@@ -12,11 +12,11 @@ GPT가 만든 155-파일 하네스 골격과 자체 작성된 깊은 콘텐츠 1
 ## migration_progress
 
 ```yaml
-current_sprint: S0
-current_sprint_step: 9
-total_steps_in_sprint: 10
-last_completed_action: "누락 폴더 14개 + README 생성"
-next_action: "PROJECT_STATE / PHASE_REGISTRY 갱신 후 instruction_index 갱신"
+current_sprint: S1
+current_sprint_step: 4
+total_steps_in_sprint: 4
+last_completed_action: "Sprint S1: Core 3 replaced + page/component maps written"
+next_action: "Sprint S2: consolidate skills 25→20 into .claude/skills/"
 blocker: null
 last_updated: 2026-05-24
 ```

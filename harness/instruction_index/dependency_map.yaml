@@ -9,6 +9,8 @@ dependencies:
     - apps/web/design.md
   apps/web/component_map.md:
     - apps/web/design.md
+    - docs/contracts/output_schema.md
+    - docs/contracts/frontend_design_contract.md
 
   # AI system
   ai_system/orchestration/flow.md:
@@ -88,3 +90,33 @@ dependencies:
   .claude/skills/harness-audit/SKILL.md:
     - migration_procedure.md
     - meta/harness_improvement_proposals.md
+
+# Cross-file content references (added in Sprint S1)
+# Lists logical entities (tables, prompt IDs) referenced from a file,
+# distinct from the direct-deps `dependencies:` block above.
+references:
+  docs/contracts/db_schema.md:
+    references_tables:
+      - candidate_knowledge
+      - brand_memory_entries
+      - plan_options
+      - users
+      - brands
+      - domains
+      - series
+      - video_projects
+      - choice_logs
+      - prompt_registry_log
+      - agent_io_logs
+  ai_system/prompts/prompt_registry.md:
+    references_prompts:
+      - P-001  # brand_direction_cards
+      - P-002  # domain_cards
+      - P-003  # series_cards
+      - P-004  # target_and_tone_cards
+      - P-005  # oneline_direction
+      - P-006  # plan_candidates
+      - P-007  # critic
+      - P-008  # rewriter
+      - P-AUX-1  # intent_filter
+      - P-AUX-2  # brand_memory_extractor
