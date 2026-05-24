@@ -1,0 +1,234 @@
+---
+name: qa-check
+description: |
+  Phase 완료 직전 또는 배포 직전 기본 품질 게이트를 통과시킬 때 사용한다.
+  MVP 범위 위반 확인, API/스키마 정합성, 에러 처리, 모바일 화면, 저장/재시도
+  흐름, 비용/로그 정상성을 한 번에 점검한다. release-gate 기능 흡수.
+  키워드: "QA 검사", "release gate", "배포 전", "최종 점검", "MVP 점검",
+  "smoke test", "regression 통과 확인".
+applies_to: [agents]
+phase: [phase-9, phase-10, phase-11, before-release]
+related_contracts:
+  - docs/contracts/mvp_non_goals.md
+  - docs/contracts/output_schema.md
+  - docs/contracts/api_contract.md
+  - apps/web/design.md
+related_state:
+  - eval/regression_results/
+version: v1.0.0
+---
+
+# qa-check
+
+배포 / Phase 종료 전 게이트. 통과해야만 다음 단계 진행.
+
+## 트리거 조건
+
+- Phase 종료 직전 (phase-complete 1단계 acceptance 확인 후)
+- 배포 직전 (staging → prod)
+- 사용자가 "배포해도 돼?" 또는 "QA 한 번 보자"
+
+## 점검 카테고리 9개
+
+각 카테고리는 pass/fail/skip 중 하나로 판정.
+
+### 1. MVP 범위 점검
+
+`docs/contracts/mvp_non_goals.md`의 항목들이 작업물에 들어왔는지 확인:
+
+```
+- 자동 영상 편집      → 안 들어왔는지
+- TTS / BGM 생성     → 안 들어왔는지
+- 결제 / billing      → 안 들어왔는지
+- 팀 협업             → 안 들어왔는지
+- Expo Mobile App     → 안 들어왔는지
+- Spring Boot 의존    → 안 들어왔는지 (Phase 21 전이면)
+```
+
+들어왔으면 fail. scope creep 발견 → contract-change Skill로 위임 또는 제거.
+
+### 2. API 응답 형식 점검
+
+각 endpoint를 한 번씩 실제 호출:
+
+```
+- 응답이 output_schema와 일치하는가?
+- 에러 응답이 정의된 형식인가?
+- 상태 코드가 적절한가?
+- 필수 필드가 모두 있는가?
+- 인증 필요한 endpoint가 인증 없이 응답하지 않는가?
+```
+
+자동화: contract test 도구로 schema validation.
+
+### 3. 에러 상태 점검
+
+design.md의 `State & Error Rules`에 명시된 상태가 모두 구현됐는지:
+
+```
+- Empty State
+- Loading State
+- Streaming State (생성 중)
+- Partial Result State
+- Error State + 다음 액션 제공
+- Retry State
+- Save Success State
+- Memory Updated State
+```
+
+빈 로딩 스피너만 30초 노출 같은 안티패턴 없는지 확인.
+
+### 4. 모바일 화면 점검
+
+iPhone SE(375px), iPhone 14(390px), Galaxy S22(360px) 기준:
+
+```
+- 가로 스크롤 발생 안 함
+- 터치 영역 44×44px 이상
+- 한 손 조작 가능 (CTA 하단)
+- 카드가 한 화면에 적정 수 배치
+- safe-area inset 적용
+- 키보드 올라와도 입력창 가림 없음
+```
+
+수동 검사 + 자동화(Playwright viewport 테스트).
+
+### 5. 저장 / 재시도 흐름
+
+```
+- 사용자 입력이 도중에 끊겨도 임시 저장되는가?
+- 네트워크 끊김 후 재연결 시 자동 동기화되는가?
+- LLM 호출 실패 시 재시도 버튼 동작?
+- 부분 결과가 보존되는가?
+- 사용자가 명시적으로 저장 안 했어도 draft로 남는가?
+```
+
+### 6. AI 호출 정상성
+
+```
+- 4-agent 파이프라인이 끝까지 진행되는가?
+- 30–60초 안에 첫 결과 노출?
+- Critic 점수가 모든 차원에 들어왔는가?
+- prompt_version이 agent_io_logs에 기록되는가?
+- 실패 시 어느 단계에서 실패했는지 알 수 있는가?
+```
+
+### 7. 비용 / Rate Limit
+
+```
+- 1 세션당 LLM 호출 수가 예상 범위 안인가?
+- agent_io_logs.cost_usd 합계가 임계값 이하?
+- 같은 사용자가 1분 안에 N번 이상 호출 시 차단되는가?
+- 비용 폭주 알람이 작동하는가?
+```
+
+비정상이면 cost-review Skill 트리거.
+
+### 8. 로그 / 관측성
+
+```
+- request_id, user_id, project_id가 모든 로그에 포함?
+- agent_io_logs에 input/output 보존?
+- prompt_version, model 정보 기록?
+- 에러 발생 시 stack trace + context 충분?
+```
+
+### 9. 보안 기본 점검
+
+```
+- RLS 정책 동작 확인 (다른 사용자 데이터 노출 없는지)
+- prompt injection 시도 입력 차단 동작?
+- 개인정보가 응답에 포함되는 케이스 없는지?
+- API key가 클라이언트로 노출 안 되는지?
+```
+
+심층 보안은 security-review Skill로.
+
+## 절차
+
+### 1. 9개 카테고리 순차 점검
+
+각 카테고리에 대해 pass/fail/skip 기록.
+
+```
+| # | 카테고리 | 결과 | 메모 |
+|---|---|---|---|
+| 1 | MVP 범위 | pass | - |
+| 2 | API 응답 형식 | fail | /generate가 schema 안 맞음 |
+| ... | ... | ... | ... |
+```
+
+### 2. 실패 항목 처리
+
+```
+fail가 0개         → 다음 단계 진행 OK
+fail가 1–2개       → 사용자 결정 (보류 vs 진행)
+fail가 3개 이상    → 진행 차단, fix phase 필요
+fail가 Critical    → 무조건 차단 (보안, 데이터, MVP 범위 위반)
+```
+
+Critical 항목: 카테고리 1, 8(보안 부분), 9(전체).
+
+### 3. smoke test 실행
+
+전체 시스템 통과 시나리오 1개라도 끝까지 돌아가는지:
+
+```
+1. 신규 회원 가입
+2. 첫 Brand 생성 (Discovery)
+3. Domain → Series 생성
+4. 첫 영상 기획 생성
+5. 3개 기획안 비교 → 1개 선택
+6. Final Output 확인
+7. Quick Mode로 두 번째 영상 추가
+```
+
+이 시나리오가 막힘없이 끝까지 가야 함.
+
+### 4. 결과 보고
+
+`eval/qa_reports/{trigger}_{YYYY-MM-DD-HHMM}.md`:
+
+```markdown
+# QA Check Report
+
+- 트리거: {phase-complete / pre-release}
+- 실행일: {YYYY-MM-DD HH:MM}
+- 결과: {ALL PASS / N FAIL / BLOCKED}
+
+## 카테고리별 결과
+{9개 카테고리 표}
+
+## smoke test
+{각 단계 결과}
+
+## 차단 항목
+{있는 경우 나열}
+
+## 권장 다음 액션
+{진행 OK / 특정 fix 후 재검사 / 새 phase}
+```
+
+## 자주 발생하는 실수
+
+1. **smoke test 생략하고 단위 테스트만 통과로 판정**: 통합 흐름 깨짐.
+2. **MVP 범위 점검 형식적**: "들어왔겠지" 추측. 실제 코드 grep 필요.
+3. **에러 상태 1–2개 점검하고 나머지 skip**: 누락된 상태가 운영에서 노출.
+4. **모바일 점검을 시뮬레이터만**: 실기기 또는 실제 viewport로 확인.
+5. **fail인데 "별로 안 중요해 보임"으로 보류**: 누적되면 게이트 의미 상실.
+
+## 다른 Skill과의 관계
+
+```
+phase-complete   : qa-check를 1단계 일부로 호출
+cost-review      : 카테고리 7 fail 시 위임
+security-review  : 카테고리 9 fail 시 위임
+bug-triage       : 발견된 실패가 새 버그면 분류
+contract-change  : 카테고리 1 위반 시 contract 재검토 또는 제거
+```
+
+## 종료 조건
+
+- 모든 카테고리 pass + smoke test 통과 → 정상 종료, 다음 단계 진행 권한
+- 일부 fail + 사용자 결정 → 결정 기록 후 종료
+- Critical fail → 차단, 후속 작업 위임 후 종료

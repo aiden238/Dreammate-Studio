@@ -12,11 +12,11 @@ GPT가 만든 155-파일 하네스 골격과 자체 작성된 깊은 콘텐츠 1
 ## migration_progress
 
 ```yaml
-current_sprint: S1
-current_sprint_step: 4
-total_steps_in_sprint: 4
-last_completed_action: "Sprint S1: Core 3 replaced + page/component maps written"
-next_action: "Sprint S2: consolidate skills 25→20 into .claude/skills/"
+current_sprint: S2
+current_sprint_step: 7
+total_steps_in_sprint: 7
+last_completed_action: "Sprint S2: 20 skills consolidated to .claude/skills/, INDEX.md updated, sanity PASS"
+next_action: "Sprint S3: deepen 8 core contracts + placeholder marker 8"
 blocker: null
 last_updated: 2026-05-24
 ```
@@ -92,11 +92,9 @@ last_updated: 2026-05-24
 ## 다음 액션
 
 ```
-1. PHASE_REGISTRY.md 갱신 (Phase 0 active, Phase 1 pending)
-2. 00_START_HERE.md / CLAUDE.md / AGENTS.md 갱신 (신규 Skill 라우팅)
-3. instruction_index/ 3 yaml 갱신
-4. phases/active/phase-0-migration/ 5 파일 생성
-5. sanity_start.ps1 / sanity_end_S0.ps1 작성
-6. 검증 통과 → git commit "(S0)"
-7. Sprint S1 진입 (다음 세션)
+1. Sprint S2: Skill 25 → 20 정리 + .claude/skills/ 단일화 (현재 in-progress)
+2. Sprint S3: 핵심 8 contract 깊은 작성 + placeholder marker 8개
+3. Sprint S4: eval / knowledge / ai_system 보강
+4. Sprint S5: 보조 파일 + harness-audit 최종
+5. Phase 0 완료 → Phase 1 진입 (Next.js + FastAPI 실 코드)
 ```

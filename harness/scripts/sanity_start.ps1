@@ -41,7 +41,7 @@ try {
     if ($Sprint -ne "S0") {
         $prevMap = @{ "S1"="S0"; "S2"="S1"; "S3"="S2"; "S4"="S3"; "S5"="S4" }
         $prev = $prevMap[$Sprint]
-        $log = git log --oneline
+        $log = (git log --oneline | Out-String)
         if ($log -notmatch "\($prev\)") {
             Write-Host "FAIL: previous Sprint $prev not committed" -ForegroundColor Red
             exit 1
