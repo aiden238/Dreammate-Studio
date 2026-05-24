@@ -1,0 +1,7 @@
+dependencies:
+  apps/web/design.md:
+    - docs/contracts/frontend_design_contract.md
+    - docs/contracts/output_schema.md
+  ai_system/orchestration/flow.md:
+    - docs/contracts/agent_io_contract.md
+    - docs/contracts/output_schema.md

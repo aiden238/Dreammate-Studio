@@ -1,0 +1,11 @@
+documents:
+  - path: PROJECT_STATE.md
+    role: current_state
+  - path: PHASE_REGISTRY.md
+    role: phase_map
+  - path: docs/contracts/output_schema.md
+    role: contract
+  - path: apps/web/design.md
+    role: frontend_design
+  - path: eval/golden_set.md
+    role: evaluation_dataset

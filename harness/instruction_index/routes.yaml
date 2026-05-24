@@ -1,0 +1,42 @@
+task_routes:
+  phase_start:
+    load:
+      - PROJECT_STATE.md
+      - PHASE_REGISTRY.md
+      - phases/active/phase_1_mvp_basic_flow.md
+      - docs/contracts/mvp_non_goals.md
+
+  frontend_implementation:
+    load:
+      - apps/web/design.md
+      - apps/web/page_map.md
+      - apps/web/component_map.md
+      - docs/contracts/frontend_design_contract.md
+      - docs/contracts/api_contract.md
+      - docs/contracts/output_schema.md
+      - docs/contracts/error_response_contract.md
+      - eval/design_review_checklist.md
+
+  backend_implementation:
+    load:
+      - docs/contracts/api_contract.md
+      - docs/contracts/db_schema.md
+      - docs/contracts/output_schema.md
+      - docs/contracts/error_response_contract.md
+      - backend/fastapi/README.md
+
+  ai_pipeline:
+    load:
+      - ai_system/architecture.md
+      - ai_system/orchestration/flow.md
+      - docs/contracts/agent_io_contract.md
+      - docs/contracts/output_schema.md
+      - eval/video_planning_eval.md
+
+  rag_update:
+    load:
+      - knowledge/rag/metadata_schema.md
+      - knowledge/rag/retrieval_policy.md
+      - knowledge/rag/quality_filter.md
+      - knowledge/rag/promotion_rule.md
+      - docs/contracts/rag_data_contract.md
