@@ -10,17 +10,19 @@
 
 ## 핵심 흐름
 
+본 제품은 **Hybrid UX**: Discovery Wizard(신규/콜드스타트용 5단계 카드) + Quick Mode(같은 Series 추가 시). 두 모드는 같은 generate_plan 파이프라인으로 수렴.
+
 ```text
 사용자 입력
-→ 의도 분석
-→ 부족한 정보 질문
+→ 의도 분석 (Discovery 또는 Quick 자동 분기)
+→ 부족한 정보 질문 (Discovery: 5 카드, Quick: 1–2 질문)
 → 한 줄 기획 방향 승인
 → LLM Wiki / RAG 검색
-→ 영상기획안 생성
-→ Critic Agent 검증
+→ 영상기획안 3개 생성 (P-006 plan_candidates)
+→ Critic Agent 검증 (revise 최대 2회)
 → 개선안 반영
 → 결과 저장
-→ 사용자 선택·피드백 저장
+→ 사용자 선택·피드백 저장 (Brand Memory 자동 추출)
 ```
 
 ## 반드시 지킬 원칙
@@ -35,9 +37,15 @@
 
 ## 첫 진입 시 읽을 문서
 
-1. `PROJECT_STATE.md`
+1. `PROJECT_STATE.md` (현재 active Phase, migration_progress 확인)
 2. `PHASE_REGISTRY.md`
 3. `product/mvp_scope.md`
 4. `docs/contracts/mvp_non_goals.md`
-5. `phases/active/phase_1_mvp_basic_flow.md`
+5. `phases/active/{current-phase}/` 폴더 전체 (goals, scope, non_goals, acceptance, dependencies)
 6. 현재 작업에 필요한 contracts
+
+## 현재 active Phase
+
+**Phase 0. 하네스 초기화 (Migration)** — Sprint S0~S5 실행 중.
+- 진입: `phases/active/phase-0-migration/`
+- 절차: `migration_procedure.md` (v1.2.0)

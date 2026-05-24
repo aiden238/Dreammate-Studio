@@ -3,8 +3,17 @@ task_routes:
     load:
       - PROJECT_STATE.md
       - PHASE_REGISTRY.md
-      - phases/active/phase_1_mvp_basic_flow.md
+      - phases/active/
       - docs/contracts/mvp_non_goals.md
+      - instruction_index/routes.yaml
+
+  phase_complete:
+    load:
+      - PROJECT_STATE.md
+      - PHASE_REGISTRY.md
+      - phases/active/
+      - meta/retrospectives/
+      - eval/qa_reports/
 
   frontend_implementation:
     load:
@@ -15,7 +24,7 @@ task_routes:
       - docs/contracts/api_contract.md
       - docs/contracts/output_schema.md
       - docs/contracts/error_response_contract.md
-      - eval/design_review_checklist.md
+      - eval/design_reviews/
 
   backend_implementation:
     load:
@@ -29,6 +38,8 @@ task_routes:
     load:
       - ai_system/architecture.md
       - ai_system/orchestration/flow.md
+      - ai_system/orchestration/moa_policy.md
+      - ai_system/prompts/prompt_registry.md
       - docs/contracts/agent_io_contract.md
       - docs/contracts/output_schema.md
       - eval/video_planning_eval.md
@@ -40,3 +51,122 @@ task_routes:
       - knowledge/rag/quality_filter.md
       - knowledge/rag/promotion_rule.md
       - docs/contracts/rag_data_contract.md
+      - docs/contracts/privacy_contract.md
+
+  rag_design:
+    load:
+      - knowledge/llm_wiki/index.md
+      - knowledge/rag/custom_rag_plan.md
+      - knowledge/rag/chunking_policy.md
+      - knowledge/rag/sources.md
+
+  contract_change:
+    load:
+      - docs/contracts/
+      - docs/contract_changes/
+      - meta/proposals/
+
+  bug_triage:
+    load:
+      - docs/bug_reports/
+      - meta/error_taxonomy.md
+      - eval/failure_taxonomy.md
+
+  qa_check:
+    load:
+      - eval/qa_reports/
+      - eval/regression_results/
+      - tests/regression_checklist.md
+      - tests/smoke_test_checklist.md
+      - docs/contracts/mvp_non_goals.md
+
+  cost_review:
+    load:
+      - eval/cost_snapshots/
+      - ai_system/orchestration/cost_control_policy.md
+      - docs/contracts/rate_limit_policy.md
+
+  security_review:
+    load:
+      - docs/contracts/llm_security_contract.md
+      - docs/contracts/rate_limit_policy.md
+      - docs/contracts/privacy_contract.md
+      - docs/contracts/user_consent_contract.md
+      - eval/security_reviews/
+      - meta/security_metrics.md
+
+  prompt_version_review:
+    load:
+      - ai_system/prompts/prompt_registry.md
+      - docs/contracts/agent_io_contract.md
+      - docs/contracts/output_schema.md
+      - eval/golden_set.md
+      - eval/regression_results/
+
+  multi_llm_validation:
+    load:
+      - meta/validations/
+      - 10_CLAUDE_CROSS_VALIDATION_PROMPT.md
+      - PROJECT_STATE.md
+      - PHASE_REGISTRY.md
+
+  context_compact:
+    load:
+      - PROJECT_STATE.md
+      - phases/active/
+      - meta/handoffs/
+
+  design_review:
+    load:
+      - apps/web/design.md
+      - apps/web/page_map.md
+      - apps/web/component_map.md
+      - docs/contracts/frontend_design_contract.md
+      - eval/design_reviews/
+
+  meta_retrospective:
+    load:
+      - meta/retrospectives/
+      - meta/patterns.md
+      - meta/lessons_learned.md
+      - meta/self_improvement_loop.md
+
+  harness_audit:
+    load:
+      - PROJECT_STATE.md
+      - PHASE_REGISTRY.md
+      - migration_procedure.md
+      - meta/harness_improvement_proposals.md
+
+  ai_architecture_review:
+    load:
+      - ai_system/architecture.md
+      - ai_system/orchestration/
+      - ai_system/agents/
+      - docs/decisions/orchestration_strategy.md
+
+  eval_design:
+    load:
+      - eval/golden_set.md
+      - eval/video_planning_eval.md
+      - eval/human_review_rubric.md
+      - eval/phase_eval.md
+
+  agent_io_check:
+    load:
+      - docs/contracts/agent_io_contract.md
+      - docs/contracts/output_schema.md
+      - ai_system/agents/
+      - ai_system/prompts/prompt_registry.md
+
+  phase_review:
+    load:
+      - PHASE_REGISTRY.md
+      - phases/active/
+      - phases/planned/
+
+  migration:
+    load:
+      - migration_procedure.md
+      - PROJECT_STATE.md
+      - handoff_to_claude_code_sprint_S0.md

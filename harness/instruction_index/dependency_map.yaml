@@ -1,7 +1,90 @@
 dependencies:
+  # Frontend
   apps/web/design.md:
     - docs/contracts/frontend_design_contract.md
     - docs/contracts/output_schema.md
+    - docs/contracts/error_response_contract.md
+    - product/user_scenarios.md
+  apps/web/page_map.md:
+    - apps/web/design.md
+  apps/web/component_map.md:
+    - apps/web/design.md
+
+  # AI system
   ai_system/orchestration/flow.md:
     - docs/contracts/agent_io_contract.md
     - docs/contracts/output_schema.md
+    - ai_system/prompts/prompt_registry.md
+  ai_system/orchestration/moa_policy.md:
+    - ai_system/orchestration/cost_control_policy.md
+    - ai_system/orchestration/fallback_policy.md
+  ai_system/prompts/prompt_registry.md:
+    - docs/contracts/agent_io_contract.md
+    - docs/contracts/output_schema.md
+    - eval/golden_set.md
+  ai_system/agents/intent_agent.md:
+    - ai_system/prompts/prompt_registry.md
+    - docs/contracts/agent_io_contract.md
+  ai_system/agents/critic_agent.md:
+    - ai_system/prompts/prompt_registry.md
+    - eval/video_planning_eval.md
+
+  # Contracts cross-deps
+  docs/contracts/api_contract.md:
+    - docs/contracts/output_schema.md
+    - docs/contracts/error_response_contract.md
+    - docs/contracts/db_schema.md
+  docs/contracts/db_schema.md:
+    - docs/contracts/privacy_contract.md
+    - docs/contracts/data_retention_policy.md
+  docs/contracts/rag_data_contract.md:
+    - knowledge/rag/promotion_rule.md
+    - knowledge/rag/metadata_schema.md
+    - docs/contracts/privacy_contract.md
+
+  # RAG
+  knowledge/rag/promotion_rule.md:
+    - docs/contracts/rag_data_contract.md
+    - docs/contracts/privacy_contract.md
+    - eval/quality_filter.md
+
+  # Skill -> generated folder
+  .claude/skills/bug-triage/SKILL.md:
+    - docs/bug_reports/
+    - meta/error_taxonomy.md
+  .claude/skills/contract-change/SKILL.md:
+    - docs/contract_changes/
+    - meta/proposals/
+  .claude/skills/cost-review/SKILL.md:
+    - eval/cost_snapshots/
+  .claude/skills/design-review/SKILL.md:
+    - eval/design_reviews/
+    - apps/web/design.md
+  .claude/skills/eval-run/SKILL.md:
+    - eval/golden_set.md
+    - eval/regression_results/
+  .claude/skills/qa-check/SKILL.md:
+    - eval/qa_reports/
+    - tests/
+  .claude/skills/rag-update/SKILL.md:
+    - knowledge/rag/promotion_rule.md
+    - knowledge/rag/quality_filter.md
+  .claude/skills/security-review/SKILL.md:
+    - eval/security_reviews/
+    - meta/security_metrics.md
+    - docs/contracts/llm_security_contract.md
+  .claude/skills/prompt-version-review/SKILL.md:
+    - ai_system/prompts/prompt_registry.md
+    - eval/regression_results/
+  .claude/skills/multi-llm-validation/SKILL.md:
+    - meta/validations/
+  .claude/skills/context-compact/SKILL.md:
+    - meta/handoffs/
+    - PROJECT_STATE.md
+  .claude/skills/meta-retrospective/SKILL.md:
+    - meta/retrospectives/
+    - meta/patterns.md
+    - meta/lessons_learned.md
+  .claude/skills/harness-audit/SKILL.md:
+    - migration_procedure.md
+    - meta/harness_improvement_proposals.md

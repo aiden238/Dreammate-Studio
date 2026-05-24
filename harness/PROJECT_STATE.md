@@ -2,40 +2,101 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 하네스 구조와 기술 스택 방향 초안이 정리되었다.
-
-## 확정 방향
-
-- 영상 제작 AI가 아닌 영상기획 AI 에이전트
-- 초기 MVP는 Next.js PWA + FastAPI + Supabase/PostgreSQL/pgvector
-- RAG Lite와 MOA Lite를 MVP부터 일부 적용
-- 영상 제작/편집/TTS/BGM/자동 업로드는 MVP 제외
-- Phase 기반 구현 진행
-- contracts, eval, meta, design.md 하네스 포함
-
-## 현재 단계
-
-```text
-하네스 구조 확정
-→ 기술 스택 방향 확정
-→ MVP 범위 문서화
-→ Phase 1 구현 지침 작성
-→ 구현 시작
-```
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0)** 진행 중.
+GPT가 만든 155-파일 하네스 골격과 자체 작성된 깊은 콘텐츠 18-파일을 병합하여 운영 가능한 하네스를 완성한다.
 
 ## 현재 Active Phase
 
-`phases/active/phase_1_mvp_basic_flow.md`
+`phases/active/phase-0-migration/` — 하네스 초기화 (Migration)
+
+## migration_progress
+
+```yaml
+current_sprint: S0
+current_sprint_step: 9
+total_steps_in_sprint: 10
+last_completed_action: "누락 폴더 14개 + README 생성"
+next_action: "PROJECT_STATE / PHASE_REGISTRY 갱신 후 instruction_index 갱신"
+blocker: null
+last_updated: 2026-05-24
+```
+
+## 확정 방향
+
+### 제품 / UX
+- 영상 제작 AI가 아닌 **영상기획 AI 에이전트**
+- 4계층 데이터 모델: User → Brand → Domain → Series → Video Project
+- Hybrid UX: **Discovery Wizard** (신규/콜드스타트, 5단계 카드) + **Quick Mode** (같은 Series 추가)
+- Discovery 단계당 카드 5장 (4장 추천 + 1장 "직접 입력")
+- 한 호출당 plan 후보 **3개** 생성 → 사용자가 1개 선택
+- Intent Filter (영상기획 외 입력 차단)
+
+### 기술 스택
+- **MVP**: Next.js 14 PWA + FastAPI + Supabase(PostgreSQL + pgvector)
+- **LLM**: gpt-4o-mini 기본, gpt-4o 일부 (Critic 등)
+- **Phase 21+**: Expo React Native, Spring Boot, Custom RAG
+- 영상 자동 편집 / TTS / BGM / 자동 업로드 → MVP 제외 (영구)
+
+### AI 시스템
+- **MOA Lite**: Intent → Planner → Critic → Rewriter
+- **Critic revise 최대 2회** (무한 루프 차단)
+- **RAG Lite**: candidate_knowledge 5단계 승격 (pending → filtered → evaluated → approved → promoted)
+- **prompt-version-review**: semver + golden_set 회귀 + A/B (major 시 10%→50%→100%)
+- PII 마스킹 + 프롬프트 인젝션 차단 (Step 1, Step 2 자동 검사)
+
+### 운영
+- Brand Memory 자동 추출 + 사용자 검토 가능
+- 광고적 표현 차단 단어 검사 ("최고의", "혁신적인" 등)
+- 30–60초 생성 대기 시 4단계 progress stepper + 부분 결과 즉시 노출
+
+## confirmed_decisions (25)
+
+```
+[ 1] Discovery + Quick 하이브리드 UX (1.6x 비용 수용)
+[ 2] Mode 자동 분기: 신규/Brand 없음 → Discovery, 기존 Series → Quick
+[ 3] Discovery 단계당 카드 5장 (4추천 + 1직접입력)
+[ 4] 3개 plan 후보 생성 (P-006 plan_candidates)
+[ 5] Critic revise 최대 2회 (무한 루프 차단)
+[ 6] 4계층 데이터 모델 (Brand/Domain/Series/VideoProject)
+[ 7] Intent Filter (영상기획 외 입력 차단)
+[ 8] Brand Memory 자동 추출 + 사용자 검토 가능
+[ 9] 광고적 표현 차단 단어 검사
+[10] 30–60초 생성 대기 시 4단계 progress + 부분 결과 노출
+[11] Skill 14 → 20 (이번 세션, GPT 흡수 후)
+[12] Skill 폴더: .claude/skills/ 단일 + applies_to 태그
+     (v1.2.0 변경: .agents/.claude 분리 → 단일.
+      이유: Claude Code Skill 자동 트리거는 .claude/skills/만 인식)
+[13] 22 Phase 등록 (1~10 MVP, 11~20 안정화, 21~30 확장)
+[14] Phase 0 = 마이그레이션 자체 (지금 active)
+[15] context-compact가 모든 Skill 위 최우선
+[16] multi-llm-validation 워크플로 (Claude/GPT/Gemini 교대)
+[17] agent.html은 토큰 최적화 압축 레이어 (안정화 후 빌드)
+[18] RAG candidate_knowledge 5단계 승격 파이프라인
+[19] PII 마스킹 + 프롬프트 인젝션 차단 (자동 검사 2단계)
+[20] prompt 변경 semver + 회귀 + A/B (major 시 10%→50%→100%)
+[21] agent_html_spec v1.1.0 갱신 — v1.2.0 단일 폴더 결정으로 불필요해짐
+[22] placeholder marker 표준 형식 (16개 stub 일관 적용)
+[23] Sprint별 git commit + sanity script (시작/종료)
+[24] PROJECT_STATE.migration_progress 필드로 부분 완료 감지
+[25] Claude Code / Codex / Copilot Code 분담 (multi-llm-validation 활용)
+```
 
 ## 주요 리스크
 
-- output schema 불명확
-- Golden Set 부족
-- LLM 보안 지침 부족
-- 사용자 데이터 승격 정책 미흡
-- 프론트 상태/에러 UX 미흡
-- 문서 수 과다로 인한 참조 혼란
+- `output_schema.md` 불명확 → Sprint S3에서 깊은 작성 (300줄+)
+- Golden Set 부족 → Sprint S4에서 시드 10케이스 작성
+- LLM 보안 contract 9줄 stub → Sprint S3 우선 보강
+- 사용자 데이터 승격 정책 미흡 → Phase 7+ (rag-update Skill 절차로 강제)
+- 9줄 stub 16개 (docs/contracts/) → Sprint S3에서 8 보강 + 8 placeholder marker
 
 ## 다음 액션
 
-Phase 1 구현 전에 contracts와 design.md의 최소 초안을 작성하고, Claude 등 다른 모델로 교차검증한다.
+```
+1. PHASE_REGISTRY.md 갱신 (Phase 0 active, Phase 1 pending)
+2. 00_START_HERE.md / CLAUDE.md / AGENTS.md 갱신 (신규 Skill 라우팅)
+3. instruction_index/ 3 yaml 갱신
+4. phases/active/phase-0-migration/ 5 파일 생성
+5. sanity_start.ps1 / sanity_end_S0.ps1 작성
+6. 검증 통과 → git commit "(S0)"
+7. Sprint S1 진입 (다음 세션)
+```

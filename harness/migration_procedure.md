@@ -1334,4 +1334,18 @@ v1.1.0 (2026-01-XX): 7개 갭 보강
   - agent_html_spec 정합 갱신 (.agents/.claude 결정 반영)
   - 신규 충돌 3개 (Critic revise, /generate 응답, agent_html_spec)
   - Phase 0 acceptance 명시
+v1.2.0 (2026-05-24): Skill 구조 결정 변경 (Sprint S0 진입 시점)
+  - 충돌 3 재해결: .agents/.claude 분리 → .claude/skills/ 단일 + applies_to 태그
+  - 근거: Claude Code Skill 자동 트리거는 .claude/skills/만 인식.
+          분리 시 .agents/skills/ 11개가 자동 트리거 안 됨.
+          applies_to: [agents|claude|both] 태그로 모델 분리 기능 동등 제공.
+  - 영향:
+    · Sprint S2 작업 변경: 모든 20 Skill을 .claude/skills/로 통합 배치
+    · GPT의 .agents/skills/ 폴더는 S2에서 삭제
+    · agent_html_spec.md v1.1.0 갱신 (§11.6) 불필요 → 단일 폴더 전제 유지
+    · _staging/skills/INDEX.md 원래 설계 의도와 정합 회복
+  - 호환성:
+    · Claude Code: 모든 Skill 자동 트리거 ✅
+    · Codex: AGENTS.md 경로 라우팅으로 reference 로드 ✅
+    · Copilot Code: 동일 ✅
 ```

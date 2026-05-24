@@ -1,11 +1,120 @@
 documents:
+  # 루트 라우팅 / 상태
   - path: PROJECT_STATE.md
     role: current_state
   - path: PHASE_REGISTRY.md
     role: phase_map
+  - path: 00_START_HERE.md
+    role: entry_point
+  - path: CLAUDE.md
+    role: router_planning
+  - path: AGENTS.md
+    role: router_implementation
+  - path: HANDOFF.md
+    role: handoff_template
+  - path: 10_CLAUDE_CROSS_VALIDATION_PROMPT.md
+    role: cross_validation_prompt
+  - path: 00_gap_assessment.md
+    role: historical_audit
+  - path: migration_procedure.md
+    role: migration_spec
+  - path: handoff_to_claude_code_sprint_S0.md
+    role: sprint_s0_handoff
+
+  # 핵심 contracts
   - path: docs/contracts/output_schema.md
     role: contract
+  - path: docs/contracts/agent_io_contract.md
+    role: contract
+  - path: docs/contracts/api_contract.md
+    role: contract
+  - path: docs/contracts/db_schema.md
+    role: contract
+  - path: docs/contracts/mvp_non_goals.md
+    role: contract
+  - path: docs/contracts/error_response_contract.md
+    role: contract
+  - path: docs/contracts/llm_security_contract.md
+    role: contract
+  - path: docs/contracts/rate_limit_policy.md
+    role: contract
+  - path: docs/contracts/rag_data_contract.md
+    role: contract
+  - path: docs/contracts/frontend_design_contract.md
+    role: contract
+
+  # Frontend
   - path: apps/web/design.md
     role: frontend_design
+  - path: apps/web/page_map.md
+    role: frontend_pages
+  - path: apps/web/component_map.md
+    role: frontend_components
+
+  # AI system
+  - path: ai_system/architecture.md
+    role: ai_architecture
+  - path: ai_system/orchestration/flow.md
+    role: ai_orchestration
+  - path: ai_system/orchestration/moa_policy.md
+    role: ai_policy
+  - path: ai_system/prompts/prompt_registry.md
+    role: prompt_registry
+
+  # RAG
+  - path: knowledge/rag/promotion_rule.md
+    role: rag_policy
+  - path: knowledge/rag/retrieval_policy.md
+    role: rag_policy
+  - path: knowledge/llm_wiki/index.md
+    role: rag_knowledge_index
+
+  # Evaluation
   - path: eval/golden_set.md
     role: evaluation_dataset
+  - path: eval/video_planning_eval.md
+    role: evaluation_spec
+  - path: eval/regression_eval.md
+    role: evaluation_spec
+
+  # Phases
+  - path: phases/active/
+    role: active_phase_folder
+
+  # Meta
+  - path: meta/guardrails.md
+    role: meta_policy
+  - path: meta/rollback_policy.md
+    role: meta_policy
+  - path: meta/self_improvement_loop.md
+    role: meta_policy
+  - path: meta/patterns.md
+    role: meta_patterns
+  - path: meta/skill_usage_log.md
+    role: meta_usage
+  - path: meta/security_metrics.md
+    role: meta_security
+  - path: meta/retrospectives/
+    role: meta_retrospective_archive
+  - path: meta/handoffs/
+    role: meta_handoff_archive
+  - path: meta/validations/
+    role: meta_validation_archive
+  - path: meta/proposals/
+    role: meta_proposal_archive
+
+  # 신규 폴더 (Sprint S0에서 추가)
+  - path: docs/contract_changes/
+    role: contract_change_proposals
+  - path: docs/bug_reports/
+    role: bug_reports_archive
+  - path: eval/regression_results/
+    role: regression_archive
+  - path: eval/cost_snapshots/
+    role: cost_archive
+  - path: eval/qa_reports/
+    role: qa_archive
+  - path: eval/design_reviews/
+    role: design_review_archive
+  - path: eval/security_reviews/
+    role: security_review_archive
