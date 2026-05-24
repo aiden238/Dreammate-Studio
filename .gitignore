@@ -10,6 +10,7 @@ desktop.ini
 # Claude / agent state
 .claude/local/
 .claude/cache/
+.claude/settings.local.json
 *.session.json
 
 # Node / Python (장차 코드 단계에서)
