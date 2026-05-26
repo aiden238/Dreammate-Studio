@@ -1,33 +1,43 @@
-"""POST /api/v1/generate — Phase 1 Slice 1.
+"""POST /api/v1/generate — Phase 1 Slice 2.
 
 Phase 1 deviation from api_contract.md §8.3:
   - Contract: POST /api/v1/plans/{plan_id}/generate (async + SSE, 3 plans)
-  - Slice 1: POST /api/v1/generate (sync, 1 plan)
+  - Slice 1/2: POST /api/v1/generate (sync, 1 plan)
   - Reason: Simplest Slice 원칙 (phase-start v1.1.0 §6.2)
   - Migration: Phase 4 MOA Lite 완성 시 contract endpoint로 정합
 
-Slice 1 응답: output_schema v1.0 envelope (1 plan + dummy validation).
-Slice 2: Intent Filter INV-001 분리.
-Slice 3: Critic 추가.
+Slice 2 변경:
+  - Intent + Planning 분리 (직렬 2회 호출)
+  - INV-001 (Intent 차단) → ErrorEnvelope 정식 응답 (HTTP 422)
 """
 
 from __future__ import annotations
 
 import logging
+from typing import Union
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
+from fastapi.responses import JSONResponse
 
-from ..agents.intent_planning import (
-    PROMPT_ID,
-    PROMPT_VERSION,
-    run_intent_planning,
+from ..agents.intent import (
+    PROMPT_ID as INTENT_PROMPT_ID,
+    PROMPT_VERSION as INTENT_PROMPT_VERSION,
+    run_intent,
+)
+from ..agents.planning import (
+    PROMPT_ID as PLANNING_PROMPT_ID,
+    PROMPT_VERSION as PLANNING_PROMPT_VERSION,
+    run_planning,
 )
 from ..config import get_settings
 from ..schemas.input import GenerateRequest
 from ..schemas.output import (
     Body,
     Envelope,
+    ErrorBody,
+    ErrorEnvelope,
+    ErrorMeta,
     Meta,
     Plan,
     PlanFlowBeat,
@@ -40,62 +50,111 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["generate"])
 
 
+# ─── Helpers ─────────────────────────────────────────────────────────
+
+def _error_response(
+    *,
+    status_code: int,
+    code: str,
+    message: str,
+    user_message: str,
+    retry_allowed: bool = False,
+) -> JSONResponse:
+    """ErrorEnvelope를 JSONResponse로 변환 (error_response_contract.md §1)."""
+    envelope = ErrorEnvelope(
+        error=ErrorBody(
+            code=code,
+            message=message,
+            user_message=user_message,
+            retry_allowed=retry_allowed,
+        ),
+        meta=ErrorMeta.make(),
+    )
+    return JSONResponse(
+        status_code=status_code,
+        content=envelope.model_dump(mode="json"),
+    )
+
+
 # ─── Endpoint ─────────────────────────────────────────────────────────
 
 @router.post(
     "/generate",
     response_model=Envelope,
+    responses={
+        422: {"model": ErrorEnvelope, "description": "Intent 차단 (INV-001) 등"},
+        502: {"model": ErrorEnvelope, "description": "LLM 호출 실패"},
+    },
     status_code=status.HTTP_200_OK,
-    summary="영상기획 1개 생성 (Phase 1 Slice 1)",
+    summary="영상기획 1개 생성 (Phase 1 Slice 2)",
     description=(
-        "Phase 1 Slice 1 — synchronous endpoint.\n"
+        "Phase 1 Slice 2 — Intent + Planning 분리 직렬 호출.\n"
         "Phase 4에서 api_contract.md §8.3 (async + SSE) 형식으로 migration 예정.\n"
-        "Intent 차단(INV-001)은 Slice 2에서 추가."
+        "Intent 차단 시 INV-001 ErrorEnvelope 반환."
     ),
 )
-def generate(req: GenerateRequest) -> Envelope:
-    """단일 LLM 호출 → output_schema v1.0 envelope 반환."""
+def generate(req: GenerateRequest) -> Union[Envelope, JSONResponse]:
+    """Intent → Planning 직렬 호출 → output_schema v1.0 envelope 반환."""
     settings = get_settings()
 
-    # 1. LLM 호출 (Intent + Planning 통합)
+    # ── 1. Intent Agent (P-001) ──────────────────────────────────────
     try:
-        llm_result = run_intent_planning(req.input)
+        intent_result = run_intent(req.input)
     except ValueError as e:
-        logger.warning("LLM JSON 파싱 실패: %s", e)
-        raise HTTPException(
+        logger.warning("Intent LLM JSON 파싱 실패: %s", e)
+        return _error_response(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={
-                "code": "E-LLM-002",
-                "message": "LLM 응답 JSON 파싱 실패",
-                "phase_1_note": "Slice 2에서 정식 error envelope로 교체 예정",
-            },
-        ) from e
+            code="E-LLM-002",
+            message=f"Intent LLM response parse failed: {e}",
+            user_message="AI 응답을 정리하는 중 문제가 생겼어요. 다시 시도해주세요.",
+            retry_allowed=True,
+        )
     except Exception as e:
-        logger.exception("LLM 호출 실패")
-        raise HTTPException(
+        logger.exception("Intent LLM 호출 실패")
+        return _error_response(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={
-                "code": "E-LLM-001",
-                "message": "LLM 호출 실패",
-                "phase_1_note": str(e),
-            },
-        ) from e
-
-    # 2. Intent 차단 처리 (Slice 1 임시 — Slice 2에서 INV-001 error envelope로 교체)
-    if not llm_result.get("intent_ok", False):
-        logger.info("Intent 차단: %s", llm_result.get("reason"))
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={
-                "code": "INV-001",
-                "message": "영상기획 외 요청은 처리할 수 없습니다.",
-                "reason": llm_result.get("reason", ""),
-                "phase_1_note": "Slice 2에서 ErrorEnvelope 정식 응답으로 교체",
-            },
+            code="E-LLM-001",
+            message=f"Intent LLM call failed: {e}",
+            user_message="AI 응답이 늦어져서 멈췄어요. 다시 시도해주세요.",
+            retry_allowed=True,
         )
 
-    # 3. plan dict → Pydantic Plan 모델
-    plan_raw = llm_result.get("plan") or {}
+    # ── 2. Intent 차단 → INV-001 ErrorEnvelope ──────────────────────
+    if not intent_result.get("intent_ok", False):
+        reason = intent_result.get("reason", "영상기획 외 요청")
+        logger.info("Intent 차단: %s", reason)
+        return _error_response(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            code="INV-001",
+            message=f"Intent blocked: {reason}",
+            user_message="영상기획과 거리가 있는 내용 같아요. 다른 방식으로 도와드릴까요?",
+            retry_allowed=False,
+        )
+
+    # ── 3. Planning Agent (P-006) ────────────────────────────────────
+    try:
+        planning_result = run_planning(req.input)
+    except ValueError as e:
+        logger.warning("Planning LLM JSON 파싱 실패: %s", e)
+        return _error_response(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            code="E-LLM-002",
+            message=f"Planning LLM response parse failed: {e}",
+            user_message="AI 응답을 정리하는 중 문제가 생겼어요. 다시 시도해주세요.",
+            retry_allowed=True,
+        )
+    except Exception as e:
+        logger.exception("Planning LLM 호출 실패")
+        return _error_response(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            code="E-LLM-001",
+            message=f"Planning LLM call failed: {e}",
+            user_message="AI 응답이 늦어져서 멈췄어요. 다시 시도해주세요.",
+            retry_allowed=True,
+        )
+
+    # ── 4. plan dict → Pydantic Plan 모델 ─────────────────────────────
+    plan_raw = planning_result.get("plan") or {}
     try:
         plan = Plan(
             plan_id=str(uuid4()),
@@ -119,20 +178,21 @@ def generate(req: GenerateRequest) -> Envelope:
         )
     except Exception as e:
         logger.exception("Plan 모델 검증 실패")
-        raise HTTPException(
+        return _error_response(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={
-                "code": "E-LLM-003",
-                "message": "LLM 응답 구조 검증 실패",
-                "phase_1_note": str(e),
-            },
-        ) from e
+            code="E-LLM-003",
+            message=f"Plan schema validation failed: {e}",
+            user_message="AI가 형식에 맞지 않게 답했어요. 다시 시도해주세요.",
+            retry_allowed=True,
+        )
 
-    # 4. Envelope 조립
+    # ── 5. Envelope 조립 ──────────────────────────────────────────────
+    # meta.prompt_id 는 응답 본문 생성기인 Planning(P-006)을 노출.
+    # Intent(P-001) 은 검증 단계로 별도 stage_prompt_ids 에 기록.
     envelope = Envelope(
         meta=Meta.make(
-            prompt_id=PROMPT_ID,
-            prompt_version=PROMPT_VERSION,
+            prompt_id=PLANNING_PROMPT_ID,
+            prompt_version=PLANNING_PROMPT_VERSION,
             model=settings.openai_model_default,
             locale=req.locale,
         ),
@@ -141,6 +201,11 @@ def generate(req: GenerateRequest) -> Envelope:
             passed=True,
             checks=[
                 ValidationCheck(name="schema_envelope", status="ok"),
+                ValidationCheck(
+                    name="intent_filter",
+                    status="ok",
+                    detail=f"{INTENT_PROMPT_ID}@{INTENT_PROMPT_VERSION}",
+                ),
                 ValidationCheck(name="plan_count", status="ok", detail="1 (Phase 1 deviation)"),
             ],
             warnings=[

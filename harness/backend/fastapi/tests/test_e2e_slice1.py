@@ -1,10 +1,10 @@
-"""Phase 1 Slice 1 — end-to-end 검증.
+"""Phase 1 Slice 1 + Slice 2 — end-to-end 검증.
 
 검증 항목 (assumptions.md §4.1 매핑):
   A1. /api/v1/generate 응답 HTTP 200 + envelope 구조
   A6. output_schema v1.0 준수 (meta / body / validation)
   + health endpoint 동작
-  + Intent 차단 시 422 (Slice 2에서 정식 ErrorEnvelope로 교체)
+  + Intent 차단 시 422 + INV-001 ErrorEnvelope (Slice 2)
   + 입력 검증 (빈 문자열 / 너무 긴 문자열 차단)
 """
 
@@ -20,7 +20,7 @@ client = TestClient(app)
 
 # ─── A1. /api/v1/generate 200 응답 ────────────────────────────────────
 
-def test_generate_returns_200_with_envelope(mock_openai_intent_ok) -> None:
+def test_generate_returns_200_with_envelope(mock_pipeline_ok) -> None:
     """정상 입력 → HTTP 200 + envelope 구조."""
     response = client.post(
         "/api/v1/generate",
@@ -38,7 +38,7 @@ def test_generate_returns_200_with_envelope(mock_openai_intent_ok) -> None:
 
 # ─── A6. output_schema v1.0 준수 ──────────────────────────────────────
 
-def test_generate_meta_fields(mock_openai_intent_ok) -> None:
+def test_generate_meta_fields(mock_pipeline_ok) -> None:
     """meta 필수 필드 확인 (output_schema.md §2)."""
     response = client.post(
         "/api/v1/generate",
@@ -55,7 +55,7 @@ def test_generate_meta_fields(mock_openai_intent_ok) -> None:
     assert meta["locale"] == "ko-KR"
 
 
-def test_generate_body_plans_phase1_single(mock_openai_intent_ok) -> None:
+def test_generate_body_plans_phase1_single(mock_pipeline_ok) -> None:
     """Phase 1 body.plans 길이 1 (deviation from contract 3)."""
     response = client.post(
         "/api/v1/generate",
@@ -83,7 +83,7 @@ def test_generate_body_plans_phase1_single(mock_openai_intent_ok) -> None:
     ]
 
 
-def test_generate_validation_warnings_phase1(mock_openai_intent_ok) -> None:
+def test_generate_validation_warnings_phase1(mock_pipeline_ok) -> None:
     """Phase 1 deviation은 validation.warnings에 명시."""
     response = client.post(
         "/api/v1/generate",
@@ -100,10 +100,10 @@ def test_generate_validation_warnings_phase1(mock_openai_intent_ok) -> None:
     assert "phase_1_no_critic" in warnings
 
 
-# ─── Intent 차단 (Slice 2 전 임시 응답) ───────────────────────────────
+# ─── Intent 차단 (Slice 2 INV-001 ErrorEnvelope) ──────────────────────
 
-def test_generate_intent_block_returns_422(mock_openai_intent_block) -> None:
-    """영상기획 외 요청 → 422 (Slice 2에서 ErrorEnvelope로 교체 예정)."""
+def test_generate_intent_block_returns_422_envelope(mock_intent_block) -> None:
+    """영상기획 외 요청 → 422 + INV-001 ErrorEnvelope (Slice 2 정식 응답)."""
     response = client.post(
         "/api/v1/generate",
         json={"input": "오늘 서울 날씨 알려줘"},
@@ -111,7 +111,21 @@ def test_generate_intent_block_returns_422(mock_openai_intent_block) -> None:
 
     assert response.status_code == 422
     body = response.json()
-    assert body["detail"]["code"] == "INV-001"
+
+    # ErrorEnvelope 정합 (error_response_contract.md §1)
+    assert body["ok"] is False
+    assert "error" in body
+    assert "meta" in body
+
+    err = body["error"]
+    assert err["code"] == "INV-001"
+    assert isinstance(err["message"], str) and err["message"]
+    assert isinstance(err["user_message"], str) and err["user_message"]
+    assert err["retry_allowed"] is False
+
+    meta = body["meta"]
+    assert "request_id" in meta and meta["request_id"]
+    assert "generated_at" in meta and meta["generated_at"]
 
 
 # ─── 입력 검증 ────────────────────────────────────────────────────────
@@ -152,7 +166,6 @@ def test_health_endpoint() -> None:
     data = response.json()
     assert data["status"] == "ok"
     assert data["phase"] == "1"
-    assert data["slice"] == "1"
 
 
 # ─── OpenAPI 문서 노출 ────────────────────────────────────────────────
