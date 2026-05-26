@@ -1,4 +1,4 @@
-"""Phase 1 Slice 1 + Slice 2 — end-to-end 검증.
+"""Phase 1 Slice 1 + Slice 2 + Slice 3 — end-to-end 검증.
 
 검증 항목 (assumptions.md §4.1 매핑):
   A1. /api/v1/generate 응답 HTTP 200 + envelope 구조
@@ -6,6 +6,8 @@
   + health endpoint 동작
   + Intent 차단 시 422 + INV-001 ErrorEnvelope (Slice 2)
   + 입력 검증 (빈 문자열 / 너무 긴 문자열 차단)
+  + Critic 평가 결과가 body.critic_evaluation에 포함 (Slice 3)
+  + validation.warnings에서 phase_1_no_critic 제거 (Slice 3)
 """
 
 from __future__ import annotations
@@ -84,7 +86,11 @@ def test_generate_body_plans_phase1_single(mock_pipeline_ok) -> None:
 
 
 def test_generate_validation_warnings_phase1(mock_pipeline_ok) -> None:
-    """Phase 1 deviation은 validation.warnings에 명시."""
+    """Phase 1 deviation은 validation.warnings에 명시.
+
+    Slice 3 변경: Critic이 활성화되었으므로 `phase_1_no_critic`는 더 이상 포함되지 않음.
+    남는 deviation 경고는 `phase_1_single_plan` (3 vs 1) + `phase_1_no_rag` (Slice 4 해소).
+    """
     response = client.post(
         "/api/v1/generate",
         json={"input": "쇼츠 콘텐츠 기획"},
@@ -97,7 +103,88 @@ def test_generate_validation_warnings_phase1(mock_pipeline_ok) -> None:
     warnings = validation["warnings"]
     assert "phase_1_single_plan" in warnings
     assert "phase_1_no_rag" in warnings
-    assert "phase_1_no_critic" in warnings
+    assert "phase_1_no_critic" not in warnings, (
+        "Slice 3에서 Critic이 활성화되었으므로 phase_1_no_critic 경고가 사라져야 함"
+    )
+
+
+# ─── Critic 평가 (Slice 3) ────────────────────────────────────────────
+
+def test_generate_includes_critic_evaluation(mock_pipeline_ok) -> None:
+    """body.critic_evaluation 8 차원 + verdict 포함 (output_schema §9.1)."""
+    response = client.post(
+        "/api/v1/generate",
+        json={"input": "초보 요리 쇼츠 채널 첫 영상 기획해줘"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    critic = data["body"].get("critic_evaluation")
+    assert critic is not None, "Slice 3: body.critic_evaluation 필드 채워져야 함"
+
+    # 8 차원 점수 모두 0~5 정수
+    scores = critic["scores"]
+    expected_dims = {
+        "intent_fit",
+        "target_clarity",
+        "hook_strength",
+        "message_clarity",
+        "structure",
+        "feasibility",
+        "brand_consistency",
+        "differentiation",
+    }
+    assert set(scores.keys()) == expected_dims
+    for k, v in scores.items():
+        assert isinstance(v, int)
+        assert 0 <= v <= 5, f"{k} 점수가 0~5 범위 밖: {v}"
+
+    # verdict는 enum
+    assert critic["overall_verdict"] in ("approve", "revise", "reject")
+
+    # plan_id echo back
+    plan_id = data["body"]["plans"][0]["plan_id"]
+    assert critic["target_plan_id"] == plan_id
+
+    # Phase 1: revise_round 항상 0
+    assert critic["revise_round"] == 0
+
+
+def test_generate_critic_validation_check_present(mock_pipeline_ok) -> None:
+    """validation.checks에 critic_evaluation 항목이 P-007@v1.0.0 detail로 노출."""
+    response = client.post(
+        "/api/v1/generate",
+        json={"input": "유튜브 첫 영상"},
+    )
+    data = response.json()
+    checks = data["validation"]["checks"]
+
+    critic_check = next((c for c in checks if c["name"] == "critic_evaluation"), None)
+    assert critic_check is not None
+    assert critic_check["status"] == "ok"
+    assert critic_check["detail"] == "P-007@v1.0.0"
+
+
+def test_generate_critic_flagged_returns_revise_verdict(
+    mock_intent_ok, mock_planning_ok, mock_critic_flagged
+) -> None:
+    """Critic이 약한 plan을 flag → verdict=revise, blocking_issues 채워짐.
+
+    Phase 1: revise verdict여도 router는 정상 200 응답 (revise 호출 없음).
+    """
+    response = client.post(
+        "/api/v1/generate",
+        json={"input": "건강 관련 쇼츠"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    critic = data["body"]["critic_evaluation"]
+    assert critic["overall_verdict"] == "revise"
+    assert len(critic["blocking_issues"]) >= 1
+    # FC-001/002 시드 패턴 — hook_strength, target_clarity가 미달
+    assert critic["scores"]["hook_strength"] < 2
+    assert critic["scores"]["target_clarity"] < 2
 
 
 # ─── Intent 차단 (Slice 2 INV-001 ErrorEnvelope) ──────────────────────

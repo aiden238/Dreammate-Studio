@@ -13,6 +13,10 @@ Phase 1 Slice 1 단순화 (Deviation from contract, documented):
 Slice 2 추가:
   - ErrorEnvelope (error_response_contract.md §1 정합) 활성화
   - Intent 차단 시 INV-001 코드로 반환
+
+Slice 3 추가:
+  - CriticScores / CriticEvaluation (output_schema.md §9 정합)
+  - body.critic_evaluation 필드 활성화 (Phase 1: 평가만, revise 없음)
 """
 
 from datetime import datetime, timezone
@@ -97,14 +101,48 @@ class Plan(BaseModel):
     rag_used: list[dict[str, Any]] = Field(default_factory=list)
 
 
-class Body(BaseModel):
-    """envelope body — Phase 1 Slice 1 단순화 구조.
+class CriticScores(BaseModel):
+    """Critic 8 차원 점수 (output_schema.md §9.1)."""
 
-    output_schema.md §8.1은 plans 길이 3 강제하지만 Phase 1은 1개만.
-    validation.warnings에 phase_1_single_plan 명시.
+    intent_fit: int = Field(..., ge=0, le=5)
+    target_clarity: int = Field(..., ge=0, le=5)
+    hook_strength: int = Field(..., ge=0, le=5)
+    message_clarity: int = Field(..., ge=0, le=5)
+    structure: int = Field(..., ge=0, le=5)
+    feasibility: int = Field(..., ge=0, le=5)
+    brand_consistency: int = Field(..., ge=0, le=5)
+    differentiation: int = Field(..., ge=0, le=5)
+
+
+class CriticEvaluation(BaseModel):
+    """Critic 평가 결과 (output_schema.md §9.1).
+
+    Phase 1: revise_round 항상 0 (revise 호출 없음).
+    overall_verdict는 평가만 노출 (Phase 4+에서 revise 트리거로 사용).
+    """
+
+    target_plan_id: str
+    scores: CriticScores
+    reasons: dict[str, str] = Field(default_factory=dict)
+    suggestions: dict[str, str] = Field(default_factory=dict)
+    overall_score_avg: float
+    overall_verdict: Literal["approve", "revise", "reject"]
+    blocking_issues: list[str] = Field(default_factory=list, max_length=3)
+    revise_round: int = Field(default=0, ge=0)
+
+
+class Body(BaseModel):
+    """envelope body — Phase 1 Slice 3 구조.
+
+    Slice 1: plans 길이 1 (vs contract 3). validation.warnings에 phase_1_single_plan.
+    Slice 3: critic_evaluation 활성화 (revise 없음).
     """
 
     plans: list[Plan] = Field(..., min_length=1, max_length=3)
+    critic_evaluation: CriticEvaluation | None = Field(
+        default=None,
+        description="Phase 1 Slice 3: 평가만 (revise 없음). Phase 4+에서 list로 확장.",
+    )
 
 
 # ─── Validation ───────────────────────────────────────────────────────
