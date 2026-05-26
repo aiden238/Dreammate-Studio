@@ -13,7 +13,7 @@
 | Phase | 이름 | 상태 | 목적 |
 |---|---|---|---|
 | 0 | 하네스 초기화 (Migration) | **done** (2026-05-26) | GPT 골격 + 우리 콘텐츠 병합, Sprint S0~S5 완료 |
-| **1** | **MVP 기본 플로우** | **active (next)** | **입력 → 기획 → 검증 → 저장 흐름 구현** |
+| **1** | **MVP 기본 플로우** | **🟡 implementation_complete (2026-05-26)** | **7 Slices commit/push 완료, pytest 62/62, smoke test 사용자 manual 대기** |
 | 2 | design.md 기반 PWA 설계 (Discovery + Quick 분기) | pending | 4계층 데이터 모델 + Hybrid UX 화면 구조 확정 |
 | 3 | Next.js PWA 기본 UI 구현 (Discovery + Quick 분기) | pending | Discovery wizard + Quick mode 양쪽 핵심 화면 구현 |
 | 4 | FastAPI 기본 백엔드 구현 | planned | API 및 AI pipeline 뼈대 |
@@ -38,14 +38,19 @@ Acceptance : 모두 충족 (acceptance.md 참조)
 다음 Phase : 1. MVP 기본 플로우 (active, 진입 대기)
 ```
 
-## Phase 1 active (next)
+## Phase 1 implementation_complete
 
 ```
 Goal       : 영상기획 AI 에이전트의 핵심 흐름 구현 (입력 → 기획 → 검증 → 저장)
-Scope      : Next.js + FastAPI 뼈대 + Supabase 연결 + 핵심 endpoint 1-2개
-Acceptance : phase-start Skill로 진입 시 acceptance.md 작성
+Result     : 7 Slices (1~7) commit + push 완료, pytest 62/62, frontend build 0 errors
+Acceptance : 8/8 implementation 충족, 4개 항목 사용자 manual smoke test 대기
 의존성     : Phase 0 (완료)
-다음 Phase : 2. design.md 기반 PWA 설계 (Discovery + Quick)
+잔여 항목  :
+  - Manual smoke test 8단계 (사용자 환경, .env 필요)
+  - Contract drift 정리: plan_options vs plan_candidates (contract-change Skill)
+  - meta-retrospective Skill 실행
+  - phase-complete Skill로 archive 이동
+다음 Phase : 2. design.md 기반 PWA 설계 (Discovery + Quick 분기)
 ```
 
 ## Phase 2~3 Hybrid UX 분기 (planned, 중간 상세화)

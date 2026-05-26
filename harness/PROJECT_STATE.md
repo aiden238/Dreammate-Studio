@@ -8,11 +8,11 @@ GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sp
 
 ## 현재 Active Phase
 
-**Phase 1. MVP 기본 플로우** — 🔵 active (2026-05-26 진입)
-- 진입 점검: phase-start v1.1.0 §6 4점검 통과 (`phases/active/phase-1-mvp-basic-flow/assumptions.md`)
-- 작업 분해: 7 Slice (Slice 1 ~ 7), 총 20~27시간 추정
-- **Slice 1 완료** ✅ (FastAPI POST /api/v1/generate, pytest 10/10)
-- **Slice 2 대기** — Intent / Planning Agent 분리
+**Phase 1. MVP 기본 플로우** — 🟡 implementation-complete (2026-05-26)
+- 7 Slices 모두 commit + push 완료
+- pytest 62/62 통과 / Frontend tsc + lint + build 0 errors
+- 진입 점검: phase-start v1.1.0 §6 4점검 (assumptions.md)
+- 다음 단계: smoke test 8단계 (사용자 manual) → meta-retrospective → phase-complete
 - Phase 0 archive: `phases/archive/phase-0-migration/` (참조 금지)
 
 ## migration_progress
@@ -21,17 +21,22 @@ GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sp
 current_sprint: completed
 current_sprint_step: 6
 total_steps_in_sprint: 6
-last_completed_action: "Phase 1 Slice 1 완료: FastAPI POST /api/v1/generate skeleton + output_schema v1.0 envelope + Intent 차단 422 + pytest 10/10 통과. backend/fastapi/ 신규 15 파일 + pyproject.toml. eval dual-track 적용 (Implementation 100%)."
-next_action: "Slice 2 진입: Intent / Planning Agent 분리 + INV-001 정식 ErrorEnvelope + golden_set GS-001~003 검증"
+last_completed_action: "Phase 1 전체 7 Slices 구현 완료 — pytest 62/62 + Next.js build 0 errors. Slice 1~7 모두 commit + push. backend/fastapi/ 28 파일 + apps/web/ 30 파일 + eval/qa_reports/ 9 reports."
+next_action: "Phase 1 마무리: smoke test 8단계 (사용자 manual) → meta-retrospective → phase-complete Skill → phases/archive 이동"
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
-phase_1_status: active
+phase_1_status: implementation_complete
 phase_1_entry_date: 2026-05-26
-phase_1_current_slice: 2  # Slice 1 완료, Slice 2 진입 대기
-phase_1_completed_slices: [1]
+phase_1_implementation_complete_date: 2026-05-26
+phase_1_current_slice: null  # 모두 완료
+phase_1_completed_slices: [1, 2, 3, 4, 5, 6, 7]
 phase_1_total_slices: 7
-total_commits: 9  # S0~S5 + Phase 1 pre-check + Phase 1 entry checks + eval dual-track + Slice 1
+phase_1_pytest_count: 62
+phase_1_frontend_pages_built: 5
+phase_1_backend_endpoints: 2  # /api/v1/generate + /health
+phase_1_qa_reports: 9  # entry + slice 1~7 + smoke_test_instructions
+total_commits: 15  # S0~S5(6) + Phase 1 pre-check + entry checks + eval dual-track + slice 1 + multi_slice_plan + 7 slices
 last_updated: 2026-05-26
 ```
 
@@ -106,17 +111,26 @@ last_updated: 2026-05-26
 ## 다음 액션
 
 ```
-Phase 1 Slice 1 — FastAPI 단일 endpoint + JSON 반환
-  - backend/fastapi/main.py
-  - backend/fastapi/routers/generate.py
-  - backend/fastapi/schemas/output.py
-  - backend/fastapi/schemas/input.py
-  - backend/fastapi/agents/intent_planning.py (Slice 2에서 분리 예정)
-  - backend/fastapi/.env.example
-  - backend/fastapi/requirements.txt
-  검증: curl POST /api/v1/generate → HTTP 200 + output_schema v1.0 valid JSON
-  추정: 2~3시간
-  완료 후: Slice 2 (Intent / Planning Agent 분리) 진입
+Phase 1 마무리 (구현 완료 → 정식 phase-complete까지):
 
-이후 Slice 3~7 work_plan.md 참조.
+1. Manual smoke test 8단계 (사용자 환경)
+   → 가이드: eval/qa_reports/phase-1-smoke-test-instructions_2026-05-26.md
+   → 백엔드: uvicorn + .env 설정 / 프론트: npm run dev
+   → INV-001 차단 + 정상 응답 + (선택) Supabase 저장 확인
+
+2. Phase 1 final QA report 작성
+   → eval/qa_reports/phase-1-final_2026-05-26.md
+   → qa-check Skill v1.1.0 전체 10 카테고리 적용
+
+3. Contract drift 정리
+   → plan_options (api_contract §4.2) vs plan_candidates (db_schema, Slice 5 구현)
+   → contract-change Skill 절차로 통일 결정
+
+4. meta-retrospective Skill 실행
+   → meta/retrospectives/phase-1.md 작성
+   → 4점검 (assumptions.md 불확실 U1~U5 검증 결과 포함)
+
+5. phase-complete Skill 실행
+   → PHASE_REGISTRY Phase 1 → done, Phase 2 → active
+   → phases/active/phase-1-mvp-basic-flow/ → phases/archive/ 이동
 ```

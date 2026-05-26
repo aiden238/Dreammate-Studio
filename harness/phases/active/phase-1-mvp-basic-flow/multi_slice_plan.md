@@ -221,27 +221,65 @@ Wave 4: Slice 5 = backend/ / Slice 7 = apps/web/  → 충돌 0
 
 ---
 
-## 6. 진행 트래킹
+## 6. 진행 트래킹 (실행 완료)
 
 ```yaml
 phase_1_multi_slice_progress:
   wave_1:
-    status: not_started
+    status: completed
     sub_agents: [A_slice_2, B_slice_6]
-    started_at: null
-    completed_at: null
+    completed_at: 2026-05-26
+    commits: [0baff33, d1cafca]
+    pytest: 23/23
+    frontend_build: pass
   wave_2:
-    status: not_started
+    status: completed
     sub_agents: [C_slice_3]
+    completed_at: 2026-05-26
+    commits: [7ebe422]
+    pytest: 39/39
   wave_3:
-    status: not_started
+    status: completed
     sub_agents: [E_slice_4]
+    completed_at: 2026-05-26
+    commits: [a55729c]
+    pytest: 49/49
   wave_4:
-    status: not_started
+    status: completed
     sub_agents: [F_slice_5, G_slice_7]
+    completed_at: 2026-05-26
+    commits: [17a0283, 720059b]
+    pytest: 62/62
+    frontend_build: pass
 ```
 
-각 wave 완료 시 본 파일 + PROJECT_STATE.md 갱신.
+## 7. 최종 결과
+
+```
+총 sub-agent dispatch: 6 (Wave 1 병렬 2 + Wave 2 1 + Wave 3 1 + Wave 4 병렬 2)
+총 commit: 7 Slice commits + 1 plan commit
+파일 통계:
+  backend/fastapi/: 28 파일 (agents 6, db 7, rag 5, routers 2, schemas 3, tests 7, config/main/init 4)
+  apps/web/: 30 파일 (app 4, components 4, lib 4, public 5, configs 13)
+  eval/qa_reports/: 9 reports (entry + slice-1~7 + smoke_test_instructions)
+검증:
+  pytest: 62/62 PASS
+  frontend tsc: 0 errors
+  frontend lint: clean
+  frontend build: 5 pages compiled
+```
+
+## 8. 식별된 후속 항목
+
+- `plan_options` (api_contract §4.2) vs `plan_candidates` (db_schema, Slice 5) — contract-change 필요
+- `meta.prompt_id` = Planning(P-006), Intent는 validation.checks (convention 결정)
+- ErrorEnvelope 4-필드 minimal (contract §3.2 추가 필드는 Slice 5+ 또는 Phase 2)
+- `HTTP_422_UNPROCESSABLE_ENTITY` DeprecationWarning (Starlette upstream, 우리 코드 무영향)
+- ProgressStepper 실 SSE 미연결 (Phase 4 SSE migration 시 연결)
+- PNG icon → SVG 사용 (Phase 2+ 디자인 작업 시 PNG 보강)
+- `/health` slice="3"에서 멈춤 (Slice 4/5/7 미동기화) — Phase 1 종료 시 정리
+
+위 항목은 `eval/qa_reports/phase-1-final_2026-05-26.md`에서 종합 정리.
 
 ---
 
