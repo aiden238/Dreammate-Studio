@@ -147,7 +147,9 @@ task_routes:
 
   eval_design:
     load:
+      - eval/INDEX.md
       - eval/golden_set.md
+      - eval/failure_cases.md
       - eval/video_planning_eval.md
       - eval/human_review_rubric.md
       - eval/phase_eval.md

@@ -248,6 +248,46 @@ phase-1(slice-7): progress stepper + error card + PWA manifest (Phase 1 complete
 
 ---
 
+## Slice별 Eval 매핑 (이원 트랙)
+
+`eval/INDEX.md` 이원 트랙(구현 검증 / 플랫폼 품질) 기준 Phase 1 비중 70/30 적용.
+
+| Slice | 구현 Eval (필수) | 플랫폼 품질 Eval (해당 시) |
+|---|---|---|
+| 1 | curl 응답 + jsonschema valid + pytest e2e_slice1 | — (LLM 1회 호출 quality 낮아도 통과) |
+| 2 | golden_set GS-001~003 INV-001 차단 / pytest intent + planning | golden_set 결과 사람 검수 1회 |
+| 3 | critic_evaluation 5필드 채움 / pytest critic | **failure_cases FC-001~005 모두 Critic이 flag하는지 확인** |
+| 4 | pgvector 끊긴 상태에서 정상 응답 / pytest rag_fallback | RAG hit율 측정 (assumptions U3) |
+| 5 | video_projects + plan_candidates row 생성 / pytest db | — |
+| 6 | localhost:3000 동작 / 360px 가로스크롤 없음 | — |
+| 7 | INV-001 ErrorCard 노출 / manifest 유효 / **smoke test 8단계** | **사람 리뷰 1회: 샘플 5개 입력 → 결과 평가 (human_review_rubric)** |
+
+### 구현 Eval 결과 저장 위치
+
+```
+eval/qa_reports/phase-1-slice-{N}_{YYYY-MM-DD}.md     ← Slice 완료 시
+eval/regression_results/phase-1-slice-{N}_{date}.md   ← pytest 결과
+```
+
+### 플랫폼 품질 Eval 결과 저장 위치
+
+```
+eval/regression_results/phase-1-failure_cases_{date}.md  ← Slice 3 직후
+eval/qa_reports/phase-1-human-review_{date}.md           ← Slice 7 직후
+```
+
+### Phase 1 종료 직전 (Slice 7 완료 후)
+
+```
+1. qa-check Skill 전체 10 카테고리 실행 (구현 + Simplicity)
+2. golden_set 11개 + failure_cases 5개 회귀 (구현 + 품질)
+3. 사람 리뷰 5 케이스 (품질)
+4. eval/qa_reports/phase-1-final_{date}.md 작성
+5. meta/retrospectives/phase-1.md 작성 (meta-retrospective Skill)
+```
+
+---
+
 ## Slice 진입 규칙
 
 ```
