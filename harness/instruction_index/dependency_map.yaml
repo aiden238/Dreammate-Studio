@@ -36,6 +36,9 @@ dependencies:
     - docs/contracts/output_schema.md
     - docs/contracts/error_response_contract.md
     - docs/contracts/db_schema.md
+    - docs/contracts/rate_limit_policy.md
+    - docs/contracts/llm_security_contract.md
+    - docs/contracts/tech_stack_contract.md
   docs/contracts/db_schema.md:
     - docs/contracts/privacy_contract.md
     - docs/contracts/data_retention_policy.md
@@ -43,6 +46,75 @@ dependencies:
     - knowledge/rag/promotion_rule.md
     - knowledge/rag/metadata_schema.md
     - docs/contracts/privacy_contract.md
+    - docs/contracts/db_schema.md
+    - ai_system/agents/intent_agent.md
+    - ai_system/agents/critic_agent.md
+
+  # Core S3-3 contracts
+  docs/contracts/llm_security_contract.md:
+    - docs/contracts/privacy_contract.md
+    - docs/contracts/error_response_contract.md
+    - docs/contracts/output_schema.md
+    - docs/contracts/rate_limit_policy.md
+    - meta/security_metrics.md
+  docs/contracts/rate_limit_policy.md:
+    - docs/contracts/error_response_contract.md
+    - docs/contracts/api_contract.md
+    - docs/contracts/agent_io_contract.md
+    - ai_system/orchestration/cost_control_policy.md
+  docs/contracts/tech_stack_contract.md:
+    - docs/contracts/env_contract.md
+    - docs/contracts/backend_boundary.md
+    - docs/contracts/frontend_boundary.md
+    - docs/contracts/db_schema.md
+    - docs/contracts/api_contract.md
+
+  # Placeholder contracts (filled in later phases)
+  docs/contracts/accessibility_contract.md:
+    - docs/contracts/frontend_design_contract.md
+    - apps/web/design.md
+  docs/contracts/data_retention_policy.md:
+    - docs/contracts/db_schema.md
+    - docs/contracts/privacy_contract.md
+    - docs/contracts/event_log_contract.md
+  docs/contracts/event_log_contract.md:
+    - docs/contracts/db_schema.md
+    - docs/contracts/privacy_contract.md
+    - docs/contracts/agent_io_contract.md
+  docs/contracts/privacy_contract.md:
+    - docs/contracts/llm_security_contract.md
+    - docs/contracts/user_consent_contract.md
+    - docs/contracts/data_retention_policy.md
+    - docs/contracts/db_schema.md
+  docs/contracts/user_consent_contract.md:
+    - docs/contracts/privacy_contract.md
+    - docs/contracts/data_retention_policy.md
+    - docs/contracts/api_contract.md
+  docs/contracts/data_contract.md:
+    - docs/contracts/api_contract.md
+    - docs/contracts/db_schema.md
+    - docs/contracts/rag_data_contract.md
+    - docs/contracts/llm_security_contract.md
+  docs/contracts/env_contract.md:
+    - docs/contracts/tech_stack_contract.md
+    - docs/contracts/llm_security_contract.md
+    - docs/contracts/api_contract.md
+  docs/contracts/product_boundary.md:
+    - product/mvp_scope.md
+    - docs/contracts/mvp_non_goals.md
+  docs/contracts/backend_boundary.md:
+    - docs/contracts/tech_stack_contract.md
+    - docs/contracts/api_contract.md
+    - docs/contracts/agent_io_contract.md
+    - docs/contracts/db_schema.md
+  docs/contracts/frontend_boundary.md:
+    - docs/contracts/tech_stack_contract.md
+    - docs/contracts/frontend_design_contract.md
+    - docs/contracts/api_contract.md
+    - docs/contracts/output_schema.md
+  docs/contracts/mvp_non_goals.md:
+    - product/mvp_scope.md
+    - docs/contracts/product_boundary.md
 
   # RAG
   knowledge/rag/promotion_rule.md:
