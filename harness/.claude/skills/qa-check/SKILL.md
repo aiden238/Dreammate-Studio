@@ -15,7 +15,7 @@ related_contracts:
   - apps/web/design.md
 related_state:
   - eval/regression_results/
-version: v1.0.0
+version: v1.1.0
 ---
 
 # qa-check
@@ -28,7 +28,7 @@ version: v1.0.0
 - 배포 직전 (staging → prod)
 - 사용자가 "배포해도 돼?" 또는 "QA 한 번 보자"
 
-## 점검 카테고리 9개
+## 점검 카테고리 10개 (v1.1.0)
 
 각 카테고리는 pass/fail/skip 중 하나로 판정.
 
@@ -144,9 +144,38 @@ iPhone SE(375px), iPhone 14(390px), Galaxy S22(360px) 기준:
 
 심층 보안은 security-review Skill로.
 
+### 10. Simplicity Check (v1.1.0 추가)
+
+이 Phase에서 구현된 코드/문서가 **최소 범위 원칙**을 지켰는지 점검:
+
+```
+- [ ] 요청받지 않은 기능이 들어가지 않았는가?
+- [ ] 단일 사용 추상화가 생기지 않았는가?
+- [ ] Phase 1에서 Phase 2~3 기능을 미리 구현하지 않았는가?
+- [ ] 200줄짜리 구현이 50줄로 줄어들 수 있지 않은가?
+- [ ] 기존 문서/코드의 unrelated formatting을 바꾸지 않았는가?
+```
+
+각 항목 fail 시 처리:
+
+| 항목 | fail 처리 |
+|---|---|
+| 요청받지 않은 기능 | 즉시 제거 (scope creep) |
+| 단일 사용 추상화 | inline 화 또는 다음 사용처 명시 |
+| 미래 Phase 선구현 | 다음 Phase로 이관 또는 제거 |
+| 200줄→50줄 가능 | 리팩토링 또는 사유 기록 |
+| unrelated formatting | git revert |
+
+**판정 기준**:
+- 5개 모두 통과 → Simplicity pass
+- 1–2개 fail → 사용자 확인 후 보류 또는 정리
+- 3개 이상 fail → 구현 자체가 scope creep, 강제 정리 필요
+
+심층 패턴 검토는 `meta-retrospective` Skill로 위임.
+
 ## 절차
 
-### 1. 9개 카테고리 순차 점검
+### 1. 10개 카테고리 순차 점검
 
 각 카테고리에 대해 pass/fail/skip 기록.
 
@@ -156,6 +185,7 @@ iPhone SE(375px), iPhone 14(390px), Galaxy S22(360px) 기준:
 | 1 | MVP 범위 | pass | - |
 | 2 | API 응답 형식 | fail | /generate가 schema 안 맞음 |
 | ... | ... | ... | ... |
+| 10 | Simplicity Check | pass | 5개 모두 통과 |
 ```
 
 ### 2. 실패 항목 처리
@@ -167,7 +197,7 @@ fail가 3개 이상    → 진행 차단, fix phase 필요
 fail가 Critical    → 무조건 차단 (보안, 데이터, MVP 범위 위반)
 ```
 
-Critical 항목: 카테고리 1, 8(보안 부분), 9(전체).
+Critical 항목: 카테고리 1, 8(보안 부분), 9(전체), 10(Simplicity 3 fail 이상).
 
 ### 3. smoke test 실행
 
@@ -216,6 +246,12 @@ Critical 항목: 카테고리 1, 8(보안 부분), 9(전체).
 3. **에러 상태 1–2개 점검하고 나머지 skip**: 누락된 상태가 운영에서 노출.
 4. **모바일 점검을 시뮬레이터만**: 실기기 또는 실제 viewport로 확인.
 5. **fail인데 "별로 안 중요해 보임"으로 보류**: 누적되면 게이트 의미 상실.
+6. **Simplicity Check 생략**: 카테고리 10은 phase-complete 직전 가장 빠지기 쉽지만 가장 효과 큼.
+
+## 변경 이력
+
+- v1.0.0 (Phase 0): 9 카테고리 + smoke test
+- v1.1.0 (Phase 1 진입 전, 2026-05-26): 카테고리 10 Simplicity Check 추가
 
 ## 다른 Skill과의 관계
 

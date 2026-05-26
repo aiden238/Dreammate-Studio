@@ -13,7 +13,7 @@ related_state:
   - PROJECT_STATE.md
   - PHASE_REGISTRY.md
   - phases/active/
-version: v1.0.0
+version: v1.1.0
 ---
 
 # phase-start
@@ -92,15 +92,93 @@ Phase: {phase-name}
 
 이 요약은 작업 도중 scope creep을 막는 기준이 된다.
 
-### 6. 첫 작업 단위 선정
+### 6. Phase 진입 4점검 (v1.1.0 추가)
+
+스코프가 확정된 직후, **작업 단위 선정 전에** 다음 4가지를 명시적으로 점검·기록한다.
+결과는 `phases/active/{phase-name}/assumptions.md`에 작성한다.
+
+#### 6.1 Assumptions (가정)
+
+```
+- 이번 Phase에서 확정한 가정은 무엇인가?
+- 불확실한 부분은 무엇인가?
+```
+
+확정 가정 예시:
+- 외부 의존성 (Supabase, OpenAI) 가용성
+- 사용자가 제공한 결정 (모델 선택, 데이터 흐름)
+- contract에 명시된 인터페이스
+
+불확실 항목 예시:
+- 실측 LLM 응답시간 (30–60초 가정이지만 미검증)
+- pgvector 검색 정확도 (실데이터 없음)
+- 사용자 입력 패턴 (가설만 있음)
+
+**불확실 항목은 명시적으로 기록해야 phase-complete 시 회고 가능.**
+
+#### 6.2 Simplest Slice (최소 작동 단위)
+
+```
+- 이 Phase에서 작동 확인 가능한 가장 작은 단위는 무엇인가?
+- 이보다 더 줄일 수 있는가?
+```
+
+원칙:
+- "더 줄일 수 있는가?" 질문을 **3회 반복**해야 한다
+- 최종 답이 "더 못 줄임"일 때까지 압축
+- UI 없이도 흐름 증명 가능하면 UI 미포함
+- DB 저장 없이도 흐름 증명 가능하면 DB 미포함 (in-memory)
+
+예시 (Phase 1):
+- 1차 답: "입력 → 4 Agent → 저장"
+- 2차 답: "입력 → Intent + Planning → return (저장 X)"
+- 3차 답: "curl POST /generate → JSON 1개 반환" ← **이것이 Simplest Slice**
+
+Simplest Slice가 동작하면 → 점진적으로 확장 (UI, DB, Critic 등).
+
+#### 6.3 Surgical Scope (수술적 범위)
+
+```
+- 수정 가능한 파일 목록은 무엇인가?
+- 수정 금지 파일은 무엇인가?
+```
+
+| 분류 | 정의 | 예시 (Phase 1) |
+|---|---|---|
+| **editable** | 이 Phase에서 신규 생성/수정 가능 | `apps/web/`, `backend/fastapi/` |
+| **read-only** | 참조만, 수정 시 contract-change 필수 | `docs/contracts/`, `ai_system/prompts/` |
+| **forbidden** | 다른 Phase 영역, 절대 접근 금지 | `phases/archive/`, 미래 Phase 코드 |
+
+수정 가능 목록은 `phases/active/{phase-name}/scope.md`의 "예상 파일 변경 목록"과 일치해야 한다.
+**범위 밖 파일을 건드릴 필요가 생기면 → scope creep 신호, 즉시 사용자에게 알림.**
+
+#### 6.4 Verification (검증)
+
+```
+- 성공 기준은 무엇인가?
+- 어떤 테스트로 확인할 것인가?
+```
+
+성공 기준은 `acceptance.md`의 A1~An과 1:1 매핑. 각 기준에 대해:
+
+| 검증 항목 | 검증 방법 | 자동/수동 |
+|---|---|---|
+| 흐름 동작 | curl + JSON schema validation | 자동 |
+| Intent Filter | golden_set GS-001~003 케이스 | 자동 |
+| UI 진입 | localhost:3000 manual 확인 | 수동 |
+
+**자동화 가능한 것은 자동화** — 수동 검증만 있는 acceptance는 회귀 위험.
+
+### 7. 첫 작업 단위 선정
 
 `goals.md`를 작업 단위로 분해해서 첫 단위를 제시:
 
 - 1회 세션에서 완료 가능한 크기 (1–4시간 작업)
 - 명확한 산출물이 있어야 함 (파일 / 함수 / 문서)
 - acceptance.md의 한 줄 이상에 매핑돼야 함
+- §6.2 Simplest Slice에서 도출한 단위를 **그대로 사용** (재정의 금지)
 
-### 7. PHASE_REGISTRY 갱신
+### 8. PHASE_REGISTRY 갱신
 
 이 Phase가 처음 활성화되는 경우:
 
@@ -148,3 +226,11 @@ phase-start의 종료는 다음 중 하나:
 2. **contracts 전체 로드**: 컨텍스트 낭비. 현재 Phase 관련만.
 3. **active phase 둘 이상 방치**: 즉시 정리.
 4. **scope creep**: 사용자가 "이것도 같이"라고 할 때 non-goals 확인 없이 수락.
+5. **4점검 생략**: §6 Assumptions/Simplest Slice/Surgical Scope/Verification 누락 시 후반 scope creep 발생률 ↑.
+6. **Simplest Slice 압축 부족**: "더 줄일 수 있는가?" 1회만 묻고 멈춤. 3회 반복 필수.
+
+## 변경 이력
+
+- v1.0.0 (Phase 0): GPT 골격 + 우리 절차 통합
+- v1.1.0 (Phase 1 진입 전, 2026-05-26): §6 Phase 진입 4점검 추가
+  (Assumptions / Simplest Slice / Surgical Scope / Verification)
