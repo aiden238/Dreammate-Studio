@@ -2,22 +2,27 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0)** 진행 중.
-GPT가 만든 155-파일 하네스 골격과 자체 작성된 깊은 콘텐츠 18-파일을 병합하여 운영 가능한 하네스를 완성한다.
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) 완료**.
+GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sprint 작업으로 운영 가능한 하네스 완성.
+다음 단계는 Phase 1 MVP 기본 플로우 진입 준비.
 
 ## 현재 Active Phase
 
-`phases/active/phase-0-migration/` — 하네스 초기화 (Migration)
+**Phase 0 archive 이동 완료** → `phases/archive/phase-0-migration/`
+**Phase 1 진입 대기** — Next.js + FastAPI 실 코드 작업 시작 예정
 
 ## migration_progress
 
 ```yaml
-current_sprint: S4
-current_sprint_step: 4
-total_steps_in_sprint: 4
-last_completed_action: "Sprint S4: eval/ 15 files (golden_set 665L 11 cases), knowledge/ 18 files (rag 8/llm_wiki 6/datasets 4, 219-380L each), ai_system/ agents 4 deep + 2 placeholder, orchestration 5, memory 5, architecture 232L, prompt_registry P-EVAL-1 added (705L total), Planner→Planning rename across 8 files"
-next_action: "Sprint S5: polish product/, meta/, tests/, packages/ + harness-audit final (0 critical/high required) → Phase 0 acceptance"
+current_sprint: completed
+current_sprint_step: 6
+total_steps_in_sprint: 6
+last_completed_action: "Sprint S5: product 7 deep, meta 8 deep, docs/decisions 7 ADR, tools/agent_html_spec (신규), priority_rules deep, tests/packages/apps/mobile/backend/phases/planned/logs 20 placeholder, Phase 0 archive 이동, acceptance 11개 모두 ✅"
+next_action: "Phase 1 진입: phase-start Skill로 MVP 기본 플로우 phase 시작"
 blocker: null
+phase_0_status: completed
+phase_0_completion_date: 2026-05-26
+total_commits: 6  # S0~S5
 last_updated: 2026-05-26
 ```
 

@@ -12,8 +12,8 @@
 
 | Phase | 이름 | 상태 | 목적 |
 |---|---|---|---|
-| **0** | **하네스 초기화 (Migration)** | **active** | **GPT 골격 + 우리 콘텐츠 병합, Sprint S0~S5 실행** |
-| 1 | MVP 기본 플로우 | pending | 입력 → 기획 → 검증 → 저장 흐름 구현 |
+| 0 | 하네스 초기화 (Migration) | **done** (2026-05-26) | GPT 골격 + 우리 콘텐츠 병합, Sprint S0~S5 완료 |
+| **1** | **MVP 기본 플로우** | **active (next)** | **입력 → 기획 → 검증 → 저장 흐름 구현** |
 | 2 | design.md 기반 PWA 설계 (Discovery + Quick 분기) | pending | 4계층 데이터 모델 + Hybrid UX 화면 구조 확정 |
 | 3 | Next.js PWA 기본 UI 구현 (Discovery + Quick 분기) | pending | Discovery wizard + Quick mode 양쪽 핵심 화면 구현 |
 | 4 | FastAPI 기본 백엔드 구현 | planned | API 및 AI pipeline 뼈대 |
@@ -26,17 +26,26 @@
 | 11~20 | 서비스 안정화 | future | UX, eval, cost, fallback, 피드백 |
 | 21~30 | 확장 / 고도화 | future | Spring, Expo, Custom RAG, LangGraph |
 
-## Phase 0 상세 (active)
+## Phase 0 완료 (archive)
 
-`phases/active/phase-0-migration/`
+`phases/archive/phase-0-migration/`
 
 ```
+Status     : ✅ DONE (2026-05-26)
 Goal       : GPT 골격 + 우리 콘텐츠 병합하여 운영 가능한 하네스 완성
-Scope      : migration_procedure.md v1.2.0의 Sprint S0~S5 전체 실행
-Non-Goals  : 영상 에이전트 본체 코드 (Phase 1+), agent.html 빌드 (Phase 0 종료 후)
-Acceptance : 11개 항목 (Sprint S0~S5 + harness-audit + agent_html_spec 갱신)
-의존성     : 없음 (첫 Phase)
-다음 Phase : 1. MVP 기본 플로우
+Result     : 11/11 acceptance 통과, 6 commit (S0~S5), ~50,000줄 하네스
+Acceptance : 모두 충족 (acceptance.md 참조)
+다음 Phase : 1. MVP 기본 플로우 (active, 진입 대기)
+```
+
+## Phase 1 active (next)
+
+```
+Goal       : 영상기획 AI 에이전트의 핵심 흐름 구현 (입력 → 기획 → 검증 → 저장)
+Scope      : Next.js + FastAPI 뼈대 + Supabase 연결 + 핵심 endpoint 1-2개
+Acceptance : phase-start Skill로 진입 시 acceptance.md 작성
+의존성     : Phase 0 (완료)
+다음 Phase : 2. design.md 기반 PWA 설계 (Discovery + Quick)
 ```
 
 ## Phase 2~3 Hybrid UX 분기 (planned, 중간 상세화)
