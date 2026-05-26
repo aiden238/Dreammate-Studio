@@ -11,7 +11,8 @@ GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sp
 **Phase 1. MVP 기본 플로우** — 🔵 active (2026-05-26 진입)
 - 진입 점검: phase-start v1.1.0 §6 4점검 통과 (`phases/active/phase-1-mvp-basic-flow/assumptions.md`)
 - 작업 분해: 7 Slice (Slice 1 ~ 7), 총 20~27시간 추정
-- 첫 작업: Slice 1 — FastAPI POST /api/v1/generate + JSON 반환
+- **Slice 1 완료** ✅ (FastAPI POST /api/v1/generate, pytest 10/10)
+- **Slice 2 대기** — Intent / Planning Agent 분리
 - Phase 0 archive: `phases/archive/phase-0-migration/` (참조 금지)
 
 ## migration_progress
@@ -20,16 +21,17 @@ GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sp
 current_sprint: completed
 current_sprint_step: 6
 total_steps_in_sprint: 6
-last_completed_action: "Phase 1 진입 점검 완료: phase-start v1.1.0 4점검 (Assumptions/Simplest Slice/Surgical Scope/Verification) + work_plan 7 Slice 분해 + mvp_non_goals active_contract 승격 + Skill v1.1.0 갱신 (phase-start, qa-check)"
-next_action: "Slice 1 실 코드 시작: backend/fastapi/ FastAPI 부트 + POST /api/v1/generate skeleton"
+last_completed_action: "Phase 1 Slice 1 완료: FastAPI POST /api/v1/generate skeleton + output_schema v1.0 envelope + Intent 차단 422 + pytest 10/10 통과. backend/fastapi/ 신규 15 파일 + pyproject.toml. eval dual-track 적용 (Implementation 100%)."
+next_action: "Slice 2 진입: Intent / Planning Agent 분리 + INV-001 정식 ErrorEnvelope + golden_set GS-001~003 검증"
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
 phase_1_status: active
 phase_1_entry_date: 2026-05-26
-phase_1_current_slice: 1
+phase_1_current_slice: 2  # Slice 1 완료, Slice 2 진입 대기
+phase_1_completed_slices: [1]
 phase_1_total_slices: 7
-total_commits: 7  # S0~S5 + Phase 1 pre-check
+total_commits: 9  # S0~S5 + Phase 1 pre-check + Phase 1 entry checks + eval dual-track + Slice 1
 last_updated: 2026-05-26
 ```
 

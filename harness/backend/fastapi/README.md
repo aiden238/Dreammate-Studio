@@ -1,67 +1,167 @@
-# backend/fastapi
+# backend/fastapi — Dreammate Studio FastAPI Backend
 
-> ⚠️ **PLACEHOLDER** — 본 파일은 향후 Phase에서 채워질 예정.
-> 현재는 스코프와 트리거만 명시. 정상 사용 금지.
+> Status: **active** (Phase 1 Slice 1 진행 중)
+> Phase: 1 / Slice 1
+> Last updated: 2026-05-26
 
-## Status
+---
 
-```yaml
-status: placeholder
-fill_in_phase: 1+
-priority: high
-estimated_final_lines: 180
-last_updated: 2026-05-26
+## 1. 현재 범위 (Phase 1 Slice 1)
+
+```
+POST /api/v1/generate (sync, 1 plan)
+GET  /health
+GET  /openapi.json
+GET  /docs           (Swagger UI)
+GET  /redoc
 ```
 
-## Why Placeholder?
+**Phase 1 deviation from api_contract.md §8.3** — 의도된 단순화:
 
-FastAPI 백엔드 코드가 존재하지 않는 Phase 0 단계에서는 폴더 구조, 라우터
-설계, 테스트 셋업을 확정할 수 없다. Phase 1 첫 endpoint 구현 시작 시 작성한다.
+| 항목 | Contract (Phase 4 목표) | Phase 1 Slice 1 |
+|---|---|---|
+| Endpoint | `POST /api/v1/plans/{plan_id}/generate` | `POST /api/v1/generate` |
+| 응답 | async ack + SSE | sync |
+| plan 수 | 3 | 1 |
+| Critic | revise 최대 2회 | 미포함 (Slice 3 추가) |
+| RAG | pgvector | fallback dummy (Slice 4) |
+| DB 저장 | 필수 | 미포함 (Slice 5) |
 
-## Scope (TBD)
+Slice 1~7 점진 확장 → Phase 4에서 contract endpoint 정합.
+상세: `phases/active/phase-1-mvp-basic-flow/work_plan.md`.
 
-본 파일이 다룰 범위:
-- FastAPI 백엔드 전체 폴더 구조 (라우터 / 서비스 / 리포지토리 계층)
-- Pydantic v2 모델 정의 방식 (`output_schema.md` 기반)
-- OpenAPI 자동 생성 설정 (`/docs`, `/openapi.json` 경로)
-- SQLAlchemy (또는 대체) ORM 설정 및 마이그레이션
-- LLM 호출 계층 (Anthropic SDK + prompt_registry 연계)
-- RAG 검색 계층 (Claude SDK RAG Lite → pgvector 연계)
-- MOA Lite 오케스트레이션 (Intent → Planning → Critic → Rewriter)
-- 테스트 셋업 (pytest-asyncio, httpx TestClient)
+---
 
-## Known Dependencies (when filled in)
-
-- `docs/contracts/tech_stack_contract.md` — Python 버전, 프레임워크 버전
-- `docs/contracts/api_contract.md` — 엔드포인트 스펙 원천
-- `docs/contracts/output_schema.md` — Pydantic 모델 기준
-- `ai_system/architecture.md` — MOA Lite 오케스트레이션 구조
-- `knowledge/rag/retrieval_policy.md` — RAG 검색 정책
-- `docs/decisions/backend_strategy.md` — 아키텍처 결정 기록
-
-## Fill-In Trigger
-
-다음 조건 충족 시 본 파일 작성 착수:
-- Phase 1 진입 및 `backend/fastapi/` 폴더 첫 코드 파일 생성
-- `pyproject.toml` 의존성 확정 및 FastAPI 앱 초기화 완료
-
-## 예시 폴더 구조 (fill-in 시 참고)
+## 2. 폴더 구조
 
 ```
 backend/fastapi/
-├── app/
-│   ├── main.py              # FastAPI 앱 진입점
-│   ├── routers/             # API 라우터 (plans, feedback, search)
-│   ├── services/            # 비즈니스 로직 (moa_service, rag_service)
-│   ├── repositories/        # DB 접근 계층
-│   ├── models/              # Pydantic 모델 (output_schema 기반)
-│   └── core/                # 설정, 의존성 주입, 미들웨어
-├── tests/                   # pytest 테스트
-└── pyproject.toml           # 의존성 관리
+├── main.py                       FastAPI app + lifespan + CORS
+├── config.py                     pydantic-settings (env-based)
+├── requirements.txt              의존성 (Slice별 점진 추가)
+├── .env.example                  환경변수 템플릿
+├── .gitignore                    Python
+├── README.md                     이 파일
+├── routers/
+│   ├── __init__.py
+│   └── generate.py               POST /api/v1/generate
+├── schemas/
+│   ├── __init__.py
+│   ├── input.py                  GenerateRequest
+│   └── output.py                 Envelope / Meta / Body / Plan / Validation
+├── agents/
+│   ├── __init__.py
+│   └── intent_planning.py        Intent + Planning 통합 1회 호출 (임시)
+└── tests/
+    ├── __init__.py
+    ├── conftest.py               OpenAI mock fixture
+    └── test_e2e_slice1.py        Slice 1 acceptance
 ```
 
-## Related Skill / Phase
+Slice별 추가 예정:
+- Slice 2: `agents/intent.py`, `agents/planning.py`
+- Slice 3: `agents/critic.py`
+- Slice 4: `rag/retriever.py`, `rag/fallback.py`
+- Slice 5: `db/supabase_client.py`, `db/repositories/`
 
-- Skill: agent-io-check, qa-check
-- Phase: 1+
-- 책임자: AI / 운영자
+---
+
+## 3. 실행
+
+### 3.1 의존성 설치
+
+```bash
+cd backend/fastapi
+python -m venv .venv
+source .venv/bin/activate     # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 3.2 환경변수 설정
+
+```bash
+cp .env.example .env
+# .env 편집:
+# OPENAI_API_KEY=sk-...
+```
+
+### 3.3 서버 기동
+
+```bash
+# 프로젝트 루트(harness/)에서:
+uvicorn backend.fastapi.main:app --reload --port 8000
+
+# 또는 backend/fastapi/에서:
+uvicorn main:app --reload --port 8000
+```
+
+### 3.4 동작 검증 (curl)
+
+```bash
+curl -X POST http://localhost:8000/api/v1/generate \
+  -H "Content-Type: application/json" \
+  -d '{"input":"유튜브 채널 첫 영상 기획해줘"}'
+```
+
+기대 응답: `200 OK` + envelope JSON (meta / body / validation).
+
+### 3.5 OpenAPI 문서
+
+기동 후 브라우저에서 `http://localhost:8000/docs` 접속.
+
+---
+
+## 4. 테스트
+
+```bash
+# 프로젝트 루트(harness/)에서:
+pytest backend/fastapi/tests/ -v
+
+# 또는:
+cd backend/fastapi
+pytest tests/ -v
+```
+
+**테스트 특징:**
+- OpenAI API 키 없이도 통과 (conftest.py에서 mock 주입)
+- Slice 1 acceptance A1 + A6 자동 검증
+- pytest 8.x + httpx TestClient
+
+---
+
+## 5. 관련 문서
+
+### 5.1 Contracts (참조용, 수정 금지)
+
+- `docs/contracts/api_contract.md` §8.3 (Phase 4 migration 목표)
+- `docs/contracts/output_schema.md` (envelope 정의)
+- `docs/contracts/agent_io_contract.md` (Agent IO)
+- `docs/contracts/error_response_contract.md` (Slice 2부터 사용)
+- `docs/contracts/llm_security_contract.md` (Slice 2+ PII 마스킹)
+
+### 5.2 Phase 1 컨텍스트
+
+- `phases/active/phase-1-mvp-basic-flow/goals.md`
+- `phases/active/phase-1-mvp-basic-flow/scope.md`
+- `phases/active/phase-1-mvp-basic-flow/assumptions.md` (4점검 결과)
+- `phases/active/phase-1-mvp-basic-flow/work_plan.md` (Slice 1~7)
+- `phases/active/phase-1-mvp-basic-flow/acceptance.md` (A1~A8)
+
+### 5.3 결정 기록
+
+- `docs/decisions/phase_1_simplest_slice.md` (ADR-008)
+- `docs/decisions/eval_dual_track.md` (ADR-009)
+- `docs/decisions/backend_strategy.md`
+
+### 5.4 평가
+
+- `eval/INDEX.md` (이원 트랙 색인)
+- `eval/qa_reports/phase-1-entry-check_2026-05-26.md`
+- `eval/golden_set.md` (Slice 2에서 사용)
+- `eval/failure_cases.md` (Slice 3에서 사용)
+
+---
+
+## 6. 변경 이력
+
+- 2026-05-26: Slice 1 진입 — placeholder → active 전환, 코어 7파일 신규 작성

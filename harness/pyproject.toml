@@ -1,0 +1,16 @@
+# pyproject.toml — harness root
+#
+# 목적: pytest가 backend/fastapi/ 패키지를 올바르게 인식하도록 설정.
+# 우리 패키지 이름 "fastapi"가 설치된 라이브러리 fastapi와 충돌하므로
+# pythonpath를 harness 루트로 명시하고 testpaths를 분리한다.
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["backend/fastapi/tests"]
+pythonpath = ["."]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+asyncio_mode = "auto"

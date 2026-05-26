@@ -74,14 +74,20 @@ context-compact 또는 새 세션 시:
 
 ```yaml
 phase_1_progress:
-  current_slice: 1
+  current_slice: 2  # Slice 1 완료
   total_slices: 7
-  completed_slices: []
+  completed_slices: [1]
   estimated_hours_total: 20-27
-  estimated_hours_elapsed: 0
+  estimated_hours_elapsed: 3  # Slice 1 실제 소요
   blockers: []
-  next_action: "Slice 1 실 코드 시작 - FastAPI 부트 + POST /api/v1/generate"
+  next_action: "Slice 2 진입 - Intent / Planning Agent 분리 + INV-001 ErrorEnvelope"
   last_updated: 2026-05-26
+  slice_1_summary:
+    files_added: 17  # backend/__init__.py + backend/fastapi/* + pyproject.toml
+    files_modified: 2  # backend/fastapi/README.md, PROJECT_STATE.md
+    tests_passing: 10/10
+    qa_check_categories_pass: 6/10  # 4개 카테고리는 후속 Slice 영역
+    simplicity_check: 5/5
 ```
 
 ---
