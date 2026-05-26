@@ -1,15 +1,43 @@
-# Dreammate Studio — Video Planning AI Agent
+# Dreammate Studio — 영상기획 AI 에이전트 플랫폼
 
-> 사용자의 막연한 콘텐츠 아이디어를 버튼식 선택 UX와 프로젝트 메모리를 통해 반복 가능한 영상기획안으로 발전시키는 웹 기반 기획 워크스페이스.
+> 사용자의 목적·타겟·브랜드 톤을 정리하고, LLM Wiki와 RAG로 근거를 찾은 뒤,  
+> 검증 에이전트가 기획 품질을 평가·개선하는 **영상기획 특화 AI 에이전트**.
+
+영상 제작 AI가 아니라 **영상기획 AI 에이전트**입니다.
+
+---
 
 ## 현재 상태
 
-**Stage**: Harness Migration — Stage 0 (Bootstrap 완료)
-**Next**: Sprint S0 — 라우팅 + 상태 파일 갱신
+| 항목 | 내용 |
+|---|---|
+| **Phase** | Phase 1 — MVP 기본 플로우 (active) |
+| **이전 Phase** | Phase 0 — 하네스 마이그레이션 ✅ done (2026-05-26) |
+| **하네스 규모** | 200+ 파일, ~50,000줄 |
+| **Skill 구조** | `.claude/skills/` 단일 (20개, applies_to 태그) |
+| **Repository** | https://github.com/aiden238/Dreammate-Studio (Private) |
 
-GPT가 생성한 155-파일 하네스(골격 우수, 콘텐츠 빈약)와 자체 작성된 18-파일 deliverables(콘텐츠 깊지만 골격 부재)를 병합하는 과정 중이다.
+---
 
-자세한 절차는 [harness/migration_procedure.md](harness/migration_procedure.md) 참조.
+## 핵심 흐름
+
+```text
+사용자 입력
+→ 의도 분석 (Discovery Wizard 또는 Quick Mode 자동 분기)
+→ 부족한 정보 질문 (Discovery: 5 카드, Quick: 1–2 질문)
+→ 한 줄 기획 방향 승인
+→ LLM Wiki / RAG Lite 검색
+→ 영상기획안 생성 (Phase 1: 1개, Phase 4+: 3개)
+→ Critic Agent 검증 (revise 최대 2회)
+→ 결과 저장
+→ 사용자 피드백 저장 (Brand Memory 자동 추출)
+```
+
+**UX 분기 조건:**  
+- 신규 / Brand 없음 → **Discovery Wizard** (5단계 카드)  
+- 기존 Series → **Quick Mode** (1–2 질문만)
+
+---
 
 ## 폴더 구조
 
@@ -17,60 +45,90 @@ GPT가 생성한 155-파일 하네스(골격 우수, 콘텐츠 빈약)와 자체
 Dreammate_Studio/
 ├── README.md                  ← 이 파일
 ├── .gitignore
-├── .claude/                   ← Claude Code 세션 설정
-├── harness/                   ← 최종 하네스 (작업 대상)
-│   ├── migration_procedure.md         ← 이식 절차 v1.0.0
-│   ├── handoff_to_claude_code_sprint_S0.md  ← S0 진입 가이드
-│   ├── 00_START_HERE.md / CLAUDE.md / AGENTS.md / ...
-│   ├── .agents/skills/        ← 구현형 모델용 (현재 15개 → 11개 목표)
-│   ├── .claude/skills/        ← 기획형 모델용 (현재 10개 → 9개 목표)
-│   ├── ai_system/  apps/  backend/  docs/  eval/
-│   ├── instruction_index/  knowledge/  logs/  meta/
-│   ├── packages/  phases/  product/  tests/
-│   └── (총 155 파일, 이식 완료 시 약 165~170 파일)
-└── _staging/                  ← 이식 소스 (우리 deliverables)
-    ├── design.md              (688줄, → harness/apps/web/design.md 교체용)
-    ├── db_schema.md           (580줄, → harness/docs/contracts/db_schema.md)
-    ├── prompt_registry.md     (628줄, → harness/ai_system/prompts/prompt_registry.md)
-    ├── agent_html_spec.md     (789줄, → harness/tools/agent_html_spec.md)
-    └── skills/                ← 우리 14 Skill (이식 후 폴더 분리 배치)
+├── harness/                   ← 하네스 (운영 중)
+│   ├── 00_START_HERE.md       ← 첫 진입 시 여기부터
+│   ├── CLAUDE.md              ← 기획/설계 모델 라우터
+│   ├── AGENTS.md              ← 구현/QA 모델 라우터
+│   ├── PROJECT_STATE.md       ← 현재 작업 상태
+│   ├── PHASE_REGISTRY.md      ← Phase 목록 (0~30)
+│   ├── .claude/skills/        ← Skill 20개 (단일 폴더, applies_to 태그)
+│   ├── ai_system/             ← MOA Lite + RAG Lite 구조
+│   ├── apps/web/              ← Next.js PWA 설계
+│   ├── backend/               ← FastAPI + Spring (placeholder)
+│   ├── docs/contracts/        ← 모든 결정의 단일 진실 소스
+│   ├── eval/                  ← 평가 체계 + golden_set
+│   ├── knowledge/             ← LLM Wiki + RAG 지식
+│   ├── meta/                  ← 운영 가이드 + 회고
+│   ├── phases/active/         ← 현재 Phase 문서
+│   ├── phases/archive/        ← 완료 Phase (기본 참조 금지)
+│   ├── product/               ← 비전 + 범위 + 로드맵
+│   └── tests/ packages/ logs/ ← Phase 진행에 따라 채움
+└── _staging/                  ← 이식 소스 (참조용, 변경 금지)
 ```
 
-## 이식 진행 (5 Sprint)
+---
 
-| Sprint | 범위 | 상태 | Commit |
+## Phase 이력
+
+| Phase | 이름 | 상태 | 완료일 |
 |---|---|---|---|
-| S0 | 라우팅 + 상태 (START_HERE, PROJECT_STATE, CLAUDE.md, AGENTS.md, instruction_index) | 대기 | - |
-| S1 | Core 3 교체 (design.md, db_schema.md, prompt_registry.md) | 대기 | - |
-| S2 | Skill 25→20 정리 (폐기 8 / 우리 14 이식 / GPT 6 재작성) | 대기 | - |
-| S3 | 핵심 Contract 8개 보강 (output_schema, agent_io, api 등) | 대기 | - |
-| S4 | eval / knowledge / ai_system 보강 | 대기 | - |
-| S5 | 보조 파일 + harness-audit 최종 검증 | 대기 | - |
+| 0 | 하네스 초기화 (Migration) | ✅ done | 2026-05-26 |
+| **1** | **MVP 기본 플로우** | **🔵 active** | — |
+| 2 | design.md 기반 PWA 설계 | pending | — |
+| 3 | Next.js PWA 기본 UI 구현 | pending | — |
+| 4 | FastAPI 기본 백엔드 구현 | planned | — |
+| 5 | DB / Auth 기본 구조 | planned | — |
+| 6~10 | AI System + 통합 테스트 | planned | — |
+| 11~30 | 안정화 / 확장 / 고도화 | future | — |
 
-각 Sprint는 git commit 단위로 분리하여 rollback 가능. 자세한 산출물 검증은 [migration_procedure.md §6](harness/migration_procedure.md) 참조.
+Sprint S0~S5 (Phase 0) 모두 완료 — 6개 commit, 11/11 acceptance 통과.
 
-## 작업 분담
+---
 
-| 영역 | 주력 | 보조 |
+## 기술 스택
+
+| 계층 | MVP (Phase 1~10) | 확장 (Phase 21+) |
 |---|---|---|
-| 하네스 골격 / 기획 | Claude Code | GPT (교차검증) |
-| 세부 지침 / Skill 작성 | Claude Code | Codex (Claude 할당량 소진 시 이전) |
-| 코드 작성 (Phase 1 이후) | Codex | Copilot Code (Sonnet 4.6, Codex 소진 시) |
-| 큰 결정 | Multi-LLM Validation Skill (3 모델 동시 검토) | - |
+| Frontend | Next.js 14 PWA | Expo React Native |
+| Backend | FastAPI (Python) | Spring Boot |
+| DB | PostgreSQL + pgvector (Supabase) | — |
+| LLM | gpt-4o-mini (기본) / gpt-4o (Critic) | Custom Fine-tune |
+| RAG | pgvector + candidate_knowledge 5단계 | Custom RAG |
 
-## 핵심 결정 사항
+---
 
-1. **하네스 위치**: `Dreammate_Studio/harness/` 하위 (멀티-프로젝트 워크스페이스 확장 대비)
-2. **Skill 분리**: `.agents/.claude` 분리 유지 (description 매칭 명확성)
-3. **MVP 흐름**: Discovery Wizard (7단계) + Quick Mode 하이브리드
-4. **Mobile / Spring**: Phase 21+ 제외 (placeholder marker 처리)
-5. **이식 후 Skill 총 개수**: 20개 (.agents 11 + .claude 9)
+## 확정 결정 사항 (주요 25개)
 
-## 다음 단계
+1. Discovery + Quick 하이브리드 UX (1.6x 비용 수용)
+2. Mode 자동 분기: 신규 → Discovery, 기존 Series → Quick
+3. Discovery 단계당 카드 5장 (AI 4 + 직접입력 1)
+4. Plan 후보 3개 생성 (Phase 4+, Phase 1은 1개)
+5. Critic revise 최대 2회 (무한 루프 차단)
+6. 4계층 데이터 모델 (Brand / Domain / Series / VideoProject)
+7. Intent Filter (영상기획 외 입력 차단)
+8. Brand Memory 자동 추출 + 사용자 검토 가능
+9. 광고적 표현 차단 단어 검사 ("최고의", "혁신적인" 등)
+10. 30–60초 대기 시 4단계 progress + 부분 결과 노출
+11. Skill 20개, `.claude/skills/` 단일 폴더
+12. 영상 자동 편집 / TTS / BGM / 자동 업로드 → MVP 영구 제외
+
+전체 목록: `harness/PROJECT_STATE.md`의 `confirmed_decisions`
+
+---
+
+## 작업 진입
 
 ```
-1. harness/handoff_to_claude_code_sprint_S0.md 읽기
-2. Sprint S0 수행 — 라우팅 + 상태 파일 갱신
-3. 검증 체크포인트 통과 → git commit "harness: integrate GPT skeleton + routing decisions (S0)"
-4. Sprint S1 진입
+1. harness/00_START_HERE.md  ← 첫 진입 시 여기부터
+2. harness/PROJECT_STATE.md  ← 현재 작업 위치 확인
+3. harness/phases/active/phase-1-mvp-basic-flow/  ← Phase 1 컨텍스트
 ```
+
+---
+
+## 주의사항
+
+- `docs/contracts/`는 무단 변경 금지 — `contract-change` Skill 절차 필수
+- `phases/archive/`는 기본 참조 금지
+- 영상 제작 기능은 MVP에 넣지 않는다 (mvp_non_goals.md 참조)
+- contract와 다른 문서가 충돌 시 → contract 우선

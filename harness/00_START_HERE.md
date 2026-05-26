@@ -46,6 +46,7 @@
 
 ## 현재 active Phase
 
-**Phase 0. 하네스 초기화 (Migration)** — Sprint S0~S5 실행 중.
-- 진입: `phases/active/phase-0-migration/`
-- 절차: `migration_procedure.md` (v1.2.0)
+**Phase 1. MVP 기본 플로우** — Next.js + FastAPI 실 코드 작업 중.
+- 진입: `phases/active/phase-1-mvp-basic-flow/`
+- 핵심 contracts: `docs/contracts/api_contract.md`, `docs/contracts/agent_io_contract.md`, `docs/contracts/output_schema.md`
+- Phase 0 archive: `phases/archive/phase-0-migration/` (기본 참조 금지)
