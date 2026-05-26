@@ -1,8 +1,8 @@
-"""POST /api/v1/generate — Phase 1 Slice 4.
+"""POST /api/v1/generate — Phase 1 Slice 5.
 
 Phase 1 deviation from api_contract.md §8.3:
   - Contract: POST /api/v1/plans/{plan_id}/generate (async + SSE, 3 plans)
-  - Slice 1~4: POST /api/v1/generate (sync, 1 plan)
+  - Slice 1~5: POST /api/v1/generate (sync, 1 plan)
   - Reason: Simplest Slice 원칙 (phase-start v1.1.0 §6.2)
   - Migration: Phase 4 MOA Lite 완성 시 contract endpoint로 정합
 
@@ -15,13 +15,20 @@ Slice 3 변경:
   - body.critic_evaluation 활성화 (revise 없음, 평가만)
   - validation.warnings에서 "phase_1_no_critic" 제거
 
-Slice 4 변경 (이번):
+Slice 4 변경:
   - RAG Lite 추가 (Intent 통과 후 → RAG 검색 → Planning에 rag_context 주입)
   - pgvector 미가용 시 graceful fallback (절대 사용자 차단 금지)
   - body.rag_references 활성화 (fallback 시 빈 배열)
   - plan.rag_used 채움 (실제 prompt에 주입된 references)
   - validation.checks에 rag_retrieval 추가 (status=ok|warn)
   - validation.warnings에서 "phase_1_no_rag" 제거
+
+Slice 5 변경 (이번):
+  - Critic 후 Supabase 저장 단계 추가 (video_projects + plan_candidates).
+  - DB 실패는 절대 사용자 차단 금지 (graceful 정책 — RAG와 동일).
+  - meta.project_id 노출 (성공 시 uuid, skip/fail 시 None).
+  - validation.checks에 db_persistence 추가 (status=ok|warn).
+  - 익명 저장 (user_id=NULL) — Phase 5 Auth 도입 시 사용자 binding.
 """
 
 from __future__ import annotations
@@ -49,6 +56,7 @@ from ..agents.planning import (
     run_planning,
 )
 from ..config import get_settings
+from ..db import save_video_planning
 from ..rag import RetrievalResult, run_rag_retrieval
 from ..schemas.input import GenerateRequest
 from ..schemas.output import (
@@ -106,11 +114,12 @@ def _error_response(
         502: {"model": ErrorEnvelope, "description": "LLM 호출 실패"},
     },
     status_code=status.HTTP_200_OK,
-    summary="영상기획 1개 생성 + RAG + Critic 평가 (Phase 1 Slice 4)",
+    summary="영상기획 1개 생성 + RAG + Critic 평가 + Supabase 저장 (Phase 1 Slice 5)",
     description=(
-        "Phase 1 Slice 4 — Intent → RAG → Planning(rag_context) → Critic 직렬 호출.\n"
+        "Phase 1 Slice 5 — Intent → RAG → Planning(rag_context) → Critic → DB save 직렬 호출.\n"
         "RAG는 pgvector 미가용 시 graceful fallback (빈 references, 200 응답 유지).\n"
         "Critic은 8 차원 평가만 수행 (revise 없음, Phase 4+).\n"
+        "DB 저장은 Supabase 미설정/실패 시 graceful skip (meta.project_id=null, 200 응답 유지).\n"
         "Phase 4에서 api_contract.md §8.3 (async + SSE) 형식으로 migration 예정.\n"
         "Intent 차단 시 INV-001 ErrorEnvelope 반환."
     ),
@@ -274,16 +283,51 @@ def generate(req: GenerateRequest) -> Union[Envelope, JSONResponse]:
             retry_allowed=True,
         )
 
-    # ── 6. Envelope 조립 ──────────────────────────────────────────────
+    # ── 6. DB save (Slice 5) — graceful, 실패해도 사용자 차단 금지 ──────
+    # request_id 를 먼저 생성하여 Meta + video_projects 양쪽에 동일하게 주입.
+    request_id = str(uuid4())
+
+    rag_refs_serialized = [r.model_dump(mode="json") for r in rag_refs]
+
+    try:
+        persistence = save_video_planning(
+            request_id=request_id,
+            input_text=req.input,
+            locale=req.locale,
+            plan_dict=plan.model_dump(mode="json"),
+            critic_dict=critic_evaluation.model_dump(mode="json"),
+            rag_refs=rag_refs_serialized,
+        )
+    except Exception as e:  # pragma: no cover — save_video_planning이 graceful 흡수하지만 방어
+        logger.warning("save_video_planning raised unexpectedly: %s", e)
+        from ..db.types import PersistenceResult
+
+        persistence = PersistenceResult(
+            status="failed_db_error",
+            project_id=None,
+            plan_candidate_ids=[],
+            error_reason="unexpected_exception",
+        )
+
+    db_check_status = "ok" if persistence.status == "saved" else "warn"
+    db_check_detail = (
+        f"status={persistence.status}, project_id={persistence.project_id}"
+        + (f", reason={persistence.error_reason}" if persistence.error_reason else "")
+    )
+
+    # ── 7. Envelope 조립 ──────────────────────────────────────────────
     # meta.prompt_id 는 응답 본문 생성기인 Planning(P-006)을 노출.
     # Intent(P-001) + Critic(P-007) 은 각각 validation check로 별도 기록.
-    # Slice 4: rag_references (body 최상위) + rag_retrieval check 추가.
+    # Slice 4: rag_references (body 최상위) + rag_retrieval check.
+    # Slice 5: meta.project_id (DB 저장 결과) + db_persistence check.
     envelope = Envelope(
         meta=Meta.make(
             prompt_id=PLANNING_PROMPT_ID,
             prompt_version=PLANNING_PROMPT_VERSION,
             model=settings.openai_model_default,
             locale=req.locale,
+            request_id=request_id,
+            project_id=persistence.project_id,  # None일 수 있음 (skip/fail 시)
         ),
         body=Body(
             plans=[plan],
@@ -310,21 +354,29 @@ def generate(req: GenerateRequest) -> Union[Envelope, JSONResponse]:
                     status="ok",
                     detail=f"{CRITIC_PROMPT_ID}@{CRITIC_PROMPT_VERSION}",
                 ),
+                ValidationCheck(
+                    name="db_persistence",
+                    status=db_check_status,
+                    detail=db_check_detail,
+                ),
             ],
             warnings=[
                 "phase_1_single_plan",  # 1 vs contract 3 (Phase 4+ 해소)
                 # "phase_1_no_rag" — Slice 4에서 해소 (RAG retriever 활성화)
                 # "phase_1_no_critic" — Slice 3에서 해소
+                # Slice 5는 DB가 graceful이므로 별도 warning 추가하지 않음.
             ],
         ),
     )
 
     logger.info(
-        "generate ok plan_id=%s verdict=%s rag_refs=%d fallback=%s request_id=%s",
+        "generate ok plan_id=%s verdict=%s rag_refs=%d rag_fallback=%s db_status=%s project_id=%s request_id=%s",
         plan.plan_id,
         critic_evaluation.overall_verdict,
         len(rag_refs),
         rag_result.used_fallback,
+        persistence.status,
+        persistence.project_id,
         envelope.meta.request_id,
     )
     return envelope

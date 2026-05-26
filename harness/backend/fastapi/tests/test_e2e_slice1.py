@@ -1,4 +1,4 @@
-"""Phase 1 Slice 1 + Slice 2 + Slice 3 + Slice 4 — end-to-end 검증.
+"""Phase 1 Slice 1 + Slice 2 + Slice 3 + Slice 4 + Slice 5 — end-to-end 검증.
 
 검증 항목 (assumptions.md §4.1 매핑):
   A1. /api/v1/generate 응답 HTTP 200 + envelope 구조
@@ -10,6 +10,8 @@
   + validation.warnings에서 phase_1_no_critic 제거 (Slice 3)
   + body.rag_references 필드 활성화 + fallback graceful (Slice 4)
   + validation.warnings에서 phase_1_no_rag 제거 (Slice 4)
+  + meta.project_id 노출 + DB 실패 시 graceful 200 (Slice 5)
+  + validation.checks에 db_persistence 추가 (Slice 5)
 """
 
 from __future__ import annotations
@@ -171,11 +173,12 @@ def test_generate_critic_validation_check_present(mock_pipeline_ok) -> None:
 
 
 def test_generate_critic_flagged_returns_revise_verdict(
-    mock_intent_ok, mock_planning_ok, mock_critic_flagged
+    mock_intent_ok, mock_rag_fallback, mock_planning_ok, mock_critic_flagged, mock_db_save_ok
 ) -> None:
     """Critic이 약한 plan을 flag → verdict=revise, blocking_issues 채워짐.
 
     Phase 1: revise verdict여도 router는 정상 200 응답 (revise 호출 없음).
+    Slice 5: DB save 도 동시 동작 (mock_db_save_ok 체이닝).
     """
     response = client.post(
         "/api/v1/generate",
@@ -195,7 +198,7 @@ def test_generate_critic_flagged_returns_revise_verdict(
 # ─── RAG references (Slice 4) ─────────────────────────────────────────
 
 def test_generate_includes_rag_references(
-    mock_intent_ok, mock_rag_ok, mock_planning_ok, mock_critic_ok
+    mock_intent_ok, mock_rag_ok, mock_planning_ok, mock_critic_ok, mock_db_save_ok
 ) -> None:
     """RAG 가 OK 경로일 때 body.rag_references 가 채워지고 validation.checks에 rag_retrieval ok."""
     response = client.post(
@@ -217,7 +220,7 @@ def test_generate_includes_rag_references(
 
 
 def test_generate_with_rag_fallback(
-    mock_intent_ok, mock_rag_fallback, mock_planning_ok, mock_critic_ok
+    mock_intent_ok, mock_rag_fallback, mock_planning_ok, mock_critic_ok, mock_db_save_ok
 ) -> None:
     """RAG fallback 시 body.rag_references==[] + validation.checks.rag_retrieval status=warn."""
     response = client.post(
@@ -233,6 +236,84 @@ def test_generate_with_rag_fallback(
     rag_check = next((c for c in checks if c["name"] == "rag_retrieval"), None)
     assert rag_check is not None
     assert rag_check["status"] == "warn"
+
+
+# ─── DB persistence (Slice 5) ─────────────────────────────────────────
+
+
+def test_generate_includes_project_id(mock_pipeline_ok) -> None:
+    """DB 저장 성공 시 meta.project_id 가 fake-project-uuid 로 노출된다."""
+    response = client.post(
+        "/api/v1/generate",
+        json={"input": "유튜브 채널 첫 영상"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["meta"]["project_id"] == "fake-project-uuid"
+
+
+def test_generate_includes_db_persistence_check_ok(mock_pipeline_ok) -> None:
+    """validation.checks 에 db_persistence status=ok + detail 에 project_id 포함."""
+    response = client.post(
+        "/api/v1/generate",
+        json={"input": "유튜브 채널 첫 영상"},
+    )
+    data = response.json()
+    checks = data["validation"]["checks"]
+
+    db_check = next((c for c in checks if c["name"] == "db_persistence"), None)
+    assert db_check is not None, "Slice 5: db_persistence check 가 노출되어야 함"
+    assert db_check["status"] == "ok"
+    assert "saved" in db_check["detail"]
+    assert "fake-project-uuid" in db_check["detail"]
+
+
+def test_generate_db_failure_still_returns_200(
+    mock_intent_ok, mock_rag_fallback, mock_planning_ok, mock_critic_ok, mock_db_save_fail
+) -> None:
+    """DB 저장 실패 시 — HTTP 200 + meta.project_id=null + db_persistence status=warn.
+
+    Phase 1 핵심 acceptance: DB 실패는 절대 사용자를 차단하지 않는다.
+    """
+    response = client.post(
+        "/api/v1/generate",
+        json={"input": "유튜브 채널 첫 영상"},
+    )
+
+    assert response.status_code == 200, "DB 실패 시도 사용자 응답은 정상 200 유지"
+    data = response.json()
+
+    assert data["meta"]["project_id"] is None
+
+    checks = data["validation"]["checks"]
+    db_check = next((c for c in checks if c["name"] == "db_persistence"), None)
+    assert db_check is not None
+    assert db_check["status"] == "warn"
+    assert "failed_db_error" in db_check["detail"]
+
+
+def test_generate_db_skipped_still_returns_200(
+    mock_intent_ok, mock_rag_fallback, mock_planning_ok, mock_critic_ok, mock_db_save_skipped
+) -> None:
+    """Supabase env 미설정 (skipped_no_db) 시도 HTTP 200 유지.
+
+    개발 환경에서 .env에 SUPABASE_URL 없이도 정상 동작 보장 (graceful skip).
+    """
+    response = client.post(
+        "/api/v1/generate",
+        json={"input": "유튜브 채널 첫 영상"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["meta"]["project_id"] is None
+
+    checks = data["validation"]["checks"]
+    db_check = next((c for c in checks if c["name"] == "db_persistence"), None)
+    assert db_check is not None
+    assert db_check["status"] == "warn"
+    assert "skipped_no_db" in db_check["detail"]
 
 
 # ─── Intent 차단 (Slice 2 INV-001 ErrorEnvelope) ──────────────────────

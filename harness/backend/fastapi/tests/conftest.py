@@ -13,6 +13,11 @@ Slice 4 변경:
   - mock_rag_ok / mock_rag_fallback 추가 (RAG Lite + graceful fallback)
   - mock_pipeline_ok가 rag 도 포함 (Intent → RAG → Planning → Critic 전 구간 mock)
   - 기본 정책: e2e 테스트는 RAG fallback 으로 동작 (knowledge base 없는 Phase 1 환경 모사)
+
+Slice 5 변경:
+  - mock_db_save_ok / mock_db_save_fail / mock_db_save_skipped 추가 (Supabase 저장 + graceful)
+  - mock_pipeline_ok 가 DB save 도 포함 (Intent → RAG → Planning → Critic → DB save 전 구간 mock)
+  - 기본 정책: e2e 테스트는 DB save_ok 로 동작 (성공적 저장 케이스 — meta.project_id 노출 검증)
 """
 
 from __future__ import annotations
@@ -22,6 +27,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from backend.fastapi.db.types import PersistenceResult
 from backend.fastapi.rag.types import RAGReference, RetrievalResult
 
 
@@ -286,7 +292,70 @@ def mock_rag_fallback(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     return MagicMock()
 
 
-# ─── 파이프라인 (Intent allow + RAG fallback + Planning + Critic approve) ───
+# ─── DB save mock (Slice 5) ────────────────────────────────────────────
+
+_FAKE_PROJECT_ID = "fake-project-uuid"
+_FAKE_PLAN_CANDIDATE_ID = "fake-plan-candidate-uuid"
+
+
+@pytest.fixture
+def mock_db_save_ok(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """save_video_planning 이 status="saved" + project_id 반환하는 mock."""
+
+    def fake(**kwargs: Any) -> PersistenceResult:
+        return PersistenceResult(
+            status="saved",
+            project_id=_FAKE_PROJECT_ID,
+            plan_candidate_ids=[_FAKE_PLAN_CANDIDATE_ID],
+            error_reason=None,
+        )
+
+    monkeypatch.setattr(
+        "backend.fastapi.routers.generate.save_video_planning", fake
+    )
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_db_save_fail(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """save_video_planning 이 status="failed_db_error" 반환하는 mock.
+
+    Phase 1 graceful 정책 검증: 사용자 응답은 여전히 200 + meta.project_id=null.
+    """
+
+    def fake(**kwargs: Any) -> PersistenceResult:
+        return PersistenceResult(
+            status="failed_db_error",
+            project_id=None,
+            plan_candidate_ids=[],
+            error_reason="connection_refused",
+        )
+
+    monkeypatch.setattr(
+        "backend.fastapi.routers.generate.save_video_planning", fake
+    )
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_db_save_skipped(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """save_video_planning 이 status="skipped_no_db" 반환 (Supabase env 미설정 모사)."""
+
+    def fake(**kwargs: Any) -> PersistenceResult:
+        return PersistenceResult(
+            status="skipped_no_db",
+            project_id=None,
+            plan_candidate_ids=[],
+            error_reason=None,
+        )
+
+    monkeypatch.setattr(
+        "backend.fastapi.routers.generate.save_video_planning", fake
+    )
+    return MagicMock()
+
+
+# ─── 파이프라인 (Intent allow + RAG fallback + Planning + Critic approve + DB save_ok) ───
 
 @pytest.fixture
 def mock_pipeline_ok(
@@ -294,10 +363,13 @@ def mock_pipeline_ok(
     mock_rag_fallback: MagicMock,
     mock_planning_ok: MagicMock,
     mock_critic_ok: MagicMock,
+    mock_db_save_ok: MagicMock,
 ) -> MagicMock:
     """e2e 정상 경로 fixture — router 응답 200 검증용.
 
     Slice 4 기본 정책: RAG는 fallback 으로 동작 (Phase 1 knowledge base 없는 환경 모사).
+    Slice 5 기본 정책: DB save 는 ok 로 동작 (meta.project_id 노출 검증 가능).
     RAG가 references를 반환하는 케이스는 mock_rag_ok 를 직접 사용한다.
+    DB save 가 실패/skip 하는 케이스는 mock_db_save_fail / mock_db_save_skipped 를 직접 사용한다.
     """
     return MagicMock()

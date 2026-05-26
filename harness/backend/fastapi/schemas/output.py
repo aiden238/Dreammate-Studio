@@ -22,6 +22,11 @@ Slice 4 추가:
   - body.rag_references (RAGReference 배열) — rag_data_contract.md §5.5 정합
   - validation.warnings에서 "phase_1_no_rag" 제거
   - validation.checks에 "rag_retrieval" 항목 추가 (status=ok/warn)
+
+Slice 5 추가:
+  - Meta.project_id (Optional) — Supabase 저장 성공 시 video_projects.id, 실패/skip 시 None
+  - validation.checks에 "db_persistence" 항목 추가 (status=ok/warn)
+  - DB 실패는 사용자 차단 금지 (graceful 정책 — Slice 4 RAG 와 동일)
 """
 
 from datetime import datetime, timezone
@@ -53,6 +58,13 @@ class Meta(BaseModel):
     generated_at: str = Field(..., description="ISO8601 UTC")
     locale: str = Field(default="ko-KR")
     schema_version: str = Field(default="1.0.0", description="output_schema.md semver")
+    project_id: str | None = Field(
+        default=None,
+        description=(
+            "Slice 5: Supabase video_projects.id (저장 성공 시 uuid). "
+            "DB 미연결 / 저장 실패 시 None — 사용자 응답은 정상 200 유지 (graceful 정책)."
+        ),
+    )
 
     @classmethod
     def make(
@@ -62,15 +74,22 @@ class Meta(BaseModel):
         prompt_version: str,
         model: str,
         locale: str = "ko-KR",
+        request_id: str | None = None,
+        project_id: str | None = None,
     ) -> "Meta":
-        """기본값으로 Meta 생성."""
+        """기본값으로 Meta 생성.
+
+        Slice 5: request_id를 외부에서 주입 가능 (DB save 시 video_projects.request_id와 일치시키기 위함).
+        project_id 는 DB 저장 성공 시에만 채워진다 (skip/fail 시 None).
+        """
         return cls(
-            request_id=str(uuid4()),
+            request_id=request_id or str(uuid4()),
             prompt_id=prompt_id,
             prompt_version=prompt_version,
             model=model,
             generated_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             locale=locale,
+            project_id=project_id,
         )
 
 

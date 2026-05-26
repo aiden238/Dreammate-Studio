@@ -20,7 +20,7 @@ class Settings(BaseSettings):
       - 로그 레벨
 
     Slice 4 추가: pgvector (graceful fallback — env 미설정 시 자동 fallback).
-    Slice 5+ 추가 예정: Supabase 저장.
+    Slice 5 추가: Supabase URL / anon key (graceful — env 미설정 시 DB 저장 skip).
     """
 
     model_config = SettingsConfigDict(
@@ -72,6 +72,18 @@ class Settings(BaseSettings):
     pgvector_threshold: float = Field(
         default=0.7,
         description="cosine similarity 최소값 (retrieval_policy.md §2)",
+    )
+
+    # ─── Supabase (Slice 5) ─────────────────────────────────────────
+    # Phase 1: 둘 다 미설정이면 DB 저장은 자동 skip (응답 meta.project_id=null + 200).
+    # supabase-py 미설치 시에도 graceful skip (import 실패 catch).
+    supabase_url: str = Field(
+        default="",
+        description="Supabase project URL (https://xxxx.supabase.co)",
+    )
+    supabase_anon_key: str = Field(
+        default="",
+        description="Supabase anon key (Phase 1 익명 저장용; Phase 5 Auth 도입 시 RLS + service_role 전환)",
     )
 
     @property
