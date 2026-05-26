@@ -1,22 +1,32 @@
 "use client";
 
 /**
- * Phase 1 Slice 6 — 입력 페이지 (`/`)
+ * Phase 1 Slice 7 — 입력 페이지 (`/`)
  *
  * 정합:
- *   - work_plan.md Slice 6: 텍스트 입력 + 제출만 (Wizard / Quick Mode 미포함)
+ *   - work_plan.md Slice 7: ProgressStepper + ErrorCard + PWA manifest
  *   - acceptance.md A5: 입력 페이지 렌더링, 제출 후 /plan 이동
- *   - design.md §16 (모바일 우선) / §19 (44px+ 터치 타겟)
+ *   - acceptance.md A2: 비관련 입력 → INV-001 ErrorCard 노출
+ *   - design.md §16 (모바일 우선), §19 (44px+ 터치 타겟), §20 (Error UX)
  *
- * Discovery Wizard 카드 5장, Generation Stepper, Intent Warning Box 등은
- * Slice 7+ (Polish) 또는 Phase 3 (Discovery / Quick Mode 분리) 에서 추가한다.
+ * Slice 6 대비 변경점:
+ *   - inline 1줄 에러 → ErrorCard 컴포넌트 (코드별 메시지/액션)
+ *   - "생성 중..." 텍스트 → ProgressStepper (4단계 시각화)
+ *   - 에러 페이로드는 /plan 으로 넘기지 않고 입력 페이지에 인라인 표시 (즉시 재입력 가능)
+ *
+ * Discovery Wizard, Quick Mode 는 Phase 3 에서 추가.
  */
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import ErrorCard from "@/components/ErrorCard";
+import ProgressStepper, {
+  type StepperState,
+} from "@/components/ProgressStepper";
 import SubmitButton from "@/components/SubmitButton";
 import { generate } from "@/lib/api";
+import { toDisplayErrorFromCode, type DisplayError } from "@/lib/errors";
 
 const SESSION_STORAGE_KEY = "dreammate.slice6.plan";
 const MAX_INPUT_LENGTH = 2000;
@@ -25,42 +35,71 @@ export default function HomePage() {
   const router = useRouter();
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [stepperState, setStepperState] = useState<StepperState>("idle");
+  const [displayError, setDisplayError] = useState<DisplayError | null>(null);
+  const [inputWarning, setInputWarning] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = input.trim();
     if (!trimmed) {
-      setError("어떤 영상을 기획하실지 한 줄이라도 적어주세요.");
+      setInputWarning("어떤 영상을 기획하실지 한 줄이라도 적어주세요.");
       return;
     }
 
-    setError(null);
+    setInputWarning(null);
+    setDisplayError(null);
     setIsLoading(true);
+    // Phase 1 백엔드는 동기라 실제 단계 콜백이 없다 → planning 단계로 고정 표시.
+    // Phase 4+ SSE 가 들어오면 단계별 setStepperState 호출하면 됨.
+    setStepperState("planning");
 
     try {
       const result = await generate({ input: trimmed, locale: "ko-KR" });
       if (result.ok) {
-        // sessionStorage에 응답 저장 후 /plan 으로 라우팅 (Slice 6 단순화)
+        setStepperState("complete");
         if (typeof window !== "undefined") {
           window.sessionStorage.setItem(
             SESSION_STORAGE_KEY,
             JSON.stringify(result.envelope),
           );
+          window.sessionStorage.removeItem(`${SESSION_STORAGE_KEY}.error`);
         }
         router.push("/plan");
         return;
       }
 
-      // 에러: 422 (Intent 차단 / 입력 검증) / 5xx / 네트워크 등 통합 표시
-      setError(result.userMessage);
+      // 에러 표시. plan/page.tsx 로 넘기지 않고 입력 페이지에 직접 표시
+      // → 사용자가 즉시 재입력 가능.
+      setDisplayError(
+        toDisplayErrorFromCode(
+          result.errorCode,
+          result.userMessage,
+          (result.error.error as { request_id?: string }).request_id,
+          result.retryAllowed,
+        ),
+      );
+      setStepperState("idle");
     } catch (unexpected) {
       const message =
         unexpected instanceof Error ? unexpected.message : String(unexpected);
-      setError(`예상치 못한 오류가 발생했어요. (${message})`);
+      setDisplayError(
+        toDisplayErrorFromCode("UNK-001", `예상치 못한 오류: ${message}`),
+      );
+      setStepperState("idle");
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleRetry() {
+    setDisplayError(null);
+    // 사용자가 텍스트를 그대로 두고 다시 시도 가능하도록 input 은 보존.
+  }
+
+  function handleGoHome() {
+    setDisplayError(null);
+    setInput("");
   }
 
   return (
@@ -78,10 +117,19 @@ export default function HomePage() {
         </p>
       </header>
 
+      {/* 에러 카드 (입력 위에 노출 → 사용자가 입력 수정 후 재시도) */}
+      {displayError && (
+        <ErrorCard
+          error={displayError}
+          onRetry={displayError.canRetry ? handleRetry : undefined}
+          onHome={displayError.canGoHome ? handleGoHome : undefined}
+        />
+      )}
+
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-4"
-        aria-describedby={error ? "submit-error" : undefined}
+        aria-describedby={inputWarning ? "input-warning" : undefined}
       >
         <label
           htmlFor="idea-input"
@@ -107,18 +155,23 @@ export default function HomePage() {
           </span>
         </div>
 
-        {error && (
+        {inputWarning && (
           <div
-            id="submit-error"
+            id="input-warning"
             role="alert"
-            className="rounded-md border border-error-500 bg-error-50 px-3 py-2 text-sm text-error-700"
+            className="rounded-md border border-warning-500 bg-warning-50 px-3 py-2 text-sm text-warning-700"
           >
-            {error}
+            {inputWarning}
           </div>
         )}
 
         <SubmitButton isLoading={isLoading}>기획안 만들기</SubmitButton>
       </form>
+
+      {/* 진행 stepper — 제출 중일 때만 노출 */}
+      {isLoading && (
+        <ProgressStepper currentStep={stepperState} />
+      )}
 
       <footer className="mt-4 text-xs text-neutral-500 leading-relaxed">
         <p>

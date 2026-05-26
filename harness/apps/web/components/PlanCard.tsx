@@ -1,17 +1,20 @@
 /**
- * Phase 1 Slice 6 — 기획안 카드 (단일 plan 표시)
+ * Phase 1 Slice 7 — 기획안 카드 (단일 plan 표시)
  *
  * 참조: component_map.md "PlanOptionCard" (3개 비교 카드는 Phase 3에서)
  *       design.md §13 (Output Display Rules)
  *       output_schema.md §8.1 (Plan)
  *
- * Slice 6 단순화: 비교/선택/거절 액션 없음. 단일 카드 표시만.
- * Slice 7+ 에서 RegenerateButton / SavePlanButton 등 추가.
+ * Slice 7 보강:
+ *   - approach_label 배지 색상 (narrative/informational/empathy/experiment/review/other)
+ *   - flow 의 duration_sec 합계 표시
+ *
+ * 비교/선택/거절 액션은 Phase 3 (Discovery + 3-plan 비교) 에서.
  */
 
-import type { Plan } from "@/lib/types";
+import type { ApproachLabel, Plan } from "@/lib/types";
 
-const APPROACH_LABEL_KO: Record<Plan["approach_label"], string> = {
+const APPROACH_LABEL_KO: Record<ApproachLabel, string> = {
   narrative: "서사형",
   informational: "정보 전달형",
   empathy: "공감형",
@@ -20,11 +23,34 @@ const APPROACH_LABEL_KO: Record<Plan["approach_label"], string> = {
   other: "기타",
 };
 
+/**
+ * approach 유형별 톤. (color-only 분기 금지 원칙은 텍스트가 함께 있어 OK.)
+ */
+const APPROACH_BADGE_CLASS: Record<ApproachLabel, string> = {
+  narrative: "bg-info-50 text-info-700",
+  informational: "bg-neutral-100 text-neutral-700",
+  empathy: "bg-primary-50 text-primary-700",
+  experiment: "bg-warning-50 text-warning-700",
+  review: "bg-success-50 text-success-700",
+  other: "bg-neutral-100 text-neutral-700",
+};
+
 export interface PlanCardProps {
   plan: Plan;
 }
 
 export default function PlanCard({ plan }: PlanCardProps) {
+  const totalDurationSec = plan.flow.reduce(
+    (sum, beat) => sum + (beat.duration_sec ?? 0),
+    0,
+  );
+  const totalMin = Math.floor(totalDurationSec / 60);
+  const totalSec = totalDurationSec % 60;
+  const totalDurationLabel =
+    totalMin > 0
+      ? `${totalMin}분 ${totalSec}초`
+      : `${totalDurationSec}초`;
+
   return (
     <article
       className="rounded-lg border border-neutral-200 bg-neutral-0 shadow-sm p-4 sm:p-6 flex flex-col gap-4"
@@ -39,7 +65,7 @@ export default function PlanCard({ plan }: PlanCardProps) {
           {plan.name}
         </h2>
         <span
-          className="inline-flex items-center rounded-sm bg-primary-50 text-primary-700 text-xs font-medium px-2 py-1"
+          className={`inline-flex items-center rounded-sm text-xs font-medium px-2 py-1 ${APPROACH_BADGE_CLASS[plan.approach_label]}`}
           aria-label={`접근 방식: ${APPROACH_LABEL_KO[plan.approach_label]}`}
         >
           {APPROACH_LABEL_KO[plan.approach_label]}
@@ -56,9 +82,7 @@ export default function PlanCard({ plan }: PlanCardProps) {
         className="rounded-md border-l-4 border-primary-500 bg-primary-50 px-3 py-3"
         aria-label="후킹 문장"
       >
-        <p className="text-xs font-semibold text-primary-700 mb-1">
-          후킹
-        </p>
+        <p className="text-xs font-semibold text-primary-700 mb-1">후킹</p>
         <p className="text-base sm:text-lg text-neutral-900 leading-relaxed">
           {plan.hook}
         </p>
@@ -66,9 +90,15 @@ export default function PlanCard({ plan }: PlanCardProps) {
 
       {/* Flow (numbered list) */}
       <section aria-label="영상 흐름">
-        <h3 className="text-sm font-semibold text-neutral-900 mb-2">
-          영상 흐름
-        </h3>
+        <div className="flex items-baseline justify-between gap-2 mb-2">
+          <h3 className="text-sm font-semibold text-neutral-900">영상 흐름</h3>
+          <span
+            className="text-xs text-neutral-500"
+            aria-label={`총 길이 ${totalDurationLabel}`}
+          >
+            총 {totalDurationLabel} · {plan.flow.length}개 비트
+          </span>
+        </div>
         <ol className="flex flex-col gap-2">
           {plan.flow.map((beat) => (
             <li
@@ -87,9 +117,7 @@ export default function PlanCard({ plan }: PlanCardProps) {
                     {beat.duration_sec}초
                   </span>
                 </div>
-                <p className="text-xs text-neutral-600 mt-1">
-                  {beat.purpose}
-                </p>
+                <p className="text-xs text-neutral-600 mt-1">{beat.purpose}</p>
               </div>
             </li>
           ))}

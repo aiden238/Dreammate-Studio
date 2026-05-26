@@ -1,35 +1,77 @@
 "use client";
 
 /**
- * Phase 1 Slice 6 — 결과 페이지 (`/plan`)
+ * Phase 1 Slice 7 — 결과 페이지 (`/plan`)
  *
  * 정합:
- *   - work_plan.md Slice 6: PlanCard 1개 표시
+ *   - work_plan.md Slice 7: ErrorCard, Critic 점수 / RAG 참조 / project_id 표시
  *   - acceptance.md A5: 제출 후 /plan 이동 + 결과 표시
- *   - design.md §13 (Output Display Rules — 단일 카드 단순 노출)
+ *   - design.md §13 (Output Display Rules — 단일 카드 + 메타정보)
+ *   - error_response_contract.md §11.1 (클라이언트 처리)
  *
- * Slice 6 단순화: sessionStorage 로 응답 인계. URL 파라미터 / route handler 인계는
- * Slice 7+ 또는 Phase 3 에서 검토. 새로고침 시 sessionStorage 가 유지되므로 OK,
- * 다른 탭 / 직접 URL 진입 시 "기획안 없음" 안내.
+ * Slice 6 대비 변경점:
+ *   - 일반적인 에러는 `/` 에서 표시하지만, sessionStorage 로 넘어온 error 가 있으면 ErrorCard 노출
+ *   - PlanCard 위에 Critic 점수 배지 / blocking_issues / RAG 참조 수 / project_id 상태 표시
  */
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import ErrorCard from "@/components/ErrorCard";
 import PlanCard from "@/components/PlanCard";
-import type { Envelope } from "@/lib/types";
+import type {
+  CriticEvaluation,
+  CriticVerdict,
+  Envelope,
+  RAGReference,
+} from "@/lib/types";
 import { isEnvelope } from "@/lib/types";
 
 const SESSION_STORAGE_KEY = "dreammate.slice6.plan";
+const SESSION_ERROR_KEY = "dreammate.slice6.plan.error";
+
+const VERDICT_LABEL: Record<CriticVerdict, string> = {
+  approve: "승인",
+  revise: "보완 필요",
+  reject: "재시도 권장",
+};
+
+const VERDICT_CLASS: Record<CriticVerdict, string> = {
+  approve: "bg-success-50 text-success-700 border-success-500",
+  revise: "bg-warning-50 text-warning-700 border-warning-500",
+  reject: "bg-error-50 text-error-700 border-error-500",
+};
 
 export default function PlanPage() {
   const router = useRouter();
   const [envelope, setEnvelope] = useState<Envelope | null>(null);
+  const [storedError, setStoredError] = useState<{
+    code: string;
+    user_message?: string;
+    request_id?: string;
+    retry_allowed?: boolean;
+  } | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // 에러 우선 확인 (Slice 7: 일부 흐름에서 /plan 로 에러 동반 진입 가능)
+    const errRaw = window.sessionStorage.getItem(SESSION_ERROR_KEY);
+    if (errRaw) {
+      try {
+        const parsed = JSON.parse(errRaw);
+        if (parsed && typeof parsed === "object" && "code" in parsed) {
+          setStoredError(parsed);
+          setHydrated(true);
+          return;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     const raw = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) {
       setHydrated(true);
@@ -49,12 +91,12 @@ export default function PlanPage() {
   function handleRestart() {
     if (typeof window !== "undefined") {
       window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      window.sessionStorage.removeItem(SESSION_ERROR_KEY);
     }
     router.push("/");
   }
 
   if (!hydrated) {
-    // SSR / 첫 hydration 사이의 깜빡임 최소화
     return (
       <main className="mx-auto w-full max-w-2xl px-4 py-8" aria-busy>
         <p className="text-sm text-neutral-500">불러오는 중...</p>
@@ -62,6 +104,29 @@ export default function PlanPage() {
     );
   }
 
+  // ── 에러 페이로드 노출 ─────────────────────────────────────────────
+  if (storedError) {
+    return (
+      <main className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-10 flex flex-col gap-6">
+        <ErrorCard
+          error={{
+            ok: false,
+            error: {
+              code: storedError.code,
+              message: storedError.code,
+              user_message: storedError.user_message,
+              retry_allowed: storedError.retry_allowed,
+              request_id: storedError.request_id,
+            },
+          }}
+          onRetry={handleRestart}
+          onHome={handleRestart}
+        />
+      </main>
+    );
+  }
+
+  // ── envelope 비어있음 (직접 URL 진입 등) ──────────────────────────
   if (!envelope) {
     return (
       <main className="mx-auto w-full max-w-2xl px-4 py-8 flex flex-col gap-4">
@@ -81,6 +146,10 @@ export default function PlanPage() {
 
   const plan = envelope.body.plans[0];
   const warnings = envelope.validation.warnings ?? [];
+  const critic: CriticEvaluation | null | undefined =
+    envelope.body.critic_evaluation;
+  const ragRefs: RAGReference[] = envelope.body.rag_references ?? [];
+  const projectId = envelope.meta.project_id ?? null;
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-10 flex flex-col gap-6">
@@ -91,10 +160,64 @@ export default function PlanPage() {
         <h1 className="text-xl sm:text-2xl font-bold text-neutral-900">
           AI가 정리한 영상 기획안
         </h1>
-        <p className="text-xs text-neutral-500">
-          request_id: <span className="font-mono">{envelope.meta.request_id}</span>
+        <p className="text-xs text-neutral-500 flex flex-wrap gap-x-3 gap-y-1">
+          <span>
+            request_id:{" "}
+            <span className="font-mono">{envelope.meta.request_id}</span>
+          </span>
+          <span>
+            {projectId ? (
+              <span className="inline-flex items-center gap-1 text-success-700">
+                <span aria-hidden>●</span> 저장됨
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-neutral-500">
+                <span aria-hidden>○</span> 임시 결과 (저장 안 됨)
+              </span>
+            )}
+          </span>
         </p>
       </header>
+
+      {/* Critic 점수 + blocking issues */}
+      {critic && (
+        <section
+          aria-label="품질 평가"
+          className={`rounded-md border px-3 py-3 ${VERDICT_CLASS[critic.overall_verdict]}`}
+        >
+          <div className="flex items-baseline justify-between gap-2 flex-wrap">
+            <p className="text-sm font-semibold">
+              품질 점수 {critic.overall_score_avg.toFixed(1)} / 5
+            </p>
+            <span className="text-xs font-medium">
+              {VERDICT_LABEL[critic.overall_verdict]}
+              {critic.revise_round > 0 && (
+                <> · 개선 {critic.revise_round}회</>
+              )}
+            </span>
+          </div>
+          {critic.blocking_issues.length > 0 && (
+            <ul className="mt-2 list-disc list-inside flex flex-col gap-1 text-xs">
+              {critic.blocking_issues.map((issue, idx) => (
+                <li key={idx}>{issue}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {/* RAG 참조 수 */}
+      <section
+        aria-label="참고 자료"
+        className="text-xs text-neutral-600 flex items-center gap-2"
+      >
+        <span aria-hidden>📚</span>
+        <span>
+          {ragRefs.length > 0
+            ? `참고 자료 ${ragRefs.length}개를 활용했어요`
+            : "참고 자료 없이 생성했어요"}
+        </span>
+      </section>
 
       {plan ? (
         <PlanCard plan={plan} />

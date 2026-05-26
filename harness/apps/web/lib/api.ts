@@ -1,17 +1,23 @@
 /**
- * Phase 1 Slice 6 — FastAPI 백엔드 호출 wrapper
+ * Phase 1 Slice 7 — FastAPI 백엔드 호출 wrapper
  *
  * 참조: harness/backend/fastapi/routers/generate.py (POST /api/v1/generate)
  *       harness/backend/fastapi/schemas/output.py (Envelope)
  *       docs/contracts/error_response_contract.md (ErrorEnvelope)
  *
- * Slice 6 동안 백엔드는 Slice 1→2 전환 중이라 두 응답 형식을 모두 처리한다:
- *   - Slice 1: FastAPI 기본 HTTPException {"detail": "..."} (HTTP 422)
- *   - Slice 2: ErrorEnvelope {ok:false, error:{code,...}}     (HTTP 422)
+ * 처리 형식 (3종):
+ *   1. 200 OK + Envelope        → ok:true
+ *   2. 4xx/5xx + ErrorEnvelope  → ok:false, ErrorEnvelope 반환 (코드 보존)
+ *   3. 4xx + FastAPI default {"detail":"..."}
+ *       → INV-001 추정 (Slice 1→2 전환 잔재) 또는 일반 검증 실패로 합성
+ *   4. 네트워크 실패            → NET-000 합성
+ *
+ * Slice 7 추가:
+ *   - 항상 ErrorEnvelope 정규 형식으로 반환 (FastAPI detail 도 합성)
+ *   - errorCode 노출 (ErrorCard 가 매핑할 수 있도록)
  */
 
 import type {
-  ApiErrorResponse,
   Envelope,
   ErrorEnvelope,
   FastAPIDetailError,
@@ -31,8 +37,12 @@ export type GenerateResult =
   | {
       ok: false;
       status: number;
-      error: ApiErrorResponse;
+      /** 정규화된 ErrorEnvelope (FastAPI detail / 네트워크 실패도 모두 이 형식). */
+      error: ErrorEnvelope;
+      /** ErrorCard 가 표시할 사용자 메시지 (user_message 우선, 합성 fallback). */
       userMessage: string;
+      /** 코드 단축 alias. ErrorCard / errors.ts 가 분기에 사용. */
+      errorCode: string;
       retryAllowed: boolean;
     };
 
@@ -80,6 +90,7 @@ export async function generate(
       status: 0,
       error: fakeError,
       userMessage: fakeError.error.user_message!,
+      errorCode: fakeError.error.code,
       retryAllowed: true,
     };
   }
@@ -98,6 +109,7 @@ export async function generate(
 
   // ── 에러 처리 ─────────────────────────────────────────────────────
   if (isErrorEnvelope(parsed)) {
+    const code = String(parsed.error.code ?? "UNK-000");
     return {
       ok: false,
       status: response.status,
@@ -106,18 +118,33 @@ export async function generate(
         (parsed.error.user_message as string | undefined) ??
         (parsed.error.message as string | undefined) ??
         "요청을 처리하지 못했어요.",
-      retryAllowed: Boolean(parsed.error.retry_allowed),
+      errorCode: code,
+      retryAllowed:
+        parsed.error.retry_allowed === undefined
+          ? inferRetryAllowedFromCode(code)
+          : Boolean(parsed.error.retry_allowed),
     };
   }
 
   if (isFastAPIDetailError(parsed)) {
     const detailMessage = extractFastAPIDetailMessage(parsed);
+    // Slice 1 잔재 또는 입력 형식 위반 → INV-* 합성
+    const synthCode = response.status === 422 ? "INV-001" : "E-INV-008";
+    const synth: ErrorEnvelope = {
+      ok: false,
+      error: {
+        code: synthCode,
+        message: `FastAPI default (status=${response.status})`,
+        user_message: detailMessage,
+        retry_allowed: false,
+      },
+    };
     return {
       ok: false,
       status: response.status,
-      error: parsed,
+      error: synth,
       userMessage: detailMessage,
-      // FastAPI HTTPException은 보통 입력 검증 실패 → 재시도 의미 없음.
+      errorCode: synthCode,
       retryAllowed: false,
     };
   }
@@ -137,8 +164,19 @@ export async function generate(
     status: response.status,
     error: fallback,
     userMessage: fallback.error.user_message!,
+    errorCode: fallback.error.code,
     retryAllowed: true,
   };
+}
+
+/**
+ * retry_allowed 가 응답에서 누락된 경우 코드로 추론.
+ * INV / SEC 는 사용자 액션 필요 → false, 그 외는 true.
+ */
+function inferRetryAllowedFromCode(code: string): boolean {
+  if (code.startsWith("INV-") || code.startsWith("E-INV-")) return false;
+  if (code.startsWith("E-SEC-")) return false;
+  return true;
 }
 
 function extractFastAPIDetailMessage(err: FastAPIDetailError): string {

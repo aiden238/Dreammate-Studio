@@ -1,13 +1,14 @@
 /**
- * Phase 1 Slice 6 — backend FastAPI 응답 envelope 매칭 타입
+ * Phase 1 Slice 7 — backend FastAPI 응답 envelope 매칭 타입
  *
  * 참조: harness/backend/fastapi/schemas/output.py
  *       output_schema.md §2 (meta / body / validation 3섹션 envelope)
+ *       output_schema.md §8.1 (Plan), §8.2 (CriticEvaluation), §8.3 (RAGReference)
  *
- * Phase 1 단순화:
- *   - body.plans 길이 1개 (vs contract 3개)
- *   - rag_used 빈 배열
- *   - approach_label 단일 값
+ * Slice 7 확장:
+ *   - CriticEvaluation / RAGReference 타입 추가 (Slice 3/4 백엔드 응답 매칭)
+ *   - Meta.project_id 옵셔널 (Slice 5 — DB graceful failure 시 null)
+ *   - Slice 6 backward compatibility 유지 (critic_evaluation/rag_references 옵셔널)
  */
 
 // ─── Meta ─────────────────────────────────────────────────────────────
@@ -20,6 +21,10 @@ export interface Meta {
   generated_at: string; // ISO8601 UTC
   locale: string; // "ko-KR"
   schema_version: string; // "1.0.0"
+  /**
+   * Slice 5: Supabase 저장 결과. 저장 실패 시 null (graceful).
+   */
+  project_id?: string | null;
 }
 
 // ─── Body (Plans) ─────────────────────────────────────────────────────
@@ -40,8 +45,6 @@ export type ApproachLabel =
   | "other";
 
 export interface RagUsedEntry {
-  // Phase 1 Slice 6 시점에서는 rag_used 가 빈 배열이지만,
-  // 구조는 후속 Slice (4 RAG fallback)에서 채워지도록 열어둔다.
   source_id?: string;
   title?: string;
   used_reason?: string;
@@ -61,8 +64,65 @@ export interface Plan {
   rag_used: RagUsedEntry[];
 }
 
+// ─── Critic Evaluation (Slice 3) ──────────────────────────────────────
+
+/**
+ * 8차원 평가 점수. 각 차원 0.0 ~ 5.0.
+ *
+ * 참조: output_schema.md §8.2 (CriticEvaluation), eval/video_planning_eval.md
+ */
+export interface CriticScores {
+  intent_fit: number;
+  target_clarity: number;
+  hook_strength: number;
+  message_clarity: number;
+  structure: number;
+  feasibility: number;
+  brand_consistency: number;
+  differentiation: number;
+}
+
+export type CriticVerdict = "approve" | "revise" | "reject";
+
+export interface CriticEvaluation {
+  target_plan_id: string;
+  scores: CriticScores;
+  reasons: Record<string, string>;
+  suggestions: Record<string, string>;
+  overall_score_avg: number;
+  overall_verdict: CriticVerdict;
+  blocking_issues: string[];
+  revise_round: number;
+}
+
+// ─── RAG Reference (Slice 4) ──────────────────────────────────────────
+
+/**
+ * Planner 가 실제 참조한 RAG 청크.
+ *
+ * 참조: output_schema.md §8.3, rag_data_contract.md
+ */
+export interface RAGReference {
+  source_id: string;
+  title: string;
+  snippet: string;
+  used_reason?: string;
+  similarity: number;
+  metadata?: Record<string, unknown>;
+}
+
+// ─── Body ─────────────────────────────────────────────────────────────
+
 export interface Body {
   plans: Plan[]; // 1..3 (Phase 1: 1개)
+  /**
+   * Slice 3 이후. Slice 1/2 응답은 미포함 가능 → 옵셔널.
+   */
+  critic_evaluation?: CriticEvaluation | null;
+  /**
+   * Slice 4 이후. RAG fallback 또는 미연결 시 빈 배열.
+   */
+  rag_references?: RAGReference[];
 }
 
 // ─── Validation ───────────────────────────────────────────────────────
@@ -90,18 +150,19 @@ export interface Envelope {
 // ─── Error responses ──────────────────────────────────────────────────
 
 /**
- * Slice 2 이후 error_response_contract.md 정합 envelope.
- * Slice 1 시점에는 활성되지 않을 수 있어 옵셔널 fallback 처리 필요.
+ * error_response_contract.md §3.1 정합 envelope.
  */
 export interface ErrorEnvelope {
   ok: false;
   error: {
-    code: string; // e.g. "INV-001"
+    code: string; // e.g. "INV-001", "E-LLM-001"
     message: string; // 개발자용
     user_message?: string; // 사용자 표시용
     retry_allowed?: boolean;
     user_action?: string;
     request_id?: string;
+    category?: string;
+    retry_after?: number;
     [key: string]: unknown;
   };
   meta?: Partial<Meta> & { [key: string]: unknown };
