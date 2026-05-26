@@ -8,6 +8,11 @@ Slice 2 변경:
 Slice 3 변경:
   - mock_critic_ok / mock_critic_flagged 추가 (P-007 Critic Agent)
   - mock_pipeline_ok가 critic도 포함하도록 확장
+
+Slice 4 변경:
+  - mock_rag_ok / mock_rag_fallback 추가 (RAG Lite + graceful fallback)
+  - mock_pipeline_ok가 rag 도 포함 (Intent → RAG → Planning → Critic 전 구간 mock)
+  - 기본 정책: e2e 테스트는 RAG fallback 으로 동작 (knowledge base 없는 Phase 1 환경 모사)
 """
 
 from __future__ import annotations
@@ -16,6 +21,8 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+
+from backend.fastapi.rag.types import RAGReference, RetrievalResult
 
 
 # ─── 환경변수 강제 주입 ────────────────────────────────────────────────
@@ -221,13 +228,76 @@ def mock_critic_flagged(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     return MagicMock()
 
 
-# ─── 파이프라인 (Intent allow + Planning success + Critic approve) ─────
+# ─── RAG 단독 mock (Slice 4) ───────────────────────────────────────────
+
+# Seed references — pgvector OK 케이스 모사 (rag_data_contract §5.5 정합).
+_RAG_SEEDS: list[RAGReference] = [
+    RAGReference(
+        source_id="seed-001",
+        title="유튜브 후크 작성법",
+        snippet=(
+            "첫 3초가 시청 유지율의 70% 이상을 결정한다. "
+            "질문형 / 충격적 사실 / 결과 노출형 hook 3종이 가장 효과적."
+        ),
+        used_reason="hook 강도 패턴 참고",
+        similarity=0.85,
+        metadata={"source_kind": "external_seed", "language": "ko-KR"},
+    ),
+    RAGReference(
+        source_id="seed-002",
+        title="쇼츠 구조 가이드",
+        snippet=(
+            "30~60초 쇼츠는 hook(3s) → 핵심메시지(15~20s) → CTA(5s) 3비트 구조가 안정적."
+        ),
+        used_reason="flow 비트 분배 참고",
+        similarity=0.78,
+        metadata={"source_kind": "external_seed", "language": "ko-KR"},
+    ),
+]
+
+
+@pytest.fixture
+def mock_rag_ok(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """RAG retriever가 2개 reference + used_fallback=False 반환."""
+
+    def fake(*args: Any, **kwargs: Any) -> RetrievalResult:
+        return RetrievalResult(
+            references=[r.model_copy() for r in _RAG_SEEDS],
+            used_fallback=False,
+            fallback_reason=None,
+        )
+
+    monkeypatch.setattr("backend.fastapi.routers.generate.run_rag_retrieval", fake)
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_rag_fallback(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """RAG retriever가 fallback (빈 references + pgvector_unreachable) 반환."""
+
+    def fake(*args: Any, **kwargs: Any) -> RetrievalResult:
+        return RetrievalResult(
+            references=[],
+            used_fallback=True,
+            fallback_reason="pgvector_unreachable",
+        )
+
+    monkeypatch.setattr("backend.fastapi.routers.generate.run_rag_retrieval", fake)
+    return MagicMock()
+
+
+# ─── 파이프라인 (Intent allow + RAG fallback + Planning + Critic approve) ───
 
 @pytest.fixture
 def mock_pipeline_ok(
     mock_intent_ok: MagicMock,
+    mock_rag_fallback: MagicMock,
     mock_planning_ok: MagicMock,
     mock_critic_ok: MagicMock,
 ) -> MagicMock:
-    """e2e 정상 경로 fixture — router 응답 200 검증용 (Slice 3: Critic 포함)."""
+    """e2e 정상 경로 fixture — router 응답 200 검증용.
+
+    Slice 4 기본 정책: RAG는 fallback 으로 동작 (Phase 1 knowledge base 없는 환경 모사).
+    RAG가 references를 반환하는 케이스는 mock_rag_ok 를 직접 사용한다.
+    """
     return MagicMock()

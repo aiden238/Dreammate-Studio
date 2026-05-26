@@ -1,4 +1,4 @@
-"""Dreammate Studio FastAPI app — Phase 1 Slice 3.
+"""Dreammate Studio FastAPI app — Phase 1 Slice 4.
 
 Run:
     uvicorn backend.fastapi.main:app --reload --port 8000
@@ -64,12 +64,14 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Dreammate Studio API",
         description=(
-            "영상기획 AI 에이전트 백엔드 (Phase 1 Slice 3).\n\n"
-            "현재 활성 endpoint: `POST /api/v1/generate` (Intent → Planning → Critic).\n"
+            "영상기획 AI 에이전트 백엔드 (Phase 1 Slice 4).\n\n"
+            "현재 활성 endpoint: `POST /api/v1/generate` "
+            "(Intent → RAG → Planning(rag_context) → Critic).\n"
+            "RAG는 pgvector 미가용 시 graceful fallback (빈 references).\n"
             "Critic은 8 차원 평가만 수행 (revise 없음, Phase 4+에서 추가).\n"
             "Phase 4에서 api_contract.md §8.3 (async + SSE) 형식으로 migration 예정."
         ),
-        version="0.3.0",  # Phase 1 Slice 3
+        version="0.4.0",  # Phase 1 Slice 4
         lifespan=lifespan,
     )
 
@@ -91,7 +93,7 @@ def create_app() -> FastAPI:
         return {
             "status": "ok",
             "phase": "1",
-            "slice": "3",
+            "slice": "4",
             "version": app.version,
         }
 

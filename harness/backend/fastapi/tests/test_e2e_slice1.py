@@ -1,4 +1,4 @@
-"""Phase 1 Slice 1 + Slice 2 + Slice 3 — end-to-end 검증.
+"""Phase 1 Slice 1 + Slice 2 + Slice 3 + Slice 4 — end-to-end 검증.
 
 검증 항목 (assumptions.md §4.1 매핑):
   A1. /api/v1/generate 응답 HTTP 200 + envelope 구조
@@ -8,6 +8,8 @@
   + 입력 검증 (빈 문자열 / 너무 긴 문자열 차단)
   + Critic 평가 결과가 body.critic_evaluation에 포함 (Slice 3)
   + validation.warnings에서 phase_1_no_critic 제거 (Slice 3)
+  + body.rag_references 필드 활성화 + fallback graceful (Slice 4)
+  + validation.warnings에서 phase_1_no_rag 제거 (Slice 4)
 """
 
 from __future__ import annotations
@@ -88,8 +90,9 @@ def test_generate_body_plans_phase1_single(mock_pipeline_ok) -> None:
 def test_generate_validation_warnings_phase1(mock_pipeline_ok) -> None:
     """Phase 1 deviation은 validation.warnings에 명시.
 
-    Slice 3 변경: Critic이 활성화되었으므로 `phase_1_no_critic`는 더 이상 포함되지 않음.
-    남는 deviation 경고는 `phase_1_single_plan` (3 vs 1) + `phase_1_no_rag` (Slice 4 해소).
+    Slice 3: Critic 활성화 → `phase_1_no_critic` 제거됨.
+    Slice 4: RAG 활성화 → `phase_1_no_rag` 제거됨.
+    남는 deviation 경고는 `phase_1_single_plan` (3 vs 1) 만.
     """
     response = client.post(
         "/api/v1/generate",
@@ -102,7 +105,9 @@ def test_generate_validation_warnings_phase1(mock_pipeline_ok) -> None:
 
     warnings = validation["warnings"]
     assert "phase_1_single_plan" in warnings
-    assert "phase_1_no_rag" in warnings
+    assert "phase_1_no_rag" not in warnings, (
+        "Slice 4에서 RAG가 활성화되었으므로 phase_1_no_rag 경고가 사라져야 함"
+    )
     assert "phase_1_no_critic" not in warnings, (
         "Slice 3에서 Critic이 활성화되었으므로 phase_1_no_critic 경고가 사라져야 함"
     )
@@ -185,6 +190,49 @@ def test_generate_critic_flagged_returns_revise_verdict(
     # FC-001/002 시드 패턴 — hook_strength, target_clarity가 미달
     assert critic["scores"]["hook_strength"] < 2
     assert critic["scores"]["target_clarity"] < 2
+
+
+# ─── RAG references (Slice 4) ─────────────────────────────────────────
+
+def test_generate_includes_rag_references(
+    mock_intent_ok, mock_rag_ok, mock_planning_ok, mock_critic_ok
+) -> None:
+    """RAG 가 OK 경로일 때 body.rag_references 가 채워지고 validation.checks에 rag_retrieval ok."""
+    response = client.post(
+        "/api/v1/generate",
+        json={"input": "건강한 식단 쇼츠 기획"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    refs = data["body"]["rag_references"]
+    assert len(refs) == 2
+    assert refs[0]["source_id"] == "seed-001"
+
+    # validation.checks 에 rag_retrieval status=ok
+    checks = data["validation"]["checks"]
+    rag_check = next((c for c in checks if c["name"] == "rag_retrieval"), None)
+    assert rag_check is not None
+    assert rag_check["status"] == "ok"
+
+
+def test_generate_with_rag_fallback(
+    mock_intent_ok, mock_rag_fallback, mock_planning_ok, mock_critic_ok
+) -> None:
+    """RAG fallback 시 body.rag_references==[] + validation.checks.rag_retrieval status=warn."""
+    response = client.post(
+        "/api/v1/generate",
+        json={"input": "유튜브 채널 첫 영상"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["body"]["rag_references"] == []
+
+    checks = data["validation"]["checks"]
+    rag_check = next((c for c in checks if c["name"] == "rag_retrieval"), None)
+    assert rag_check is not None
+    assert rag_check["status"] == "warn"
 
 
 # ─── Intent 차단 (Slice 2 INV-001 ErrorEnvelope) ──────────────────────

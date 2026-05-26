@@ -1,4 +1,4 @@
-"""Planning Agent — P-006 (Phase 1 Slice 2).
+"""Planning Agent — P-006 (Phase 1 Slice 2 + Slice 4 RAG context).
 
 승인된 영상기획 요청에 대해 단일 plan_candidate를 생성한다.
 Phase 1 deviation: contract는 plans 3개, 본 Phase는 1개만 (validation.warnings로 추적).
@@ -6,13 +6,17 @@ Phase 1 deviation: contract는 plans 3개, 본 Phase는 1개만 (validation.warn
 호출 흐름:
   user_input(str) → gpt-4o-mini 1회 호출 (JSON mode) → dict 반환
   {"plan": {name, concept, hook, flow[...], pros, risks, approach_label}}
+
+Slice 4 추가:
+  - run_planning(user_input, rag_context=[...]) — RAG 참고 자료를 시스템 프롬프트에 주입.
+  - rag_context=None 또는 빈 배열이면 Slice 2 동작과 동일 (backward compat).
 """
 
 from __future__ import annotations
 
 import json
 import logging
-from typing import Any
+from typing import Any, Sequence
 
 from openai import OpenAI, OpenAIError
 
@@ -57,9 +61,39 @@ SYSTEM_PROMPT = """당신은 영상기획 AI 에이전트의 기획안 생성기
 
 # ─── 호출 함수 ────────────────────────────────────────────────────────
 
+def _format_rag_context(rag_context: Sequence[Any]) -> str:
+    """RAG references → 시스템 프롬프트용 "참고 자료" 섹션 문자열.
+
+    RAGReference Pydantic model 또는 dict 둘 다 허용 (backward compat).
+    빈 입력은 빈 문자열 반환 (호출자가 system prompt 합성 분기에 사용).
+    """
+    if not rag_context:
+        return ""
+
+    lines: list[str] = ["", "참고 자료 (출처가 검증된 영상기획 패턴):"]
+    for i, ref in enumerate(rag_context, start=1):
+        if hasattr(ref, "model_dump"):
+            ref_dict: dict[str, Any] = ref.model_dump()
+        elif isinstance(ref, dict):
+            ref_dict = ref
+        else:
+            continue
+
+        title = str(ref_dict.get("title") or "(제목 없음)")
+        snippet = str(ref_dict.get("snippet") or "")[:300]
+        lines.append(f"[{i}] {title}\n    {snippet}")
+
+    lines.append(
+        "이 참고 자료는 영상기획 패턴 학습용이다. 그대로 복제하지 말고 "
+        "사용자 요청에 맞게 새 plan을 생성한다."
+    )
+    return "\n".join(lines)
+
+
 def run_planning(
     user_input: str,
     *,
+    rag_context: Sequence[Any] | None = None,
     client: OpenAI | None = None,
     model: str | None = None,
 ) -> dict[str, Any]:
@@ -67,6 +101,8 @@ def run_planning(
 
     Args:
         user_input: 사용자 요청 텍스트 (Intent 통과 후).
+        rag_context: RAGReference 모델 또는 dict 의 시퀀스 (선택, Slice 4 추가).
+                     비어있거나 None이면 Slice 2 동작과 동일 (backward compat).
         client: OpenAI 클라이언트 (테스트 시 mock 주입).
         model: 사용 모델 (기본은 settings.openai_model_default).
 
@@ -82,13 +118,21 @@ def run_planning(
     _client = client or OpenAI(api_key=settings.openai_api_key)
     _model = model or settings.openai_model_default
 
-    logger.info("planning call start model=%s input_len=%d", _model, len(user_input))
+    rag_block = _format_rag_context(rag_context or [])
+    system_prompt = SYSTEM_PROMPT + (("\n" + rag_block) if rag_block else "")
+
+    logger.info(
+        "planning call start model=%s input_len=%d rag_refs=%d",
+        _model,
+        len(user_input),
+        len(rag_context or []),
+    )
 
     try:
         response = _client.chat.completions.create(
             model=_model,
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_input},
             ],
             response_format={"type": "json_object"},

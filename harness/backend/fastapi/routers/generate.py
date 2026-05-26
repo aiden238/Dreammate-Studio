@@ -1,8 +1,8 @@
-"""POST /api/v1/generate — Phase 1 Slice 3.
+"""POST /api/v1/generate — Phase 1 Slice 4.
 
 Phase 1 deviation from api_contract.md §8.3:
   - Contract: POST /api/v1/plans/{plan_id}/generate (async + SSE, 3 plans)
-  - Slice 1/2/3: POST /api/v1/generate (sync, 1 plan)
+  - Slice 1~4: POST /api/v1/generate (sync, 1 plan)
   - Reason: Simplest Slice 원칙 (phase-start v1.1.0 §6.2)
   - Migration: Phase 4 MOA Lite 완성 시 contract endpoint로 정합
 
@@ -14,6 +14,14 @@ Slice 3 변경:
   - Critic 추가 (직렬 3회 호출: Intent → Planning → Critic)
   - body.critic_evaluation 활성화 (revise 없음, 평가만)
   - validation.warnings에서 "phase_1_no_critic" 제거
+
+Slice 4 변경 (이번):
+  - RAG Lite 추가 (Intent 통과 후 → RAG 검색 → Planning에 rag_context 주입)
+  - pgvector 미가용 시 graceful fallback (절대 사용자 차단 금지)
+  - body.rag_references 활성화 (fallback 시 빈 배열)
+  - plan.rag_used 채움 (실제 prompt에 주입된 references)
+  - validation.checks에 rag_retrieval 추가 (status=ok|warn)
+  - validation.warnings에서 "phase_1_no_rag" 제거
 """
 
 from __future__ import annotations
@@ -41,6 +49,7 @@ from ..agents.planning import (
     run_planning,
 )
 from ..config import get_settings
+from ..rag import RetrievalResult, run_rag_retrieval
 from ..schemas.input import GenerateRequest
 from ..schemas.output import (
     Body,
@@ -97,16 +106,17 @@ def _error_response(
         502: {"model": ErrorEnvelope, "description": "LLM 호출 실패"},
     },
     status_code=status.HTTP_200_OK,
-    summary="영상기획 1개 생성 + Critic 평가 (Phase 1 Slice 3)",
+    summary="영상기획 1개 생성 + RAG + Critic 평가 (Phase 1 Slice 4)",
     description=(
-        "Phase 1 Slice 3 — Intent + Planning + Critic 직렬 호출.\n"
+        "Phase 1 Slice 4 — Intent → RAG → Planning(rag_context) → Critic 직렬 호출.\n"
+        "RAG는 pgvector 미가용 시 graceful fallback (빈 references, 200 응답 유지).\n"
         "Critic은 8 차원 평가만 수행 (revise 없음, Phase 4+).\n"
         "Phase 4에서 api_contract.md §8.3 (async + SSE) 형식으로 migration 예정.\n"
         "Intent 차단 시 INV-001 ErrorEnvelope 반환."
     ),
 )
 def generate(req: GenerateRequest) -> Union[Envelope, JSONResponse]:
-    """Intent → Planning → Critic 직렬 호출 → output_schema v1.0 envelope 반환."""
+    """Intent → RAG → Planning(rag_context) → Critic 직렬 호출 → envelope 반환."""
     settings = get_settings()
 
     # ── 1. Intent Agent (P-001) ──────────────────────────────────────
@@ -143,9 +153,30 @@ def generate(req: GenerateRequest) -> Union[Envelope, JSONResponse]:
             retry_allowed=False,
         )
 
-    # ── 3. Planning Agent (P-006) ────────────────────────────────────
+    # ── 3a. RAG 검색 (Slice 4) ─────────────────────────────────────────
+    # 사용자 요청을 절대 차단하지 않는다 — 모든 실패는 retriever 내부에서
+    # fallback으로 흡수되어 RetrievalResult로 반환된다. 그래도 만약을 위해
+    # router 측에서도 try/except로 한 번 더 감싼다 (방어 코드).
     try:
-        planning_result = run_planning(req.input)
+        rag_result = run_rag_retrieval(req.input)
+    except Exception as e:  # pragma: no cover — retriever가 swallow하지만 방어
+        logger.warning("RAG retriever raised unexpectedly, using empty refs: %s", e)
+        rag_result = RetrievalResult(
+            references=[],
+            used_fallback=True,
+            fallback_reason="pgvector_unreachable",
+        )
+
+    rag_refs = list(rag_result.references)
+    rag_check_status = "ok" if not rag_result.used_fallback else "warn"
+    rag_check_detail = (
+        f"references={len(rag_refs)}, fallback={rag_result.used_fallback}"
+        + (f", reason={rag_result.fallback_reason}" if rag_result.fallback_reason else "")
+    )
+
+    # ── 3b. Planning Agent (P-006) — Slice 4: rag_context 주입 ────────
+    try:
+        planning_result = run_planning(req.input, rag_context=rag_refs)
     except ValueError as e:
         logger.warning("Planning LLM JSON 파싱 실패: %s", e)
         return _error_response(
@@ -186,7 +217,16 @@ def generate(req: GenerateRequest) -> Union[Envelope, JSONResponse]:
             pros=plan_raw.get("pros", ""),
             risks=plan_raw.get("risks", ""),
             approach_label=plan_raw.get("approach_label", "informational"),
-            rag_used=[],  # Slice 4에서 채움
+            # Slice 4: rag_used는 실제 prompt에 주입된 chunk 요약만 (≤3, contract §5.5).
+            # fallback인 경우 빈 배열.
+            rag_used=[
+                {
+                    "source_id": r.source_id,
+                    "title": r.title,
+                    "used_reason": r.used_reason,
+                }
+                for r in rag_refs
+            ],
         )
     except Exception as e:
         logger.exception("Plan 모델 검증 실패")
@@ -237,6 +277,7 @@ def generate(req: GenerateRequest) -> Union[Envelope, JSONResponse]:
     # ── 6. Envelope 조립 ──────────────────────────────────────────────
     # meta.prompt_id 는 응답 본문 생성기인 Planning(P-006)을 노출.
     # Intent(P-001) + Critic(P-007) 은 각각 validation check로 별도 기록.
+    # Slice 4: rag_references (body 최상위) + rag_retrieval check 추가.
     envelope = Envelope(
         meta=Meta.make(
             prompt_id=PLANNING_PROMPT_ID,
@@ -244,7 +285,11 @@ def generate(req: GenerateRequest) -> Union[Envelope, JSONResponse]:
             model=settings.openai_model_default,
             locale=req.locale,
         ),
-        body=Body(plans=[plan], critic_evaluation=critic_evaluation),
+        body=Body(
+            plans=[plan],
+            critic_evaluation=critic_evaluation,
+            rag_references=rag_refs,
+        ),
         validation=Validation(
             passed=True,
             checks=[
@@ -256,23 +301,30 @@ def generate(req: GenerateRequest) -> Union[Envelope, JSONResponse]:
                 ),
                 ValidationCheck(name="plan_count", status="ok", detail="1 (Phase 1 deviation)"),
                 ValidationCheck(
+                    name="rag_retrieval",
+                    status=rag_check_status,
+                    detail=rag_check_detail,
+                ),
+                ValidationCheck(
                     name="critic_evaluation",
                     status="ok",
                     detail=f"{CRITIC_PROMPT_ID}@{CRITIC_PROMPT_VERSION}",
                 ),
             ],
             warnings=[
-                "phase_1_single_plan",  # 1 vs contract 3
-                "phase_1_no_rag",  # Slice 4에서 해소
-                # "phase_1_no_critic" — Slice 3에서 해소 (Critic 활성화)
+                "phase_1_single_plan",  # 1 vs contract 3 (Phase 4+ 해소)
+                # "phase_1_no_rag" — Slice 4에서 해소 (RAG retriever 활성화)
+                # "phase_1_no_critic" — Slice 3에서 해소
             ],
         ),
     )
 
     logger.info(
-        "generate ok plan_id=%s verdict=%s request_id=%s",
+        "generate ok plan_id=%s verdict=%s rag_refs=%d fallback=%s request_id=%s",
         plan.plan_id,
         critic_evaluation.overall_verdict,
+        len(rag_refs),
+        rag_result.used_fallback,
         envelope.meta.request_id,
     )
     return envelope

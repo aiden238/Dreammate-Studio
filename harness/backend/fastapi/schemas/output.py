@@ -17,6 +17,11 @@ Slice 2 추가:
 Slice 3 추가:
   - CriticScores / CriticEvaluation (output_schema.md §9 정합)
   - body.critic_evaluation 필드 활성화 (Phase 1: 평가만, revise 없음)
+
+Slice 4 추가:
+  - body.rag_references (RAGReference 배열) — rag_data_contract.md §5.5 정합
+  - validation.warnings에서 "phase_1_no_rag" 제거
+  - validation.checks에 "rag_retrieval" 항목 추가 (status=ok/warn)
 """
 
 from datetime import datetime, timezone
@@ -24,6 +29,10 @@ from typing import Any, Literal
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
+
+# Slice 4: RAGReference 는 rag/types.py가 단일 출처 (순환 import 회피용 lazy ref X —
+# rag/types.py는 schemas를 import하지 않으므로 안전).
+from ..rag.types import RAGReference
 
 
 # ─── Meta ─────────────────────────────────────────────────────────────
@@ -132,16 +141,24 @@ class CriticEvaluation(BaseModel):
 
 
 class Body(BaseModel):
-    """envelope body — Phase 1 Slice 3 구조.
+    """envelope body — Phase 1 Slice 4 구조.
 
     Slice 1: plans 길이 1 (vs contract 3). validation.warnings에 phase_1_single_plan.
     Slice 3: critic_evaluation 활성화 (revise 없음).
+    Slice 4: rag_references 활성화 (fallback 시 빈 배열).
     """
 
     plans: list[Plan] = Field(..., min_length=1, max_length=3)
     critic_evaluation: CriticEvaluation | None = Field(
         default=None,
         description="Phase 1 Slice 3: 평가만 (revise 없음). Phase 4+에서 list로 확장.",
+    )
+    rag_references: list[RAGReference] = Field(
+        default_factory=list,
+        description=(
+            "Phase 1 Slice 4: RAG 검색 결과 (fallback 시 빈 배열). "
+            "rag_data_contract.md §5.5 정합 — chunk_id / title / similarity 등 메타 포함."
+        ),
     )
 
 

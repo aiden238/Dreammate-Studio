@@ -19,7 +19,8 @@ class Settings(BaseSettings):
       - 앱 호스트 / 포트
       - 로그 레벨
 
-    Slice 4+ 추가 예정: Supabase, pgvector.
+    Slice 4 추가: pgvector (graceful fallback — env 미설정 시 자동 fallback).
+    Slice 5+ 추가 예정: Supabase 저장.
     """
 
     model_config = SettingsConfigDict(
@@ -48,6 +49,30 @@ class Settings(BaseSettings):
 
     # CORS
     cors_origins: str = "http://localhost:3000"
+
+    # ─── DB / pgvector (Slice 4) ─────────────────────────────────────
+    # Phase 1: 둘 다 미설정이면 RAG는 자동 fallback (env_missing).
+    # Phase 5에서 Supabase DATABASE_URL 도입. pgvector_database_url 은 별도 분리도 가능.
+    database_url: str = Field(
+        default="",
+        description="postgresql:// URL (Supabase Slice 5+에서 사용; Slice 4는 pgvector 통합용 fallback)",
+    )
+    pgvector_database_url: str = Field(
+        default="",
+        description="postgresql:// URL for pgvector (없으면 database_url 재사용)",
+    )
+    pgvector_table: str = Field(
+        default="rag_chunks",
+        description="pgvector chunks 테이블 이름 (rag_data_contract.md §3 정합)",
+    )
+    pgvector_top_k: int = Field(
+        default=3,
+        description="검색 상위 N (retrieval_policy.md §2 — Phase 1 default 3, contract default 5)",
+    )
+    pgvector_threshold: float = Field(
+        default=0.7,
+        description="cosine similarity 최소값 (retrieval_policy.md §2)",
+    )
 
     @property
     def cors_origins_list(self) -> list[str]:
