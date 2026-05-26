@@ -2,7 +2,7 @@
 
 > 위치: `docs/contracts/agent_io_contract.md`
 > 상태: Phase 0–1 진입용 핵심 contract 초안
-> 대상: MOA Lite 4 agent (Intent / Planner / Critic / Rewriter)
+> 대상: MOA Lite 4 agent (Intent / Planning / Critic / Rewriter)
 > 참조: `docs/contracts/output_schema.md` (출력 본문 스키마)
 > 참조: `ai_system/prompts/prompt_registry.md` (P-001~P-008, P-AUX-1, P-AUX-2)
 > 참조: `docs/contracts/db_schema.md` §7.1 `agent_io_logs`
@@ -20,7 +20,7 @@
 |---|---|---|
 | Intent | P-AUX-1, P-005, P-005q | 1~3 |
 | Card Generator (sub of Intent) | P-001, P-002, P-003, P-004 | 1~4 (Discovery) |
-| Planner | P-006 | 1 |
+| Planning | P-006 | 1 |
 | Critic | P-007 | 3 (각 plan 1번) |
 | Rewriter | P-008 | 0~3 |
 | Memory Extractor | P-AUX-2 | 1 (세션 종료 시) |
@@ -37,8 +37,8 @@
 3. 모든 호출은 agent_io_logs에 입력/출력 jsonb로 기록 (cost, latency 포함).
 4. 시간 초과는 silent fail 금지. timeout 발생 → 에러 응답 + 부분 결과 노출.
 5. Critic의 revise 권고는 server-side에서 round count로 관리. 최대 2회.
-6. RAG 검색은 Planner에만 주입. Intent/Critic/Rewriter는 RAG 직접 의존하지 않음.
-7. Brand Memory는 Planner, Rewriter, P-005에 항상 주입. Critic은 brand_consistency 검사에만 사용.
+6. RAG 검색은 Planning에만 주입. Intent/Critic/Rewriter는 RAG 직접 의존하지 않음.
+7. Brand Memory는 Planning, Rewriter, P-005에 항상 주입. Critic은 brand_consistency 검사에만 사용.
 8. 비용 상한 도달 시 즉시 차단. 부분 결과는 사용자에게 노출.
 ```
 
@@ -58,7 +58,7 @@
     "trace_id": "string (분산 추적용)",
     "issued_at": "ISO8601"
   },
-  "agent": "intent | planner | critic | rewriter | memory_extractor",
+  "agent": "intent | planning | critic | rewriter | memory_extractor",
   "prompt_id": "P-006",
   "prompt_version": "v1.0.0",
   "input": { /* agent별 본문, 아래 §3~§7에서 정의 */ },
@@ -161,7 +161,7 @@ P-AUX-1:      raw_input 정확 일치 (1h)
 
 ---
 
-## 4. Planner Agent
+## 4. Planning Agent
 
 ### 4.1 책임
 
@@ -237,13 +237,13 @@ prompt_registry P-ID: P-006
 캐싱 금지 (다양성 우선). 단 같은 request_id 재시도는 캐시 활용.
 ```
 
-### 4.7 RAG 검색 정책 (Planner 한정)
+### 4.7 RAG 검색 정책 (Planning 한정)
 
 ```
 - 검색 쿼리: approved_direction + selected_series.name + selected_domain.name
 - top_k: 5 → similarity ≥ 0.7 필터 → 최대 3개 채택
 - 빈 결과 시: rag_context = [], validation.warnings에 "no_rag_reference" 기록
-- 검색 실패 (DB error): Planner는 계속 진행 + warning 노출
+- 검색 실패 (DB error): Planning는 계속 진행 + warning 노출
 ```
 
 → 자세한 RAG 정책은 `docs/contracts/rag_data_contract.md` 참조.
@@ -265,7 +265,7 @@ prompt_registry P-ID: P-006
   "target_plan": { /* P-006 plan 1개 그대로 */ },
   "target_plan_id": "uuid",
   "approved_direction": "string",
-  "selected_context": { /* Planner와 동일 */ },
+  "selected_context": { /* Planning와 동일 */ },
   "brand_memory": {
     "avoid_phrases": ["string"],
     "preferred_tone": "string | null"
@@ -307,7 +307,7 @@ cost per session: 3 plan × ~$0.005 = ~$0.015 (gpt-4o)
 ### 5.6 의존성
 
 ```
-이전 단계 출력: Planner의 plan 1개
+이전 단계 출력: Planning의 plan 1개
 RAG: 사용 안 함
 Brand Memory: avoid_phrases, preferred_tone만 (brand_consistency 검사용)
 prompt_registry P-ID: P-007
@@ -316,7 +316,7 @@ prompt_registry P-ID: P-007
 ### 5.7 병렬 호출 정책
 
 ```
-Planner가 3개 plan을 반환하면 Critic을 3개 병렬로 호출 (Promise.all).
+Planning가 3개 plan을 반환하면 Critic을 3개 병렬로 호출 (Promise.all).
 1개라도 실패 시 나머지 2개는 그대로 진행, 실패한 1개는 재시도 1회.
 재시도 후에도 실패면 해당 plan에 critic 결과 없이 사용자 노출 + 경고 표시.
 ```
@@ -350,7 +350,7 @@ revise_round = 2에서 verdict가 다시 revise:
 {
   "target_plan": { /* P-006 plan, 또는 직전 Rewriter 출력의 improved_plan */ },
   "critic_result": { /* P-007 body 전체 */ },
-  "selected_context": { /* Planner와 동일 */ },
+  "selected_context": { /* Planning와 동일 */ },
   "brand_memory": {
     "preferred_phrases": ["string"],
     "avoid_phrases": ["string"],
@@ -468,8 +468,8 @@ cost per call:   ~$0.001
 4. 사용자 선택 → Intent(P-003)           # Series 카드 5장
 5. 사용자 선택 → Intent(P-004)           # Target+Tone 카드 5+5장
 6. 사용자 선택 → Intent(P-005)           # 한 줄 방향
-7. 사용자 승인 → Planner(P-006)          # 3개 plan
-8. Planner 완료 → Critic(P-007) × 3 병렬 # 평가
+7. 사용자 승인 → Planning(P-006)          # 3개 plan
+8. Planning 완료 → Critic(P-007) × 3 병렬 # 평가
 9. (선택) revise 판정 → Rewriter(P-008)  # 개선
 10. 사용자 plan 선택 → 다음 단계 (script, storyboard 등)
 11. 세션 종료 → Memory Extractor(P-AUX-2) (백그라운드)
@@ -481,8 +481,8 @@ cost per call:   ~$0.001
 1. quick_prompt → Intent(P-AUX-1)
 2. (allow)      → Intent(P-005q)         # 한 줄 방향 + missing_info
 3. (missing 있음) → 사용자에게 추가 질문 → P-005q 재실행
-4. 사용자 승인  → Planner(P-006)
-5. Planner 완료 → Critic(P-007) × 3 병렬
+4. 사용자 승인  → Planning(P-006)
+5. Planning 완료 → Critic(P-007) × 3 병렬
 6. (선택) revise → Rewriter(P-008)
 7. 사용자 plan 선택 → 다음
 8. 세션 종료 → Memory Extractor(P-AUX-2)
@@ -497,7 +497,7 @@ cost per call:   ~$0.001
             │ approved_direction
             ▼
        ┌──────────┐  rag_context
-       │ Planner  │ ◄────────────── RAG 검색
+       │ Planning  │ ◄────────────── RAG 검색
        └────┬─────┘
             │ plans[3]
             ▼
@@ -526,7 +526,7 @@ cost per call:   ~$0.001
 Intent (card):       $0.001
 Intent (P-005):      $0.0005
 Intent (P-AUX-1):    $0.0002
-Planner:             $0.003
+Planning:             $0.003
 Critic (gpt-4o):     $0.006
 Critic (mini 폴백):  $0.0015
 Rewriter:            $0.0015
@@ -574,7 +574,7 @@ Quick Mode (cost_saving):       $0.010
 
 ```
 - Intent 실패: 사용자에게 "다시 입력해주세요" + 입력 보존
-- Planner 실패: 사용자에게 에러 노출 + "재시도" 버튼.
+- Planning 실패: 사용자에게 에러 노출 + "재시도" 버튼.
                 3개 중 2개라도 성공했으면 그대로 노출 + warning.
 - Critic 실패: 평가 없이 plan만 노출 + "AI 검토 실패" warning.
                사용자가 직접 선택할 수 있도록.
@@ -591,7 +591,7 @@ Critic 3개 중 1개 실패:
   → 성공한 2개 plan은 verdict 노출
   → 실패한 1개는 "검토 불가" 표시 + 사용자가 직접 검토 옵션
 
-Planner 3개 중 일부만 성공:
+Planning 3개 중 일부만 성공:
   → 성공한 N개 노출 + "추가로 생성하기" 버튼
 ```
 
@@ -642,7 +642,7 @@ brand_memory.preferred_phrases는 그대로 저장 (사용자 자기 데이터).
 | Agent | RAG 사용 | 이유 |
 |---|---|---|
 | Intent | no | 카드 생성은 사용자 input + memory로 충분 |
-| Planner | yes | 검증된 영상기획 패턴 참고 |
+| Planning | yes | 검증된 영상기획 패턴 참고 |
 | Critic | no | 평가는 prompt에 내장된 기준으로 |
 | Rewriter | no | Critic 결과만으로 개선 |
 | Memory Extractor | no | 세션 로그만 분석 |
@@ -659,7 +659,7 @@ brand_memory.preferred_phrases는 그대로 저장 (사용자 자기 데이터).
 | Intent (P-001) | no | (첫 카드는 사용자 memory 없음 가정) |
 | Intent (P-002~P-004) | yes | preferred_tone, avoid_phrases |
 | Intent (P-005) | yes | preferred_phrases, avoid_phrases |
-| Planner (P-006) | yes (full) | 전체 5개 필드 |
+| Planning (P-006) | yes (full) | 전체 5개 필드 |
 | Critic (P-007) | yes (partial) | avoid_phrases, preferred_tone |
 | Rewriter (P-008) | yes (full) | 전체 5개 필드 |
 | Memory Extractor (P-AUX-2) | yes (current state) | 모든 필드 (충돌 검사용) |
@@ -675,7 +675,7 @@ agent           timeout    UX 표시
 Intent (card)    30s        "AI가 후보를 만들고 있어요" + 카드 placeholder 4장
 Intent (P-005)   30s        "한 줄 방향을 정리하고 있어요"
 Intent (P-AUX-1) 10s        스피너 없이 즉시 (사용자 모름)
-Planner          60s        4단계 stepper의 "Plan 생성 중" 표시 + 부분 결과 스트리밍
+Planning          60s        4단계 stepper의 "Plan 생성 중" 표시 + 부분 결과 스트리밍
 Critic           45s        "AI가 품질을 검토하고 있어요"
 Rewriter         45s        "AI가 개선안을 만들고 있어요"
 Memory Extractor 60s        백그라운드 (사용자에게 보이지 않음)
@@ -714,7 +714,7 @@ Memory Extractor 60s        백그라운드 (사용자에게 보이지 않음)
 
 ```
 - Multi-agent voting: Critic 3개 모델 병렬 → 평균 verdict 채택
-- Streaming output: Planner의 plan 1개씩 SSE로 전송
+- Streaming output: Planning의 plan 1개씩 SSE로 전송
 - Tool use: Critic이 RAG 직접 호출 (검증 보강)
 - Function calling: agent 간 직접 호출 (오케스트레이터 우회) — 보안 검토 필요
 - Voice/multi-modal input: Intent에 audio_transcript 추가
@@ -730,7 +730,7 @@ Memory Extractor 60s        백그라운드 (사용자에게 보이지 않음)
 | Intent (cards) | user_input + selected_* | discovery_choices, agent_io_logs | P-001 ~ P-004 |
 | Intent (P-005) | discovery_choices 누적 | video_projects.one_line_direction | P-005 |
 | Intent (P-AUX-1) | user_input | intent_filter_logs | P-AUX-1 |
-| Planner | approved_direction + RAG + memory | plan_options × 3 | P-006 |
+| Planning | approved_direction + RAG + memory | plan_options × 3 | P-006 |
 | Critic | plan + memory | quality_scores | P-007 |
 | Rewriter | plan + critic_result | revision_requests.rewriter_result | P-008 |
 | Memory Extractor | session log + brand_memory | brand_memory_entries (조건부) | P-AUX-2 |
@@ -742,7 +742,7 @@ Memory Extractor 60s        백그라운드 (사용자에게 보이지 않음)
 1. Critic을 gpt-4o로 고정할지, 사용자 무료 사용량 단위로 mini 폴백할지의 임계치 (현재 일 $0.10).
 2. Rewriter 자동 실행 vs 사용자 명시 트리거 — 사용자 학습 데이터 누적 후 결정.
 3. Memory Extractor의 자동 INSERT 임계 confidence (현재 0.9 자동, 0.7~0.9 pending queue).
-4. Planner의 RAG top-k (현재 5 → 3 채택) — RAG 누적량에 따라 조정.
+4. Planning의 RAG top-k (현재 5 → 3 채택) — RAG 누적량에 따라 조정.
 5. 3개 plan 중 1개라도 Critic 실패 시 자동 재생성 vs 부분 노출 — UX 협의 필요.
 6. revise_round 강제 승격 시 사용자 안내 톤 (현재 친근체) — copy 검토.
 7. Memory Extractor를 세션 종료 즉시 vs 24h 누적 후 일괄 처리 — 비용 vs UX 트레이드오프.

@@ -352,9 +352,9 @@ Direction Summary. 한 줄 기획 방향.
 
 ---
 
-## 8. P-006 · plan_candidates (Planner Agent)
+## 8. P-006 · plan_candidates (Planning Agent)
 
-3개 기획안 카드. MOA Planner.
+3개 기획안 카드. MOA Planning.
 
 ### 8.1 Body 스키마
 

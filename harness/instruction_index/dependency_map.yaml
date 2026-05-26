@@ -12,24 +12,58 @@ dependencies:
     - docs/contracts/output_schema.md
     - docs/contracts/frontend_design_contract.md
 
-  # AI system
+  # AI system - agents
+  ai_system/agents/intent_agent.md:
+    - docs/contracts/agent_io_contract.md
+    - ai_system/prompts/prompt_registry.md
+  ai_system/agents/planning_agent.md:
+    - docs/contracts/agent_io_contract.md
+    - docs/contracts/output_schema.md
+    - docs/contracts/rag_data_contract.md
+    - ai_system/prompts/prompt_registry.md
+  ai_system/agents/critic_agent.md:
+    - docs/contracts/agent_io_contract.md
+    - ai_system/prompts/prompt_registry.md
+    - eval/video_planning_eval.md
+  ai_system/agents/rewrite_agent.md:
+    - docs/contracts/agent_io_contract.md
+    - ai_system/prompts/prompt_registry.md
+
+  # AI system - orchestration
   ai_system/orchestration/flow.md:
     - docs/contracts/agent_io_contract.md
     - docs/contracts/output_schema.md
-    - ai_system/prompts/prompt_registry.md
+    - docs/contracts/api_contract.md
+    - ai_system/orchestration/moa_policy.md
+    - ai_system/orchestration/fallback_policy.md
   ai_system/orchestration/moa_policy.md:
     - ai_system/orchestration/cost_control_policy.md
     - ai_system/orchestration/fallback_policy.md
+  ai_system/orchestration/cost_control_policy.md:
+    - docs/contracts/rate_limit_policy.md
+    - docs/contracts/agent_io_contract.md
+  ai_system/orchestration/fallback_policy.md:
+    - docs/contracts/error_response_contract.md
+
+  # AI system - memory
+  ai_system/memory/candidate_knowledge_policy.md:
+    - docs/contracts/rag_data_contract.md
+    - knowledge/rag/promotion_rule.md
+  ai_system/memory/knowledge_promotion_policy.md:
+    - knowledge/rag/promotion_rule.md
+    - docs/contracts/rag_data_contract.md
+
+  # AI system - architecture
+  ai_system/architecture.md:
+    - ai_system/orchestration/flow.md
+    - docs/contracts/agent_io_contract.md
+    - docs/contracts/tech_stack_contract.md
+
+  # AI system - prompts
   ai_system/prompts/prompt_registry.md:
     - docs/contracts/agent_io_contract.md
     - docs/contracts/output_schema.md
     - eval/golden_set.md
-  ai_system/agents/intent_agent.md:
-    - ai_system/prompts/prompt_registry.md
-    - docs/contracts/agent_io_contract.md
-  ai_system/agents/critic_agent.md:
-    - ai_system/prompts/prompt_registry.md
-    - eval/video_planning_eval.md
 
   # Contracts cross-deps
   docs/contracts/api_contract.md:
@@ -192,3 +226,4 @@ references:
       - P-008  # rewriter
       - P-AUX-1  # intent_filter
       - P-AUX-2  # brand_memory_extractor
+      - P-EVAL-1 # candidate_knowledge_evaluator

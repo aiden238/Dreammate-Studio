@@ -534,6 +534,83 @@ Brand Memory에 추가할 후보를 추출해줘. JSON으로만.
 
 ---
 
+### P-EVAL-1 · candidate_knowledge_evaluator
+
+**Stage**: candidate_knowledge `filtered → evaluated` 단계 자동 평가 (rag_data_contract §4.2)
+**Version**: v1.0.0
+**Model**: gpt-4o-mini
+**Timeout**: 5초
+**Cost per call**: < $0.0005
+**Input variables**: `candidate_chunk` (text + metadata), `existing_approved_summary` (중복 검사용 요약)
+**Output schema**:
+
+```json
+{
+  "candidate_chunk_id": "uuid",
+  "evaluation_score": 0.87,
+  "pass": true,
+  "dimensions": {
+    "accuracy":     { "score": 0.9, "reason": "string" },
+    "relevance":    { "score": 0.85, "reason": "string" },
+    "uniqueness":   { "score": 0.95, "reason": "string" },
+    "safety":       { "score": 1.0, "reason": "string" },
+    "completeness": { "score": 0.7, "reason": "string" }
+  },
+  "reasons": ["passes safety", "minor completeness issue (마지막 문장 미완)"],
+  "rejection_reason": null
+}
+```
+
+#### System (추가)
+
+```
+candidate_knowledge 항목을 5 차원으로 평가하여 approved_knowledge 승격 가능 여부를 판정한다.
+
+평가 차원:
+1. accuracy (0~1)     — 사실 정확도. 명백히 틀린 정보가 있으면 < 0.5.
+2. relevance (0~1)    — 영상기획 도메인 관련성. 무관한 일반 지식은 < 0.5.
+3. uniqueness (0~1)   — 기존 approved_knowledge와 중복 아님. 90% 이상 유사하면 < 0.3.
+4. safety (0~1)       — 광고 단어, PII, 안전성 위반 없음. 위반 시 < 0.3.
+5. completeness (0~1) — 의미 단위 완결성. 문장이 잘렸거나 의미가 불완전하면 < 0.5.
+
+규칙:
+- 모든 차원 ≥ 0.6 AND overall ≥ 0.85 → pass=true
+- 그 외 → pass=false, rejection_reason 채움
+- 안전성(safety) < 0.5는 즉시 rejection_reason='safety'
+- 한국어/영어 혼합 가능. 의미만 일관되면 OK.
+- 최대 출력 토큰 600. 이유는 한 줄.
+```
+
+#### User
+
+```
+평가할 candidate chunk:
+{candidate_chunk}
+
+기존 approved_knowledge 요약 (중복 검사용):
+{existing_approved_summary}
+
+5 차원으로 평가해줘. JSON으로만.
+```
+
+#### Semver / 활성 정책
+
+```
+v1.0.0 (2026-05-26): 최초 도입. rag-update Skill의 filtered → evaluated 자동 호출.
+A/B 운영: Phase 7+ candidate 누적 후 weight 조정 검토.
+회귀 평가: eval/golden_set.md에 candidate_knowledge 케이스 별도 추가 시점에 evaluation 회귀.
+```
+
+#### Cross-reference
+
+- `docs/contracts/rag_data_contract.md` §4 (5단계 파이프라인)
+- `ai_system/memory/candidate_knowledge_policy.md` §4
+- `ai_system/memory/knowledge_promotion_policy.md` §6 (5 차원 정의 재확인)
+- `knowledge/rag/promotion_rule.md` (자동 승격 임계와 연동)
+- `knowledge/rag/quality_filter.md` (선행 필터)
+
+---
+
 ## 11. 프롬프트 호출 흐름
 
 ### Discovery Mode

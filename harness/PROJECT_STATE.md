@@ -12,11 +12,11 @@ GPT가 만든 155-파일 하네스 골격과 자체 작성된 깊은 콘텐츠 1
 ## migration_progress
 
 ```yaml
-current_sprint: S3
+current_sprint: S4
 current_sprint_step: 4
 total_steps_in_sprint: 4
-last_completed_action: "Sprint S3: 9 core contracts deepened (output_schema 668L, agent_io 558L, error_response 457L, api 1281L, rag_data 777L, frontend_design 941L, llm_security 550L, rate_limit 486L, tech_stack 365L) + 11 placeholder markers + dependency_map.yaml updated, sanity 97/97 PASS"
-next_action: "Sprint S4: enrich eval/ (golden_set 10+ cases), knowledge/rag/ (8 files 50+ lines), ai_system/ (agents/orchestration/memory)"
+last_completed_action: "Sprint S4: eval/ 15 files (golden_set 665L 11 cases), knowledge/ 18 files (rag 8/llm_wiki 6/datasets 4, 219-380L each), ai_system/ agents 4 deep + 2 placeholder, orchestration 5, memory 5, architecture 232L, prompt_registry P-EVAL-1 added (705L total), Planner→Planning rename across 8 files"
+next_action: "Sprint S5: polish product/, meta/, tests/, packages/ + harness-audit final (0 critical/high required) → Phase 0 acceptance"
 blocker: null
 last_updated: 2026-05-26
 ```
