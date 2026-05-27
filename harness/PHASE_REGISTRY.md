@@ -14,7 +14,7 @@
 |---|---|---|---|
 | 0 | 하네스 초기화 (Migration) | **done** (2026-05-26) | GPT 골격 + 우리 콘텐츠 병합, Sprint S0~S5 완료 |
 | 1 | MVP 기본 플로우 | **done** (2026-05-26) | 7 Slices + pytest 62/62 + automated smoke 5/5 + CC-001 + 회고 archive 완료 |
-| **2** | **design.md 기반 PWA 설계 (Discovery + Quick 분기)** | **active (next)** | **4계층 데이터 모델 + Hybrid UX 화면 구조 확정** |
+| **2** | **design.md 기반 PWA 설계 (Discovery + Quick 분기)** | **🔵 active (2026-05-27)** | **조정안: 4-layer 4개 + Variants 3개 + Discovery Step 1 상세 + Direction Approval 격상 + design_handoff** |
 | 3 | Next.js PWA 기본 UI 구현 (Discovery + Quick 분기) | pending | Discovery wizard + Quick mode 양쪽 핵심 화면 구현 |
 | 4 | FastAPI 기본 백엔드 구현 | planned | API 및 AI pipeline 뼈대 |
 | 5 | DB / Auth 기본 구조 구현 | planned | Supabase / PostgreSQL 연결 |

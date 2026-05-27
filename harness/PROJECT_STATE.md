@@ -8,16 +8,16 @@ GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sp
 
 ## 현재 Active Phase
 
-**Phase 1. MVP 기본 플로우 ✅ done (2026-05-26)**
-- 7 Slices 구현 + automated smoke 5/5 + meta-retrospective + CC-001 적용 + archive 이동 완료
-- archive: `phases/archive/phase-1-mvp-basic-flow/`
-- 회고: `meta/retrospectives/phase-1.md`
-- 개선 제안: `meta/proposals/2026-05-26_phase-1-retrospective-proposals.md` (P1~P4 사용자 검토 대기)
-- Manual smoke test 일부는 사용자 .env 입력 후 release 전 진행 권장
+**Phase 1. MVP 기본 플로우 ✅ done (2026-05-26)** — archive 이동 완료
 
-**Phase 2. design.md 기반 PWA 설계** — 🔵 active (next, 진입 대기)
-- 진입 전 권장: Phase 1 개선 제안 P1/P2 검토 결정
-- Discovery wizard 7단계 + Quick Mode 분기 설계
+**Phase 2. design.md 기반 PWA 설계** — 🔵 **active (2026-05-27 진입)**
+- 진입 점검: phase-start v1.2.0 §6 4점검 통과 (audit_naming 0 drift)
+- Plan: 조정안 채택 (GPT 검토 80점) — 4-layer 4개 / Variants 3개 / Step 1 상세 + 2~7 간략
+- 작업 분해: 6 Slices, 5 Waves, 11~17h 추정
+- 첫 작업: Wave 1 Slice 1 — Design System Foundation
+- 강화 Skill: phase-start v1.2.0 / qa-check v1.2.0 / phase-complete v1.1.0 / harness-audit v1.1.0
+- Phase 1 archive: `phases/archive/phase-1-mvp-basic-flow/` (참조 가능, 기본 미참조)
+- Phase 0 archive: `phases/archive/phase-0-migration/` (참조 금지)
 
 ## migration_progress
 
@@ -25,24 +25,32 @@ GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sp
 current_sprint: completed
 current_sprint_step: 6
 total_steps_in_sprint: 6
-last_completed_action: "Phase 1 phase-complete 8단계 모두 통과: acceptance 8/8 + docs-sync + 회고 + 4 proposals + archive 이동. Phase 2 진입 대기."
-next_action: "Phase 2 (PWA 설계: Discovery wizard + Quick Mode 분기) 진입 — phase-start Skill로 시작. 진입 전 권장: meta/proposals/2026-05-26_phase-1-retrospective-proposals.md 의 P1~P4 검토"
+last_completed_action: "Phase 2 진입 점검 완료: phase-start v1.2.0 §6 4점검 (audit_naming 0 drift) + 9 entry files + work_plan (6 Slices) + multi_slice_plan (5 Waves) + 조정안 채택 (GPT 검토 80점)"
+next_action: "Wave 1 Slice 1 sub-agent dispatch — Design System Foundation (tokens + 4-layer template + variant format + replaceability + ADR-010 + ADR-011)"
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
 phase_1_status: completed
-phase_1_entry_date: 2026-05-26
 phase_1_completion_date: 2026-05-26
 phase_1_archive_location: phases/archive/phase-1-mvp-basic-flow/
-phase_1_completed_slices: [1, 2, 3, 4, 5, 6, 7]
-phase_1_pytest_count: 62
-phase_1_automated_smoke: 5/5
-phase_1_retrospective: meta/retrospectives/phase-1.md
-phase_1_pending_proposals: 4  # P1~P4 사용자 검토 대기
-phase_2_status: pending_entry
-phase_2_estimated_scope: "Discovery wizard 7-step + Quick mode 분기 + page_map + component_map 확정"
-total_commits: 19  # ~93753bf + task-4
-last_updated: 2026-05-26
+phase_1_retrospective_proposals: accepted_all + applied (P1~P4)
+phase_2_status: active
+phase_2_entry_date: 2026-05-27
+phase_2_current_wave: 1
+phase_2_current_slice: 1
+phase_2_total_slices: 6
+phase_2_total_waves: 5
+phase_2_completed_slices: []
+phase_2_estimated_hours_total: 11-17
+phase_2_estimated_hours_elapsed: 0
+phase_2_design_policy:
+  layers_strict: 4  # BrandDirectionCard / CardGrid5 / DirectionApprovalCard / QuickInputCard
+  variants_strict: 3  # BrandDirectionCard / CardGrid5 / DirectionApprovalCard
+  replaceability_score: L/M/H 단순화
+  deferred_to_phase_3: [Step_2_to_7_wireframe_detail, QuickInputCard_variants, PlanCard_4layer_reconcile, audit_page_component_script]
+  deferred_to_phase_4: [PlanComparisonCard_detailed]
+total_commits: 24  # ~dbc0f44 + Phase 2 entry
+last_updated: 2026-05-27
 ```
 
 ## 확정 방향
