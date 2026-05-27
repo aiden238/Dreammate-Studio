@@ -14,8 +14,8 @@
 |---|---|---|---|
 | 0 | 하네스 초기화 (Migration) | **done** (2026-05-26) | GPT 골격 + 우리 콘텐츠 병합, Sprint S0~S5 완료 |
 | 1 | MVP 기본 플로우 | **done** (2026-05-26) | 7 Slices + pytest 62/62 + automated smoke 5/5 + CC-001 + 회고 archive 완료 |
-| **2** | **design.md 기반 PWA 설계 (Discovery + Quick 분기)** | **🔵 active (2026-05-27)** | **조정안: 4-layer 4개 + Variants 3개 + Discovery Step 1 상세 + Direction Approval 격상 + design_handoff** |
-| 3 | Next.js PWA 기본 UI 구현 (Discovery + Quick 분기) | pending | Discovery wizard + Quick mode 양쪽 핵심 화면 구현 |
+| 2 | design.md 기반 PWA 설계 (Discovery + Quick 분기) | **done** (2026-05-27) | 6 Slices + design_handoff 5/5 PASS + design-review 7원칙 + audit_naming 0 + P-AGENT-SCOPE-001 발견 |
+| **3** | **Next.js PWA 기본 UI 구현 (Discovery + Quick 분기)** | **🔵 active (next, 진입 대기)** | Discovery wizard + Quick mode 양쪽 핵심 화면 구현 (Phase 2 spec 기반) |
 | 4 | FastAPI 기본 백엔드 구현 | planned | API 및 AI pipeline 뼈대 |
 | 5 | DB / Auth 기본 구조 구현 | planned | Supabase / PostgreSQL 연결 |
 | 6 | Output Schema + Agent IO 구현 | planned | AI 입출력 안정화 |
@@ -53,15 +53,39 @@ Sub-agent  : 6 dispatches (Wave 1×2 + Wave 2 + Wave 3 + Wave 4×2), 충돌 0
 다음 Phase : 2. design.md 기반 PWA 설계 (active, 진입 대기)
 ```
 
-## Phase 2 active (next)
+## Phase 2 done (archive)
+
+`phases/archive/phase-2-pwa-design/`
 
 ```
-Goal       : Discovery wizard 7단계 + Quick Mode 분기 + 4계층 데이터 모델 화면 매핑
-Scope      : design.md 정합, page_map.md / component_map.md 작성, Mode 자동 분기 규칙
+Status     : ✅ DONE (2026-05-27)
+Goal       : design.md 기반 PWA 설계 (Discovery wizard + Quick Mode 분기, 4계층 데이터 모델 화면 매핑)
+Result     : 6 Slices + 5 Waves + acceptance 10/10 PASS + audit_naming 0 drift (모든 Slice) + 변경성 시뮬레이션 5/5 PASS + design-review 7 원칙 정합 + qa-check v1.2.0 11 카테고리 (5 PASS / 6 skip - spec phase)
+산출물     : 17 신규/수정 (design_system 4 + ADR 2 + flow specs 4 + wireframes 4 + design_handoff 1 + page_map 1 + component_map 1) — apps/web/* 약 3962 insertions / 0 코드
+Sub-agent  : 6 dispatches (Wave 1 + Wave 2 + Wave 3×2 + Wave 4 + Wave 5), 충돌 0
+회고       : meta/retrospectives/phase-2.md
+신규 패턴  : P-AGENT-SCOPE-001 (sub-agent forbidden 침범, 무충돌) + P-DESIGN-LAYERED-001 (변경성 보장 효과)
+개선 제안  : meta/proposals/2026-05-27_phase-2-retrospective-proposals.md (P-X1~P-X5, proposed 상태)
+다음 Phase : 3. Next.js PWA 기본 UI 구현 (active, 진입 대기)
+```
+
+## Phase 3 active (next)
+
+```
+Goal       : Next.js PWA UI 실 구현 (Phase 2 spec 기반)
+Scope      :
+  - Tailwind config / CSS custom properties tokens.md 자동 매핑
+  - 4-layer 4 컴포넌트 current variant 구현 (BrandDirectionCard / CardGrid5 / DirectionApprovalCard / QuickInputCard)
+  - /new route middleware (mode_branching.md yaml 적용)
+  - Discovery Step 1 화면 + 5-card pattern
+  - Quick Mode 화면 + DirectionApprovalCard variant 분기
+  - Direction Approval 양 모드 공통 컴포넌트 구현
 Acceptance : phase-start Skill로 진입 시 작성
-의존성     : Phase 1 (done) — POST /api/v1/generate + Envelope + frontend baseline 활용
-진입 전 권장: meta/proposals/2026-05-26_phase-1-retrospective-proposals.md P1/P2 검토
-다음 Phase : 3. Next.js PWA UI 구현
+의존성     : Phase 1 (done — backend baseline) + Phase 2 (done — design spec baseline)
+진입 전 필수: meta/proposals/2026-05-27_phase-2-retrospective-proposals.md P-X1 검토 (sub-agent enforcement 강화 — 코드 phase 위험 ↑)
+진입 전 권장: P-X2 (변경성 시뮬 게이트) + P-X3 (design-review spec-only) 검토
+deferred 처리: D1 Step 2~7 wireframe / D2 QuickInputCard alt variants / D3 PlanCard 4-layer / D5 audit_page_component.ps1
+다음 Phase : 4. FastAPI 기본 백엔드 구현 (MOA Lite 완성)
 ```
 
 ## Phase 2~3 Hybrid UX 분기 (planned, 중간 상세화)

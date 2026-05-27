@@ -11,10 +11,10 @@
 
 | 항목 | 내용 |
 |---|---|
-| **Phase** | Phase 2 — design.md 기반 PWA 설계 (active, 진입 대기) |
-| **이전 Phase** | Phase 1 — MVP 기본 플로우 ✅ done (2026-05-26, pytest 62/62) |
-| **하네스 규모** | 250+ 파일, ~55,000줄 (Phase 1 backend/frontend 추가) |
-| **Skill 구조** | `.claude/skills/` 단일 (20개, applies_to 태그, v1.1.0) |
+| **Phase** | Phase 3 — Next.js PWA UI 구현 (active, 진입 대기) |
+| **이전 Phase** | Phase 2 — design.md 기반 PWA 설계 ✅ done (2026-05-27, 6 Slices + 변경성 시뮬 5/5 PASS) |
+| **하네스 규모** | 270+ 파일, ~62,000줄 (Phase 2 design spec 17 신규/수정 추가) |
+| **Skill 구조** | `.claude/skills/` 단일 (20개, applies_to 태그, v1.2.0 — Phase 1 P1~P4 적용) |
 | **Repository** | https://github.com/aiden238/Dreammate-Studio (Private) |
 
 ---
@@ -74,14 +74,16 @@ Dreammate_Studio/
 |---|---|---|---|
 | 0 | 하네스 초기화 (Migration) | ✅ done | 2026-05-26 |
 | 1 | MVP 기본 플로우 | ✅ done | 2026-05-26 |
-| **2** | **design.md 기반 PWA 설계** | **🔵 active (next)** | — |
-| 3 | Next.js PWA 기본 UI 구현 | pending | — |
+| 2 | design.md 기반 PWA 설계 | ✅ done | 2026-05-27 |
+| **3** | **Next.js PWA 기본 UI 구현** | **🔵 active (next)** | — |
 | 4 | FastAPI 기본 백엔드 구현 | planned | — |
 | 5 | DB / Auth 기본 구조 | planned | — |
 | 6~10 | AI System + 통합 테스트 | planned | — |
 | 11~30 | 안정화 / 확장 / 고도화 | future | — |
 
 Sprint S0~S5 (Phase 0) 모두 완료 — 6개 commit, 11/11 acceptance 통과.
+Phase 1 — 13 commit, 8/8 implementation acceptance + pytest 62/62 + smoke 5/5 PASS.
+Phase 2 — 6 commit, 10/10 acceptance + 변경성 시뮬레이션 5/5 PASS + audit_naming 0 drift.
 
 ---
 
@@ -121,7 +123,10 @@ Sprint S0~S5 (Phase 0) 모두 완료 — 6개 commit, 11/11 acceptance 통과.
 ```
 1. harness/00_START_HERE.md  ← 첫 진입 시 여기부터
 2. harness/PROJECT_STATE.md  ← 현재 작업 위치 확인
-3. harness/phases/active/phase-1-mvp-basic-flow/  ← Phase 1 컨텍스트
+3. harness/phases/active/phase-3-pwa-impl/  ← Phase 3 진입 시 생성 (현재 pending_entry)
+4. harness/phases/archive/phase-2-pwa-design/  ← Phase 2 design spec baseline (참조)
+5. harness/apps/web/design_handoff.md  ← Phase 2 핵심 산출물 (변경 가이드)
+6. harness/meta/proposals/2026-05-27_phase-2-retrospective-proposals.md  ← Phase 3 진입 전 P-X1 검토 필수
 ```
 
 ---

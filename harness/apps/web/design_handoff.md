@@ -289,14 +289,60 @@ Phase 3+ 코드 영향 평가 + 갱신
 
 | # | 시나리오 | 예상 영향 파일 수 | 실측 (Slice 6) | 결과 |
 |---|---|---|---|---|
-| 1 | `tokens.md` `color.primary` 값 변경 | ≤ 1 | (Slice 6 walkthrough 결과 기록) | TBD |
-| 2 | BrandDirectionCard variants chosen swap (current → alt_horizontal_swipe) | ≤ 2 | (Slice 6) | TBD |
-| 3 | Discovery 7→5 단계 축소 (Step 4 Target + Step 5 Tone 통합) | ≤ 4 | (Slice 6) | TBD |
-| 4 | Direction Approval Quick mode에서 minimal → verbose swap | ≤ 1 | (Slice 6) | TBD |
-| 5 | Quick mode 폐기 (Discovery only로 전환) | ≤ 5 | (Slice 6) | TBD |
+| 1 | `tokens.md` `color.primary` 값 변경 | ≤ 1 | **1** (tokens.md만) | ✅ PASS |
+| 2 | BrandDirectionCard variants chosen swap (current → alt_horizontal_swipe) | ≤ 2 | **2** (component_map.md + wireframes/step1_brand.md) | ✅ PASS |
+| 3 | Discovery 7→5 단계 축소 (Step 4 Target + Step 5 Tone 통합) | ≤ 4 | **4** (discovery_flow.md + mode_branching.md + page_map.md + component_map.md) | ✅ PASS |
+| 4 | Direction Approval Quick mode에서 minimal → verbose swap | ≤ 1 | **1** (component_map.md `DirectionApprovalCard.Variants chosen` 1줄 토글) | ✅ PASS |
+| 5 | Quick mode 폐기 (Discovery only로 전환) | ≤ 5 | **5** (quick_flow.md + mode_branching.md + page_map.md + component_map.md + wireframes/quick_short.md) | ✅ PASS |
 
-→ 실측 vs 예상 일치 (모든 5개가 예상 영향 파일 수 이하) → **PASS**. Slice 6 acceptance A9 통과.
-→ 불일치 시 → 매핑표 또는 파일 구조 조정 + 본 가이드 §1 / §2 갱신.
+→ 실측 vs 예상 일치: **5/5 PASS** (모든 시나리오가 예상 영향 파일 수 이하). Slice 6 acceptance A9 통과.
+→ 변경성 보장 입증 — Phase 2 design system 도입 효과 실증 (4-layer + Variants Bank + tokens 분리 정책).
+
+### 6.1.1 실측 근거 (Slice 6, 2026-05-27)
+
+각 시나리오는 §1의 매핑표를 기준으로 "실제 수정해야 할 파일" (참조만 하는 파일 제외)을 카운트.
+
+**시나리오 1 — tokens.md color.primary 값 변경**:
+- 수정 파일: `apps/web/design_system/tokens.md` 1개 (값 1줄만)
+- 참조 파일 (수정 불필요): `component_map.md`, `wireframes/*`, `design_handoff.md`, `discovery_flow.md`, `direction_approval.md`, `design_system/component_contract.md`, `replaceability_score.md` 등은 모두 `tokens.color.primary` 토큰 참조만 사용 (literal 값 0 정책 — Slice 1 강제) → 자동 반영, 수정 불필요.
+- **결과: 1 ≤ 1, PASS**
+
+**시나리오 2 — BrandDirectionCard variants chosen swap (current → alt_horizontal_swipe)**:
+- 수정 파일:
+  1. `component_map.md` §BrandDirectionCard.Variants — `chosen: true` 토글 (current → false, alt_horizontal_swipe → true) 2줄
+  2. `wireframes/step1_brand.md` — 새 chosen variant에 맞춰 ASCII art 갱신 (carousel peek 형태)
+- 비수정 (검토만): `design_handoff.md` §1 시나리오 2 (가이드 자체), `design_system/variant_format.md` (이미 alt 등재)
+- **결과: 2 ≤ 2, PASS**
+
+**시나리오 3 — Discovery 7→5 단계 축소 (Step 4 Target + Step 5 Tone 통합)**:
+- 수정 파일:
+  1. `discovery_flow.md` §0.3 단계 매핑 표 + §4/§5 통합 + 단계 수 갱신
+  2. `mode_branching.md` `discovery_from_stepN` mode 표 갱신 (5/6/7 → 4/5)
+  3. `page_map.md` `/new/discovery/step/{n}` route 7개 → 5개
+  4. `component_map.md` Routes ↔ Components 매핑 표 갱신 + ToneChipsForm placeholder (Step 5 → Step 4 통합 표기)
+- 선택: `wireframes/*` (Step 1만 상세 wireframe 존재, Step 2~7은 placeholder이므로 추가 변경 0)
+- **결과: 4 ≤ 4, PASS**
+
+**시나리오 4 — Direction Approval Quick mode minimal → verbose swap**:
+- 수정 파일: `component_map.md` §DirectionApprovalCard.Variants — verbose chosen false, minimal chosen true (또는 컨텍스트별 분기 표기 1줄)
+- 비수정 (선택): `wireframes/direction_approval.md` 상단 강조 우선순위 변경은 선택사항
+- **결과: 1 ≤ 1, PASS**
+
+**시나리오 5 — Quick mode 폐기**:
+- 수정 파일:
+  1. `quick_flow.md` deprecated 헤더 또는 archive
+  2. `mode_branching.md` `rule_has_series` 제거 또는 discovery redirect + `user_quick_force` override 제거
+  3. `page_map.md` `/new/quick*` route 4개 제거
+  4. `component_map.md` QuickInputCard deprecated 표기 + Routes 매핑 표에서 Quick routes 제거
+  5. `wireframes/quick_short.md` archive 이동 또는 deprecated 헤더
+- **결과: 5 ≤ 5, PASS**
+
+### 6.1.2 5/5 통과 의의
+
+- **Replaceability 분포 (§2 매트릭스 18 항목)** 와 실제 시나리오 매핑이 일관 — design system 정책이 작동.
+- **literal 값 0 정책** (Slice 1)이 시나리오 1을 1파일로 압축 — 다른 design system이 보통 4~10 파일 수정 필요한 색 변경이 1파일.
+- **Variants Bank chosen toggle** 패턴이 시나리오 2/4를 1~2 파일로 압축 — 향후 Phase 4+ A/B 테스트 인프라 자연 흡수.
+- **본 표는 Phase 4+ 실 변경 빈도와 비교 가능한 baseline** — Phase 11+ retrospective에서 "예상 분포 vs 실제 변경 분포" 차이 분석에 사용.
 
 ### 6.2 walkthrough 진행 방법 (Slice 6)
 
@@ -360,3 +406,4 @@ Slice 6 / Phase 종료 시 본 가이드 정합성 확인:
 ## 9. 변경 이력
 
 - 2026-05-27: Phase 2 Slice 5 최초 작성 — 5 시나리오 매핑표 + Replaceability 통합 매트릭스 (18 항목) + Phase 3 진입 절차 + Phase 4+ 영향 범위 예측 + Slice 6 변경성 시뮬레이션 검증 기준
+- 2026-05-27: Phase 2 Slice 6 — §6.1 실측 컬럼 갱신 (5 시나리오 walkthrough 5/5 PASS) + §6.1.1 실측 근거 sections 추가 + §6.1.2 통과 의의 추가. acceptance A9 통과.

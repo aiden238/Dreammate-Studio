@@ -10,12 +10,13 @@ GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sp
 
 **Phase 1. MVP 기본 플로우 ✅ done (2026-05-26)** — archive 이동 완료
 
-**Phase 2. design.md 기반 PWA 설계** — 🔵 **active (2026-05-27 진입)**
-- 진입 점검: phase-start v1.2.0 §6 4점검 통과 (audit_naming 0 drift)
-- Plan: 조정안 채택 (GPT 검토 80점) — 4-layer 4개 / Variants 3개 / Step 1 상세 + 2~7 간략
-- 작업 분해: 6 Slices, 5 Waves, 11~17h 추정
-- 첫 작업: Wave 1 Slice 1 — Design System Foundation
-- 강화 Skill: phase-start v1.2.0 / qa-check v1.2.0 / phase-complete v1.1.0 / harness-audit v1.1.0
+**Phase 2. design.md 기반 PWA 설계 ✅ done (2026-05-27)** — archive 이동 완료
+
+**Phase 3. Next.js PWA 기본 UI 구현 (Discovery + Quick 분기)** — 🔵 **pending_entry (진입 대기, 2026-05-27 이후)**
+- 진입 전 필수: meta/proposals/2026-05-27_phase-2-retrospective-proposals.md **P-X1** 검토 (sub-agent enforcement 강화 — 코드 phase 진입 전 필수)
+- Phase 2 산출물: design_system 4 + ADR 2 + flow specs 4 + wireframes 4 + design_handoff + page_map + component_map = 17 신규/수정
+- Phase 2 변경성 시뮬레이션: 5/5 PASS (acceptance A9)
+- Phase 2 archive: `phases/archive/phase-2-pwa-design/` (참조 가능, 기본 미참조)
 - Phase 1 archive: `phases/archive/phase-1-mvp-basic-flow/` (참조 가능, 기본 미참조)
 - Phase 0 archive: `phases/archive/phase-0-migration/` (참조 금지)
 
@@ -25,8 +26,8 @@ GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sp
 current_sprint: completed
 current_sprint_step: 6
 total_steps_in_sprint: 6
-last_completed_action: "Phase 2 진입 점검 완료: phase-start v1.2.0 §6 4점검 (audit_naming 0 drift) + 9 entry files + work_plan (6 Slices) + multi_slice_plan (5 Waves) + 조정안 채택 (GPT 검토 80점)"
-next_action: "Wave 1 Slice 1 sub-agent dispatch — Design System Foundation (tokens + 4-layer template + variant format + replaceability + ADR-010 + ADR-011)"
+last_completed_action: "Phase 2 종료 절차 완료: Slice 6 final QA (qa-check v1.2.0 11 카테고리 PASS + Simplicity 5/5 + Contract Drift 0) + design-review (7 원칙 정합 PASS) + 변경성 시뮬레이션 5/5 PASS + meta-retrospective (P-AGENT-SCOPE-001 + P-DESIGN-LAYERED-001 신규 패턴 등록) + 5 proposals (P-X1~P-X5) + archive 이동"
+next_action: "Phase 3 진입 — 진입 전 P-X1 검토 → phase-start v1.2.0 (또는 P-X1 적용 시 v1.3.0)로 시작"
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
@@ -34,22 +35,32 @@ phase_1_status: completed
 phase_1_completion_date: 2026-05-26
 phase_1_archive_location: phases/archive/phase-1-mvp-basic-flow/
 phase_1_retrospective_proposals: accepted_all + applied (P1~P4)
-phase_2_status: active
-phase_2_entry_date: 2026-05-27
-phase_2_current_wave: 1
-phase_2_current_slice: 1
-phase_2_total_slices: 6
+phase_2_status: completed
+phase_2_completion_date: 2026-05-27
+phase_2_archive_location: phases/archive/phase-2-pwa-design/
+phase_2_retrospective_proposals: proposed (P-X1~P-X5, awaiting user review)
+phase_2_total_slices_completed: 6  # Slice 1~6 모두 PASS
 phase_2_total_waves: 5
-phase_2_completed_slices: []
-phase_2_estimated_hours_total: 11-17
-phase_2_estimated_hours_elapsed: 0
-phase_2_design_policy:
-  layers_strict: 4  # BrandDirectionCard / CardGrid5 / DirectionApprovalCard / QuickInputCard
-  variants_strict: 3  # BrandDirectionCard / CardGrid5 / DirectionApprovalCard
-  replaceability_score: L/M/H 단순화
-  deferred_to_phase_3: [Step_2_to_7_wireframe_detail, QuickInputCard_variants, PlanCard_4layer_reconcile, audit_page_component_script]
-  deferred_to_phase_4: [PlanComparisonCard_detailed]
-total_commits: 24  # ~dbc0f44 + Phase 2 entry
+phase_2_acceptance_passed: 10/10  # A1~A10
+phase_2_changeability_simulation: 5/5 PASS
+phase_2_design_review: 7 principles aligned (PASS)
+phase_2_audit_naming_final: 0 drift
+phase_2_simplicity_check: 5/5 PASS
+phase_2_qa_check_v1_2_0: 11 categories applied (5 PASS / 6 skip - spec phase)
+phase_2_new_patterns:
+  - P-AGENT-SCOPE-001  # sub-agent forbidden 영역 침범 (Wave 3 Slice 3)
+  - P-DESIGN-LAYERED-001  # 4-layer 4 + Variants 3 minimal 정책 효과
+phase_2_deferred_to_phase_3:
+  - Step_2_to_7_wireframe_detail
+  - QuickInputCard_variants
+  - PlanCard_4layer_reconcile
+  - audit_page_component_script
+phase_2_deferred_to_phase_4:
+  - PlanComparisonCard_detailed
+phase_3_status: pending_entry
+phase_3_estimated_scope: "Next.js PWA UI 구현 (Phase 2 spec 기반) — 4-layer 4 컴포넌트 current variant + /new middleware + Discovery Step 1 + Quick Mode + Direction Approval"
+phase_3_pre_entry_required: "Review meta/proposals/2026-05-27_phase-2-retrospective-proposals.md P-X1 (sub-agent forbidden enforcement)"
+total_commits: 30  # ~f50bc74 + Phase 2 Slice 6 commit
 last_updated: 2026-05-27
 ```
 
@@ -124,26 +135,25 @@ last_updated: 2026-05-27
 ## 다음 액션
 
 ```
-Phase 1 마무리 (구현 완료 → 정식 phase-complete까지):
+Phase 3 진입 준비:
 
-1. Manual smoke test 8단계 (사용자 환경)
-   → 가이드: eval/qa_reports/phase-1-smoke-test-instructions_2026-05-26.md
-   → 백엔드: uvicorn + .env 설정 / 프론트: npm run dev
-   → INV-001 차단 + 정상 응답 + (선택) Supabase 저장 확인
+1. (필수) Phase 2 회고 5 proposals 검토
+   → meta/proposals/2026-05-27_phase-2-retrospective-proposals.md
+   → P-X1 (sub-agent enforcement 강화) 채택 권장 — Phase 3 진입 전 필수
+   → P-X2 / P-X3 채택 검토
+   → P-X4 / P-X5 deferred 적정성 확인
 
-2. Phase 1 final QA report 작성
-   → eval/qa_reports/phase-1-final_2026-05-26.md
-   → qa-check Skill v1.1.0 전체 10 카테고리 적용
+2. (P-X1 채택 시) phase-start SKILL.md v1.2.0 → v1.3.0 갱신
+   → §6.3 Surgical Scope에 sub-agent 자기 검증 절차 추가
+   → multi_slice_plan template 갱신
 
-3. Contract drift 정리
-   → plan_options (api_contract §4.2) vs plan_candidates (db_schema, Slice 5 구현)
-   → contract-change Skill 절차로 통일 결정
+3. Phase 3 진입 (phase-start 호출)
+   → phases/active/phase-3-pwa-impl/ 폴더 생성
+   → 4점검 (assumptions / Simplest Slice / Surgical Scope / Verification)
+   → Phase 2 산출물 17 + Phase 1 archive 3 = 20 baseline 문서 로드
+   → 첫 작업: Tailwind config tokens.md 매핑 (시나리오 1 자동 반영 보장)
 
-4. meta-retrospective Skill 실행
-   → meta/retrospectives/phase-1.md 작성
-   → 4점검 (assumptions.md 불확실 U1~U5 검증 결과 포함)
-
-5. phase-complete Skill 실행
-   → PHASE_REGISTRY Phase 1 → done, Phase 2 → active
-   → phases/active/phase-1-mvp-basic-flow/ → phases/archive/ 이동
+4. Phase 3 deferred 처리 계획
+   → D1 Step 2~7 wireframe / D2 QuickInputCard variants / D3 PlanCard 4-layer
+   / D5 audit_page_component.ps1
 ```

@@ -46,8 +46,11 @@
 
 ## 현재 active Phase
 
-**Phase 2. design.md 기반 PWA 설계 (Discovery + Quick 분기)** — 🔵 active (next, 진입 대기)
-- 진입: phase-start Skill로 시작 (phases/active/phase-2-pwa-design/ 폴더 생성)
-- Phase 1 archive: `phases/archive/phase-1-mvp-basic-flow/` (참조 가능, 기본 미참조)
+**Phase 3. Next.js PWA 기본 UI 구현 (Discovery + Quick 분기)** — 🔵 active (next, 진입 대기)
+- 진입: phase-start Skill로 시작 (phases/active/phase-3-pwa-impl/ 폴더 생성)
+- Phase 2 archive: `phases/archive/phase-2-pwa-design/` (참조 가능, 기본 미참조 — design spec baseline)
+- Phase 1 archive: `phases/archive/phase-1-mvp-basic-flow/` (참조 가능, 기본 미참조 — backend baseline)
 - Phase 0 archive: `phases/archive/phase-0-migration/` (참조 금지)
-- 진입 전 권장: `meta/proposals/2026-05-26_phase-1-retrospective-proposals.md` (P1~P4) 검토
+- **진입 전 필수**: `meta/proposals/2026-05-27_phase-2-retrospective-proposals.md` **P-X1** 검토 (sub-agent enforcement 강화 — 코드 phase 위험 ↑)
+- 진입 전 권장: P-X2 + P-X3 검토. P-X4/P-X5는 deferred
+- Phase 2 핵심 산출물 참조 권장: `apps/web/design_handoff.md` (변경 가이드, 변경성 시뮬레이션 5/5 PASS) + `apps/web/component_map.md` (4-layer 4 컴포넌트) + `apps/web/design_system/*` (tokens / 4-layer template / variants / replaceability)
