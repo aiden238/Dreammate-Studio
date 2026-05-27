@@ -153,47 +153,145 @@ events:
 
 ---
 
-## 2~7. Steps 2~7
+## 2. Step 2: Domain (산업/주제)
 
-> Slice 3에서 각 step 4줄 명세로 추가 예정. 현재는 placeholder.
->
-> 예상 구조 (Slice 3에서 작성):
->
-> ### 2. Step 2: Domain
-> - prompt: P-002 / pattern: BrandDirectionCard × 5 재사용
-> - 입력: Step 1 선택 (brand_direction)
-> - 다음: Step 3 Series
-> - 변경점: Behavior layer card 필드에 step-specific 추가 (예: domain_focus)
->
-> ### 3. Step 3: Series
-> - prompt: P-003 / pattern: BrandDirectionCard × 5 재사용 + structure_type, cadence_hint 필드
-> - 입력: Step 1+2
-> - 다음: Step 4 Target
->
-> ### 4. Step 4: Target
-> - prompt: P-004 / pattern: BrandDirectionCard × 5 재사용 + pain_points, watch_motivation 필드
-> - 입력: Step 1~3
-> - 다음: Step 5 Tone
->
-> ### 5. Step 5: Tone (form 패턴 — 5-card 예외)
-> - prompt: P-004 / pattern: form (슬라이더 + 다중선택)
-> - 입력: Step 1~4
-> - 다음: Step 6 Direction Summary
-> - 예외 이유: tone은 categorical이 아니라 spectrum이므로 5장 카드 부적합
->
-> ### 6. Step 6: Direction Summary
-> - prompt: P-005 / pattern: **DirectionApprovalCard** (별도 컴포넌트 — direction_approval.md 참조)
-> - 입력: Step 1~5 종합
-> - 다음: 승인 → Step 7 Generate, 수정 → 이전 step 복귀, 다시 좁히기 → 동일 깊이 재선택
->
-> ### 7. Step 7: Generate
-> - prompt: P-006 / pattern: GenerationProgressStepper 4단계 (Intent / RAG / Planning / Critic)
-> - 입력: Direction 승인 결과
-> - 다음: /plan 결과 페이지 (Phase 4)
-> - 대기 시간: 30~60초 (`design.md` §13)
+- **prompt**: P-002 (`docs/contracts/output_schema.md` §4 domain_direction_cards)
+- **pattern**: `BrandDirectionCard` 변형 × 5 (`CardGrid5`) — Step 1 패턴 재사용
+- **입력**: Step 1 선택된 `brand_direction` + user_direct_input 텍스트 (if any)
+- **다음 단계**: Step 3 Series (선택된 domain 컨텍스트 전달)
+
+### 2.1 컴포넌트 재사용
+
+- `BrandDirectionCard`: `card.name = "도메인 이름"`, `card.description = "도메인 설명"` (props 형식 동일)
+- 카드 5장: AI 추천 4 (예: 재테크 / 건강 / 라이프스타일 / 기술) + user_direct_input 1
+- Wireframe: `step1_brand.md` 패턴 그대로 재사용 (H1 + subtitle 텍스트만 변경, 진행 표시 "2 / 7")
+- Behavior layer 차이: 없음 (card 필드 동일, 컨텐츠만 domain-specific)
+
+---
+
+## 3. Step 3: Series
+
+- **prompt**: P-003 (`output_schema.md` §5 series_cards)
+- **pattern**: `BrandDirectionCard` 변형 × 5
+- **입력**: Step 1+2 (brand + domain)
+- **다음 단계**: Step 4 Target
+
+### 3.1 재사용 메모
+
+- Step 2와 동일 패턴, 카드 컨텐츠만 series-specific (예: 30초 쇼츠 / 1분 정보 / 인터뷰 / 리뷰 / 직접 입력)
+- 진행 표시 "3 / 7"
+- Phase 3 진입 시 Behavior layer에 `structure_type`, `cadence_hint` 필드 추가 검토 — 현재 spec은 description 한 줄로 표현
+
+---
+
+## 4. Step 4: Target Audience
+
+- **prompt**: P-004 part 1 (`output_schema.md` §6 target_cards)
+- **pattern**: `BrandDirectionCard` 변형 × 5
+- **입력**: Step 1~3 (brand + domain + series)
+- **다음 단계**: Step 5 Tone
+
+### 4.1 재사용 메모
+
+- 카드 컨텐츠 = target persona (예: 30대 직장인 / 20대 학생 / 자영업자 / 주부 / 직접 입력)
+- 진행 표시 "4 / 7"
+- Phase 3 진입 시 Behavior layer에 `pain_points`, `watch_motivation` 필드 추가 검토 — 현재는 fit_situation / pros / cautions로 통합
+
+---
+
+## 5. Step 5: Tone & Style (★ form 변형, 5-card 예외)
+
+- **prompt**: P-004 part 2 (`output_schema.md` §6 tone_card form)
+- **pattern**: **다중선택 chip (multi-select chips)** — 5-card pattern 예외
+- **입력**: Step 1~4
+- **다음 단계**: Step 6 Direction Summary
+
+### 5.1 컴포넌트 변형 (form 패턴)
+
+- 사용 컴포넌트: `ToneChipsForm` (Phase 3 신규, Phase 2는 spec only — Phase 3 진입 시 4-layer 작성)
+- form 구성:
+  - **다중선택 chip × 6~10** (warm / professional / casual / energetic / sincere / humorous / informative / friendly / formal / story-telling)
+  - chip 1개당 toggle (선택 / 해제), 선택된 chip에 `tokens.color.border_focus` 또는 `tokens.color.primary` border
+  - **"직접 입력" textarea** (선택, 추가 톤 자유 표현)
+  - 강도 슬라이더는 **미채택** (Phase 3+ 결정 시 추가 검토)
+- 진행 표시 "5 / 7"
+- 하단 SubmitButton sticky — 최소 1개 chip 선택 시 활성
+
+### 5.2 사용자 결정 (U2-7)
+
+- **2026-05-27 confirmed**: 다중선택 chip 패턴 채택 (`phases/active/phase-2-pwa-design/assumptions.md` §1.2 U2-7)
+- 슬라이더 X, 5-card 예외로 form 변형 적용
+- 5-card pattern 예외 사유: tone은 categorical (multi-tag) 성격 — 단일 선택 부적합, 사용자가 여러 톤을 동시에 원함
+
+### 5.3 Wireframe (간략)
+
+- Step 1 wireframe의 5-card 영역을 **chip cloud**로 대체
+- 진행 표시 + H1 + subtitle은 동일
+- chip 영역: flex-wrap, gap=space.2, chip별 padding=space.2/space.3, radius=radius.sm or radius.full (pill)
+- 선택된 chip: bg=tokens.color.primary, text=tokens.color.text_inverse
+- 비선택 chip: bg=surface, text=text_default, border=border_default 1px
+- 하단 SubmitButton sticky
+
+### 5.4 Phase 3 deferred
+
+- `ToneChipsForm` 4-layer 상세 (Phase 3 진입 시 작성)
+- chip 개수 / 라벨 확정 (현재 6~10개 예시 — Phase 4+ 사용자 데이터로 조정 가능)
+- chip vs textarea 직접 입력 비율 추적 (Phase 4 analytics)
+
+---
+
+## 6. Step 6: Direction Summary (★ DirectionApprovalCard 사용)
+
+- **prompt**: P-005 oneline_direction (`output_schema.md` §7)
+- **pattern**: **DirectionApprovalCard** (`apps/web/direction_approval.md` 참조 — 양 모드 공통)
+- **입력**: Step 1~5 종합 → AI가 한 줄 방향 생성
+- **다음 단계**: Step 7 Generate (승인 시) / Step 6 재호출 (재생성 시) / inline 편집 후 진행 (수정 시)
+
+### 6.1 컴포넌트 사용
+
+- 컴포넌트: `DirectionApprovalCard` (`apps/web/component_map.md` §DirectionApprovalCard 참조)
+- variant: **verbose** (Discovery는 Step 1~5 이유 표시 권장)
+- Quick Mode는 같은 컴포넌트 + `variant=minimal` 사용 (Slice 4 작성 `quick_flow.md`)
+- 진행 표시 "6 / 7"
+
+### 6.2 Cross-reference
+
+- `apps/web/direction_approval.md` — pattern 본문 (목적 / 행동 모델 / 분석 / a11y / 변경성)
+- `apps/web/wireframes/direction_approval.md` — wireframe (verbose chosen + minimal 대안)
+- `apps/web/component_map.md` §DirectionApprovalCard — 4-layer + 2 variants yaml
+
+---
+
+## 7. Step 7: Generate
+
+- **prompt**: P-006 plan_candidates (`output_schema.md` §8)
+- **pattern**: `GenerationProgressStepper` 4단계 (Intent → RAG → Planning → Critic) + 결과 plan_candidates
+- **입력**: Step 6에서 승인된 (또는 수정된) direction
+- **다음 단계**: `/plan` 결과 페이지 (Phase 1 PlanCard 활용)
+
+### 7.1 컴포넌트 재사용
+
+- `GenerationProgressStepper` (Phase 0 minimal entry, Phase 1 활용 — 4단계 적용)
+- `PlanCard` (Phase 1 기존, `apps/web/components/PlanCard.tsx`) — Phase 1 응답 envelope 그대로 사용 (`plan_candidates[0]`)
+- 결과: 1 plan (Phase 1 deviation 명시 — `output_schema.md` §8.2 검증 규칙 validation.warnings)
+- Phase 4에서 3 plans + `PlanComparisonCard` 활성화 예정
+
+### 7.2 대기 시간 UX
+
+- 30~60초 대기 (`apps/web/design.md` §13)
+- 4단계 stepper 텍스트 업데이트 (현재 sync, Phase 4+ SSE migration)
+- partial result 즉시 표시 (Phase 4+ SSE 활성 후)
+- 진행 표시 "7 / 7"
+
+### 7.3 Phase 3 deferred
+
+- progress stepper 실 polling 또는 SSE (Phase 1은 sync, Phase 4 SSE migration)
+- 3-plan 비교 (`PlanComparisonCard`, Phase 4)
+- Critic revise 흐름 UI (revise_count ≤ 2, `apps/web/design.md` §13)
 
 ---
 
 ## 변경 이력
 
 - 2026-05-27: Phase 2 Slice 2 — §0 개요 + §1 Step 1 Brand 상세 작성. §2~§7은 Slice 3 placeholder.
+- 2026-05-27: Phase 2 Slice 3 — §2~§7 4줄 명세로 확정. Step 5 다중선택 chip 패턴 채택 (U2-7 confirmed). Step 6 DirectionApprovalCard cross-reference 명시 (`direction_approval.md`).

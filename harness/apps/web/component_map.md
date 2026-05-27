@@ -321,3 +321,246 @@ variants:
 → 참고: BrandDirectionCard의 `alt_grid_2x3`는 CardGrid5 차원에서 별도 alt로 등재하지 않음 (BrandDirectionCard variants와 1:1 매핑되므로 중복 등재 회피).
 
 ---
+
+## DirectionApprovalCard (Phase 2 Slice 3)
+
+> 분류: Card (양 모드 공통 핵심 UX — Discovery Step 6 + Quick Mode)
+> Phase 진입: Phase 3 Slice 3 (실 구현)
+> Replaceability: **M** (variants swap 시 2 파일 영향 — `replaceability_score.md` §3.2)
+> Variants: 2개 (verbose / minimal) — `variant_format.md` §4 baseline
+> 파일 위치 (Phase 3): `apps/web/components/common/DirectionApprovalCard.tsx`
+> 참조 spec: `apps/web/direction_approval.md` (pattern), `apps/web/wireframes/direction_approval.md` (wireframe)
+> output_schema 매핑: `docs/contracts/output_schema.md` §7 P-005 oneline_direction
+> 사용 컨텍스트: Discovery Step 6 (verbose 권장) + Quick Mode (minimal 권장)
+
+### Behavior
+
+```typescript
+interface DirectionApprovalCardProps {
+  direction: {
+    one_line: string;             // P-005 output_schema §7 (20~70자)
+    components?: {
+      target: string;
+      message: string;
+      format: 'shorts_30s' | 'reels_60s' | 'shorts_60s' | 'youtube_3m' | 'youtube_8m' | 'other';
+      length_sec: number;
+    };
+    reasons?: Array<{             // verbose variant only — Step 1~5 요약
+      step: 'brand' | 'domain' | 'series' | 'target' | 'tone';
+      label: string;              // "Step 1 Brand"
+      value: string;              // "정보형 콘텐츠 선택"
+    }>;
+    confidence?: number;          // 0.0 ~ 1.0
+    revise_count: number;         // 재생성 누적 횟수
+  };
+  variant: 'minimal' | 'verbose';
+  onApprove: () => void;                          // "이대로 진행"
+  onEditAndApprove: (edited_text: string) => void; // "수정 후 진행"
+  onRegenerate: () => void;                        // "다시 생성" (P-005 재호출)
+  ariaLabel?: string;                              // default: "기획 방향 승인"
+}
+```
+
+- **State**:
+  - `editMode: boolean` (internal) — ✎ 클릭 시 inline 편집 모드 진입
+  - `editedText: string` (internal) — 편집 중 텍스트 buffer
+  - `revise_count` controlled by parent (`direction.revise_count` prop, cap ≤ 2 권장)
+- **Events**:
+  - `onApprove()` — 한 줄 방향 그대로 다음 단계
+  - `onEditAndApprove(edited_text)` — 편집된 텍스트로 다음 단계 (P-005 재호출 X)
+  - `onRegenerate()` — P-005 재호출 (parent에서 revise_count++ + missing_info 처리)
+- **a11y** (`docs/contracts/frontend_design_contract.md` §5):
+  - 컨테이너: `role="region"` + `aria-label={ariaLabel}`
+  - 한 줄 방향 영역: `role="region"` + `aria-label="AI 생성 기획 방향"`
+  - textarea (편집 모드): `role="textbox"` + `aria-multiline="true"` + `aria-label="기획 방향 편집"`
+  - 버튼: `role="button"` + 명시 `aria-label`
+  - 키보드: Tab → primary CTA → secondary → tertiary, Esc로 편집 취소
+- **출력 schema mapping**: `output_schema.md` §7 P-005 oneline_direction (one_line / components / missing_info / confidence)
+
+### Layout
+
+- **mobile (≤ `tokens.bp.mobile_md`, 390px)**: 100% width, `flex-direction: column`
+  - container padding: `tokens.space.4` (16px 좌/우)
+  - direction card padding: `tokens.space.4`
+  - 내부 항목 gap: `tokens.space.3` (12px)
+  - 버튼 간 gap: `tokens.space.3`
+  - bottom button area sticky (sticky bottom — `apps/web/design.md` §17)
+- **verbose layout**: 한 줄 방향 카드 + 구분선 + 이유 list (5줄) + 버튼 영역 (primary + secondary + tertiary)
+- **minimal layout**: 한 줄 방향 카드 + 버튼 영역 (primary + tertiary 2개만)
+- **편집 모드 layout**: 한 줄 방향 영역이 textarea로 inline 변환 + 글자수 카운터 + [적용] [취소] inline action
+- **tablet (≥ `tokens.bp.tablet`)**: 동일 stack, container max-width 480px 중앙 정렬
+- **desktop (≥ `tokens.bp.desktop`)**: 동일 stack 유지 (한 줄 방향은 좁은 컬럼에서 더 가독성 ↑)
+- **터치 타겟**: 버튼 height ≥ 48px = `tokens.space.12` (`frontend_design_contract.md` §3.3)
+
+### Visual
+
+| 항목 | default | hover | focus | editing | error |
+|---|---|---|---|---|---|
+| direction card bg | `tokens.color.bg_subtle` | (동) | (동) | `tokens.color.surface` | (동) |
+| direction text | `tokens.color.text_default`, `tokens.font.size_xl`, `tokens.font.weight_medium` | (동) | (동) | (동) | (동) |
+| direction card radius | `tokens.radius.lg` | (동) | (동) | (동) | (동) |
+| 편집 icon (✎) | `tokens.color.text_muted` | `tokens.color.primary` | (동) | hidden | (동) |
+| 구분선 (verbose) | 1px solid `tokens.color.border_subtle` | — | — | — | — |
+| 이유 list text | `tokens.color.text_muted`, `tokens.font.size_sm` | (동) | (동) | (동) | (동) |
+| textarea (편집) | `tokens.color.surface` bg, 1px solid `tokens.color.border_default` | (동) | 2px solid `tokens.color.border_focus` (offset 2px) | (동) | 2px solid `tokens.color.state_error` |
+| 글자수 카운터 (정상) | `tokens.color.text_muted` | — | — | (동) | — |
+| 글자수 카운터 (≥70자) | `tokens.color.text_danger` | — | — | (동) | — |
+| primary CTA bg | `tokens.color.primary` | `tokens.color.primary_hover` | (동) | (동) | `tokens.color.primary_disabled` |
+| primary CTA text | `tokens.color.text_inverse` | (동) | (동) | (동) | (동) |
+| primary CTA radius | `tokens.radius.md` | (동) | (동) | (동) | (동) |
+| secondary CTA | `tokens.color.bg_default` bg + 1px solid `tokens.color.border_default` | `tokens.color.bg_subtle` | (동) | (동) | — |
+| tertiary CTA | `tokens.color.text_muted`, underline, transparent bg | `tokens.color.text_default` | (동) | (동) | — |
+
+- **motion**:
+  - 편집 모드 진입 (직접 → textarea): `tokens.motion.base` (250ms), `tokens.motion.ease_out`
+  - 버튼 hover: `tokens.motion.fast` (150ms)
+  - prefers-reduced-motion: 편집 모드 전환 instant, color transition만 유지 (`tokens.md` §6.3)
+
+### Wireframe
+
+`apps/web/wireframes/direction_approval.md` 참조 (verbose chosen + minimal 대안 + 편집 모드 + loading/error 상태)
+
+### Variants
+
+```yaml
+variants:
+  - id: verbose
+    name: "Verbose with reasons (Discovery 권장)"
+    chosen: true
+    layout: "한 줄 방향 + Step 1~5 이유 list (5줄) + 버튼 3개 (이대로 진행 / 수정 후 진행 / 다시 생성)"
+    tradeoff_pros: |
+      사용자가 AI 결정 근거(Step 1~5 어떤 선택에서 도출됐는지) 확인 가능 → 신뢰 ↑.
+      편집 시 어느 Step을 다시 가야 할지 판단 쉬움.
+    tradeoff_cons: |
+      세로 길이 증가 (이유 5줄 + 버튼 3개) → 360px 모바일 한 화면 한 CTA 원칙 위반 위험.
+      Quick Mode 빠른 흐름에 부적합.
+    replaceability_cost: L
+    decision_log: "Phase 2 Slice 3 채택 — Discovery 시나리오 가정 (사용자가 Step별 결정 검토 필요)"
+
+  - id: minimal
+    name: "Minimal (Quick Mode 권장)"
+    chosen: false
+    layout: "한 줄 방향 + 버튼 2개 (이대로 진행 / 다시 생성). 편집은 ✎ icon → 편집 후 primary 라벨이 '수정 후 진행'으로 자동 변경"
+    tradeoff_pros: |
+      빠른 진행 — Quick Mode 짧은 흐름 자연스러움.
+      360px 한 화면 적합 (버튼 2개 + 한 줄만).
+    tradeoff_cons: |
+      AI 결정 이유(이유 list) 미표시 → 신뢰 ↓ 위험.
+      편집 시 어떤 Step 다시 가야 할지 단서 부족.
+    replaceability_cost: L
+    decision_log: "Phase 2 Slice 3 등재 — Quick Mode 짧은 흐름 가정. Phase 4+ 실 데이터로 verbose vs minimal 분포 재평가 (assumptions.md U2-4)"
+```
+
+→ variant chosen swap (verbose ↔ minimal): `component_map.md` 1줄 토글 + 영향 wireframe section 1개 우선 표시 변경. Replaceability **L~M** (2 파일 이하).
+
+---
+
+## QuickInputCard (Phase 2 Slice 4)
+
+> 분류: Card (Quick Mode 입력 — 짧은 프롬프트 + 동적 부족정보 질문)
+> Phase 진입: Phase 3 Slice 4 (실 구현)
+> Replaceability: **L** (단순 input form, 변경 영향 ≤ 1 파일 — `replaceability_score.md` §3.2)
+> Variants: **current만** (ADR-011 Variants Bank 3개 한정 정책 — `variant_format.md` §0)
+> 파일 위치 (Phase 3): `apps/web/components/quick/QuickInputCard.tsx`
+> 참조 spec: `apps/web/quick_flow.md` §1 + §2, `apps/web/wireframes/quick_short.md`
+> output_schema 매핑: 직접 매핑 없음 (입력은 `POST /api/v1/quick/start` body로 backend 전달, 응답은 P-005 oneline_direction 또는 clarify_questions)
+> 사용 컨텍스트: Quick Mode Step 1 (짧은 프롬프트) + Step 2 (부족 정보 질문, 재사용 — mode prop만 다름)
+
+### Behavior
+
+```typescript
+interface QuickInputCardProps {
+  mode: 'initial_prompt' | 'follow_up_question';
+  question?: string;                  // follow_up_question 모드일 때만 (예: "어떤 분께 보여드릴 영상인가요?")
+  placeholder?: string;               // default: mode별 다름
+  maxLength?: number;                 // default: initial_prompt=300, follow_up_question=200
+  value: string;
+  onChange: (text: string) => void;
+  onSubmit: () => void;               // primary CTA (다음 ▶ / 답변 후 진행 ▶)
+  onSkip?: () => void;                // follow_up_question 모드만 — "이대로 진행 (skip)"
+  ariaLabel?: string;
+}
+```
+
+- **State**: `value`는 parent controlled (sessionStorage 또는 wizard state container 관리)
+- **Events**:
+  - `onChange(text)` — textarea 입력 시
+  - `onSubmit()` — Cmd/Ctrl+Enter 또는 primary CTA 클릭
+  - `onSkip()` — follow_up_question 모드의 secondary CTA 클릭 (skip)
+- **a11y** (`docs/contracts/frontend_design_contract.md` §5):
+  - 컨테이너: `role="region"` + `aria-label={ariaLabel || (mode==='initial_prompt' ? "짧은 프롬프트 입력" : "AI 부족 정보 질문")}`
+  - textarea: `role="textbox" aria-multiline="true"` + `aria-label` 자동 연결
+  - question (follow_up 모드): `<h2>` 또는 `role="heading" aria-level="2"` + `aria-live="polite"` (동적 변경 알림)
+  - char count: `aria-live="polite"` (300자 근접 시 변경 알림, over limit 시 `aria-invalid="true"`)
+  - 키보드: Tab → textarea → primary CTA → skip CTA (mode='follow_up' 시), Esc로 입력 clear (optional)
+- **출력 schema mapping**: 직접 schema 매핑 없음 (input form, body는 backend 자유 형식 `{short_prompt, brand_id, series_id}` 또는 `{answers: Record<question_id, string>}`)
+
+### Layout
+
+- **mobile (≤ `tokens.bp.mobile_md`, 390px)**: 100% width, `flex-direction: column`
+  - container padding: `tokens.space.4` (16px 좌/우)
+  - 내부 항목 gap: `tokens.space.3` (12px)
+  - textarea min-height: `tokens.space.24` (96px, rows=4) — initial_prompt 모드
+  - textarea min-height: `tokens.space.16` (64px, rows=3) — follow_up_question 모드 (짧은 답변 가정)
+  - char count: 우측 하단, textarea 내부 absolute positioning
+  - resize: vertical disabled (`resize: none`)
+  - skip 버튼 (follow_up_question 모드만): primary CTA 위에 배치, 두 CTA 간 gap `tokens.space.3`
+- **tablet (≥ `tokens.bp.tablet`)**: 동일 stack, container max-width 480px 중앙 정렬
+- **desktop (≥ `tokens.bp.desktop`)**: 동일 stack 유지 (input은 좁은 컬럼이 자연스러움)
+- **터치 타겟**: textarea height ≥ 64px, CTA height ≥ 48px (`frontend_design_contract.md` §3.3)
+
+### Visual
+
+| 항목 | default | hover | focus | error (over limit) | disabled |
+|---|---|---|---|---|---|
+| textarea bg | `tokens.color.surface` | (동) | (동) | (동) | `tokens.color.bg_subtle` |
+| textarea text | `tokens.color.text_default`, `tokens.font.size_base` | (동) | (동) | (동) | `tokens.color.text_muted` |
+| textarea placeholder | `tokens.color.text_placeholder` | (동) | (동) | — | — |
+| textarea border | 1px solid `tokens.color.border_default` | (동) | 2px solid `tokens.color.border_focus` (offset 2px) | 2px solid `tokens.color.state_error` | 1px solid `tokens.color.border_subtle` |
+| textarea radius | `tokens.radius.md` (8px) | (동) | (동) | (동) | (동) |
+| char count (정상) | `tokens.color.text_muted`, `tokens.font.size_xs` | — | — | — | — |
+| char count (over limit) | `tokens.color.text_danger`, `tokens.font.size_xs`, `tokens.font.weight_medium` | — | — | — | — |
+| question (follow_up_question) | `tokens.color.text_default`, `tokens.font.size_lg`, `tokens.font.weight_semibold` | — | — | — | — |
+| primary CTA bg (외부 SubmitButton) | `tokens.color.primary` | `tokens.color.primary_hover` | (동) | — | `tokens.color.primary_disabled` |
+| skip CTA (외부 SubmitButton secondary) | `tokens.color.bg_default` bg + 1px solid `tokens.color.border_default`, text=`tokens.color.text_muted` | `tokens.color.bg_subtle` | (동) | — | — |
+
+- **typography**:
+  - placeholder: `tokens.font.size_base` + `tokens.font.weight_regular` + `tokens.color.text_placeholder`
+  - input text: `tokens.font.size_base` + `tokens.font.weight_regular` + `tokens.color.text_default`
+  - question (follow_up): `tokens.font.size_lg` + `tokens.font.weight_semibold` + `tokens.color.text_default`
+- **motion**:
+  - focus border 전환: `tokens.motion.fast` (150ms), `tokens.motion.ease_out`
+  - question 동적 노출 (mode 변경 시): `tokens.motion.base` (250ms) fade-in
+  - prefers-reduced-motion: 전환 instant, color transition만 유지 (`tokens.md` §6.3)
+
+### Wireframe
+
+`apps/web/wireframes/quick_short.md` 참조 (Step 1 initial_prompt + Step 2 follow_up_question 모두 포함).
+
+### Variants
+
+```yaml
+variants:
+  - id: current
+    name: "Single textarea with char count (initial + follow-up dual mode)"
+    chosen: true
+    layout: "단일 textarea + char count 우측 하단 + primary CTA (외부 SubmitButton). follow_up_question 모드일 때만 question heading + skip CTA 추가."
+    tradeoff_pros: |
+      단순, 모바일 적합, 학습 비용 0.
+      Step 1/Step 2 양쪽 재사용 가능 (mode prop만 차이) → 단일 컴포넌트 유지보수.
+      구현 비용 L (Phase 3 진입 시 단순 controlled textarea + sticky CTA).
+    tradeoff_cons: |
+      부족 정보 질문 시 시각 단조 (선택지 미제공).
+      음성 입력 / 멀티모달 입력 미지원 (Phase 11+ 영역).
+    replaceability_cost: L
+    decision_log: "Phase 2 Slice 4 채택 — Variants Bank 3개 한정 정책 (ADR-011) 정합. QuickInputCard는 current variant 1개만. Phase 3+ 실 구현 중 alt 발생 시 추가 가능 (예: alt_voice / alt_4_choice)."
+```
+
+→ alt variants는 deferred:
+- `alt_voice` (Phase 11+) — 음성 입력 + 텍스트 transcript
+- `alt_4_choice` (Phase 3 사용자 피드백 후) — Step 2 부족 정보 질문을 4지선다 카드로 (`IntentQuestionCard` 패턴 차용)
+
+→ alt 추가 시 본 entry variants yaml에 등재 + `wireframes/quick_short.md` 대안 section 갱신 + ADR 권장 (`variant_format.md` §5 절차).
+
+---
+
