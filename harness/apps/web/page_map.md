@@ -1,138 +1,293 @@
 # Page Map
 
 > 위치: `apps/web/page_map.md`
-> 정합 기준: `apps/web/design.md` §5, §7, §8, §9, §11, §12, §13
-> Mode: Discovery (Track A) + Quick (Track B) Hybrid
+> 상태: Phase 2 Slice 5 통합 갱신 (2026-05-27)
+> 정합 기준: `apps/web/design.md` §5, §7, §8, §9, §11, §12, §13 + Phase 2 spec
+> 참조: `apps/web/discovery_flow.md`, `quick_flow.md`, `mode_branching.md`, `direction_approval.md`, `component_map.md`, `design_handoff.md`
+>
+> 본 파일 = 전체 routes 통합. Phase 1 active routes 보존 + Phase 2 spec routes 추가 + Phase 4+ placeholder.
+> 각 route → 사용 컴포넌트 명시 (component_map.md cross-reference).
 
-## Mode 진입 분기 (design.md §5)
+---
 
-사용자는 무조건 한 쪽 모드만 쓰지 않는다. 컨텍스트(Brand/Domain/Series 보유 여부)에 따라 `/new` 진입 시 자동으로 Discovery 또는 Quick으로 라우팅된다. 두 모드 사이 명시적 전환 버튼("다시 좁히기" / "직접 입력")도 항상 제공한다.
+## 1. Active Routes (Phase 1 구현 완료, 운영 중)
 
-| 조건 | 기본 모드 |
-|---|---|
-| 신규 회원 첫 영상 | Discovery (모든 단계) |
-| Brand 없음 | Discovery (Brand 단계부터) |
-| Brand 있고 Domain 없음 | Discovery (Domain 단계부터) |
-| Brand+Domain 있고 Series 없음 | Discovery (Series 단계부터) |
-| Brand+Domain+Series 있음 | Quick |
-| "직접 입력" 명시 선택 | Quick (Brand 컨텍스트 상속) |
-| Quick 결과에서 "다시 좁히기" | Discovery (현재 깊이부터) |
+### 1.1 `/` (Home / Initial Input)
 
-## MVP Pages (10개, design.md §8)
+- **진입 조건**: Phase 1 첫 진입 (Mode 분기 미적용 — Phase 3 진입 시 mode_branching.md 라우터로 전환)
+- **표시 컴포넌트** (component_map.md):
+  - textarea (자유 입력) — Phase 1 native input (별도 컴포넌트 X)
+  - `SubmitButton` — Phase 1 기존 (`apps/web/components/SubmitButton.tsx`)
+  - `ProgressStepper` — Phase 1 기존 (4단계 sync stepper)
+- **API**: `POST /api/v1/generate` (Phase 1 simplified endpoint)
+- **다음**: `/plan` (성공 시) / 같은 페이지 (에러 시 ErrorCard inline 표시)
+- **Phase 3 migration**: Mode 자동 분기 진입 화면 (`mode_branching.md`)으로 전환 — `/`는 Landing 또는 Dashboard로 격상 가능
 
-각 페이지: 경로 | 진입 조건 | 표시 카드 | 다음 행동 | 의존 컴포넌트
+### 1.2 `/plan`
 
-### 1. Landing (`/`)
-- 진입: 비로그인 첫 방문
-- 표시: 제품 소개, Login CTA
-- 다음 행동: → Login
+- **진입 조건**: `/`에서 generate 성공 후
+- **표시 컴포넌트** (component_map.md):
+  - `PlanCard` (Phase 1) — 단일 plan 표시 (Phase 1 단일 plan, Phase 4 3-plan 비교 전환)
+  - `ProgressStepper` (Phase 1) — 완료 상태 표시
+  - `ErrorCard` (Phase 1) — 응답 실패 시 (sessionStorage envelope 검증 실패 포함)
+- **데이터 소스**: `sessionStorage.envelope` (Phase 1 임시 저장)
+- **다음**:
+  - "다시 만들기" → `/` 복귀
+  - (Phase 4+) Plan 선택 → save → workspace
+- **Phase 4 migration**: `PlanComparisonCard` 활성화 → 3-plan 가로 비교 + 1 선택 화면으로 전환 (component_map.md PlanComparisonCard placeholder 참조)
 
-### 2. Login (`/login`)
-- 진입: 로그인 필요
-- 인증: Supabase Auth (OAuth + 이메일)
-- 다음 행동: 성공 → Onboarding(신규) / Dashboard(기존), 실패 → Landing
+---
 
-### 3. Onboarding (`/onboarding`)
-- 진입: 신규 회원 첫 로그인
-- 표시: Discovery 압축판 (Step 2 Brand → Step 3 Domain → Step 4 Series, 즉 P-001/P-002/P-003)
-- 다음 행동: 첫 Brand 생성 완료 → Dashboard
-- 의존: WizardStepHeader, ChoiceOptionCard, ChoiceCardGrid, DirectInputFallback
+## 2. Spec Routes (Phase 2 spec, Phase 3 구현 예정)
 
-### 4. Dashboard (`/dashboard`)
-- 진입: 기존 사용자 로그인 후 기본 진입점
-- 표시: Brand 카드 그리드 + "새 영상" 큰 CTA
-- 다음 행동:
-  - "새 영상" → `/new` (Mode 자동 분기)
-  - Brand 카드 → `/brand/[brandId]` (Domain 트리 펼침)
-  - Series 카드 → Quick 진입 (`/new/quick`)
-- 의존: AppShell, BreadcrumbBrandPath, ProjectTreeNav
+> 본 section의 routes는 Phase 2에서 spec만 작성 (Next.js 코드 0줄).
+> Phase 3 진입 시 Next.js app router 또는 middleware로 구현.
 
-### 5. Discovery Wizard (`/new/discovery`)
-- 진입: Mode 분기에서 Discovery 결정 (§5)
-- 표시: 단계별 5장 카드 (Brand/Domain/Series/Target/Tone)
-- 단계 순서 (design.md §11):
-  - Step 1: Idea Input — 자유 입력 1–2줄
-  - Step 2: Brand 카드 5장 — P-001 prompt
-  - Step 3: Domain 카드 5장 — P-002 prompt
-  - Step 4: Series 카드 5장 — P-003 prompt
-  - Step 5: Target 카드 5장 — P-004a prompt
-  - Step 6: Tone 카드 5장 — P-004b prompt
-  - Step 7: Direction Summary — P-005 prompt
-- 카드 규칙: 단계당 정확히 5장 (4 추천 + 1 "직접 입력"), 6장 이상 금지
-- Skip 허용: Series, Target, Tone (Brand, Domain은 필수)
-- 다음 행동: Step 7 완료 → Direction Summary
-- 의존: WizardStepHeader, ChoiceOptionCard, ChoiceCardGrid, DirectInputFallback, IdeaInputBox
+### 2.1 Mode 분기 진입점
 
-### 6. Direction Summary (`/new/direction`)
-- 진입: Discovery Step 7 완료
-- 표시: DirectionSummaryCard (모든 선택 종합)
-- 다음 행동: 승인 → Generation Progress / 수정 → 이전 단계로 복귀
-- 의존: DirectionSummaryCard, ApprovalToggle
+#### `/new` (Mode auto-router, UI 없음)
+- **진입 조건**: 사용자가 "+ 새 프로젝트" / "새 영상" 클릭 (Dashboard 또는 직접 URL)
+- **동작**: `mode_branching.md` yaml 따라 자동 redirect
+  - `rule_new_user` (Brand 0) → `/new/discovery/step/1`
+  - `rule_brand_no_series` → `/new/discovery/step/3` (discovery_from_step3)
+  - `rule_has_series` → `/new/quick`
+  - `rule_default` (fallback) → `/new/discovery/step/1`
+- **UI 없음**: middleware 라우팅만 (Phase 3 구현)
+- **참조**: `mode_branching.md` §2 branching_rules + §4 매핑표
 
-### 7. Quick Prompt (`/new/quick`)
-- 진입: Brand+Domain+Series 있음 / "직접 입력" 선택
-- 표시: QuickPromptInput (10–200자) + ContextInheritanceBadge (상속된 Brand/Domain/Series) + IntentQuestionCard (부족정보 최대 2개)
-- 한 줄 방향: OneLineDirectionCard ("{타깃}을 대상으로 {목적}을 보여주는 {길이} {포맷}")
-- 다음 행동: 승인 → Generation Progress / "다시 좁히기" → Discovery (현재 깊이부터)
-- 의존: QuickPromptInput, IntentQuestionCard, OneLineDirectionCard, ApprovalToggle
+### 2.2 Discovery Routes (`/new/discovery/step/{1..7}`)
 
-### 8. Generation Progress (`/new/generate`)
-- 진입: Direction Summary / Quick 승인 후
-- 표시: 4단계 GenerationProgressStepper (Intent → RAG → Plan → Critic) + 부분 결과 즉시 노출
-- 대기 시간: 30–60초
-- 의존: GenerationProgressStepper, RAGReferencePanel, AgentStatusIndicator
+#### `/new/discovery/step/1` (Step 1 Brand)
+- **표시 컴포넌트** (component_map.md):
+  - `WizardStepHeader` (Phase 0 entry, Phase 3 신규 또는 ProgressStepper 활용)
+  - `CardGrid5` (4-layer, Slice 2) — radiogroup 5장 컨테이너
+  - `BrandDirectionCard` × 5 (4-layer, Slice 2) — 4 AI suggestions + 1 user_direct_input
+  - `SubmitButton` (Phase 1 기존, sticky bottom)
+  - `ErrorCard` (Phase 1 기존) — 응답 실패 시
+- **API**: P-001 `brand_direction_cards` (output_schema.md §3)
+- **다음**: `/new/discovery/step/2`
+- **참조**: `discovery_flow.md` §1 Step 1 Brand 상세 + `wireframes/step1_brand.md`
 
-### 9. Project Workspace (`/brand/[brandId]/domain/[domainId]/series/[seriesId]/video/[videoId]`)
-- 진입: Generation 완료
-- 표시: PlanOptionCard ×3 (콘셉트/후킹/흐름/장점/리스크) 비교 + Brand Memory / 체크리스트
-- 카드 배치: 모바일 세로 스와이프, 데스크톱 가로 3열
-- 다음 행동: 1개 선택 + 선택 이유 입력 → 저장 → Final Output / 재생성 / 수정 요청
-- 의존: PlanOptionCard, BrandMemoryPanel, ChecklistPanel, RegenerateButton, RevisionRequestModal
+#### `/new/discovery/step/2` (Step 2 Domain)
+- **표시 컴포넌트**: Step 1과 동일 (CardGrid5 + BrandDirectionCard × 5 변형 + SubmitButton)
+- **API**: P-002 `domain_direction_cards` (output_schema.md §4)
+- **다음**: `/new/discovery/step/3`
+- **참조**: `discovery_flow.md` §2
 
-### 10. Final Output (`/brand/.../video/[videoId]/output`)
-- 진입: Project Workspace에서 plan 선택 후 저장
-- 표시 순서 (design.md §13):
-  1. 한 줄 기획 방향 (OneLineDirectionCard)
-  2. 타깃 분석
-  3. 후킹 후보 3개 (HookCandidateCard)
-  4. 영상 구성안 (VideoStructureTimeline)
-  5. 촬영 노트 (ShootingNoteCard)
-  6. 품질 평가 점수 (QualityScorePanel, 8차원)
-  7. 개선 제안 (RevisionSuggestionCard)
-  8. 업로드 문구 + 해시태그 + 커뮤니티 유입 문구
-  9. 저장 / 수정 / 재생성
-- 의존: OutputViewer, HookCandidateCard, VideoStructureTimeline, ShootingNoteCard, QualityScorePanel, RevisionSuggestionCard, CopyOutputButton
+#### `/new/discovery/step/3` (Step 3 Series)
+- **표시 컴포넌트**: 동상 (CardGrid5 + BrandDirectionCard × 5 변형)
+- **API**: P-003 `series_cards` (output_schema.md §5)
+- **다음**: `/new/discovery/step/4`
+- **참조**: `discovery_flow.md` §3
+- **Note**: `rule_brand_no_series` 진입점 — Brand 있고 Series 없는 사용자가 직접 이 route로 라우팅 (mode_branching.md)
 
-### 추가 경로 (MVP 보조)
-- `/saved` — 저장된 기획안 목록 (Series 무관) | 의존: PlanOptionCard
-- `/settings` — Brand Memory 관리, 계정, 로그아웃 | 의존: BrandMemoryPanel
-- `/new` — Mode trigger entry (자동 분기 라우터, UI 없음)
+#### `/new/discovery/step/4` (Step 4 Target)
+- **표시 컴포넌트**: 동상
+- **API**: P-004 part 1 `target_cards` (output_schema.md §6)
+- **다음**: `/new/discovery/step/5`
+- **참조**: `discovery_flow.md` §4
 
-## 페이지-컴포넌트 매트릭스
+#### `/new/discovery/step/5` (Step 5 Tone, ★ 5-card 예외 form 변형)
+- **표시 컴포넌트** (5-card 예외):
+  - `WizardStepHeader`
+  - `ToneChipsForm` (Phase 3 신규 — Phase 2는 sketch만, Phase 3 진입 시 4-layer 작성) — 다중선택 chip + 직접 입력 textarea
+  - `SubmitButton` (sticky)
+- **API**: P-004 part 2 `tone_card` form (output_schema.md §7)
+- **다음**: `/new/discovery/step/6`
+- **참조**: `discovery_flow.md` §5 (U2-7 confirmed: 다중선택 chip 패턴)
 
-| Page | Primary Components |
-|---|---|
-| Landing | (marketing only) |
-| Login | (Supabase Auth UI) |
-| Onboarding | WizardStepHeader, ChoiceOptionCard, IdeaInputBox |
-| Dashboard | AppShell, BreadcrumbBrandPath, ProjectTreeNav, BottomActionBar |
-| Discovery Wizard | WizardStepHeader, ChoiceOptionCard ×5, ChoiceCardGrid, DirectInputFallback, IdeaInputBox |
-| Direction Summary | DirectionSummaryCard, ApprovalToggle |
-| Quick Prompt | QuickPromptInput, IntentQuestionCard, OneLineDirectionCard, ApprovalToggle |
-| Generation Progress | GenerationProgressStepper, RAGReferencePanel, AgentStatusIndicator |
-| Project Workspace | PlanOptionCard ×3, BrandMemoryPanel, ChecklistPanel, RegenerateButton, RevisionRequestModal |
-| Final Output | OutputViewer, HookCandidateCard, VideoStructureTimeline, ShootingNoteCard, QualityScorePanel, RevisionSuggestionCard, CopyOutputButton |
-| Saved | PlanOptionCard |
-| Settings | BrandMemoryPanel |
+#### `/new/discovery/step/6` (Step 6 Direction Summary)
+- **표시 컴포넌트**:
+  - `WizardStepHeader`
+  - `DirectionApprovalCard` (4-layer, Slice 3) — **variant=verbose** (Discovery 권장 chosen)
+- **API**: P-005 `oneline_direction` (output_schema.md §7)
+- **다음**:
+  - "이대로 진행" → `/new/discovery/step/7`
+  - "수정 후 진행" → `/new/discovery/step/7` (편집된 텍스트 전달)
+  - "다시 생성" → 본 route 재호출 (revise_count++)
+- **참조**: `direction_approval.md` + `discovery_flow.md` §6 + `wireframes/direction_approval.md`
 
-## Phase 매핑
+#### `/new/discovery/step/7` (Step 7 Generate)
+- **표시 컴포넌트**:
+  - `WizardStepHeader`
+  - `ProgressStepper` (Phase 1 기존, 4단계: Intent → RAG → Planning → Critic)
+  - `RAGReferencePanel` (Phase 0 entry, Phase 4+ SSE 활성 시)
+  - `PlanCard` (Phase 1 기존) — 생성 완료 시 (Phase 1은 단일 plan)
+  - `ErrorCard` (Phase 1 기존) — 응답 실패 시
+- **API**: P-006 `plan_candidates` (output_schema.md §8) — Phase 1은 1 plan, Phase 4는 3 plans
+- **다음**: `/plan` (생성 완료 시) — Phase 4에서는 `/brand/[brandId]/.../video/[videoId]` workspace로 전환
+- **대기 시간**: 30~60초 (`design.md` §13)
+- **참조**: `discovery_flow.md` §7
 
-- MVP (Phase 1~10): 위 10개 페이지 + `/saved`, `/settings` 라우트 전부
-- Phase 11+ (확장 IA): `/brand-memory/[brandId]`, `/knowledge`, `/team`, `/billing`, `/admin`
-- Phase 21+: Expo React Native 모바일 앱 (동일 정보 구조 반영)
+### 2.3 Quick Mode Routes (`/new/quick*`)
 
-## MVP 제외 (영구 / 후속 phase)
+#### `/new/quick` (Step 1 짧은 프롬프트)
+- **표시 컴포넌트**:
+  - `BreadcrumbBrandPath` (Phase 0 entry) — 상속된 Brand/Domain/Series 표시
+  - `QuickInputCard` (4-layer, Slice 4, **mode='initial_prompt'**)
+  - `SubmitButton` (Phase 1 기존, sticky)
+  - `IntentWarningBox` (Phase 0 entry) — 영상기획 외 입력 감지 시
+- **API**: `POST /api/v1/quick/start` (Phase 4 endpoint)
+  - body: `{ short_prompt, brand_id, series_id, locale }`
+  - response: `{ needs_clarification: true, clarify_questions: [...] }` 또는 P-005 즉시
+- **다음**:
+  - `needs_clarification: true` → `/new/quick/clarify`
+  - `needs_clarification: false` → `/new/quick/direction`
+- **참조**: `quick_flow.md` §1
 
-- Billing, Team Workspace, Admin Dashboard
-- Expo Mobile App (Phase 21+)
-- Auto Video Editing / Auto Upload (영구 제외)
+#### `/new/quick/clarify` (Step 2 부족 정보 질문, optional)
+- **표시 컴포넌트**:
+  - `BreadcrumbBrandPath`
+  - `QuickInputCard` (재사용, **mode='follow_up_question'**) — question + textarea + skip CTA
+  - `SubmitButton` (primary + skip 2-way)
+  - (대안 패턴) `IntentQuestionCard` (Phase 0 entry) — 4지선다 + 자유 입력 — Phase 3 결정 시 활성
+- **API**: 진입 시점은 Step 1 응답의 `clarify_questions`. 답변 submit 시 `POST /api/v1/quick/answer` (Phase 4) → P-005 응답
+- **다음**: `/new/quick/direction`
+- **참조**: `quick_flow.md` §2
+
+#### `/new/quick/direction` (Step 3 Direction Approval)
+- **표시 컴포넌트**:
+  - `BreadcrumbBrandPath`
+  - `DirectionApprovalCard` (4-layer, Slice 3, **variant=minimal** — Quick 권장)
+- **API**: P-005 `oneline_direction` (output_schema.md §7)
+- **다음**:
+  - "이대로 진행" → `/new/quick/generate`
+  - "수정 후 진행" → `/new/quick/generate` (편집된 텍스트)
+  - "다시 좁히기" → `/new/discovery/step/1` (mode_branching.md override `direction_renarrow`)
+- **참조**: `quick_flow.md` §3 + `direction_approval.md` §2.2
+
+#### `/new/quick/generate` (Step 4 Generate)
+- **표시 컴포넌트**:
+  - `BreadcrumbBrandPath`
+  - `ProgressStepper` (Phase 1 기존, 4단계)
+  - `PlanCard` (Phase 1 기존) — 생성 완료 시
+  - `ErrorCard` (Phase 1 기존)
+- **API**: P-006 `plan_candidates` (output_schema.md §8) — Discovery Step 7과 동일 endpoint
+- **다음**: `/plan` (생성 완료 시)
+- **대기 시간**: 30~60초
+- **참조**: `quick_flow.md` §4
+
+---
+
+## 3. Route ↔ Mode Branching 매핑
+
+| 사용자 상태 | 자동 분기 | 진입 라우트 | rule_id (mode_branching.md) |
+|---|---|---|---|
+| 신규 (Brand 0) | Discovery | `/new/discovery/step/1` | rule_new_user |
+| Brand 있음, Series 0 | Discovery from Step 3 | `/new/discovery/step/3` | rule_brand_no_series |
+| Series 있음 | Quick | `/new/quick` | rule_has_series |
+| 명시 "새로 시작" | Discovery (강제) | `/new/discovery/step/1` | user_new_project (override) |
+| 명시 "Quick" (Brand 있음) | Quick (강제) | `/new/quick` | user_quick_force (override) |
+| Quick Mode "다시 좁히기" | Discovery (전환) | `/new/discovery/step/1` | direction_renarrow (override) |
+| 분류 불가 | Discovery (fallback) | `/new/discovery/step/1` | rule_default |
+
+→ 전체 라우팅 정책은 `mode_branching.md` §4 매핑표 참조.
+
+---
+
+## 4. Future Phase Routes (placeholder)
+
+### 4.1 Phase 4 (MOA Lite 완성)
+- `/plan` — `PlanComparisonCard` (4-layer 신규) 활성 → 3-plan 가로 비교 + 1 선택
+- `/brand/[brandId]/.../video/[videoId]` — Project Workspace (design.md §8.9) 일부 활성
+- `/brand/.../video/[videoId]/output` — Final Output (design.md §8.10) 일부 활성
+
+### 4.2 Phase 5 (Auth)
+- `/login` — Supabase Auth
+- `/signup` — Supabase Auth (신규 가입 흐름)
+- `/onboarding` — 신규 회원 첫 Brand 생성 (design.md §8.3)
+- `/dashboard` — 기존 사용자 진입점 (design.md §8.4)
+
+### 4.3 Phase 9 (Feedback / History)
+- `/history` — 저장된 기획안 목록 (`design.md` §8 보조 `/saved` 자리)
+- `/feedback` — 사용자 피드백 화면 + choice_logs UI
+
+### 4.4 Phase 11+ (확장)
+- `/settings` — Brand Memory 관리, 계정, dark mode, 다국어 (design.md §8 보조)
+- `/brand-memory/[brandId]` — Brand 단위 메모리 편집
+- `/knowledge` — LLM Wiki + Custom RAG 관리
+
+### 4.5 영구 제외 (MVP non-goals)
+- `/billing` — 결제 (영구 제외, mvp_non_goals.md)
+- `/team` — 팀 workspace (영구 제외)
+- `/admin` — 관리자 대시보드 (영구 제외)
+
+---
+
+## 5. Phase 1 → Phase 2 → Phase 3 라우팅 진화
+
+```
+Phase 1 (현재 운영)
+  /        — 자유 입력 (textarea)
+  /plan    — 단일 PlanCard
+
+Phase 2 spec (본 파일)
+  /        — Phase 1 유지 (Phase 3에서 mode router로 전환)
+  /plan    — Phase 1 유지 (Phase 4에서 PlanComparisonCard 활성)
+  /new     — Mode auto-router (Phase 3 구현)
+  /new/discovery/step/{1..7}  — Discovery 7-step (Phase 3 구현)
+  /new/quick                  — Quick Step 1 (Phase 3 구현)
+  /new/quick/clarify          — Quick Step 2 (Phase 3 구현)
+  /new/quick/direction        — Quick Step 3 (Phase 3 구현)
+  /new/quick/generate         — Quick Step 4 (Phase 3 구현)
+
+Phase 3 (Next.js PWA)
+  → 본 spec의 모든 routes를 실 코드로 구현
+  → /는 Mode router 또는 Landing으로 격상 검토
+
+Phase 4 (MOA Lite + 3-plan)
+  → /plan에 PlanComparisonCard 활성
+  → /brand/[brandId]/... workspace 추가
+```
+
+---
+
+## 6. 변경성 (replaceability_score.md §3.3 정합)
+
+| 변경 | 영향 파일 | 비용 |
+|---|---|---|
+| 신규 route 추가 (예: `/new/voice`) | `page_map.md` + `component_map.md` + 새 flow.md | M |
+| route 폐기 (예: `/new/quick*` 제거) | `page_map.md` + `mode_branching.md` + `quick_flow.md` + `component_map.md` | H |
+| Discovery step 수 변경 (7 → 5) | `page_map.md` + `discovery_flow.md` + `mode_branching.md` + (wireframes) | H |
+| Phase 1 route 유지 정책 변경 (예: `/`를 Dashboard로) | `page_map.md` (1줄) + Phase 5+ 구현 | L (spec) / M (구현) |
+| 새 컴포넌트가 기존 route에 추가 (예: /plan에 RegenerateButton) | `page_map.md` (1줄) + `component_map.md` | L |
+
+→ 상세 변경 절차는 `design_handoff.md` §1 + §2 참조.
+
+---
+
+## 7. cross-reference 정합 (manual checklist)
+
+본 page_map.md의 모든 컴포넌트가 component_map.md에 등재되어 있어야 함.
+
+- [ ] `SubmitButton` — component_map.md Feedback / Action (Phase 1)
+- [ ] `ProgressStepper` — component_map.md AI Flow 또는 Phase 1 entry
+- [ ] `PlanCard` — component_map.md Output (Phase 1 simplified) 또는 PlanOptionCard (Phase 0 entry)
+- [ ] `ErrorCard` — component_map.md (Phase 1 추가 entry)
+- [ ] `WizardStepHeader` — component_map.md Discovery
+- [ ] `CardGrid5` — component_map.md Phase 2 Slice 2 (4-layer)
+- [ ] `BrandDirectionCard` — component_map.md Phase 2 Slice 2 (4-layer)
+- [ ] `DirectionApprovalCard` — component_map.md Phase 2 Slice 3 (4-layer)
+- [ ] `QuickInputCard` — component_map.md Phase 2 Slice 4 (4-layer)
+- [ ] `ToneChipsForm` — component_map.md (Phase 3 deferred entry, Slice 5 표기)
+- [ ] `BreadcrumbBrandPath` — component_map.md Layout / Navigation
+- [ ] `IntentWarningBox` — component_map.md Project Memory / Intent
+- [ ] `IntentQuestionCard` — component_map.md Input Components
+- [ ] `RAGReferencePanel` — component_map.md AI Flow
+- [ ] `PlanComparisonCard` — component_map.md Phase 4 placeholder (Slice 5)
+
+→ Slice 6 design-review Skill 호출 시 본 체크리스트 자동 검증.
+
+---
+
+## 8. 변경 이력
+
+- Phase 0: design.md §8 MVP Pages 10개 baseline (`/`, `/login`, `/onboarding`, `/dashboard`, `/new/discovery`, `/new/direction`, `/new/quick`, `/new/generate`, `/brand/[brandId]/.../video/[videoId]`, `/brand/.../output`)
+- Phase 1: `/`, `/plan` 2 routes 활성 (simplified MVP)
+- 2026-05-27: Phase 2 Slice 5 — 통합 갱신
+  - Phase 1 active routes 보존
+  - Phase 2 spec routes 추가 (`/new`, `/new/discovery/step/{1..7}`, `/new/quick*`)
+  - 각 route → 사용 컴포넌트 명시
+  - Route ↔ Mode Branching 매핑 표 추가
+  - Future Phase routes placeholder 정리
+  - cross-reference 정합 checklist 추가

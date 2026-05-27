@@ -564,3 +564,123 @@ variants:
 
 ---
 
+# Phase 2 Slice 5 — Integrated Matrix
+
+> 추가일: 2026-05-27 (Phase 2 Slice 5)
+> 목적: Slice 1~4의 모든 컴포넌트 + Phase 0/1 entries를 통합 매트릭스로 한눈에 정리.
+> 기존 entries 모두 보존. 본 section은 cross-cutting view + Phase 4 placeholder 추가만.
+> 참조: `apps/web/design_handoff.md` (Phase 2 핵심 산출물 — 변경 가이드 본문)
+
+---
+
+## Replaceability 통합 매트릭스
+
+> 모든 컴포넌트의 Replaceability + Variants 수 + 4-layer 완성도 한눈에 확인.
+> 본 매트릭스는 `design_handoff.md` §2 매트릭스와 cross-reference.
+
+| # | 컴포넌트 | Phase | Replaceability | Variants 수 | 4-layer | 비고 |
+|---|---|---|---|---|---|---|
+| 1 | BrandDirectionCard | 2 spec / 3 impl | M | 3 (current / alt_horizontal_swipe / alt_grid_2x3) | ✅ | Slice 2 |
+| 2 | CardGrid5 | 2 spec / 3 impl | M | 2 (current / alt_horizontal_swipe) | ✅ | Slice 2 |
+| 3 | DirectionApprovalCard | 2 spec / 3 impl | M | 2 (verbose / minimal) | ✅ | Slice 3, 양 모드 공통 |
+| 4 | QuickInputCard | 2 spec / 3 impl | L | 1 (current) | ✅ | Slice 4 |
+| 5 | ToneChipsForm | 2 sketch / 3 impl | M | TBD (Phase 3 진입 시 결정) | △ deferred | Step 5 form 변형 (5-card 예외) |
+| 6 | PlanCard (Phase 1) | 1 done | L | 1 (Phase 1 형식) | △ minimal entry | Phase 4에서 3-plan / PlanComparisonCard로 격상 |
+| 7 | ProgressStepper (Phase 1) | 1 done | L | 1 | △ minimal entry | 4단계 sync (Phase 4 SSE 전환) |
+| 8 | ErrorCard (Phase 1) | 1 done | L | 1 | △ minimal entry | INV-001 / E-LLM-* 시리즈 |
+| 9 | SubmitButton (Phase 1) | 1 done | L | 1 | △ minimal entry | sticky bottom |
+| 10 | WizardStepHeader | 2 spec / 3 impl | L | 1 | △ minimal entry | Discovery 진행 표시 |
+| 11 | BreadcrumbBrandPath | 0 entry / 3 impl | L | 1 | △ minimal entry | Quick Mode 상단 컨텍스트 |
+| 12 | IntentQuestionCard | 0 entry / 3 alt | M | TBD (Phase 3 활성 시 결정) | △ minimal entry | Quick Step 2 대안 패턴 |
+| 13 | IntentWarningBox | 0 entry / 3 impl | L | 1 | △ minimal entry | 영상기획 외 입력 감지 |
+| 14 | RAGReferencePanel | 0 entry / 4 impl | L | 1 | △ minimal entry | Phase 4 SSE 활성 |
+| 15 | PlanComparisonCard | 4 placeholder | M (예상) | TBD (Phase 4 진입 시 결정) | ⚠ Phase 4 deferred | 본 section 별도 placeholder 참조 |
+| 16 | DirectionSummaryCard (legacy entry) | 0 entry | L | 1 | △ minimal entry | DirectionApprovalCard로 대체 (Slice 3) — Phase 3 진입 시 정리 검토 |
+| 17 | ApprovalToggle (legacy entry) | 0 entry | L | 1 | △ minimal entry | DirectionApprovalCard 내부 흡수 (Slice 3) — Phase 3 진입 시 정리 검토 |
+| 18 | OneLineDirectionCard (legacy entry) | 0 entry | L | 1 | △ minimal entry | DirectionApprovalCard로 흡수 (Slice 3) — Phase 3 진입 시 정리 검토 |
+
+### Replaceability 분포
+
+- **L (Low — 1 파일 수정)**: 9개 — 단순 entry, 단일 variant
+- **M (Medium — 2~3 파일 수정)**: 8개 — 4-layer + variants 다수 또는 form pattern
+- **H (High — 4~5+ 파일)**: 0개 — Phase 2에서 H 컴포넌트는 만들지 않음 (구조적 변경은 §design_handoff.md §1 시나리오 3/5 영역)
+
+→ 18개 중 9개 L + 8개 M = 17개 "변경 가능성 보장" 확보. PlanComparisonCard (Phase 4) 1개만 deferred.
+
+---
+
+## Routes ↔ Components 매핑
+
+> `page_map.md`와 cross-reference. 각 route가 사용하는 컴포넌트 list.
+> 본 매핑은 Slice 6 design-review에서 정합 검증 (모든 컴포넌트가 component_map.md에 등재되어야 함).
+
+| Route | 사용 컴포넌트 (진입 순서) | Phase |
+|---|---|---|
+| `/` (Home) | textarea (native) + SubmitButton + ProgressStepper | 1 active |
+| `/plan` | PlanCard + ProgressStepper + ErrorCard | 1 active |
+| `/new` (Mode router, UI 없음) | — (middleware only) | 2 spec / 3 impl |
+| `/new/discovery/step/1` | WizardStepHeader + CardGrid5 + BrandDirectionCard×5 + SubmitButton + ErrorCard | 2 spec / 3 impl |
+| `/new/discovery/step/2` | WizardStepHeader + CardGrid5 + BrandDirectionCard×5 변형 + SubmitButton | 2 spec / 3 impl |
+| `/new/discovery/step/3` | WizardStepHeader + CardGrid5 + BrandDirectionCard×5 변형 + SubmitButton | 2 spec / 3 impl |
+| `/new/discovery/step/4` | WizardStepHeader + CardGrid5 + BrandDirectionCard×5 변형 + SubmitButton | 2 spec / 3 impl |
+| `/new/discovery/step/5` (★ form 예외) | WizardStepHeader + ToneChipsForm + SubmitButton | 2 sketch / 3 impl |
+| `/new/discovery/step/6` | WizardStepHeader + DirectionApprovalCard (variant=verbose) | 2 spec / 3 impl |
+| `/new/discovery/step/7` | WizardStepHeader + ProgressStepper (4단계) + RAGReferencePanel + PlanCard + ErrorCard | 2 spec / 3 impl |
+| `/new/quick` | BreadcrumbBrandPath + QuickInputCard (mode=initial_prompt) + SubmitButton + IntentWarningBox | 2 spec / 3 impl |
+| `/new/quick/clarify` | BreadcrumbBrandPath + QuickInputCard (mode=follow_up_question) + SubmitButton (primary + skip) | 2 spec / 3 impl |
+| `/new/quick/direction` | BreadcrumbBrandPath + DirectionApprovalCard (variant=minimal) | 2 spec / 3 impl |
+| `/new/quick/generate` | BreadcrumbBrandPath + ProgressStepper + PlanCard + ErrorCard | 2 spec / 3 impl |
+
+### Phase 4+ routes (placeholder)
+| Route | 사용 컴포넌트 | Phase |
+|---|---|---|
+| `/plan` (Phase 4 활성) | PlanComparisonCard + ProgressStepper | 4 |
+| `/brand/[brandId]/.../video/[videoId]` | PlanOptionCard×3 + BrandMemoryPanel + ChecklistPanel + RegenerateButton + RevisionRequestModal | 4 |
+| `/brand/.../output` | OutputViewer + HookCandidateCard + VideoStructureTimeline + ShootingNoteCard + QualityScorePanel + RevisionSuggestionCard + CopyOutputButton | 4 |
+| `/login`, `/signup`, `/onboarding`, `/dashboard` | (Phase 5 신규) | 5 |
+| `/history`, `/feedback` | (Phase 9 신규 — LikeDislikeFeedback 등) | 9 |
+| `/settings` | BrandMemoryPanel + (Phase 11+ dark mode toggle) | 11+ |
+
+→ 본 매핑이 `page_map.md` §1~§4와 일치하는지 Slice 6 검증.
+
+---
+
+## PlanComparisonCard (Phase 4 placeholder)
+
+> **Phase 4 deferred** — Phase 2는 placeholder 1줄만 등재. 본 section은 Phase 4 진입 시 4-layer 정식 entry로 확장 예정.
+
+- **위치 (Phase 4)**: `apps/web/components/discovery/PlanComparisonCard.tsx`
+- **역할**: 3-plan 가로 비교 (모바일 세로 스와이프 / 데스크톱 가로 3열) + 1 선택 + 선택 이유 입력
+- **Phase 진입**: Phase 4 (MOA Lite 완성 시점, `docs/contracts/api_contract.md` §8.3)
+- **Replaceability**: M (예상 — Phase 4 활성 시점에 4-layer 작성하며 확정)
+- **Variants**: TBD (Phase 4 진입 시 3개 한정 정책 — ADR-011 정합 — 결정)
+- **Wireframe**: `apps/web/wireframes/plan_comparison_placeholder.md` (1줄 placeholder)
+- **참조 spec**: `apps/web/design.md` §13 (Final Output 구조) + `output_schema.md` §8 (P-006 plan_candidates)
+- **Phase 2 Slice 5 작업**: 본 placeholder entry만 등재. 상세 4-layer는 Phase 4 design-review Skill 호출 후.
+
+---
+
+## Slice 5 통합 검증 체크리스트
+
+본 통합 갱신 후 Slice 6 design-review에서 자동/수동 검증:
+
+- [ ] page_map.md의 모든 route → 사용 컴포넌트가 component_map.md에 존재 (Routes ↔ Components 매핑 표 참조)
+- [ ] Replaceability 통합 매트릭스 18 entry 모두 컴포넌트 존재 또는 placeholder 명시
+- [ ] 기존 entries (Layout / Input / Discovery / Quick / AI Flow / Output / Project Memory / Feedback) 0줄 수정
+- [ ] Phase 2 Slice 2~4 4-layer entries (BrandDirectionCard / CardGrid5 / DirectionApprovalCard / QuickInputCard) 모두 보존
+- [ ] PlanComparisonCard placeholder 1개 등재 (Phase 4 deferred)
+- [ ] ToneChipsForm placeholder 명시 (Step 5 form 변형, Phase 3 진입 시 4-layer)
+- [ ] design_handoff.md §2 매트릭스 18 항목과 본 통합 매트릭스 18 entry 정합 (cross-reference)
+
+---
+
+## 변경 이력 (Slice 5 통합)
+
+- 2026-05-27: Phase 2 Slice 5 통합 갱신
+  - Replaceability 통합 매트릭스 18 entry 추가 (모든 컴포넌트 L/M/H 분포 + Variants 수 + 4-layer 완성도)
+  - Routes ↔ Components 매핑 표 추가 (page_map.md cross-reference, Phase 1 active + Phase 2 spec + Phase 4+ placeholder)
+  - PlanComparisonCard Phase 4 placeholder section 추가 (1~2줄 deferred 명시)
+  - ToneChipsForm Step 5 form 변형 deferred 명시
+  - 기존 Phase 0/1 + Slice 2/3/4 entries 모두 보존 (0줄 수정, append only)
+  - design_handoff.md cross-reference 추가
+
