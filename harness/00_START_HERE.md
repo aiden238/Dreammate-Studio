@@ -46,7 +46,8 @@
 
 ## 현재 active Phase
 
-**Phase 1. MVP 기본 플로우** — Next.js + FastAPI 실 코드 작업 중.
-- 진입: `phases/active/phase-1-mvp-basic-flow/`
-- 핵심 contracts: `docs/contracts/api_contract.md`, `docs/contracts/agent_io_contract.md`, `docs/contracts/output_schema.md`
-- Phase 0 archive: `phases/archive/phase-0-migration/` (기본 참조 금지)
+**Phase 2. design.md 기반 PWA 설계 (Discovery + Quick 분기)** — 🔵 active (next, 진입 대기)
+- 진입: phase-start Skill로 시작 (phases/active/phase-2-pwa-design/ 폴더 생성)
+- Phase 1 archive: `phases/archive/phase-1-mvp-basic-flow/` (참조 가능, 기본 미참조)
+- Phase 0 archive: `phases/archive/phase-0-migration/` (참조 금지)
+- 진입 전 권장: `meta/proposals/2026-05-26_phase-1-retrospective-proposals.md` (P1~P4) 검토

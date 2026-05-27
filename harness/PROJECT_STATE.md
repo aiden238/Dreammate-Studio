@@ -8,12 +8,16 @@ GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sp
 
 ## 현재 Active Phase
 
-**Phase 1. MVP 기본 플로우** — 🟡 implementation-complete (2026-05-26)
-- 7 Slices 모두 commit + push 완료
-- pytest 62/62 통과 / Frontend tsc + lint + build 0 errors
-- 진입 점검: phase-start v1.1.0 §6 4점검 (assumptions.md)
-- 다음 단계: smoke test 8단계 (사용자 manual) → meta-retrospective → phase-complete
-- Phase 0 archive: `phases/archive/phase-0-migration/` (참조 금지)
+**Phase 1. MVP 기본 플로우 ✅ done (2026-05-26)**
+- 7 Slices 구현 + automated smoke 5/5 + meta-retrospective + CC-001 적용 + archive 이동 완료
+- archive: `phases/archive/phase-1-mvp-basic-flow/`
+- 회고: `meta/retrospectives/phase-1.md`
+- 개선 제안: `meta/proposals/2026-05-26_phase-1-retrospective-proposals.md` (P1~P4 사용자 검토 대기)
+- Manual smoke test 일부는 사용자 .env 입력 후 release 전 진행 권장
+
+**Phase 2. design.md 기반 PWA 설계** — 🔵 active (next, 진입 대기)
+- 진입 전 권장: Phase 1 개선 제안 P1/P2 검토 결정
+- Discovery wizard 7단계 + Quick Mode 분기 설계
 
 ## migration_progress
 
@@ -21,22 +25,23 @@ GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sp
 current_sprint: completed
 current_sprint_step: 6
 total_steps_in_sprint: 6
-last_completed_action: "Phase 1 전체 7 Slices 구현 완료 — pytest 62/62 + Next.js build 0 errors. Slice 1~7 모두 commit + push. backend/fastapi/ 28 파일 + apps/web/ 30 파일 + eval/qa_reports/ 9 reports."
-next_action: "Phase 1 마무리: smoke test 8단계 (사용자 manual) → meta-retrospective → phase-complete Skill → phases/archive 이동"
+last_completed_action: "Phase 1 phase-complete 8단계 모두 통과: acceptance 8/8 + docs-sync + 회고 + 4 proposals + archive 이동. Phase 2 진입 대기."
+next_action: "Phase 2 (PWA 설계: Discovery wizard + Quick Mode 분기) 진입 — phase-start Skill로 시작. 진입 전 권장: meta/proposals/2026-05-26_phase-1-retrospective-proposals.md 의 P1~P4 검토"
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
-phase_1_status: implementation_complete
+phase_1_status: completed
 phase_1_entry_date: 2026-05-26
-phase_1_implementation_complete_date: 2026-05-26
-phase_1_current_slice: null  # 모두 완료
+phase_1_completion_date: 2026-05-26
+phase_1_archive_location: phases/archive/phase-1-mvp-basic-flow/
 phase_1_completed_slices: [1, 2, 3, 4, 5, 6, 7]
-phase_1_total_slices: 7
 phase_1_pytest_count: 62
-phase_1_frontend_pages_built: 5
-phase_1_backend_endpoints: 2  # /api/v1/generate + /health
-phase_1_qa_reports: 9  # entry + slice 1~7 + smoke_test_instructions
-total_commits: 15  # S0~S5(6) + Phase 1 pre-check + entry checks + eval dual-track + slice 1 + multi_slice_plan + 7 slices
+phase_1_automated_smoke: 5/5
+phase_1_retrospective: meta/retrospectives/phase-1.md
+phase_1_pending_proposals: 4  # P1~P4 사용자 검토 대기
+phase_2_status: pending_entry
+phase_2_estimated_scope: "Discovery wizard 7-step + Quick mode 분기 + page_map + component_map 확정"
+total_commits: 19  # ~93753bf + task-4
 last_updated: 2026-05-26
 ```
 

@@ -11,10 +11,10 @@
 
 | 항목 | 내용 |
 |---|---|
-| **Phase** | Phase 1 — MVP 기본 플로우 (active) |
-| **이전 Phase** | Phase 0 — 하네스 마이그레이션 ✅ done (2026-05-26) |
-| **하네스 규모** | 200+ 파일, ~50,000줄 |
-| **Skill 구조** | `.claude/skills/` 단일 (20개, applies_to 태그) |
+| **Phase** | Phase 2 — design.md 기반 PWA 설계 (active, 진입 대기) |
+| **이전 Phase** | Phase 1 — MVP 기본 플로우 ✅ done (2026-05-26, pytest 62/62) |
+| **하네스 규모** | 250+ 파일, ~55,000줄 (Phase 1 backend/frontend 추가) |
+| **Skill 구조** | `.claude/skills/` 단일 (20개, applies_to 태그, v1.1.0) |
 | **Repository** | https://github.com/aiden238/Dreammate-Studio (Private) |
 
 ---
@@ -73,8 +73,8 @@ Dreammate_Studio/
 | Phase | 이름 | 상태 | 완료일 |
 |---|---|---|---|
 | 0 | 하네스 초기화 (Migration) | ✅ done | 2026-05-26 |
-| **1** | **MVP 기본 플로우** | **🔵 active** | — |
-| 2 | design.md 기반 PWA 설계 | pending | — |
+| 1 | MVP 기본 플로우 | ✅ done | 2026-05-26 |
+| **2** | **design.md 기반 PWA 설계** | **🔵 active (next)** | — |
 | 3 | Next.js PWA 기본 UI 구현 | pending | — |
 | 4 | FastAPI 기본 백엔드 구현 | planned | — |
 | 5 | DB / Auth 기본 구조 | planned | — |
