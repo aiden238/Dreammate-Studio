@@ -13,7 +13,7 @@ related_state:
   - PROJECT_STATE.md
   - PHASE_REGISTRY.md
   - phases/active/
-version: v1.1.0
+version: v1.2.0
 ---
 
 # phase-start
@@ -102,6 +102,7 @@ Phase: {phase-name}
 ```
 - 이번 Phase에서 확정한 가정은 무엇인가?
 - 불확실한 부분은 무엇인가?
+- contract 간 핵심 명명이 일관한가? (v1.2.0 추가)
 ```
 
 확정 가정 예시:
@@ -115,6 +116,21 @@ Phase: {phase-name}
 - 사용자 입력 패턴 (가설만 있음)
 
 **불확실 항목은 명시적으로 기록해야 phase-complete 시 회고 가능.**
+
+##### Contract cross-reference 점검 (v1.2.0 추가)
+
+P-DRIFT-001 패턴(`meta/patterns.md`) 대응 — sub-agent 분산 작성 시 contract 내부 명명 drift 사후 발견 방지.
+
+**필수 절차**:
+```powershell
+powershell -ExecutionPolicy Bypass -NoProfile -File scripts/audit_naming.ps1
+```
+
+**판정 + 기록**:
+- `audit_naming PASS — 0 drift detected` → assumptions.md §1.1 확정 가정에 "audit_naming 통과 ({YYYY-MM-DD})" 명시
+- `audit_naming FAIL` → **즉시 작업 중단**, contract-change Skill로 drift 해소 또는 NAMING_POLICY whitelist 보강 결정. assumptions.md §1.2 불확실 항목 U-X로 기록 후 phase-complete 시 검증.
+
+**근거 회고**: `meta/retrospectives/phase-1.md` §근본 원인 (5 Whys, CC-001 drift).
 
 #### 6.2 Simplest Slice (최소 작동 단위)
 
@@ -234,3 +250,5 @@ phase-start의 종료는 다음 중 하나:
 - v1.0.0 (Phase 0): GPT 골격 + 우리 절차 통합
 - v1.1.0 (Phase 1 진입 전, 2026-05-26): §6 Phase 진입 4점검 추가
   (Assumptions / Simplest Slice / Surgical Scope / Verification)
+- v1.2.0 (2026-05-27 Phase 1 회고 P2 적용): §6.1 Assumptions에 "Contract cross-reference 점검" 항목 추가
+  (`scripts/audit_naming.ps1` 호출, P-DRIFT-001 대응)

@@ -17,7 +17,7 @@ related_state:
   - instruction_index/
   - meta/harness_improvement_proposals.md
   - meta/skill_usage_log.md
-version: v1.0.0
+version: v1.1.0
 ---
 
 # harness-audit
@@ -94,6 +94,35 @@ version: v1.0.0
 
 로그 파일이 없으면 본 감사에서 생성을 제안.
 
+### 6.5 Contract 명명 일관성 (audit_naming) — v1.1.0 추가
+
+`scripts/audit_naming.ps1`을 실행해 contract / code / frontend 간 핵심 명명 일관성을 자동 검사한다.
+
+**배경**: P-DRIFT-001 패턴 (sub-agent 분산 작성 시 명명 drift 사후 발견, `meta/patterns.md`) 대응.
+
+**실행**:
+```powershell
+powershell -ExecutionPolicy Bypass -NoProfile -File scripts/audit_naming.ps1
+```
+
+**검사 대상** (NAMING_POLICY 정의):
+- `plan_candidates` (deprecated: `plan_options`)
+- `video_projects` (deprecated: camelCase 변형)
+- `critic_evaluation` (deprecated: 잘린 snake_case / camelCase)
+- `rag_references` (deprecated: camelCase 변형)
+
+**판정**:
+- 종료 코드 0 + "0 drift detected" → 통과
+- 종료 코드 1 + drift 파일/라인 출력 → critical (즉시 contract-change Skill 트리거)
+
+**whitelist 자동 적용**:
+- `phases/archive/**` (역사 보존)
+- `eval/qa_reports/**` (역사 보존)
+- `meta/**` (회고 / 패턴 / 제안 보존)
+- `docs/contract_changes/**` (결정 기록)
+
+**새 명명 추가 시**: NAMING_POLICY 배열에 entry 추가 (canonical / deprecated / scope / rationale / whitelist).
+
 ### 7. 발견사항 분류
 
 각 항목을 다음 4단계로:
@@ -146,6 +175,12 @@ low (1):
 2. **description 키워드를 frontmatter 외에서 추출**: 본문 키워드는 무시. frontmatter `description:` 블록만.
 3. **사용 로그 없다고 low 처리**: 사용 로그가 없으면 본 감사 자체의 신뢰도가 낮다. 운영 시작 제안은 항상 포함.
 4. **routes.yaml만 보고 정합 확인**: dependency_map / lookup_table도 함께. 셋 다 일치해야 함.
+5. **audit_naming 결과 무시 (v1.1.0)**: §6.5 자동 도구가 drift를 발견하면 critical. PascalCase 클래스명과 snake_case JSON 필드명 혼동에 의한 false positive는 case-sensitive 검사 + NAMING_POLICY whitelist로 이미 회피됨.
+
+## 변경 이력
+
+- v1.0.0 (Phase 0 S5): 7단계 (상태 / stub / Skill / contract 참조 / instruction_index / 사용 로그 / 분류)
+- v1.1.0 (2026-05-27 Phase 1 회고 P1 적용): §6.5 audit_naming 단계 + scripts/audit_naming.ps1 도구 추가 (P-DRIFT-001 대응)
 
 ## 종료 조건
 

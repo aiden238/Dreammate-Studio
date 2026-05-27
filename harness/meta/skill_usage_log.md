@@ -35,12 +35,12 @@
 
 | Skill | 첫 트리거 | 마지막 트리거 | 누적 | 최근 30일 | 상태 | 비고 |
 |---|---|---|---|---|---|---|
-| phase-start | 2026-05-26 | 2026-05-26 | 1 | 1 | active | v1.0.0 → v1.1.0 강화 후 사용 |
-| qa-check | 2026-05-26 | 2026-05-26 | 8 | 8 | active | v1.1.0 §10 Simplicity 매 Slice 적용 |
-| contract-change | 2026-05-26 | 2026-05-26 | 1 | 1 | active | CC-001 (Option B 적용) |
+| phase-start | 2026-05-26 | 2026-05-26 | 1 | 1 | active | v1.0.0 → v1.1.0 → v1.2.0 (P2 적용) |
+| qa-check | 2026-05-26 | 2026-05-26 | 8 | 8 | active | v1.1.0 → v1.2.0 (P3 적용, 카테고리 11 Contract Drift) |
+| contract-change | 2026-05-26 | 2026-05-27 | 2 | 2 | active | CC-001 (Option B) + P1~P4 Skill 갱신 |
 | meta-retrospective | 2026-05-26 | 2026-05-26 | 1 | 1 | active | phase-1.md 작성 |
-| phase-complete | - | - | 0 | 0 | pending | Phase 1 마무리 Task 4에서 사용 예정 |
-| harness-audit | - | - | 0 | 0 | unused | Phase 1 회고 개선안 적용 후 실행 권장 |
+| phase-complete | 2026-05-26 | 2026-05-26 | 1 | 1 | active | v1.0.0 → v1.1.0 (P4 적용, §1.5 자동 smoke test) |
+| harness-audit | 2026-05-27 | 2026-05-27 | 1 | 1 | active | v1.0.0 → v1.1.0 (P1 적용, §6.5 audit_naming) — audit_naming.ps1 첫 실행 0 drift |
 | design-review | - | - | 0 | 0 | unused | Phase 2 진입 시 활성화 |
 | eval-design | - | - | 0 | 0 | unused | failure_cases.md 작성은 INDEX + ADR로 처리 (skill 미사용) |
 | eval-run | - | - | 0 | 0 | unused | Phase 4+ Critic revise 도입 시 활성화 |

@@ -38,15 +38,17 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 
 ### Pattern P-DRIFT-001: sub-agent 분산 작성 시 contract 명명 drift 사후 발견
 
-- **유형**: 반복 실패 (1회 발생, 위험성 높음)
+- **유형**: 반복 실패 → **Mitigated** (2026-05-27)
 - **최초 식별**: 2026-05-26 (Phase 1)
 - **관련 회고**: meta/retrospectives/phase-1.md §근본 원인 (5 Whys)
 - **요약**: contract를 sub-agent 분산으로 작성하면 contract 내부 cross-reference (예: API body 키 = DB 테이블 = TS interface) 명명 일관성이 자동 검증되지 않아 다음 Phase 구현 중 발견됨. Phase 1에서 CC-001 (`plan_options` / `plans` / `plan_candidates` 3-way drift).
-- **권장 대응**:
-  - harness-audit Skill에 audit_naming 자동 도구 추가 (proposal P1)
-  - phase-start §6.1 Assumptions에 cross-reference 점검 항목 추가 (proposal P2)
-  - qa-check 카테고리 11 Contract Drift 추가 (proposal P3)
-- **연관 Skill / Contract**: harness-audit, phase-start, qa-check, contract-change
+- **적용된 대응 (2026-05-27)**:
+  - ✅ scripts/audit_naming.ps1 신규 작성 (NAMING_POLICY + whitelist)
+  - ✅ harness-audit v1.1.0 §6.5 audit_naming 단계 추가 (P1)
+  - ✅ phase-start v1.2.0 §6.1 Contract cross-reference 점검 추가 (P2)
+  - ✅ qa-check v1.2.0 카테고리 11 Contract Drift 추가 (P3)
+- **다음 재평가 시점**: Phase 2 종료 시 — 새 contract 추가/변경 시 audit_naming이 실제로 신규 drift를 잡았는지 회고
+- **연관 Skill / Contract**: harness-audit, phase-start, qa-check, contract-change, audit_naming.ps1
 
 ### Pattern P-SLICE-001: Simplest Slice 3회 압축 원칙 채택
 

@@ -14,7 +14,7 @@ related_state:
   - PHASE_REGISTRY.md
   - phases/active/
   - phases/archive/
-version: v1.0.0
+version: v1.1.0
 ---
 
 # phase-complete
@@ -41,6 +41,25 @@ Phase가 끝나면 다음 Phase로 정리되지 않은 상태가 흘러가지 �
 미통과 항목 있으면:
 - 강제 종료할지, 미통과 항목을 다음 Phase로 이월할지 사용자에게 선택지 제시
 - 어느 쪽이든 `phases/active/{phase-name}/closing_notes.md`에 사유 기록
+
+### 1.5 자동 smoke test (v1.1.0 추가)
+
+Phase별 자동 smoke 스크립트가 존재하면 실행하고 결과를 첨부:
+
+```powershell
+# 예: Phase 1
+powershell -ExecutionPolicy Bypass -NoProfile -File scripts/smoke_test_phase_1.ps1
+```
+
+**판정**:
+- 종료 코드 0 → pass, 결과를 `eval/qa_reports/phase-{N}-smoke-test-automated_{date}.md` 에 첨부 (이미 있으면 갱신)
+- 종료 코드 1 → fail, **즉시 작업 중단**. fix 후 재실행 또는 `closing_notes.md`에 보류 사유 명시 후 사용자 결정.
+
+**스크립트 부재 시**:
+- 자동 스크립트가 없으면 본 단계는 skip
+- 단, Phase 종료 commit 직전에 `scripts/smoke_test_phase_{N}.ps1` 신규 작성 권장 (다음 Phase 회귀 baseline)
+
+**근거**: Phase 1 회고 P4 (`meta/retrospectives/phase-1.md`) — 매 Phase 종료 시 자동 게이트화로 회귀 차단.
 
 ### 2. 산출물 정리
 
@@ -207,6 +226,12 @@ docs/contracts/agent_io_contract.md + ai_system/prompts/prompt_registry.md
 3. **PROJECT_STATE.md 갱신 누락**: 다음 세션이 어디서 시작할지 모름.
 4. **meta-retrospective 건너뛰기**: 같은 실수 반복.
 5. **docs-sync 안 하고 다음 phase로**: 코드-문서 갭이 쌓여 한꺼번에 정리 시 부담.
+6. **자동 smoke test 건너뛰기 (v1.1.0)**: §1.5 자동 스크립트가 있는데 manual instructions만 보고 통과 처리 → 실제 회귀 미발견.
+
+## 변경 이력
+
+- v1.0.0 (Phase 0 S5): 8단계 절차 정형화
+- v1.1.0 (2026-05-27 Phase 1 회고 P4 적용): §1.5 자동 smoke test 단계 추가 (scripts/smoke_test_phase_{N}.ps1)
 
 ## 종료 조건
 

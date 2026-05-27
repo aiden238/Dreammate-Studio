@@ -15,7 +15,7 @@ related_contracts:
   - apps/web/design.md
 related_state:
   - eval/regression_results/
-version: v1.1.0
+version: v1.2.0
 ---
 
 # qa-check
@@ -28,7 +28,7 @@ version: v1.1.0
 - 배포 직전 (staging → prod)
 - 사용자가 "배포해도 돼?" 또는 "QA 한 번 보자"
 
-## 점검 카테고리 10개 (v1.1.0)
+## 점검 카테고리 11개 (v1.2.0)
 
 각 카테고리는 pass/fail/skip 중 하나로 판정.
 
@@ -173,9 +173,31 @@ iPhone SE(375px), iPhone 14(390px), Galaxy S22(360px) 기준:
 
 심층 패턴 검토는 `meta-retrospective` Skill로 위임.
 
+### 11. Contract Drift (v1.2.0 추가)
+
+`harness-audit` Skill §6.5 `scripts/audit_naming.ps1` 자동 실행 → contract / code / frontend 간 핵심 명명 일관성 확인.
+
+**실행**:
+```powershell
+powershell -ExecutionPolicy Bypass -NoProfile -File scripts/audit_naming.ps1
+```
+
+**판정**:
+- 종료 코드 0, "0 drift detected" → **pass**
+- 종료 코드 1, drift 발견 → **fail (critical)**
+- whitelist 후보 신규 발견 (역사 보존 영역의 의도된 명명) → **warn** (NAMING_POLICY 갱신 권장)
+
+**Fail 처리**:
+1. drift 위치 확인 (audit 출력)
+2. `contract-change` Skill 발동 — 어느 쪽이 canonical인지 결정 후 일괄 변경
+3. 또는 NAMING_POLICY whitelist 보강 (의도된 예외)
+4. 재실행 → pass 확인 후 phase-complete 게이트 통과
+
+**배경**: P-DRIFT-001 (meta/patterns.md) — Phase 1 회고 P3 적용으로 매 Phase 종료 시 자동 게이트화.
+
 ## 절차
 
-### 1. 10개 카테고리 순차 점검
+### 1. 11개 카테고리 순차 점검
 
 각 카테고리에 대해 pass/fail/skip 기록.
 
@@ -186,6 +208,7 @@ iPhone SE(375px), iPhone 14(390px), Galaxy S22(360px) 기준:
 | 2 | API 응답 형식 | fail | /generate가 schema 안 맞음 |
 | ... | ... | ... | ... |
 | 10 | Simplicity Check | pass | 5개 모두 통과 |
+| 11 | Contract Drift | pass | audit_naming 0 drift |
 ```
 
 ### 2. 실패 항목 처리
@@ -197,7 +220,7 @@ fail가 3개 이상    → 진행 차단, fix phase 필요
 fail가 Critical    → 무조건 차단 (보안, 데이터, MVP 범위 위반)
 ```
 
-Critical 항목: 카테고리 1, 8(보안 부분), 9(전체), 10(Simplicity 3 fail 이상).
+Critical 항목: 카테고리 1, 8(보안 부분), 9(전체), 10(Simplicity 3 fail 이상), 11(audit_naming drift 1건이라도).
 
 ### 3. smoke test 실행
 
@@ -252,6 +275,7 @@ Critical 항목: 카테고리 1, 8(보안 부분), 9(전체), 10(Simplicity 3 fa
 
 - v1.0.0 (Phase 0): 9 카테고리 + smoke test
 - v1.1.0 (Phase 1 진입 전, 2026-05-26): 카테고리 10 Simplicity Check 추가
+- v1.2.0 (2026-05-27 Phase 1 회고 P3 적용): 카테고리 11 Contract Drift 추가 (`scripts/audit_naming.ps1` 자동 게이트, P-DRIFT-001 대응)
 
 ## 다른 Skill과의 관계
 

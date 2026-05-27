@@ -2,8 +2,9 @@
 
 > 출처: `meta/retrospectives/phase-1.md` §개선 제안
 > 작성일: 2026-05-26
-> 상태: pending review (사용자 승인 대기)
-> 적용 절차: contract-change Skill (Skill SKILL.md 변경 → 절차 통과)
+> 상태: **accepted + applied (2026-05-27)**
+> 결정: P1~P4 전부 채택. P5/P6 보류 유지.
+> 적용 검증: pytest 62/62 + audit_naming 0 drift
 
 ---
 
@@ -102,16 +103,23 @@ P1이 인프라 — 먼저 작성. P2/P3/P4는 P1 도구를 호출하는 절차.
 
 ---
 
-## 사용자 검토 요청
+## 사용자 검토 결과
 
 ```yaml
-status: pending_user_review
-expected_decision: 2026-05-27 (Phase 2 진입 전)
-decision_options:
-  - accept_all: P1~P4 모두 채택, contract-change 절차 발동
-  - accept_priority: P1 + P2만 우선 채택, P3/P4 백로그
-  - reject_with_reason: 채택 거부 + 사유
-  - defer: Phase 2 진입 후 재검토
+status: accepted_all + applied
+decision_date: 2026-05-27
+decision: accept_all
+applied_at_commits:
+  - P1: scripts/audit_naming.ps1 신규 + .claude/skills/harness-audit/SKILL.md v1.0.0 → v1.1.0 §6.5 추가
+  - P2: .claude/skills/phase-start/SKILL.md v1.1.0 → v1.2.0 §6.1 Contract cross-reference 점검 추가
+  - P3: .claude/skills/qa-check/SKILL.md v1.1.0 → v1.2.0 카테고리 11 Contract Drift 추가
+  - P4: .claude/skills/phase-complete/SKILL.md v1.0.0 → v1.1.0 §1.5 자동 smoke test 단계 추가
+verification:
+  - pytest: 62/62 PASS
+  - audit_naming: 0 drift detected
+deferred:
+  - P5: tech_stack_contract Python 패키지명 충돌 가이드 (재발 시 재평가)
+  - P6: assumptions §1.2 자동 트래킹 (P2 운영 후 데이터 누적 시 재평가)
 ```
 
 ---
