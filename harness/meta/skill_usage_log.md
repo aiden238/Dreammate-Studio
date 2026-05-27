@@ -31,6 +31,29 @@
 
 ## 인덱스
 
-| Skill | 첫 트리거 | 마지막 트리거 | 누적 | 최근 30일 | 상태 |
-|---|---|---|---|---|---|
-| (Phase 0 진행 중. Sprint S2에서 Skill 20개 배치 후 누적 시작) | - | - | 0 | 0 | pending |
+> 누적 시작: 2026-05-26 (Phase 1 완료 시점)
+
+| Skill | 첫 트리거 | 마지막 트리거 | 누적 | 최근 30일 | 상태 | 비고 |
+|---|---|---|---|---|---|---|
+| phase-start | 2026-05-26 | 2026-05-26 | 1 | 1 | active | v1.0.0 → v1.1.0 강화 후 사용 |
+| qa-check | 2026-05-26 | 2026-05-26 | 8 | 8 | active | v1.1.0 §10 Simplicity 매 Slice 적용 |
+| contract-change | 2026-05-26 | 2026-05-26 | 1 | 1 | active | CC-001 (Option B 적용) |
+| meta-retrospective | 2026-05-26 | 2026-05-26 | 1 | 1 | active | phase-1.md 작성 |
+| phase-complete | - | - | 0 | 0 | pending | Phase 1 마무리 Task 4에서 사용 예정 |
+| harness-audit | - | - | 0 | 0 | unused | Phase 1 회고 개선안 적용 후 실행 권장 |
+| design-review | - | - | 0 | 0 | unused | Phase 2 진입 시 활성화 |
+| eval-design | - | - | 0 | 0 | unused | failure_cases.md 작성은 INDEX + ADR로 처리 (skill 미사용) |
+| eval-run | - | - | 0 | 0 | unused | Phase 4+ Critic revise 도입 시 활성화 |
+| rag-design | - | - | 0 | 0 | unused | Phase 7 RAG 본격화 시 활성화 |
+| rag-update | - | - | 0 | 0 | unused | Phase 7+ |
+| prompt-version-review | - | - | 0 | 0 | unused | prompt_registry 변경 시 활성화 |
+| ai-architecture-review | - | - | 0 | 0 | unused | Phase 7/8 진입 시 활성화 |
+| multi-llm-validation | - | - | 0 | 0 | unused | 큰 결정 발생 시 활성화 |
+| context-compact | - | - | 0 | 0 | unused | (이번 세션은 컨텍스트 충분) |
+| phase-review | - | - | 0 | 0 | unused | Phase 중간 health check 시 활성화 |
+| agent-io-check | - | - | 0 | 0 | unused | Phase 4+ agent 추가 시 활성화 |
+| bug-triage | - | - | 0 | 0 | unused | 버그 발견 시 활성화 |
+| security-review | - | - | 0 | 0 | unused | Phase 6+ 또는 보안 인시던트 시 |
+| cost-review | - | - | 0 | 0 | unused | Phase 9+ 비용 본격 추적 시 |
+
+**Phase 1 사용 요약**: 4 Skill 활용 (phase-start + qa-check 8회 + contract-change + meta-retrospective). 16 Skill은 아직 unused — Phase 2~10 진행하며 단계적 활성화 예상.
