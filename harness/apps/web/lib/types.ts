@@ -114,7 +114,7 @@ export interface RAGReference {
 // ─── Body ─────────────────────────────────────────────────────────────
 
 export interface Body {
-  plans: Plan[]; // 1..3 (Phase 1: 1개)
+  plan_candidates: Plan[]; // 1..3 (Phase 1: 1개) — CC-001 Option B 적용 (2026-05-26)
   /**
    * Slice 3 이후. Slice 1/2 응답은 미포함 가능 → 옵셔널.
    */

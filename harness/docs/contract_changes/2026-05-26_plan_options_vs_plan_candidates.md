@@ -1,8 +1,9 @@
 # Contract Change Proposal — plan_options vs plan_candidates 통합
 
 > ID: CC-001
-> Status: proposed (Phase 1 종료 시 결정 필요)
+> Status: **decided + applied** (2026-05-26, Phase 1 종료 직전)
 > Date: 2026-05-26
+> Decision: **Option B (plan_candidates 통일)** 적용 완료
 > Author: Claude (Opus 4.7), reported by Phase 1 Slice 5 sub-agent
 > Related contracts: `api_contract.md`, `db_schema.md`, `output_schema.md`
 
@@ -102,11 +103,46 @@ Phase 1 Slice 5 (Supabase persistence) 구현 중 다음 불일치 발견:
 ## 7. 결정 결과
 
 ```yaml
-status: proposed
-decided: false
-decision_date: null
-decision: null  # A | B | C | D
-applied_at_commit: null
+status: decided + applied
+decided: true
+decision_date: 2026-05-26
+decision: B  # plan_candidates 통일
+applied_at_commit: (pending push - 본 commit)
+verification: pytest 62/62 PASS + frontend tsc 0 errors (회귀 없음)
+```
+
+### 7.1 적용 변경 (8 파일)
+
+```
+Backend code:
+  backend/fastapi/schemas/output.py     — Body.plans → Body.plan_candidates
+  backend/fastapi/routers/generate.py   — Body(plans=...) → Body(plan_candidates=...)
+  backend/fastapi/tests/test_e2e_slice1.py    — data["body"]["plans"] → ["plan_candidates"]
+  backend/fastapi/tests/test_rag_fallback.py  — 동일
+
+Frontend code:
+  apps/web/lib/types.ts                 — interface Body.plans → plan_candidates
+  apps/web/app/plan/page.tsx            — envelope.body.plans[0] → plan_candidates[0]
+
+Contracts:
+  docs/contracts/output_schema.md §8.1  — body 키 plans → plan_candidates + 검증 규칙 부연
+  docs/contracts/api_contract.md         — 모든 plan_options 참조 → plan_candidates (7곳)
+```
+
+### 7.2 미변경 (의도된)
+
+```
+- DB schema (db_schema.md, migration 001_init.sql): 이미 plan_candidates → 무변경
+- prompt_registry.md P-006: 이미 plan_candidates 명명 → 무변경
+- ai_system/agents/planning_agent.md: 개념 설명 일관 (변경 불필요)
+- 역사적 QA reports (phase-1-slice-N) / phases/active 문서: 작성 시점 명명 기록으로 보존
+```
+
+### 7.3 검증 결과
+
+```
+pytest: 62/62 PASS (변경 후 회귀 없음)
+frontend tsc: 0 errors (Slice 7 build 이미 검증, types.ts 변경 후 재컴파일 불필요)
 ```
 
 ---

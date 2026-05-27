@@ -358,9 +358,12 @@ Direction Summary. 한 줄 기획 방향.
 
 ### 8.1 Body 스키마
 
+> **v1.1.0 (2026-05-26 CC-001 적용)**: body 키 `plans` → `plan_candidates` 로 변경.
+> DB 테이블명 (`plan_candidates`) + prompt_registry P-006 명명과 정합.
+
 ```json
 {
-  "plans": [
+  "plan_candidates": [
     {
       "plan_id": "string (uuid)",
       "option_index": 0,
@@ -389,7 +392,7 @@ Direction Summary. 한 줄 기획 방향.
 ### 8.2 검증 규칙
 
 ```
-- plans 길이 정확히 3
+- plan_candidates 길이 정확히 3 (Phase 4+), Phase 1 deviation은 1개 허용 (validation.warnings)
 - option_index 0, 1, 2 각각 1번씩
 - 3개의 approach_label이 서로 달라야 함 (의미적 중첩 < 30%)
 - flow 배열 길이 3~6

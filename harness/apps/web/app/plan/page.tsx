@@ -144,7 +144,7 @@ export default function PlanPage() {
     );
   }
 
-  const plan = envelope.body.plans[0];
+  const plan = envelope.body.plan_candidates[0];
   const warnings = envelope.validation.warnings ?? [];
   const critic: CriticEvaluation | null | undefined =
     envelope.body.critic_evaluation;

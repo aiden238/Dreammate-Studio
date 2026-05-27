@@ -662,7 +662,7 @@ Discovery 5단계 진행. 각 호출이 1단계 카드 생성.
   "data": {
     "plan_id": "uuid",
     "status": "plans_ready",
-    "plan_options": [
+    "plan_candidates": [
       { /* P-006 plan 1개, output_schema §8 */ },
       { /* plan 2 */ },
       { /* plan 3 */ }
@@ -690,7 +690,7 @@ Discovery 5단계 진행. 각 호출이 1단계 카드 생성.
 **요청 바디:**
 ```json
 {
-  "selected_option_id": "uuid (plan_options.option_id)",
+  "selected_option_id": "uuid (plan_candidates.option_id)",
   "selection_reason": "string (≤200자) | null"
 }
 ```
@@ -759,8 +759,8 @@ Discovery 5단계 진행. 각 호출이 1단계 카드 생성.
 전체 상태 조회. 진행 중이든 완료든.
 
 **Query parameters:**
-- `include` (comma-separated): `plan_options,quality_scores,selected,final,feedback,memory_proposals`
-  - 기본값: `plan_options,quality_scores,selected`
+- `include` (comma-separated): `plan_candidates,quality_scores,selected,final,feedback,memory_proposals`
+  - 기본값: `plan_candidates,quality_scores,selected`
   - `all` 키워드도 허용 (모든 sub-resource 포함)
 
 **응답 바디:**
@@ -780,7 +780,7 @@ Discovery 5단계 진행. 각 호출이 1단계 카드 생성.
       "domain": { "domain_id": "uuid", "name": "string" },
       "series": { "series_id": "uuid", "name": "string" }
     },
-    "plan_options": [ /* P-006 plans, include=plan_options일 때 */ ],
+    "plan_candidates": [ /* P-006 plans, include=plan_candidates일 때 */ ],
     "quality_scores": [ /* P-007 results, include=quality_scores일 때 */ ],
     "selected_plan": { /* selected_plans row, include=selected일 때 */ },
     "final_output": { /* output_schema §17 통합 JSON, include=final일 때 */ },
@@ -1169,7 +1169,7 @@ POST endpoint 중 다음은 `X-Idempotency-Key` 헤더 지원:
    { approved_direction: "...", approved_components: {...}, use_rag: true, use_critic: true }
                                               → 200 ack + SSE url
 7. SSE: stage_started / partial_result / done 이벤트 수신
-8. GET /api/v1/plans/{plan_id}?include=plan_options,quality_scores
+8. GET /api/v1/plans/{plan_id}?include=plan_candidates,quality_scores
                                               → 200 + plans[3] + scores[3]
 9. POST /api/v1/plans/{plan_id}/select
    { selected_option_id: "...", selection_reason: "..." }
@@ -1254,7 +1254,7 @@ POST endpoint 중 다음은 `X-Idempotency-Key` 헤더 지원:
 | POST /brands | brands one | E-INV-005, E-DB-002 | brands INSERT |
 | POST /plans/start | mode 분기 + plan_id | E-INV-006 | video_projects INSERT |
 | POST /plans/{plan_id}/step | output_schema §3~§7,§11 | E-LLM-* | discovery_choices, agent_io_logs |
-| POST /plans/{plan_id}/generate | ack + SSE | E-LLM-*, E-RAG-*, E-RL-001 | plan_options ×3, quality_scores |
+| POST /plans/{plan_id}/generate | ack + SSE | E-LLM-*, E-RAG-*, E-RL-001 | plan_candidates ×3, quality_scores |
 | POST /plans/{plan_id}/select | selection ack | E-DB-003 | selected_plans, feedback_events |
 | POST /plans/{plan_id}/feedback | feedback ack + memory job | — | feedback_events, P-AUX-2 queue |
 | POST /intent/check | output_schema §11 | E-LLM-*, E-RL-002 | intent_filter_logs |

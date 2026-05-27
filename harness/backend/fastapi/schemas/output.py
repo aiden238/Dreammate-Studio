@@ -167,7 +167,7 @@ class Body(BaseModel):
     Slice 4: rag_references 활성화 (fallback 시 빈 배열).
     """
 
-    plans: list[Plan] = Field(..., min_length=1, max_length=3)
+    plan_candidates: list[Plan] = Field(..., min_length=1, max_length=3)
     critic_evaluation: CriticEvaluation | None = Field(
         default=None,
         description="Phase 1 Slice 3: 평가만 (revise 없음). Phase 4+에서 list로 확장.",

@@ -330,7 +330,7 @@ def generate(req: GenerateRequest) -> Union[Envelope, JSONResponse]:
             project_id=persistence.project_id,  # None일 수 있음 (skip/fail 시)
         ),
         body=Body(
-            plans=[plan],
+            plan_candidates=[plan],
             critic_evaluation=critic_evaluation,
             rag_references=rag_refs,
         ),

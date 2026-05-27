@@ -62,17 +62,17 @@ def test_generate_meta_fields(mock_pipeline_ok) -> None:
 
 
 def test_generate_body_plans_phase1_single(mock_pipeline_ok) -> None:
-    """Phase 1 body.plans 길이 1 (deviation from contract 3)."""
+    """Phase 1 body.plan_candidates 길이 1 (deviation from contract 3)."""
     response = client.post(
         "/api/v1/generate",
         json={"input": "초보 요리 쇼츠 채널 첫 영상"},
     )
     data = response.json()
 
-    plans = data["body"]["plans"]
-    assert len(plans) == 1, "Phase 1 Slice 1은 plans 1개만 반환"
+    plan_candidates = data["body"]["plan_candidates"]
+    assert len(plan_candidates) == 1, "Phase 1 Slice 1은 plan_candidates 1개만 반환"
 
-    plan = plans[0]
+    plan = plan_candidates[0]
     assert plan["plan_id"]
     assert plan["option_index"] == 0
     assert plan["name"]
@@ -150,7 +150,7 @@ def test_generate_includes_critic_evaluation(mock_pipeline_ok) -> None:
     assert critic["overall_verdict"] in ("approve", "revise", "reject")
 
     # plan_id echo back
-    plan_id = data["body"]["plans"][0]["plan_id"]
+    plan_id = data["body"]["plan_candidates"][0]["plan_id"]
     assert critic["target_plan_id"] == plan_id
 
     # Phase 1: revise_round 항상 0

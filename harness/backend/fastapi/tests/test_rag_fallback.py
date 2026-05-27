@@ -121,7 +121,7 @@ def test_router_with_rag_fallback_returns_200(
     assert rag_check["status"] == "warn"
     assert "fallback=True" in (rag_check["detail"] or "")
     # plan.rag_used 도 빈 배열
-    assert data["body"]["plans"][0]["rag_used"] == []
+    assert data["body"]["plan_candidates"][0]["rag_used"] == []
 
 
 # ─── 5. router + rag OK → references 채워짐 ────────────────────────────
@@ -159,7 +159,7 @@ def test_router_with_rag_ok_returns_references(
     assert "fallback=False" in (rag_check["detail"] or "")
 
     # plan.rag_used 도 2개 (router가 references 요약하여 주입)
-    plan_rag_used = data["body"]["plans"][0]["rag_used"]
+    plan_rag_used = data["body"]["plan_candidates"][0]["rag_used"]
     assert len(plan_rag_used) == 2
     assert plan_rag_used[0]["source_id"] == "seed-001"
     assert plan_rag_used[1]["source_id"] == "seed-002"
