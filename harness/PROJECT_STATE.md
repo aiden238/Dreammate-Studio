@@ -12,13 +12,17 @@ GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sp
 
 **Phase 2. design.md 기반 PWA 설계 ✅ done (2026-05-27)** — archive 이동 완료
 
-**Phase 3. Next.js PWA 기본 UI 구현 (Discovery + Quick 분기)** — 🔵 **pending_entry (진입 대기, 2026-05-27 이후)**
-- 진입 전 필수: meta/proposals/2026-05-27_phase-2-retrospective-proposals.md **P-X1** 검토 (sub-agent enforcement 강화 — 코드 phase 진입 전 필수)
-- Phase 2 산출물: design_system 4 + ADR 2 + flow specs 4 + wireframes 4 + design_handoff + page_map + component_map = 17 신규/수정
-- Phase 2 변경성 시뮬레이션: 5/5 PASS (acceptance A9)
-- Phase 2 archive: `phases/archive/phase-2-pwa-design/` (참조 가능, 기본 미참조)
-- Phase 1 archive: `phases/archive/phase-1-mvp-basic-flow/` (참조 가능, 기본 미참조)
-- Phase 0 archive: `phases/archive/phase-0-migration/` (참조 금지)
+**Phase 3. Next.js PWA 기본 UI 구현 (Discovery + Quick 분기)** — 🔵 **active (2026-05-28 진입)**
+- 진입 점검: phase-start v1.3.0 §6 4점검 통과 + audit_naming 0 drift
+- 4 조정 적용:
+  1. P-X1 선적용 ✅ (commit 3d0b0fb, phase-start v1.3.0)
+  2. Thin Vertical Flow (Slice 2 = Discovery Step 1 end-to-end)
+  3. D3 PlanCard 4-layer 정합 Phase 4 이관
+  4. component_map.md read-only 절대 보장 (deviations.md 운영)
+- 작업: 6 Slices, 5 Waves, 14~20h 추정
+- 첫 작업: Wave 1 Slice 1 — Foundation (Tailwind tokens 매핑)
+- Phase 2 17 spec 모두 read-only (조정 4번)
+- Phase 1 backend / frontend baseline 유지 (pytest 62/62)
 
 ## migration_progress
 
@@ -57,11 +61,25 @@ phase_2_deferred_to_phase_3:
   - audit_page_component_script
 phase_2_deferred_to_phase_4:
   - PlanComparisonCard_detailed
-phase_3_status: pending_entry
-phase_3_estimated_scope: "Next.js PWA UI 구현 (Phase 2 spec 기반) — 4-layer 4 컴포넌트 current variant + /new middleware + Discovery Step 1 + Quick Mode + Direction Approval"
-phase_3_pre_entry_required: "Review meta/proposals/2026-05-27_phase-2-retrospective-proposals.md P-X1 (sub-agent forbidden enforcement)"
-total_commits: 30  # ~f50bc74 + Phase 2 Slice 6 commit
-last_updated: 2026-05-27
+phase_3_status: active
+phase_3_entry_date: 2026-05-28
+phase_3_current_wave: 1
+phase_3_current_slice: 1
+phase_3_total_slices: 6
+phase_3_total_waves: 5
+phase_3_completed_slices: []
+phase_3_estimated_hours_total: 14-20
+phase_3_estimated_hours_elapsed: 0.5  # P-X1 pre-entry
+phase_3_deviation_count: 0  # 조정 4번 — component_map.md 직접 수정 시도 (0 강제)
+phase_3_adjustments_applied:
+  - "1. P-X1 선적용 (phase-start v1.3.0, commit 3d0b0fb)"
+  - "2. Thin Vertical Flow (Slice 2 = Discovery Step 1 end-to-end)"
+  - "3. D3 PlanCard 4-layer Phase 4 이관 (Slice 6에서 처리 X)"
+  - "4. component_map.md read-only 절대 (deviations.md 운영)"
+phase_3_pre_entry_completed: P-X1 (commit 3d0b0fb)
+phase_3_remaining_proposals: [P-X2, P-X3, P-X4, P-X5]  # pending, Phase 3 진행 중/종료 시점 재검토
+total_commits: 32  # ~3d0b0fb + Phase 3 entry
+last_updated: 2026-05-28
 ```
 
 ## 확정 방향
