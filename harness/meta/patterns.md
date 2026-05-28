@@ -100,25 +100,26 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **재평가 시점**: Phase 3 코드 phase 진행 중 (같은 .tsx 파일 sub-section 동시 수정 위험 ↑) — P-X1 적용 후 효과 측정
 - **연관 Skill / Contract**: phase-start §6.3, multi_slice_plan template, sub-agent prompt format
 
-### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 13연속 PASS 효과 측정 (update 2026-05-28 Phase 4.5)
+### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 17연속 PASS 효과 측정 (update 2026-05-29 Phase 6)
 
-- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 = **13 Slice 누적**, 0 deviation)
-- **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 **13연속 누적 update**
-- **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md + meta/retrospectives/phase-4.5.md §P-X1 13연속 효과 측정
-- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 PASS → Phase 4 4/4 PASS → Phase 4.5 4/4 PASS = **13연속**. Phase 4.5는 mini-phase 형식(4 Slice 모두 sub-agent dispatch)에서도 0건 재발. **proposal → 적용 → 3 phase 누적 효과 측정 사이클 완성**.
-- **증거 (Phase 3 + Phase 4 + Phase 4.5)**:
-  - Slice 1~13 (Phase 3 5 + Phase 4 4 + Phase 4.5 4) 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
-  - `git diff f50bc74..HEAD -- harness/apps/web/component_map.md` → **0줄 (19연속, Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4)**
-  - `git diff 76b4d2c..HEAD -- harness/apps/web/components/PlanCard.tsx` → **0줄 (9연속, Phase 4 4 + Phase 4.5 5 — 사용자 결정 6-a 계승)**
+- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 = **17 Slice 누적**, 0 deviation)
+- **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 13연속 update — Phase 6에서 **17연속 누적 update**
+- **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md + meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md §P-X1 17연속 효과 측정
+- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 → Phase 4 4/4 → Phase 4.5 4/4 → Phase 6 4/4 = **17연속 PASS**. Phase 6는 stabilization mini-phase (output_schema + agent_io contract 본격 변경 + frontend types mirror)에서도 0건 재발. **proposal → 적용 → 4 phase 누적 효과 측정 사이클 완성**.
+- **증거 (Phase 3 + Phase 4 + Phase 4.5 + Phase 6)**:
+  - Slice 1~17 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4) 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
+  - `git diff f50bc74..HEAD -- harness/apps/web/component_map.md` → **0줄 (22연속, Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3)**
+  - `git diff 76b4d2c..HEAD -- harness/apps/web/components/PlanCard.tsx` → **0줄 (12연속, Phase 4 4 + Phase 4.5 5 + Phase 6 3 — 사용자 결정 6-a 계승)**
   - phases/active/phase-3-pwa-impl/deviations.md → 0건 entry
   - phases/active/phase-4-fastapi-extension/deviations.md → 1건 entry (D-1 audit drift, intended → Slice 4 해소)
   - phases/active/phase-4.5-critic-revise-loop/deviations.md → 0건 entry
+  - phases/active/phase-6-output-schema-stabilization/deviations.md → 0건 entry
 - **권장 대응**:
   - Phase 5+ 모든 sub-agent prompt에 §SELF-VERIFICATION 의무 유지
   - phase-start v1.3.0 §6.3 의무 절차 보존
   - main session sub-agent 완료 후 `git diff --stat` 검증 의무 절차 보존
-- **재평가 시점**: Phase 5+ DB/Auth phase (Supabase + RLS 새 영역 도입) — 재발 시 P-X4 (worktree isolation) 재검토 트리거
-- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 13연속), P-GPT-REVIEW-001 (Phase 4 신규), P-VALIDATION-FORMAL-001 (Phase 4.5 신규)
+- **재평가 시점**: Phase 5 DB/Auth phase (Supabase + RLS 새 영역 도입) — 재발 시 P-X4 (worktree isolation) 재검토 트리거
+- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 17연속), P-GPT-REVIEW-001 (Phase 4 + Phase 6 두 번째 적용), P-VALIDATION-FORMAL-001 (Phase 4.5 + Phase 6 두 번째 입증), P-CRITIC-CANONICAL-001 (Phase 6 신규), P-CONTRACT-FIRST-001 (Phase 6 신규 후보)
 
 ### Pattern P-THIN-VERTICAL-001: Thin Vertical Slice 효과 (코드 phase entry 표준)
 
@@ -199,11 +200,12 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - meta/retrospectives/phase-4.5.md
   - meta/proposals/2026-05-28_phase-4-retrospective-proposals.md §P-X2 (채택 권장)
 
-### Pattern P-VALIDATION-FORMAL-001: multi-llm-validation formal self + 외부 분리 패턴 (Phase 4.5 첫 트리거)
+### Pattern P-VALIDATION-FORMAL-001: multi-llm-validation formal self + 외부 분리 패턴 (Phase 4.5 첫 + Phase 6 두 번째 입증)
 
-- **유형**: 반복 성공 (Phase 4.5 첫 적용, formal self V1~V4 PASS + external placeholder 분리)
+- **유형**: 반복 성공 (Phase 4.5 첫 적용 V1~V4 PASS, Phase 6 두 번째 적용 V1~V5 PASS, 두 번째 트리거로 정식 패턴 확정)
 - **최초 식별**: 2026-05-28 (Phase 4.5 Slice 1 — 첫 formal 트리거)
-- **관련 회고**: meta/retrospectives/phase-4.5.md §잘된 것 2 + §P-VALIDATION-FORMAL-001
+- **두 번째 입증**: 2026-05-29 (Phase 6 Slice 1 — 두 번째 formal 트리거, V5 frontend types ↔ backend 1:1 매핑 추가)
+- **관련 회고**: meta/retrospectives/phase-4.5.md §잘된 것 2 + meta/retrospectives/phase-6.md §잘된 것 4 + §P-VALIDATION-FORMAL-001 두 번째 입증
 - **요약**: 사용자 결정 "검증 모델은 너가 직접 (Claude Code, 혹은 codex가 지침 참고하면서 자가 검증), 외부 검증은 따로 작성되도록 할 것" → multi-llm-validation Skill formal 트리거를 다음 패턴으로 정의:
   1. **Self validation**: Claude Code가 지침(CLAUDE.md, contracts, eval, patterns)을 참조하여 자가 검증 → `meta/validations/{date}_{phase}_self.md`
   2. **External validation**: 외부 LLM(GPT/Gemini) 검증은 placeholder로 별도 파일 → `meta/validations/{date}_{phase}_external.md` (사용자가 외부에서 진행 후 채움)
@@ -223,5 +225,64 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **연관 Skill / Contract**: multi-llm-validation Skill, P-GPT-REVIEW-001 (informal GPT 검토 — Phase 4 baseline)
 - **관련 회고**:
   - meta/retrospectives/phase-4.5.md
+  - meta/retrospectives/phase-6.md (두 번째 트리거)
   - meta/validations/2026-05-28_phase-4.5-pre-entry_self.md (V1~V4 PASS)
   - meta/validations/2026-05-28_phase-4.5-pre-entry_external.md (placeholder)
+  - meta/validations/2026-05-29_phase-6-pre-entry_self.md (V1~V5 PASS)
+  - meta/validations/2026-05-29_phase-6-pre-entry_external.md (placeholder)
+
+### Pattern P-CRITIC-CANONICAL-001: 다중 fallback → canonical + deprecated 단계적 축소 (Phase 6 신규)
+
+- **유형**: 반복 성공 (Phase 6 첫 적용, Critic verdict 4 fallback → 1 canonical + 1 우선 fallback + 3 deprecated)
+- **최초 식별**: 2026-05-29 (Phase 6 Slice 2 — Critic verdict canonical 결정, ADR-018)
+- **관련 회고**: meta/retrospectives/phase-6.md §잘된 것 6 + §P-CRITIC-CANONICAL-001
+- **요약**: Phase 4.5에서 발견된 "Critic verdict 4 fallback (overall_score_avg / scores / dimensions / eight_dim_scores) 혼재" 문제 → Phase 6 Slice 2 contract-change Skill 트리거로 다음 패턴 정립:
+  1. **Canonical 1 결정**: `overall_score: float [0.0~1.0]` + `dimensions: dict[str, float]` (`output_schema.md §9.1 + ADR-018`)
+  2. **우선 fallback 1 유지**: `dimensions` 값 평균 (canonical fallback, 같은 정규화 수준)
+  3. **Deprecated 3 + DeprecationWarning**: `overall_score_avg` / `scores` / `eight_dim_scores` — Phase 1~4.5 호환을 위해 코드에 잔존하되 `agents/critic.py::select_best_plan_index` 에서 `warnings.warn(DeprecationWarning, ...)` 발행 + `pytest.warns(DeprecationWarning)` capture 의무화
+  4. **단계적 제거 시점 명시**: Phase 9+ eval-run 정식화 후 deprecated 3 완전 제거 (별도 contract-change 절차)
+- **효과 측정 (Phase 6)**:
+  - 코드 단순화: 4 fallback 분기 → canonical 우선 분기로 명확화
+  - 회귀 검출 ↑: DeprecationWarning + pytest.warns capture → 누락 발견 자동화
+  - 데이터 호환 ↑: Phase 1~4.5 데이터 그대로 동작 (즉시 제거 X)
+  - schema_stress_test 22 케이스 PASS — canonical / deprecated 양쪽 모두 검증
+- **다음 단계**:
+  - Phase 7+ RAG schema, Phase 9+ eval schema 같은 다중 fallback 누적 시 동일 패턴 재사용 가능
+  - Phase 9+ eval-run 정식화 후 fallback 완전 제거 시점에 "Resolved" 표기 추가
+- **권장 대응**:
+  - 큰 schema 결정 시 canonical 1 + 우선 fallback 1 + deprecated N + DeprecationWarning 4단계 명시
+  - ADR로 결정 근거 영구 기록 (Phase 6 ADR-018 패턴 복제)
+  - `pytest.warns(DeprecationWarning)` capture 의무화 (회귀 자동 검출)
+- **연관 Skill / Contract**: contract-change Skill, agent-io-check Skill, ADR-018 (Phase 6 Critic canonical), output_schema.md §9 canonical
+- **관련 회고**:
+  - meta/retrospectives/phase-6.md
+  - docs/decisions/phase_6_critic_canonical.md (ADR-018)
+
+### Pattern P-CONTRACT-FIRST-001: 큰 phase 진입 전 mini-phase로 contract 안정화 (Phase 6 신규 후보)
+
+- **유형**: 반복 성공 (Phase 6 첫 적용 — Phase 5 DB/Auth 15~20h 진입 전 mini-phase 8h로 contract 안정화)
+- **최초 식별**: 2026-05-29 (Phase 6 — stabilization mini-phase 형식 두 번째)
+- **관련 회고**: meta/retrospectives/phase-6.md §잘된 것 9 + §배운 것 6
+- **요약**: 사용자 결정 "Phase 6 → Phase 5 순차 진행" (옵션 B 변형) → Phase 5 DB/Auth 진입 전 Phase 6를 mini-phase로 분리하여 contract 안정화:
+  1. **Critic verdict canonical 결정**: 4 fallback → 1+1+3 deprecated (ADR-018)
+  2. **Rewriter contract v1.0.0 → v1.1.0**: Pydantic 모델 + graceful 정책 명시 (ADR-019)
+  3. **revise_history / recommended_plan_index 정식 등록**: Optional 필드 contract 명시 (§10 Body)
+  4. **frontend types.ts canonical mirror**: types ↔ backend 1:1 매핑 정합 (tsc 0 errors)
+- **효과 측정 (Phase 6)**:
+  - Phase 5 DB/Auth 진입 시 critic_evaluation schema drift 위험 ~0
+  - Phase 5 revise_history / recommended_plan_index DB 컬럼 설계 시 schema 결정 부담 ↓
+  - mini-phase 8h 비용 → Phase 5+ migration 회귀 비용 ↓↓ (ROI ↑↑)
+  - 큰 phase 진입 전 안정화 효과 입증 (Phase 4.5는 Critic revise loop 안정화 / Phase 6은 schema 안정화)
+- **다음 단계**:
+  - Phase 7 (RAG Lite) 진입 전에 RAG schema 안정화 mini-phase 검토
+  - Phase 9+ (eval-run 정식화) 진입 전에 eval schema 안정화 mini-phase 검토
+  - Phase 5 entry 시점 사용자 검토 후 정식 패턴 채택 결정 (현재 후보 상태)
+- **권장 대응**:
+  - 큰 phase (15+h, DB / Auth / RAG / eval 등) 진입 직전 mini-phase로 contract 안정화 검토
+  - contract-change Skill + agent-io-check Skill 본격 활용
+  - ADR로 결정 근거 영구 기록
+  - smoke_test_phase_N + schema_stress_test 신규 (P-X2 v2 패턴)
+- **연관 Skill / Contract**: contract-change Skill, agent-io-check Skill, phase-start v1.3.0, P-GPT-REVIEW-001 (Phase 6 두 번째 적용 ▼20% 시간)
+- **관련 회고**:
+  - meta/retrospectives/phase-6.md
+  - meta/retrospectives/phase-4.5.md (Phase 4.5는 Critic revise loop 안정화 mini-phase 첫)

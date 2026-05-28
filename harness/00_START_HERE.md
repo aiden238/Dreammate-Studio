@@ -46,30 +46,37 @@
 
 ## 현재 active Phase
 
-**🟡 pending_user_decision — 다음 phase 옵션 A/B/C**
+**Phase 5 (DB/Auth) — pending entry**
 
-Phase 4.5 ✅ done (2026-05-28). 다음 phase 진입 대기.
+Phase 6 ✅ done (2026-05-29). 다음 phase = Phase 5 DB/Auth (사용자 결정 "Phase 6 → Phase 5 순차" 계승).
 
-- Phase 4.5 archive: `phases/archive/phase-4.5-critic-revise-loop/` (참조 가능 — closing_notes + 회고 + 다음 옵션)
+- Phase 6 archive: `phases/archive/phase-6-output-schema-stabilization/` (참조 가능 — closing_notes + 회고 + Phase 5 진입 체크리스트)
+- Phase 4.5 archive: `phases/archive/phase-4.5-critic-revise-loop/` (참조 가능 — Critic revise loop + Rewriter baseline)
 - Phase 4 archive: `phases/archive/phase-4-fastapi-extension/` (참조 가능 — backend + frontend baseline)
 - Phase 3 archive: `phases/archive/phase-3-pwa-impl/` (참조 가능 — frontend baseline)
 - Phase 2 archive: `phases/archive/phase-2-pwa-design/` (참조 가능 — design spec baseline)
 - Phase 1 archive: `phases/archive/phase-1-mvp-basic-flow/` (참조 가능 — backend baseline)
 - Phase 0 archive: `phases/archive/phase-0-migration/` (참조 금지)
-- **진입 전 권장**: `meta/retrospectives/phase-4.5.md` + `meta/validations/2026-05-28_phase-4.5-pre-entry_external.md` (외부 검증 추가 가능) + multi-llm-validation Skill **formal external** (Phase 5 진입 시 의무)
 
-**Phase 4.5 핵심 성과**:
-- **P-X1 §SELF-VERIFICATION 13연속 PASS** (Phase 3 5 + Phase 4 4 + Phase 4.5 4)
-- **PlanCard.tsx 9연속 0줄** (Phase 4 4 + Phase 4.5 5)
-- **component_map.md 19연속 0줄** (Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4)
-- **multi-llm-validation formal 첫 트리거** (Claude Code 자가 검증 V1~V4 PASS + 외부 placeholder 분리)
-- **P-X2 자동 게이트 첫 작동** (scenario_simulation.ps1 5/5 PASS via phase-complete v1.2.0 §1.6)
-- pytest 109/109 (+16 신규) + smoke 9/9 + audit 0 drift × 2 + tsc 0 + lint clean
-- 신규 패턴: P-X2-EFFECT-001 + P-VALIDATION-FORMAL-001 + P-X1-EFFECT-001 update (13연속)
+**진입 전 의무**:
+1. multi-llm-validation **formal external** 작성 (`meta/validations/2026-05-29_phase-6-pre-entry_external.md` placeholder를 GPT/Gemini로 채움)
+2. security-review Skill 첫 호출 준비
+3. scenario_simulation.ps1 v2 (DB/Auth용 5 시나리오 추가) — Phase 5 Slice 1에서
+4. contract-change Skill (db_schema.md 신규 + 0001_init.sql migration)
+5. ADR-020 Supabase 채택 결정 작성
 
-**다음 phase 옵션**:
-- **A**: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h) — multi-llm-validation formal external 의무
-- **B**: Phase 6 Output Schema + Agent IO 안정화 (Phase 4.5 산출물 stress test + Critic verdict 단일 표준)
-- **C**: 다른 우선순위 (Phase 9 결과 저장 / Phase 11+ 안정화 등)
+**Phase 6 핵심 성과**:
+- **P-X1 §SELF-VERIFICATION 17연속 PASS** (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4)
+- **PlanCard.tsx 12연속 0줄** (Phase 4 4 + Phase 4.5 5 + Phase 6 3)
+- **component_map.md 22연속 0줄** (Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3)
+- **Critic verdict canonical 결정** (overall_score + dimensions, ADR-018)
+- **Rewriter contract v1.0.0 → v1.1.0** (Pydantic + graceful, ADR-019)
+- **Critic 4 fallback → 1 canonical + 1 우선 fallback + 3 deprecated** (DeprecationWarning)
+- pytest 109 → **144 (+35)** + smoke 9 → **10** (smoke_test_phase_6) + scenario_sim 5/5 (P-X2 두 번째) + schema_stress 5/5 (P-X2 v2 신규)
+- **agent-io-check Skill 첫 정식 트리거** (Rewriter v1.1.0 + Critic canonical 정합 PASS)
+- **contract-change Skill 첫 본격 실 변경 통과** (3 contract + 회귀 0)
+- **multi-llm-validation formal 두 번째 트리거** (V1~V5 PASS, 정식 패턴 확정)
+- 신규 패턴: P-CRITIC-CANONICAL-001 + P-CONTRACT-FIRST-001 (신규 후보) + P-X1-EFFECT-001 update (17연속) + P-VALIDATION-FORMAL-001 update (두 번째 입증)
+- GPT 검토안 6→4 Slice 압축 (▼33%) + 시간 ▼20% (P-GPT-REVIEW-001 두 번째 적용)
 
-사용자가 셋 중 선택 후 phase-start v1.3.0 호출로 진입.
+**Phase 5 entry 트리거**: 위 5개 의무 사항 완료 후 phase-start v1.3.0 호출.

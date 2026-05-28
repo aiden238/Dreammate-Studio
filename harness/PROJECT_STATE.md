@@ -2,9 +2,9 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 모두 완료, Phase 6 ★ active (entry 2026-05-29)**.
-Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-model 인터페이스 + Critic verdict + revise loop (max 2) + recommended_plan_index 모두 동작.
-**🟢 Phase 6 진행 중 — Output Schema + Agent IO Stabilization** (Phase 5 DB/Auth 진입 전 contract 안정화, 8~10h, 4 Slice 모두 sub-agent)
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 모두 완료**.
+Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions) + revise loop (max 2) + Rewriter v1.1.0 (Pydantic) + recommended_plan_index 모두 동작.
+**🟡 Phase 5 (DB/Auth) — pending entry** (사용자 결정 "Phase 6 → Phase 5 순차" 계승, external validation + security-review + scenario_simulation v2 작성 후 진입)
 
 ## 현재 Active Phase
 
@@ -30,12 +30,18 @@ Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-m
 - 신규 패턴: P-X2-EFFECT-001 + P-VALIDATION-FORMAL-001 + P-X1-EFFECT-001 update (13연속)
 - Sub-agent 4/4 (모두 sub-agent dispatch) + Slice 4 close (final)
 
-**Phase 6. Output Schema + Agent IO Stabilization 🟢 active (entry 2026-05-29)** — mini-phase 8~10h, 4 Slice 모두 sub-agent
-- 8 entry files (goals/scope/non_goals/dependencies/acceptance/assumptions/multi_slice_plan/notes) 작성 완료
-- assumptions.md §6 4-check PASS (audit_naming 0 drift entry, simplest slice CriticEvaluation canonical 1 모델)
-- Slice 1 (Pre-Entry) sub-agent 진행 중 — validations self V1~V5 PASS + external placeholder + contract gap analysis
-- GPT 검토안 7.5/10 채택 + 6→4 Slice 압축 (P-GPT-REVIEW-001 정신 계승)
-- 사용자 결정: Phase 6 선행 → Phase 5 순차 진행 ("플랜을 세워서 순차적으로")
+**Phase 6. Output Schema + Agent IO Stabilization ✅ done (2026-05-29)** — archive 이동 완료
+- A1~A10 10/10 PASS + M1~M3 3/3 PASS / audit_naming + audit_page_component 0 drift × 2 / scenario_simulation 5/5 (P-X2 두 번째 자동 게이트) / schema_stress_test 5/5 (P-X2 v2 신규) / smoke_test_phase_6 10/10 PASS / pytest 144/144 (+35 신규)
+- **P-X1 17연속 PASS (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4) + PlanCard 12연속 0줄 + component_map 22연속 0줄** ★
+- **Critic verdict canonical 결정** (overall_score + dimensions, ADR-018) + **Rewriter v1.0.0 → v1.1.0** (Pydantic + graceful, ADR-019)
+- **contract-change Skill 첫 본격 실 변경 통과** (output_schema + agent_io_contract + api_contract 3 contract + 회귀 0)
+- **agent-io-check Skill 첫 정식 트리거** (Rewriter v1.1.0 + Critic canonical 정합 PASS)
+- **multi-llm-validation formal 두 번째 트리거** (V1~V5 PASS, P-VALIDATION-FORMAL-001 두 번째 입증 → 정식 패턴 확정)
+- 신규 패턴: P-CRITIC-CANONICAL-001 + P-CONTRACT-FIRST-001 (신규 후보) + P-X1-EFFECT-001 update (17연속) + P-VALIDATION-FORMAL-001 update (두 번째)
+- Sub-agent 4/4 (모두 sub-agent dispatch) + Slice 4 close (final)
+- GPT 검토안 6→4 Slice 압축 (▼33%) + 시간 8~12h → 실측 ~8h (▼20%, P-GPT-REVIEW-001 두 번째 적용)
+
+**🟡 Phase 5 (DB/Auth) — pending entry** (사용자 결정 "Phase 6 → Phase 5 순차" 계승)
 
 ## 이전 결정 (옵션 B 변형: Phase 6 선행)
 
@@ -48,12 +54,14 @@ Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-m
 ## migration_progress
 
 ```yaml
-current_sprint: phase-6-slice-1
-current_sprint_step: 1
+current_sprint: completed
+current_sprint_step: completed
 total_steps_in_sprint: 4
-last_completed_action: "Phase 6 entry — 8 entry files (4-check PASS, audit_naming 0 drift) + GPT 검토안 7.5/10 채택 + 6→4 Slice 압축"
-next_action: "Slice 1 commit 후 Slice 2 sub-agent dispatch (contract-change + Critic canonical + Rewriter contract)"
+last_completed_action: "Phase 6 종료 — A1~A10 10/10 + M1~M3 3/3 + P-X1 17연속 + Critic canonical (ADR-018) + Rewriter v1.1.0 (ADR-019) + 144/144 pytest + 10/10 smoke + scenario_sim 5/5 (P-X2 두 번째) + schema_stress 5/5 (P-X2 v2) + audit×2 0 drift + agent-io-check 첫 정식 + contract-change 본격 + multi-llm-validation formal 두 번째"
+next_action: "Phase 5 (DB/Auth) entry 대기 — external validation 작성 + security-review Skill + scenario_simulation v2 + multi-llm-validation formal external"
 blocker: null
+next_phase: phase-5-db-auth
+next_phase_status: pending_phase_5_entry
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
 phase_1_status: completed
@@ -190,12 +198,28 @@ phase_4_5_new_patterns:
 phase_4_5_mitigated_patterns:
   - P-AGENT-SCOPE-001  # 13연속 누적 입증 (Phase 3 5 + Phase 4 4 + Phase 4.5 4)
 phase_4_5_retrospective_proposals: in_retrospective  # 본 회고 §개선 제안에 직접 기록 (mini-phase)
-phase_6_status: in_progress
+phase_6_status: completed
 phase_6_entry_date: 2026-05-29
+phase_6_completion_date: 2026-05-29
+phase_6_archive_location: phases/archive/phase-6-output-schema-stabilization/
 phase_6_total_slices: 4  # 모두 sub-agent
-phase_6_completed_slices: 0
+phase_6_completed_slices: 4  # Slice 1~4 모두 PASS
 phase_6_estimated_hours_total: 8-10
+phase_6_actual_hours: ~8  # GPT 정신 계승 ▼20% (8~12h → ~8h)
 phase_6_assumptions_check: PASS  # 4-check 통과 (entry)
+phase_6_acceptance_passed: 10/10  # A1~A10
+phase_6_meta_acceptance_passed: 3/3  # M1~M3
+phase_6_pytest_result: 144/144  # Phase 4.5 baseline 109 + Phase 6 신규 35
+phase_6_smoke_test: 10/10 PASS  # smoke_test_phase_6.ps1 신규
+phase_6_scenario_simulation: 5/5 PASS (auto-gate, 두 번째)  # P-X2 두 번째 자동 게이트
+phase_6_schema_stress_test: 5/5 PASS (P-X2 v2 신규)  # schema_stress_test.ps1 신규
+phase_6_audit_naming_final: 0 drift  # Slice 1 + Slice 4
+phase_6_audit_page_component_final: 0 drift  # Slice 1 + Slice 4
+phase_6_p_x1_self_verification: 4/4 PASS  # Slice 1~4 모두
+phase_6_p_x1_cumulative_streak: 17  # Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 ★
+phase_6_component_map_zero_lines_streak: 22  # Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 ★
+phase_6_plan_card_zero_lines_streak: 12  # Phase 4 4 + Phase 4.5 5 + Phase 6 3 ★
+phase_6_deviation_count: 0
 phase_6_user_decisions_applied:
   next_phase_choice: phase_6_first_then_phase_5  # GPT 검토안 채택 (옵션 B 변형 — Phase 6 선행 → Phase 5)
   slice_compression: 6_to_4  # P-GPT-REVIEW-001 정신
@@ -203,7 +227,34 @@ phase_6_user_decisions_applied:
   multi_llm_validation_formal: yes  # 두 번째 트리거
   prompt_registry_defer_phase_7_plus: yes  # NG8
   critic_fallback_keep_with_deprecation: yes  # NG12
-total_commits: 49  # 48 + Slice 1 entry (Phase 6)
+phase_6_skills_first_trigger:
+  - agent_io_check  # 첫 정식 트리거 (Slice 4)
+  - contract_change_formal  # 첫 본격 실 변경 (Slice 2 — output_schema + agent_io_contract + api_contract 3 contract + ADR-018/019)
+  - multi_llm_validation_formal_second  # 두 번째 트리거 (Slice 1 V1~V5)
+  - phase_complete_v1_2_0_second  # P-X2 자동 게이트 두 번째 트리거 (Slice 4)
+phase_6_contracts_changed:
+  - output_schema.md  # §9 CriticEvaluation canonical + §10 Body.revise_history Optional
+  - agent_io_contract.md  # §6 Rewriter v1.0.0 → v1.1.0
+  - api_contract.md  # §8.3 응답 필드 정식 등록
+phase_6_adr_created:
+  - ADR-018  # Critic verdict canonical (phase_6_critic_canonical.md)
+  - ADR-019  # Rewriter contract v1.1.0 (phase_6_rewriter_contract.md)
+phase_6_new_patterns:
+  - P-CRITIC-CANONICAL-001  # 다중 fallback → canonical + deprecated 단계적 축소
+  - P-CONTRACT-FIRST-001  # DB 진입 전 mini-phase로 contract 안정화 (신규 후보)
+  - P-X1-EFFECT-001 (update 17연속)  # P-X1 17연속 PASS 누적 입증
+  - P-VALIDATION-FORMAL-001 (update 두 번째)  # 두 번째 트리거로 정식 패턴 확정
+phase_6_mitigated_patterns:
+  - P-AGENT-SCOPE-001  # 17연속 누적 입증 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4)
+phase_6_retrospective_proposals: in_retrospective  # 본 회고 §개선 제안에 직접 기록 (mini-phase)
+phase_6_deferred_to_next:
+  - external_validation_fill  # Phase 5 entry 직전 사용자가 외부에서 채움
+  - security_review_first_trigger  # Phase 5 entry
+  - scenario_simulation_v2  # Phase 5 Slice 1 (DB/Auth 5 시나리오 추가)
+  - prompt_registry_p_007_p_008_formal  # Phase 7+ (NG8)
+  - critic_fallback_full_removal  # Phase 9+ eval-run 정식화 후
+  - revise_effect_eval  # Phase 9+ eval-design (Phase 4.5 D6 effect 계속 deferred)
+total_commits: 53  # 49 + Slice 2 (dad38c5) + Slice 3 (d0ab5a8) + Slice 4 final
 last_updated: 2026-05-29
 ```
 
@@ -278,37 +329,33 @@ last_updated: 2026-05-29
 ## 다음 액션
 
 ```
-다음 phase 진입 준비 (🟡 pending_user_decision — Phase 4.5 종료, 다음 옵션 A/B/C):
+다음 phase 진입 준비 (🟡 pending_phase_5_entry — Phase 6 종료, 사용자 결정 "Phase 6 → Phase 5 순차" 계승):
 
-1. (필수) Phase 4.5 회고 + closing_notes 검토
-   → meta/retrospectives/phase-4.5.md (개선 제안 §1~4)
-   → phases/archive/phase-4.5-critic-revise-loop/closing_notes.md (다음 phase 옵션 A/B/C 명시)
-   → 신규 패턴: P-X2-EFFECT-001 + P-VALIDATION-FORMAL-001 + P-X1-EFFECT-001 update (13연속)
+1. (필수) Phase 6 회고 + closing_notes 검토
+   → meta/retrospectives/phase-6.md (개선 제안 §1~5)
+   → phases/archive/phase-6-output-schema-stabilization/closing_notes.md (Phase 5 진입 체크리스트)
+   → 신규 패턴: P-CRITIC-CANONICAL-001 + P-CONTRACT-FIRST-001 (신규 후보) + P-X1-EFFECT-001 update (17연속) + P-VALIDATION-FORMAL-001 update (두 번째)
 
-2. Phase 4 회고 권장 사항 재평가 (Phase 4.5 채택 결과 반영)
-   → Z-X1 (audit_page_component dynamic route 정규화): deferred 유지 (Phase 5+ 새 dynamic route 추가 시 검토)
-   → Z-X2 (multi-provider client factory): deferred 유지 (Phase 21+ 검토)
-   → Z-X3 (Critic best-plan): ✅ Phase 4.5에서 채택 완료
-   → P-X2 (변경성 시뮬 자동 게이트): ✅ Phase 4.5에서 채택 + 첫 자동 작동 완료
+2. (의무) external validation 작성 (Phase 5 큰 보안 phase 진입 전)
+   → meta/validations/2026-05-29_phase-6-pre-entry_external.md placeholder를 GPT/Gemini로 채움
+   → V1~V5 cross-check 결과 phase-6 notes.md에 기록
 
-3. (권장) multi-llm-validation Skill formal external
-   → Phase 4.5 패턴 계승: self.md + external.md 2 파일 작성
-   → 옵션 A (Phase 5 DB/Auth) 진입 시 external 의무
-   → V1~V4 cross-check 권장
+3. (의무) security-review Skill 첫 호출 준비 (Phase 5 entry)
+   → Auth/RLS 도입 + JWT + Supabase 연결 시 보안 검토 절차
 
-4. 사용자 결정 (다음 phase 옵션 A/B/C)
-   → 옵션 A: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h) — formal external 의무
-   → 옵션 B: Phase 6 Output Schema 안정화 (Phase 4.5 산출물 stress test + Critic verdict 단일 표준)
-   → 옵션 C: Phase 9 결과 저장 + 피드백 / Phase 11+ 안정화 등 사용자 시점 재평가
+4. (권장) scenario_simulation.ps1 v2 작성 (Phase 5 Slice 1)
+   → DB/Auth용 5 시나리오 추가: Supabase 연결 / RLS 정책 / user 분리 / JWT / SSE
+   → P-X2 자동 게이트 표현력 강화
 
-5. 다음 phase 진입 (phase-start v1.3.0 호출 — 옵션 채택 후)
-   → phases/active/<chosen-phase>/ 폴더 생성
+5. Phase 5 (DB/Auth) 진입 (phase-start v1.3.0 호출)
+   → phases/active/phase-5-db-auth/ 폴더 생성
    → 4점검 (assumptions / Simplest Slice / Surgical Scope / Verification)
-   → Phase 4.5 backend (revise loop + best-plan) + frontend (wrapper UI) baseline 로드
-   → 첫 작업: 채택 옵션에 따라
+   → Phase 6 contract 안정화 (Critic canonical + Rewriter v1.1.0 + revise_history Optional) baseline 로드
+   → 권장 Slice 분할 (1: Pre-Entry+Security / 2: Supabase+Schema / 3: Auth+JWT+Login / 4: RLS+SSE / 5: Close)
+   → contract-change Skill (db_schema.md 신규 + 0001_init.sql migration) + ADR-020 Supabase 채택
 
-6. 다음 phase deferred 처리 계획 (옵션별)
-   → 옵션 A: D7 (SSE Progress) + plan_store DB migration
-   → 옵션 B: Critic verdict 4-fallback → 단일 표준 통합 + revise effect eval
-   → 옵션 C: 사용자 시점 재평가
+6. Phase 5 deferred 처리 계획
+   → Phase 5: Supabase + Auth + RLS + SSE D7 + plan_store DB migration
+   → Phase 7+: RAG Lite + prompt_registry P-007/P-008 정식화 (NG8)
+   → Phase 9+: revise effect eval + Critic fallback 완전 제거
 ```
