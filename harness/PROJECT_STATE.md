@@ -2,9 +2,9 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 모두 완료**.
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 모두 완료 + Phase 4.5 active (entry 2026-05-28)**.
 Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-model 인터페이스 + Critic verdict 노출 모두 동작.
-다음 단계는 **다음 phase 옵션 A/B/C 사용자 결정 대기** (사용자 결정 3-c).
+**Phase 4.5 진행 중** — Slice 1 (Pre-Entry) validations + P-X2 채택 + scenario_simulation.ps1 작업 중.
 
 ## 현재 Active Phase
 
@@ -22,20 +22,19 @@ Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-m
 - smoke_test_phase_4 8/8 PASS
 - 신규 패턴: P-GPT-REVIEW-001 + P-X1-EFFECT-001 update (9연속)
 
-**다음 Phase — 🟡 pending_user_decision (사용자 결정 3-c 옵션 A/B/C)**
-- 옵션 A: Phase 4.5 mini-phase (Critic revise loop + Rewriter, 8~12h)
-- 옵션 B: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h)
-- 옵션 C: 다른 우선순위 (Phase 6 / 9 / 11+ 등)
-- 사용자가 셋 중 선택 후 다음 phase 진입 (phase-start v1.3.0 호출)
+**Phase 4.5 ★ active (entry 2026-05-28)** — Critic Revise Loop + Rewriter + Z-X3 Best-Plan + P-X2 자동 게이트 (mini-phase, 12~16h)
+- 사용자 결정: 옵션 A 선택 + Z-X3 포함 + P-X2 채택 + multi-llm-validation **formal** 첫 트리거 (Claude Code 자가 검증, 외부 검증 별도 파일 분리)
+- Slice 4개 모두 sub-agent dispatch (사용자 결정)
+- Slice 1 (entry): 진행 중 — validations 자가 + P-X2 채택 (phase-complete v1.2.0) + scenario_simulation.ps1
 
 ## migration_progress
 
 ```yaml
-current_sprint: completed
+current_sprint: phase-4.5-slice-1
 current_sprint_step: 6
 total_steps_in_sprint: 6
-last_completed_action: "Phase 4 entry: phase-start v1.3.0 §6 4점검 통과 + 9 entry files + audit_naming 0 drift. GPT 검토 채택 (6→4 Slices). 사용자 결정 7개 모두 반영 (4-b multi-model / 5-a Phase 8+ 제거 / 6-a PlanCard 무수정 등)"
-next_action: "Wave 1 Slice 1 sub-agent dispatch — Foundation contract endpoints (routers/plans.py 4 endpoints + schemas/plans.py + ADR-014)"
+last_completed_action: "Phase 4.5 entry — 8 entry files 작성 (goals/scope/non_goals/dependencies/acceptance/assumptions/multi_slice_plan/notes) + assumptions.md 4-check 통과 + audit_naming 0 drift"
+next_action: "Slice 1 sub-agent commit 후 Slice 2 dispatch (Rewriter + Revise Loop)"
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
@@ -140,12 +139,18 @@ phase_4_deferred_to_next:
   - D2_QuickInputCard_alt_variants  # Phase 9
   - Phase_1_endpoint_removal  # Phase 8+
 phase_4_retrospective_proposals: proposed (Z-X1~Z-X3 + Phase 2 P-X2 재평가, awaiting user review)
-next_phase_status: pending_user_decision  # 옵션 A/B/C (사용자 결정 3-c)
-next_phase_options:
-  option_a: Phase_4.5_mini_phase  # Critic revise + Rewriter, 8~12h
-  option_b: Phase_5_DB_Auth  # Supabase + RLS + SSE, 15~20h
-  option_c: 다른 우선순위  # Phase 6 / 9 / 11+ 사용자 시점 재평가
-total_commits: 44  # 39 + Phase 4 (entry + Slice 1~3 + Slice 4 본 commit)
+phase_4_5_status: in_progress
+phase_4_5_entry_date: 2026-05-28
+phase_4_5_total_slices: 4  # 모두 sub-agent
+phase_4_5_completed_slices: 0  # Slice 1 진행 중
+phase_4_5_estimated_hours_total: 12-16
+phase_4_5_assumptions_check: PASS  # 4-check 통과
+phase_4_5_user_decisions_applied:
+  z_x3_include: yes  # Best-Plan Selection 본 scope 포함
+  p_x2_adopt: yes  # phase-complete v1.2.0 §1.6 자동 게이트
+  multi_llm_validation_formal: yes  # Claude Code 자가 검증, 외부 placeholder 분리
+  all_slices_sub_agent: yes  # 4개 모두 sub-agent dispatch
+total_commits: 45  # 44 + Phase 4.5 Slice 1 entry commit
 last_updated: 2026-05-28
 ```
 

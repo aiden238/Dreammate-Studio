@@ -14,7 +14,7 @@ related_state:
   - PHASE_REGISTRY.md
   - phases/active/
   - phases/archive/
-version: v1.1.0
+version: v1.2.0
 ---
 
 # phase-complete
@@ -60,6 +60,31 @@ powershell -ExecutionPolicy Bypass -NoProfile -File scripts/smoke_test_phase_1.p
 - 단, Phase 종료 commit 직전에 `scripts/smoke_test_phase_{N}.ps1` 신규 작성 권장 (다음 Phase 회귀 baseline)
 
 **근거**: Phase 1 회고 P4 (`meta/retrospectives/phase-1.md`) — 매 Phase 종료 시 자동 게이트화로 회귀 차단.
+
+### 1.6 변경성 시뮬레이션 자동 게이트 (v1.2.0 추가, P-X2)
+
+P-X2 패턴(`meta/patterns.md`) 채택 — Phase 4 회고 시점 manual walkthrough의 일관성 부족 ↓ + 회귀 검출 누락 위험 ↓.
+
+**필수 절차** (Phase 종료 시 자동 호출):
+
+```powershell
+powershell -ExecutionPolicy Bypass -NoProfile -File scripts/scenario_simulation.ps1
+```
+
+**판정 + 기록**:
+
+- `PASS — 5/5 simulated scenarios passed` → `PROJECT_STATE.md` migration_progress yaml에 `phase_X_changeability_simulation: 5/5 PASS (auto-gate)` 기록
+- `FAIL — N/5 scenarios failed` → **Phase 종료 차단**, 회고 §개선 제안에 시나리오 추가/수정 명시 후 재실행
+
+**시나리오 (Phase 4.5 기준)**:
+
+1. PlanCard.tsx 시각 톤 변경
+2. component_map 항목 추가
+3. wrapper UI ring 색상 변경
+4. revise loop 최대 횟수 변경 (config)
+5. recommended_plan_index 비활성화
+
+**근거 회고**: `meta/proposals/2026-05-28_phase-4-retrospective-proposals.md` §P-X2 채택 권장 (우선순위 ↑).
 
 ### 2. 산출물 정리
 
@@ -232,6 +257,7 @@ docs/contracts/agent_io_contract.md + ai_system/prompts/prompt_registry.md
 
 - v1.0.0 (Phase 0 S5): 8단계 절차 정형화
 - v1.1.0 (2026-05-27 Phase 1 회고 P4 적용): §1.5 자동 smoke test 단계 추가 (scripts/smoke_test_phase_{N}.ps1)
+- v1.2.0 (2026-05-28 Phase 4.5 진입 시 P-X2 채택): §1.6 변경성 시뮬레이션 자동 게이트 추가 (`scripts/scenario_simulation.ps1` 호출)
 
 ## 종료 조건
 
