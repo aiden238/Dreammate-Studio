@@ -355,3 +355,20 @@ export interface WizardStepResponse {
   accepted: boolean;
   next_step: string | null;
 }
+
+// ─── Phase 5 Slice 3 — Auth types ──────────────────────────────────────
+//
+// 참조:
+//   - harness/backend/fastapi/routers/auth.py (AuthSession Pydantic)
+//   - harness/meta/security_reviews/2026-05-29_phase-5-auth-rls.md §T1
+//
+// 정책: access_token / refresh_token 은 backend httpOnly cookie 로만 관리.
+// 응답 body 에는 절대 노출 안 함 → 본 interface 에 토큰 필드 없음.
+
+/**
+ * /auth/login / /auth/me 응답.
+ */
+export interface AuthSession {
+  user_id: string;
+  email: string;
+}

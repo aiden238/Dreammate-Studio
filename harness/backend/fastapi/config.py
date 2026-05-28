@@ -122,6 +122,19 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 5 Slice 3 — Auth dev mode ────────────────────────────
+    # Supabase 미설정 환경에서 /auth/login mock user (mock-user-1) 발급 허용.
+    # 절대 production = False 강제 (배포 환경 환경변수로 override).
+    # security-review §T1 정합: mock 토큰도 httpOnly cookie 로만 노출.
+    dev_auth_mock: bool = Field(
+        default=True,
+        description=(
+            "Phase 5 Slice 3: Supabase 미설정 시 mock user 허용 (dev only). "
+            "production 환경에서는 환경변수 DEV_AUTH_MOCK=false 로 비활성화. "
+            "security-review §T1: mock 토큰도 httpOnly cookie 로만 노출."
+        ),
+    )
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

@@ -27,7 +27,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
+from .middleware import auth_middleware
 from .routers import generate_router, plans_router
+from .routers.auth import router as auth_router
 
 
 # ─── Logging ──────────────────────────────────────────────────────────
@@ -97,9 +99,15 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Phase 5 Slice 3 — JWT auth middleware (security-review §T1).
+    # httpOnly cookie 우선, Bearer fallback. graceful: 토큰 없거나 검증 실패 시
+    # request.state.user = None (pass-through). 인증 강제는 endpoint level 에서.
+    app.middleware("http")(auth_middleware)
+
     # Routers
     app.include_router(generate_router)  # Phase 1 endpoint (Phase 8+ 제거 예정)
     app.include_router(plans_router)  # Phase 4 contract endpoints
+    app.include_router(auth_router)  # Phase 5 Slice 3 — /api/v1/auth/{login,me,logout}
 
     # Health check (Slice 1 부수적 — uvicorn 부트 확인용).
     # Phase 1 baseline 보존: phase/slice 값은 Phase 1 베이스라인 유지 (회귀 0).

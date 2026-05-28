@@ -21,6 +21,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+import AuthGuard from "@/components/AuthGuard"; // Phase 5 Slice 3 — 외부 wrapper (PlanCard 무수정 유지)
 import ErrorCard from "@/components/ErrorCard";
 import PlanCard from "@/components/PlanCard"; // ★ 무수정 import (사용자 결정 6-a)
 import ProgressStepper from "@/components/ProgressStepper";
@@ -49,7 +50,20 @@ const VERDICT_CLASS: Record<CriticVerdict, string> = {
   reject: "bg-error-50 text-error-700",
 };
 
+/**
+ * Phase 5 Slice 3 — AuthGuard 외부 wrapper.
+ * 기존 PlanResultPage 컴포넌트 로직은 PlanResultPageContent 로 이동.
+ * PlanCard.tsx + component_map.md 무수정 정신 계승 (외부에서만 wrap).
+ */
 export default function PlanResultPage() {
+  return (
+    <AuthGuard>
+      <PlanResultPageContent />
+    </AuthGuard>
+  );
+}
+
+function PlanResultPageContent() {
   const params = useParams<{ plan_id: string }>();
   const router = useRouter();
   const planId = String(params?.plan_id ?? "");
