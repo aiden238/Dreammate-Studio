@@ -46,11 +46,12 @@
 
 ## 현재 active Phase
 
-**Phase 5 (DB/Auth) — pending entry**
+**🟡 pending_user_decision** (Phase 5 ✅ done 2026-05-29)
 
-Phase 6 ✅ done (2026-05-29). 다음 phase = Phase 5 DB/Auth (사용자 결정 "Phase 6 → Phase 5 순차" 계승).
+Phase 5 ✅ done (2026-05-29). 다음 phase 사용자 결정 대기 — 옵션 A Phase 7 RAG / B Phase 6+ legacy / C Phase 9 저장-피드백 / D Phase 8 MOA.
 
-- Phase 6 archive: `phases/archive/phase-6-output-schema-stabilization/` (참조 가능 — closing_notes + 회고 + Phase 5 진입 체크리스트)
+- Phase 5 archive: `phases/archive/phase-5-db-auth/` (참조 가능 — closing_notes + 회고 + Phase 6+/7+/8/9 옵션)
+- Phase 6 archive: `phases/archive/phase-6-output-schema-stabilization/` (참조 가능 — contract 안정화 baseline)
 - Phase 4.5 archive: `phases/archive/phase-4.5-critic-revise-loop/` (참조 가능 — Critic revise loop + Rewriter baseline)
 - Phase 4 archive: `phases/archive/phase-4-fastapi-extension/` (참조 가능 — backend + frontend baseline)
 - Phase 3 archive: `phases/archive/phase-3-pwa-impl/` (참조 가능 — frontend baseline)
@@ -58,25 +59,32 @@ Phase 6 ✅ done (2026-05-29). 다음 phase = Phase 5 DB/Auth (사용자 결정 
 - Phase 1 archive: `phases/archive/phase-1-mvp-basic-flow/` (참조 가능 — backend baseline)
 - Phase 0 archive: `phases/archive/phase-0-migration/` (참조 금지)
 
-**진입 전 의무**:
-1. multi-llm-validation **formal external** 작성 (`meta/validations/2026-05-29_phase-6-pre-entry_external.md` placeholder를 GPT/Gemini로 채움)
-2. security-review Skill 첫 호출 준비
-3. scenario_simulation.ps1 v2 (DB/Auth용 5 시나리오 추가) — Phase 5 Slice 1에서
-4. contract-change Skill (db_schema.md 신규 + 0001_init.sql migration)
-5. ADR-020 Supabase 채택 결정 작성
+**다음 phase 옵션** (사용자 결정 대기):
 
-**Phase 6 핵심 성과**:
-- **P-X1 §SELF-VERIFICATION 17연속 PASS** (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4)
-- **PlanCard.tsx 12연속 0줄** (Phase 4 4 + Phase 4.5 5 + Phase 6 3)
-- **component_map.md 22연속 0줄** (Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3)
-- **Critic verdict canonical 결정** (overall_score + dimensions, ADR-018)
-- **Rewriter contract v1.0.0 → v1.1.0** (Pydantic + graceful, ADR-019)
-- **Critic 4 fallback → 1 canonical + 1 우선 fallback + 3 deprecated** (DeprecationWarning)
-- pytest 109 → **144 (+35)** + smoke 9 → **10** (smoke_test_phase_6) + scenario_sim 5/5 (P-X2 두 번째) + schema_stress 5/5 (P-X2 v2 신규)
-- **agent-io-check Skill 첫 정식 트리거** (Rewriter v1.1.0 + Critic canonical 정합 PASS)
-- **contract-change Skill 첫 본격 실 변경 통과** (3 contract + 회귀 0)
-- **multi-llm-validation formal 두 번째 트리거** (V1~V5 PASS, 정식 패턴 확정)
-- 신규 패턴: P-CRITIC-CANONICAL-001 + P-CONTRACT-FIRST-001 (신규 후보) + P-X1-EFFECT-001 update (17연속) + P-VALIDATION-FORMAL-001 update (두 번째 입증)
-- GPT 검토안 6→4 Slice 압축 (▼33%) + 시간 ▼20% (P-GPT-REVIEW-001 두 번째 적용)
+- **A**: Phase 7 RAG Lite (8~12h) — candidate_knowledge 5단계 + pgvector + rag-design/update 첫 정식
+- **B**: Phase 6+ legacy DB 통합 (4~6h) + Phase 7 — Phase 5 §1 발견 해소
+- **C**: Phase 9 결과 저장 + 피드백 (6~10h) — plans_repo + RLS 활용 + Brand Memory 자동 추출 활성화
+- **D**: Phase 8 MOA Lite 본격 (12~16h) — Intent/Planner/Critic/Rewriter 완전 분리 + SSE worker 통합
 
-**Phase 5 entry 트리거**: 위 5개 의무 사항 완료 후 phase-start v1.3.0 호출.
+**진입 전 권장** (옵션 무관):
+1. Legacy DB 통합 결정 (Phase 5 발견 §1)
+2. Brand Memory 자동 추출 (확정 결정 [8]) baseline 활성화
+3. external validation 사용자 채움 (Phase 5 placeholder)
+4. phase-start v1.3.0 4점검 (8번째 trigger)
+5. multi-llm-validation formal self (네 번째 트리거)
+
+**Phase 5 핵심 성과**:
+- **P-X1 §SELF-VERIFICATION 22연속 PASS** (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5)
+- **PlanCard.tsx 17연속 0줄** (Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5)
+- **component_map.md 27연속 0줄** (Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5)
+- **Supabase + 4계층 schema migration + plans_repo** (Slice 2, db_schema.md contract + ADR-020)
+- **Auth + JWT (httpOnly cookie) + Frontend Login + AuthGuard wrapper** (Slice 3)
+- **RLS 정책 (auth.uid() + 4 정책 + 2-hop subquery) + SSE Progress 4단계 D7** (Slice 4, ADR-021/022)
+- pytest 144 → **170 (+26)** + smoke 10 → **12** (smoke_test_phase_5) + scenario_sim v2 10/10 (P-X2 세 번째)
+- **security-review Skill 첫 정식 (Slice 1) + 두 번째 final (Slice 5)** — T1~T6 위협 모델 + 영역 1~10 baseline 달성
+- **contract-change Skill 두 번째 본격** (db_schema.md 신규 — DB schema 첫 정식 contract)
+- **multi-llm-validation formal 세 번째** (V1~V6 PASS) — **P-VALIDATION-FORMAL-001 정식 패턴 확정 (3회 누적)**
+- **agent-io-check Skill 두 번째 회귀** (Phase 6 baseline 유지)
+- 4 ADR 신규 (ADR-020 + ADR-021 + ADR-022)
+- 신규 패턴: P-RLS-001 + P-SSE-001 + P-SECURITY-REVIEW-001 (신규 후보) + P-X1-EFFECT-001 update (22연속) + P-VALIDATION-FORMAL-001 update (정식 확정)
+- graceful fallback 일관 적용 — Supabase 미설정 시 in-memory dict 회귀 0

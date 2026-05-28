@@ -100,26 +100,27 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **재평가 시점**: Phase 3 코드 phase 진행 중 (같은 .tsx 파일 sub-section 동시 수정 위험 ↑) — P-X1 적용 후 효과 측정
 - **연관 Skill / Contract**: phase-start §6.3, multi_slice_plan template, sub-agent prompt format
 
-### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 17연속 PASS 효과 측정 (update 2026-05-29 Phase 6)
+### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 22연속 PASS 효과 측정 (update 2026-05-29 Phase 5)
 
-- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 = **17 Slice 누적**, 0 deviation)
-- **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 13연속 update — Phase 6에서 **17연속 누적 update**
-- **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md + meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md §P-X1 17연속 효과 측정
-- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 → Phase 4 4/4 → Phase 4.5 4/4 → Phase 6 4/4 = **17연속 PASS**. Phase 6는 stabilization mini-phase (output_schema + agent_io contract 본격 변경 + frontend types mirror)에서도 0건 재발. **proposal → 적용 → 4 phase 누적 효과 측정 사이클 완성**.
-- **증거 (Phase 3 + Phase 4 + Phase 4.5 + Phase 6)**:
-  - Slice 1~17 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4) 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
-  - `git diff f50bc74..HEAD -- harness/apps/web/component_map.md` → **0줄 (22연속, Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3)**
-  - `git diff 76b4d2c..HEAD -- harness/apps/web/components/PlanCard.tsx` → **0줄 (12연속, Phase 4 4 + Phase 4.5 5 + Phase 6 3 — 사용자 결정 6-a 계승)**
+- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 = **22 Slice 누적**, 0 deviation)
+- **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 13연속 update — Phase 6에서 17연속 update — Phase 5에서 **22연속 누적 update**
+- **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md + meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md §P-X1 22연속 효과 측정
+- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 → Phase 4 4/4 → Phase 4.5 4/4 → Phase 6 4/4 → Phase 5 5/5 = **22연속 PASS**. Phase 5는 large + 보안 phase (Supabase + RLS + JWT + SSE)에서도 0건 재발. **proposal → 적용 → 5 phase 누적 효과 측정 사이클 완성 + large/보안 phase 확장 입증**.
+- **증거 (Phase 3 + Phase 4 + Phase 4.5 + Phase 6 + Phase 5)**:
+  - Slice 1~22 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5) 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
+  - `git diff f50bc74..HEAD -- harness/apps/web/component_map.md` → **0줄 (27연속, Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5)**
+  - `git diff 76b4d2c..HEAD -- harness/apps/web/components/PlanCard.tsx` → **0줄 (17연속, Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5 — 사용자 결정 6-a 계승)**
   - phases/active/phase-3-pwa-impl/deviations.md → 0건 entry
   - phases/active/phase-4-fastapi-extension/deviations.md → 1건 entry (D-1 audit drift, intended → Slice 4 해소)
   - phases/active/phase-4.5-critic-revise-loop/deviations.md → 0건 entry
   - phases/active/phase-6-output-schema-stabilization/deviations.md → 0건 entry
+  - phases/active/phase-5-db-auth/deviations.md → 0건 entry (audit_page_component 2 drift는 의도된 신규 Slice 3 — WARN 허용)
 - **권장 대응**:
-  - Phase 5+ 모든 sub-agent prompt에 §SELF-VERIFICATION 의무 유지
+  - Phase 6+ 모든 sub-agent prompt에 §SELF-VERIFICATION 의무 유지
   - phase-start v1.3.0 §6.3 의무 절차 보존
   - main session sub-agent 완료 후 `git diff --stat` 검증 의무 절차 보존
-- **재평가 시점**: Phase 5 DB/Auth phase (Supabase + RLS 새 영역 도입) — 재발 시 P-X4 (worktree isolation) 재검토 트리거
-- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 17연속), P-GPT-REVIEW-001 (Phase 4 + Phase 6 두 번째 적용), P-VALIDATION-FORMAL-001 (Phase 4.5 + Phase 6 두 번째 입증), P-CRITIC-CANONICAL-001 (Phase 6 신규), P-CONTRACT-FIRST-001 (Phase 6 신규 후보)
+- **재평가 시점**: Phase 7 (RAG) 또는 Phase 8 (MOA Lite) — 새 영역 (RAG sources / agent 분리) 도입 시 재발 위험 ↑
+- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 22연속), P-GPT-REVIEW-001 (Phase 4 + Phase 6 두 번째 적용), P-VALIDATION-FORMAL-001 (Phase 4.5 + Phase 6 + Phase 5 세 번째 입증 → 정식 확정), P-CRITIC-CANONICAL-001 (Phase 6), P-CONTRACT-FIRST-001 (Phase 6 후보 + Phase 5 db_schema.md 적용), P-RLS-001 (Phase 5 신규), P-SSE-001 (Phase 5 신규), P-SECURITY-REVIEW-001 (Phase 5 신규 후보)
 
 ### Pattern P-THIN-VERTICAL-001: Thin Vertical Slice 효과 (코드 phase entry 표준)
 
@@ -200,36 +201,131 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - meta/retrospectives/phase-4.5.md
   - meta/proposals/2026-05-28_phase-4-retrospective-proposals.md §P-X2 (채택 권장)
 
-### Pattern P-VALIDATION-FORMAL-001: multi-llm-validation formal self + 외부 분리 패턴 (Phase 4.5 첫 + Phase 6 두 번째 입증)
+### Pattern P-VALIDATION-FORMAL-001: multi-llm-validation formal self + 외부 분리 패턴 (Phase 4.5 첫 + Phase 6 두 번째 + Phase 5 세 번째 — 정식 확정)
 
-- **유형**: 반복 성공 (Phase 4.5 첫 적용 V1~V4 PASS, Phase 6 두 번째 적용 V1~V5 PASS, 두 번째 트리거로 정식 패턴 확정)
+- **유형**: 반복 성공 (Phase 4.5 첫 V1~V4 + Phase 6 두 번째 V1~V5 + Phase 5 세 번째 V1~V6 = 3회 누적, 정식 패턴 확정)
 - **최초 식별**: 2026-05-28 (Phase 4.5 Slice 1 — 첫 formal 트리거)
-- **두 번째 입증**: 2026-05-29 (Phase 6 Slice 1 — 두 번째 formal 트리거, V5 frontend types ↔ backend 1:1 매핑 추가)
-- **관련 회고**: meta/retrospectives/phase-4.5.md §잘된 것 2 + meta/retrospectives/phase-6.md §잘된 것 4 + §P-VALIDATION-FORMAL-001 두 번째 입증
+- **두 번째 입증**: 2026-05-29 (Phase 6 Slice 1 — 두 번째 formal 트리거)
+- **세 번째 입증 (정식 확정)**: 2026-05-29 (Phase 5 Slice 1 — 세 번째 formal 트리거, V6 large + 보안 phase 추가: Supabase 채택 / JWT / RLS / SSE / revise_history JSONB / canonical DB)
+- **관련 회고**: meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md
 - **요약**: 사용자 결정 "검증 모델은 너가 직접 (Claude Code, 혹은 codex가 지침 참고하면서 자가 검증), 외부 검증은 따로 작성되도록 할 것" → multi-llm-validation Skill formal 트리거를 다음 패턴으로 정의:
   1. **Self validation**: Claude Code가 지침(CLAUDE.md, contracts, eval, patterns)을 참조하여 자가 검증 → `meta/validations/{date}_{phase}_self.md`
   2. **External validation**: 외부 LLM(GPT/Gemini) 검증은 placeholder로 별도 파일 → `meta/validations/{date}_{phase}_external.md` (사용자가 외부에서 진행 후 채움)
   3. 두 결과의 차이 항목 발견 시 phase notes.md에 기록 + 회고 §개선 제안 반영
-- **효과 측정 (Phase 4.5)**:
+- **효과 측정 (Phase 4.5 + Phase 6 + Phase 5 누적)**:
   - 큰 phase 진입 시 단일 모델 편향 회피 baseline 확립
   - 외부 검증 의무화 부담 없이 분리 가능 → 사용자가 외부에서 진행 여부를 phase별로 결정 가능
-  - `meta/validations/` 폴더 누적 시작 → 추후 audit / 회고 / pattern 추출 가능
-  - Phase 4.5 self V1~V4 4/4 PASS (지침 정합성, contract 정합성, eval 정합성, 패턴 정합성)
+  - `meta/validations/` 폴더 누적 → 추후 audit / 회고 / pattern 추출 가능
+  - **V dimension 점진 확장**: Phase 4.5 V1~V4 (지침/contract/eval/패턴) → Phase 6 +V5 (frontend types ↔ backend 1:1 매핑) → Phase 5 +V6 (보안 + DB 영속 정합성)
 - **다음 단계**:
-  - Phase 5 (큰 phase, DB/Auth) 진입 전 동일 패턴 적용 (사용자 결정 의무, external 채움 권장)
-  - skill_usage_log.md에 formal vs informal 트리거 구분 기록 (이미 Phase 4.5 entry에서 구분)
-  - Phase 5+ external 채움 시 V1~V4 cross-check (self vs external 차이 회고 §개선 제안)
+  - Phase 7+ RAG / Phase 8 MOA / Phase 9 저장-피드백 등 큰 phase 진입 시 동일 패턴 적용
+  - 정식 확정 (3회 누적) → "후보" 마커 제거, 모든 큰 phase 의무
+  - external 채움 누적 시 self vs external 차이 분석 회고 별도 (Phase 11+)
 - **권장 대응**:
-  - Phase 5+ 모든 큰 phase 진입 전 self.md + external.md 2 파일 생성 의무
+  - 모든 큰 phase 진입 전 self.md + external.md 2 파일 생성 의무
   - phase entry commit message에 "multi-llm-validation formal self PASS" 명시 (재현 가능성 ↑)
 - **연관 Skill / Contract**: multi-llm-validation Skill, P-GPT-REVIEW-001 (informal GPT 검토 — Phase 4 baseline)
 - **관련 회고**:
   - meta/retrospectives/phase-4.5.md
-  - meta/retrospectives/phase-6.md (두 번째 트리거)
+  - meta/retrospectives/phase-6.md
+  - meta/retrospectives/phase-5.md (세 번째 트리거 — 정식 확정)
   - meta/validations/2026-05-28_phase-4.5-pre-entry_self.md (V1~V4 PASS)
   - meta/validations/2026-05-28_phase-4.5-pre-entry_external.md (placeholder)
   - meta/validations/2026-05-29_phase-6-pre-entry_self.md (V1~V5 PASS)
   - meta/validations/2026-05-29_phase-6-pre-entry_external.md (placeholder)
+  - meta/validations/2026-05-29_phase-5-pre-entry_self.md (V1~V6 PASS — 세 번째)
+  - meta/validations/2026-05-29_phase-5-pre-entry_external.md (placeholder)
+
+### Pattern P-RLS-001: RLS 정책 + 인증/익명 endpoint 분리 패턴 (Phase 5 신규)
+
+- **유형**: 반복 성공 (Phase 5 첫 적용, RLS 4 정책 + auth.uid() + 2-hop subquery + NULLABLE auth_user_id)
+- **최초 식별**: 2026-05-29 (Phase 5 Slice 4 — RLS 정책 0003_rls_policy.sql + ADR-021)
+- **관련 회고**: meta/retrospectives/phase-5.md §잘된 것 2 + §P-RLS-001
+- **요약**: Supabase RLS (Row Level Security) 정책을 DB-level 강제 + 인증/익명 endpoint 동시 운영을 위한 패턴:
+  1. **auth.uid() 직접 매칭** (plans, video_projects 1-hop): `auth.uid() = auth_user_id` 정책
+  2. **2-hop subquery 정책** (series via video_projects via brand_id): `auth.uid() = (SELECT auth_user_id FROM brands WHERE id = ...)` — series는 brand 통해 user 추적
+  3. **anonymous endpoint 호환 NULLABLE**: Phase 1 `/api/v1/generate` 유지를 위해 `auth_user_id NULL` 허용 + RLS bypass (anonymous policy)
+  4. **인증 endpoint 가드**: Phase 6+ 신규 endpoint에서 `auth_user_id IS NOT NULL` 가드 추가 권장
+  5. **service_role 분리**: 백엔드 admin 작업만 service_role (API 응답에 노출 X)
+- **효과 측정 (Phase 5)**:
+  - 다른 user plan 접근 차단 4/4 PASS (test_rls.py)
+  - anonymous /generate 호환 유지 (Phase 1 baseline 회귀 0)
+  - DB-level 강제 → application bug 시에도 보호 (defense in depth)
+- **다음 단계**:
+  - Phase 6+ Legacy DB 통합 시 service_role boundary 명시
+  - Phase 7+ Custom RAG schema 도입 시 동일 패턴 (rag_sources.auth_user_id RLS)
+  - Phase 9+ pgtap 자동 검증 도입 (test_rls.py mock → pgtap real)
+- **권장 대응**:
+  - 새 user-scoped 테이블 추가 시 RLS 4 정책 (SELECT/INSERT/UPDATE/DELETE) 의무
+  - 다른 테이블 reference 시 1-hop vs 2-hop subquery 결정 (cost vs cognitive load)
+  - ADR로 정책 근거 영구 기록 (Phase 5 ADR-021 패턴 복제)
+- **연관 Skill / Contract**: security-review Skill (영역 5 권한/RLS), contract-change Skill (db_schema.md), ADR-021 (Phase 5 RLS Policy)
+- **관련 회고**:
+  - meta/retrospectives/phase-5.md
+  - meta/security_reviews/2026-05-29_phase-5-auth-rls.md (T2 위협 모델)
+  - meta/security_reviews/2026-05-29_phase-5-final-verification.md (T2 PASS verify)
+  - docs/decisions/phase_5_rls_policy.md (ADR-021)
+
+### Pattern P-SSE-001: SSE 4단계 progress + Origin 검증 + cookie-based auth (Phase 5 신규)
+
+- **유형**: 반복 성공 (Phase 5 첫 적용, SSE event stream + 4 progress steps + Origin whitelist + cookie auth)
+- **최초 식별**: 2026-05-29 (Phase 5 Slice 4 — routers/sse.py + lib/sse.ts + ADR-022)
+- **관련 회고**: meta/retrospectives/phase-5.md §잘된 것 + §P-SSE-001
+- **요약**: 30~60초 대기 시 UX 이탈 방지 (확정 결정 [10]) — SSE 4단계 progress + 부분 결과 노출 패턴:
+  1. **SSE event stream** (`text/event-stream` content type): `event: progress\ndata: {...}\n\n` 표준 포맷
+  2. **4단계 progress**: intent_analysis (1/4) → wiki_retrieval (2/4) → plan_generation (3/4) → critic_revise (4/4) + complete
+  3. **Origin 검증**: `request.headers.get("origin")` whitelist 체크, 미일치 → 403 (CSRF/CORS 1차 방어)
+  4. **Cookie-based auth**: EventSource `withCredentials=true` + httpOnly cookie JWT 자동 전송 (Authorization header 노출 회피)
+  5. **Heartbeat 30s**: `asyncio.sleep(30)` 무응답 차단
+  6. **X-Accel-Buffering: no** header (nginx 호환, 즉시 flush)
+  7. **EventSource 자동 재연결**: 브라우저 표준 (네트워크 끊김 시 last-event-id 기반 resume)
+- **효과 측정 (Phase 5)**:
+  - test_sse.py 4 cases PASS (event_stream content type + 4 steps + schema + invalid origin 403)
+  - frontend EventSource wrapper (`lib/sse.ts`) PlanCard 무수정 (wrapper 패턴)
+  - 30~60초 UX 이탈 risk ↓ (확정 결정 [10] baseline 활성화)
+- **다음 단계**:
+  - Phase 8+ MOA Lite 본격화 시 실 worker progress callback 연동 (현 mock asyncio.sleep)
+  - Phase 9+ event 재연결 시 last-event-id 기반 resume 정식 활성화
+  - Phase 11+ multi-client broadcast (한 plan을 여러 device 동시 표시)
+- **권장 대응**:
+  - 새 SSE endpoint 추가 시 Origin 검증 + cookie auth + heartbeat + X-Accel-Buffering 4종 의무
+  - event schema는 `output_schema.md` 또는 sse_event_schema.md (Phase 11+ 분리) 정합
+  - frontend EventSource wrapper 패턴 (wrapper 정신 계승)
+- **연관 Skill / Contract**: security-review Skill (T4 SSE hijacking), ADR-022 (Phase 5 SSE Progress)
+- **관련 회고**:
+  - meta/retrospectives/phase-5.md
+  - meta/security_reviews/2026-05-29_phase-5-auth-rls.md (T4 위협 모델)
+  - meta/security_reviews/2026-05-29_phase-5-final-verification.md (T4 PASS verify)
+  - docs/decisions/phase_5_sse_progress.md (ADR-022)
+
+### Pattern P-SECURITY-REVIEW-001: security-review Skill 2-trigger 패턴 (entry + final) — 보안 phase 표준화 (Phase 5 신규 후보)
+
+- **유형**: 반복 성공 (Phase 5 첫 적용, Slice 1 entry 첫 정식 + Slice 5 final verification 두 번째)
+- **최초 식별**: 2026-05-29 (Phase 5 — security-review Skill 첫 정식 + 두 번째 final 트리거)
+- **관련 회고**: meta/retrospectives/phase-5.md §잘된 것 2 + §P-SECURITY-REVIEW-001 신규 후보
+- **요약**: 보안 영향이 있는 phase (Auth + RLS + JWT + SSE 도입 등)에서 security-review Skill을 2회 트리거:
+  1. **Entry 첫 정식 트리거** (Slice 1): 위협 모델 작성 (T1~Tn) + §4 영역 1~10 점검 + 권장 조치 + ADR 작성
+  2. **Final 두 번째 트리거** (close Slice): 실 구현 ↔ 권장 조치 verify + 잔존 risk 명시 + 후속 phase 이관 항목 정리
+  3. 두 review 결과 모두 `meta/security_reviews/{date}_{phase}_*.md` 누적 → 영구 보관
+  4. ADR로 결정 근거 영구 기록 + security_metrics.md 갱신
+- **효과 측정 (Phase 5)**:
+  - T1~T6 위협 모델 (JWT 누수 / RLS 우회 / Refresh / SSE hijacking / SQL injection / PII) 5 PASS + 1 PARTIAL
+  - 영역 1~10 점검: 6 PASS + 2 PARTIAL + 2 N/A
+  - 권장 조치 ↔ 실 구현 1:1 verify → 잔존 risk 명시화 (Phase 9+/21+ 이관)
+  - 보안 결정 명시화 baseline 확립 (Phase 7+ RAG / Phase 9+ retention / Phase 21+ MFA 시 재사용)
+- **다음 단계**:
+  - Phase 7+ RAG (security-review §2 RAG 오염), Phase 9+ retention (§9 retention/삭제), Phase 21+ MFA (§8 인증/세션) 진입 시 동일 2-trigger 패턴
+  - 정식 채택 결정은 두 번째 phase 보안 진입 시 (Phase 7 또는 Phase 9) 효과 재측정 후
+- **권장 대응**:
+  - 보안 영향 phase 진입 전 security-review Skill 첫 정식 트리거 의무
+  - phase close 직전 security-review 두 번째 final verification 의무
+  - ADR + security_metrics.md 갱신 의무
+- **연관 Skill / Contract**: security-review Skill, contract-change Skill (security 정책 변경), P-RLS-001 (Phase 5 신규), P-SSE-001 (Phase 5 신규)
+- **관련 회고**:
+  - meta/retrospectives/phase-5.md
+  - meta/security_reviews/2026-05-29_phase-5-auth-rls.md (첫 정식)
+  - meta/security_reviews/2026-05-29_phase-5-final-verification.md (두 번째 final)
+- **상태**: 신규 등록 후보 (Phase 7+ 또는 Phase 9+ 두 번째 보안 phase에서 효과 재측정 후 정식 패턴 채택 결정)
 
 ### Pattern P-CRITIC-CANONICAL-001: 다중 fallback → canonical + deprecated 단계적 축소 (Phase 6 신규)
 

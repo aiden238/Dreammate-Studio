@@ -19,8 +19,8 @@
 | 4 | FastAPI 기본 백엔드 구현 (확장) | **done** (2026-05-28) | 4 Slices (GPT 검토 6→4 채택) + acceptance 10/10 + audit_naming + audit_page_component 0 drift (D-1 해소) + smoke 8/8 + **P-X1 9연속 PASS + component_map 15연속 0줄 + PlanCard 4연속 0줄 + GPT 검토 ▼66% 시간** |
 | 4.5 | Critic Revise Loop + Rewriter + Z-X3 + P-X2 | **done** (2026-05-28) | 4 Slices (모두 sub-agent) + A1~A10 + M1~M3 + P-X1 13연속 + PlanCard 9연속 + component_map 19연속 + P-X2 자동 게이트 첫 + multi-llm-validation formal 첫 + pytest 109/109 + smoke 9/9 |
 | 6 | Output Schema + Agent IO Stabilization | **done** (2026-05-29) | 4 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M3 + P-X1 17연속 + PlanCard 12연속 + component_map 22연속 + pytest 144/144 + smoke 10/10 + Critic canonical (ADR-018) + Rewriter v1.1.0 (ADR-019) + agent-io-check 첫 정식 + contract-change 본격 + P-CONTRACT-FIRST-001 신규 |
-| **next** | **🟡 Phase 5 (DB/Auth) — pending entry** | **next** | external validation + security-review + scenario_simulation v2 작성 후 진입 (사용자 결정 "Phase 6 → Phase 5 순차" 계승) |
-| 5 | DB / Auth 기본 구조 구현 | planned (next) | Supabase / PostgreSQL 연결 + RLS + SSE Progress (D7) — 15~20h 추정 |
+| 5 | DB / Auth / RLS / SSE | **done** (2026-05-29) | 5 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M4 4/4 + **P-X1 22연속** + PlanCard 17연속 + component_map 27연속 + pytest 170/170 (+26) + smoke 12/12 + scenario_sim v2 10/10 (P-X2 세 번째) + Supabase + JWT httpOnly + RLS (ADR-021) + SSE 4단계 (ADR-022) + ADR-020 + security-review 첫+두 번째 + contract-change 두 번째 본격 (db_schema.md) + agent-io-check 두 번째 회귀 + P-RLS-001 + P-SSE-001 + P-SECURITY-REVIEW-001 신규 후보 + P-VALIDATION-FORMAL-001 정식 확정 |
+| **next** | **🟡 pending_user_decision** | **next** | Phase 7 RAG / Phase 6+ legacy / Phase 8 MOA / Phase 9 저장-피드백 (사용자 결정 대기) |
 | 7 | RAG Lite 구현 | planned | 초기 지식 검색 + candidate_knowledge 5단계 |
 | 8 | MOA Lite 구현 | planned | Intent / Planner / Critic / Rewriter |
 | 9 | 결과 저장 + 피드백 저장 | planned | 사용자 선택 / 수정 / 반려 저장 |
@@ -146,38 +146,64 @@ GPT 검토안 정신: 6→4 Slice 압축 (▼33%) + 시간 8~12h → 실측 ~8h 
 다음 Phase : **🟡 Phase 5 (DB/Auth) — pending entry** (사용자 결정 "Phase 6 → Phase 5 순차" 계승)
 ```
 
-## 🟡 Next phase: Phase 5 (DB/Auth) — pending entry (2026-05-29)
+## Phase 5 done (archive)
+
+`phases/archive/phase-5-db-auth/`
 
 ```
-사용자 결정 "Phase 6 → Phase 5 순차" 계승. 진입 전 의무:
+Status     : ✅ DONE (2026-05-29)
+유형       : large phase (15~20h — MVP 본격 영속화)
+Goal       : Supabase + PostgreSQL 영속화 + Supabase Auth + JWT + RLS + SSE Progress D7
+Result     : 5 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M4 4/4 + smoke 12/12 (11 PASS + 1 WARN intended) + scenario_simulation v2 10/10 (P-X2 세 번째) + schema_stress 5/5 (Phase 6 유지) + pytest 170/170 (+26) + audit_naming 0 drift × 2 + audit_page_component 2 intended drift WARN (Slice 3 AuthGuard + /login 신규)
+산출물     : ~30 신규 + ~10 수정 (backend db/auth/sse +1500 / frontend AuthGuard + login + sse.ts +600 / tests +400 / docs/contracts/db_schema.md + ADR-020/021/022 / scripts/smoke_test_phase_5.ps1 / meta retrospectives/security_reviews/validations)
+Sub-agent  : 5 dispatches (Slice 1~5 모두), 충돌 0 — P-X1 5/5 PASS
+회고       : meta/retrospectives/phase-5.md
+신규 패턴  : P-RLS-001 + P-SSE-001 + P-SECURITY-REVIEW-001 (신규 후보) + P-X1-EFFECT-001 update (22연속) + P-VALIDATION-FORMAL-001 update (세 번째 정식 확정)
+Mitigated  : P-AGENT-SCOPE-001 (22연속 누적 입증 — Phase 3:5 + Phase 4:4 + Phase 4.5:4 + Phase 6:4 + Phase 5:5)
+Skill 첫 정식: security-review (★ 첫 정식 Slice 1 + 두 번째 final Slice 5) + contract-change (두 번째 본격 — db_schema.md) + multi-llm-validation formal 세 번째 (V1~V6) + phase-complete v1.2.0 세 번째 자동 게이트 + agent-io-check 두 번째 회귀
+4 ADR      : ADR-020 Supabase + ADR-021 RLS Policy + ADR-022 SSE Progress
+핵심 성과  : **P-X1 22연속 PASS + PlanCard 17연속 + component_map 27연속 + Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE 4단계 + security-review 첫 정식 + 두 번째 final + contract-change 두 번째 본격**
+다음 Phase : **🟡 pending_user_decision** (Phase 7 RAG / Phase 6+ legacy / Phase 8 MOA / Phase 9 저장-피드백)
+```
 
-Phase 5: DB/Auth (Supabase + RLS + SSE)
-  - Supabase Auth + JWT + RLS 정책 (4계층 데이터 모델 첫 영속화)
-  - plan_store DB migration (in-memory → Supabase row)
-  - SSE Progress streaming (D7)
-  - 추정 시간: 15~20h
-  - 다음 → Phase 7 (RAG Lite)
+## 🟡 Next phase: pending_user_decision (2026-05-29)
 
-진입 전 의무:
-  - [ ] external validation 작성: meta/validations/2026-05-29_phase-6-pre-entry_external.md placeholder를 GPT/Gemini로 채움
-  - [ ] security-review Skill 첫 호출 (Auth/RLS 도입 시 의무)
-  - [ ] scenario_simulation.ps1 v2 (DB/Auth용 5 시나리오 추가 — Phase 5 Slice 1)
-  - [ ] multi-llm-validation formal **external 의무** (큰 보안 phase)
-  - [ ] contract-change Skill (db_schema.md 신규 + 0001_init.sql migration)
-  - [ ] ADR-020 Supabase 채택 결정
+```
+Phase 5 종료. 사용자 결정 대기:
 
-권장 Slice 분할 (5개, 총 15~20h):
-  1. Pre-Entry + Security (2~3h)
-  2. Supabase 연결 + Schema migration (4~5h)
-  3. Auth + JWT + Frontend Login (4~5h)
-  4. RLS 정책 + SSE Progress D7 (3~4h)
-  5. Close + 회귀 검증 (2~3h)
+옵션 A. Phase 7 — RAG Lite (8~12h)
+  - candidate_knowledge 5단계 승격 (pending → filtered → evaluated → approved → promoted)
+  - pgvector 활용 (Supabase 기본 제공)
+  - rag-design + rag-update Skill 첫 정식 트리거 예상
+  - prompt-version-review P-007/P-008 정식화 (NG8 해소)
+
+옵션 B. Phase 6+ legacy DB 통합 mini-phase (4~6h) + Phase 7
+  - Phase 5 발견 §1: Phase 1 db/supabase_client.py + Phase 5 db/client.py 통합
+  - migrations zero-padding 통합
+  - Protocol-based DI 일원화
+
+옵션 C. Phase 9 — 결과 저장 + 피드백 (6~10h)
+  - 사용자 plan 선택 / 수정 / 반려 누적
+  - Phase 5 plans_repo + RLS 활용
+  - Brand Memory 자동 추출 (확정 결정 [8]) baseline 활성화
+
+옵션 D. Phase 8 — MOA Lite 본격 (12~16h)
+  - Intent / Planner / Critic / Rewriter 완전 분리
+  - Phase 5 SSE Progress worker 통합 (Slice 4 mock → 실 worker)
+  - ai-architecture-review Skill 첫 정식 트리거 예상
+
+진입 전 권장 (옵션 무관):
+  - [ ] Legacy DB 통합 결정 (Phase 5 발견 §1)
+  - [ ] Brand Memory 자동 추출 (확정 결정 [8]) baseline 활성화
+  - [ ] external validation 사용자 채움 (Phase 5 placeholder)
+  - [ ] phase-start v1.3.0 4점검 (4번째 trigger)
+  - [ ] multi-llm-validation formal self (네 번째 트리거)
 
 진입 전 권장 검토:
-  - meta/retrospectives/phase-6.md (P-CRITIC-CANONICAL-001 + P-CONTRACT-FIRST-001 신규)
-  - meta/patterns.md (P-X1-EFFECT-001 17연속, P-CRITIC-CANONICAL-001 신규, P-CONTRACT-FIRST-001 신규 후보, P-VALIDATION-FORMAL-001 정식 패턴 확정)
-  - phases/archive/phase-6-output-schema-stabilization/closing_notes.md (Phase 5 진입 체크리스트)
-  - meta/validations/2026-05-29_phase-6-pre-entry_external.md (placeholder — 사용자 외부 채움 필수)
+  - meta/retrospectives/phase-5.md (P-RLS-001 + P-SSE-001 + P-SECURITY-REVIEW-001 신규 후보)
+  - meta/patterns.md (P-X1-EFFECT-001 22연속, P-VALIDATION-FORMAL-001 정식 확정 3회)
+  - phases/archive/phase-5-db-auth/closing_notes.md (다음 phase 옵션 A/B/C/D + 진입 권장)
+  - meta/security_reviews/2026-05-29_phase-5-final-verification.md (Phase 5 보안 baseline + Phase 6+/9+ 권장 후속)
 ```
 
 ## Phase 2~3 Hybrid UX 분기 (planned, 중간 상세화)

@@ -2,9 +2,9 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 완료 + Phase 5 Slice 1 entry 진행 중 (★ active)**.
-Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions) + revise loop (max 2) + Rewriter v1.1.0 (Pydantic) + recommended_plan_index 모두 동작.
-**Phase 5 ★ active (entry 2026-05-29)** — DB / Auth / RLS / SSE 도입 (15~20h, 5 Slice). Slice 1 entry 완료 (security-review Skill ★ 첫 정식 + multi-llm-validation formal 세 번째 + ADR-020 Supabase 채택 + scenario_simulation v2).
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 모두 완료**.
+Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /auth/* + /sse/* 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계** 모두 동작.
+**Phase 5 ✅ done (2026-05-29)** — 🟡 **pending_user_decision** (Phase 7 RAG / Phase 6+ legacy / Phase 8 MOA / Phase 9 저장-피드백).
 
 ## 현재 Active Phase
 
@@ -41,13 +41,27 @@ Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-m
 - Sub-agent 4/4 (모두 sub-agent dispatch) + Slice 4 close (final)
 - GPT 검토안 6→4 Slice 압축 (▼33%) + 시간 8~12h → 실측 ~8h (▼20%, P-GPT-REVIEW-001 두 번째 적용)
 
-**Phase 5 ★ active (entry 2026-05-29)** — DB / Auth / RLS / SSE 도입 (15~20h, 5 Slice)
-- 사용자 결정 "Phase 6 → Phase 5 순차" 계승
-- Slice 1 (entry, 완료): security-review Skill ★ 첫 정식 + ADR-020 Supabase 채택 + scenario_simulation v2 + multi-llm-validation formal 세 번째 (V1~V6 PASS) + external placeholder 분리
-- Slice 2 (대기): Supabase + Schema migration + plans_repo (db_schema.md 신규 + 0001/0002 migration + contract-change 5번째)
-- Slice 3 (대기): Auth + JWT + Frontend Login + AuthGuard (httpOnly cookie + Supabase Auth)
-- Slice 4 (대기): RLS + SSE Progress D7 + ADR-021/022 (anonymous/authenticated endpoint 분리)
-- Slice 5 (대기): Close + 회귀 검증 (security-review 두 번째 + agent-io-check 두 번째 + P-X2 세 번째 자동 게이트 10/10 목표 + retrospective + archive)
+**Phase 5. DB / Auth / RLS / SSE ✅ done (2026-05-29)** — archive 이동 완료
+- A1~A10 10/10 PASS + M1~M4 4/4 PASS / audit_naming 0 drift × 2 / audit_page_component 2 intended drift WARN (Slice 3 AuthGuard + /login route 신규) / scenario_simulation v2 10/10 (P-X2 세 번째 자동 게이트) / schema_stress_test 5/5 (Phase 6 v2 유지) / smoke_test_phase_5 12/12 (11 PASS + 1 WARN intended) / pytest 170/170 (+26 신규)
+- **P-X1 22연속 PASS (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5) + PlanCard 17연속 0줄 + component_map 27연속 0줄** ★
+- **Supabase + 4계층 schema migration + plans_repo** (Slice 2 — db_schema.md contract + ADR-020)
+- **Auth + JWT (httpOnly cookie) + Frontend Login + AuthGuard wrapper** (Slice 3)
+- **RLS 정책 (auth.uid() + 4 정책 + 2-hop subquery) + SSE Progress 4단계 D7** (Slice 4 — ADR-021/022)
+- **security-review Skill 첫 정식 + 두 번째 final** (Slice 1 entry T1~T6 + Slice 5 verification)
+- **contract-change Skill 두 번째 본격 실 변경 통과** (db_schema.md 신규)
+- **multi-llm-validation formal 세 번째 트리거** (V1~V6 PASS, P-VALIDATION-FORMAL-001 정식 패턴 확정 — 3회 누적)
+- **agent-io-check Skill 두 번째 회귀 검증** (Phase 6 baseline 유지 PASS)
+- 4 ADR 신규 (ADR-020 Supabase + ADR-021 RLS + ADR-022 SSE)
+- 신규 패턴: P-RLS-001 + P-SSE-001 + P-SECURITY-REVIEW-001 (신규 후보) + P-X1-EFFECT-001 update (22연속) + P-VALIDATION-FORMAL-001 update (세 번째 정식 확정)
+- Sub-agent 5/5 (모두 sub-agent dispatch) + Slice 5 close (final)
+- graceful fallback 일관 적용 — Supabase 미설정 시 in-memory dict 회귀 0
+- 실측 시간 ~14-16h (추정 15~20h 내)
+
+**🟡 Next: pending_user_decision** — 다음 phase 옵션:
+- A. Phase 7 RAG Lite (8~12h)
+- B. Phase 6+ legacy DB 통합 mini-phase (4~6h) + Phase 7
+- C. Phase 9 결과 저장 + 피드백 (6~10h)
+- D. Phase 8 MOA Lite 본격 (12~16h)
 
 ## 이전 결정 (옵션 B 변형: Phase 6 선행)
 
@@ -60,14 +74,14 @@ Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-m
 ## migration_progress
 
 ```yaml
-current_sprint: phase-5-slice-1
-current_sprint_step: entry_complete
-total_steps_in_sprint: 8
-last_completed_action: "Phase 5 entry — 8 entry files + 4-check PASS + audit_naming 0 drift + security-review Skill ★ 첫 정식 트리거 (T1~T6 위협 모델 + §4 영역 1~10 점검) + ADR-020 Supabase 채택 + scenario_simulation v2 (5→10 시나리오, Slice 1 시점 5/10 의도된 PASS) + multi-llm-validation formal 세 번째 V1~V6 PASS"
-next_action: "Slice 2 sub-agent dispatch (Supabase 연결 + Schema migration + plans_repo + contract-change db_schema.md 신규)"
+current_sprint: completed
+current_sprint_step: phase_5_done
+total_steps_in_sprint: 5
+last_completed_action: "Phase 5 종료 — A1~A10 10/10 + M1~M4 + P-X1 22연속 + security-review 첫+두 번째 + 4 ADR + pytest 170/170 + smoke 12/12 + scenario_sim v2 10/10 (P-X2 세 번째) + contract-change 두 번째 본격 (db_schema.md) + agent-io-check 두 번째 회귀 + retrospective + archive"
+next_action: "다음 phase 사용자 결정 대기 (옵션 A Phase 7 RAG / B Phase 6+legacy / C Phase 9 저장-피드백 / D Phase 8 MOA)"
 blocker: null
-next_phase: phase-5-db-auth
-next_phase_status: in_progress
+next_phase: pending_user_decision
+next_phase_status: pending_user_decision
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
 phase_1_status: completed
@@ -260,29 +274,69 @@ phase_6_deferred_to_next:
   - prompt_registry_p_007_p_008_formal  # Phase 7+ (NG8)
   - critic_fallback_full_removal  # Phase 9+ eval-run 정식화 후
   - revise_effect_eval  # Phase 9+ eval-design (Phase 4.5 D6 effect 계속 deferred)
-phase_5_status: in_progress
+phase_5_status: completed
 phase_5_entry_date: 2026-05-29
+phase_5_completion_date: 2026-05-29
+phase_5_archive_location: phases/archive/phase-5-db-auth/
 phase_5_total_slices: 5  # 모두 sub-agent
-phase_5_completed_slices: 0  # Slice 1 entry는 진행 의무 완료지만 archive 미이동 (전체 phase 종료 후)
+phase_5_completed_slices: 5  # Slice 1~5 모두 PASS
 phase_5_estimated_hours_total: 15-20
+phase_5_actual_hours: ~14-16
 phase_5_assumptions_check: PASS  # 4-check 통과 (entry, audit_naming 0 drift)
+phase_5_acceptance_passed: 10/10  # A1~A10
+phase_5_meta_acceptance_passed: 4/4  # M1~M4
+phase_5_pytest_result: 170/170  # Phase 6 144 baseline + Phase 5 신규 26 (test_db 9 + test_auth 9 + test_rls 4 + test_sse 4)
+phase_5_smoke_test: 12/12 (11 PASS + 1 WARN intended)  # smoke_test_phase_5.ps1 신규
+phase_5_scenario_simulation_v2: 10/10 PASS (auto-gate, 세 번째)  # P-X2 세 번째 자동 게이트
+phase_5_schema_stress_test: 5/5 PASS (Phase 6 v2 유지)
+phase_5_audit_naming_final: 0 drift  # Slice 1 + Slice 5
+phase_5_audit_page_component_final: 2 intended drift WARN  # Slice 3 AuthGuard + /login route 신규, phase-complete v1.2.0 §1.6 허용
+phase_5_audit_page_component_intended_drift:
+  - AuthGuard  # Slice 3 신규 component (wrapper 패턴)
+  - /login  # Slice 3 신규 route
+phase_5_p_x1_self_verification: 5/5 PASS  # Slice 1~5 모두
+phase_5_p_x1_cumulative_streak: 22  # Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 ★
+phase_5_component_map_zero_lines_streak: 27  # Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5 ★
+phase_5_plan_card_zero_lines_streak: 17  # Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5 ★
+phase_5_deviation_count: 0
 phase_5_user_decisions_applied:
   next_phase_order: phase_6_first_then_phase_5  # GPT 검토안 채택 + 사용자 명시
-  all_slices_sub_agent: yes  # 5개 모두 sub-agent dispatch 예정
-  security_review_first_trigger: yes  # ★ 첫 정식 (Slice 1)
+  all_slices_sub_agent: yes  # 5개 모두 sub-agent dispatch
+  security_review_first_trigger: yes  # ★ 첫 정식 (Slice 1) + 두 번째 final (Slice 5)
   multi_llm_validation_formal: yes  # 세 번째 트리거 (Slice 1, V1~V6 PASS)
-  external_validation_placeholder: yes  # Phase 4.5/6 패턴 계승 (사용자 외부 진행 권장)
+  external_validation_placeholder: yes  # Phase 4.5/6 패턴 계승
   supabase_adoption: yes  # ADR-020
-  scenario_simulation_v2: yes  # 5 → 10 scenarios (Slice 1)
-phase_5_slice_1_entry_artifacts:
-  - meta/validations/2026-05-29_phase-5-pre-entry_self.md  # V1~V6 PASS
-  - meta/validations/2026-05-29_phase-5-pre-entry_external.md  # placeholder
-  - meta/security_reviews/2026-05-29_phase-5-auth-rls.md  # ★ 첫 정식 (T1~T6 + 영역 1~10)
-  - docs/decisions/phase_5_supabase_adoption.md  # ADR-020
-  - scripts/scenario_simulation.ps1  # v2 (5 → 10 scenarios)
-  - meta/skill_usage_log.md  # security-review 1 + multi-llm-validation 4 + phase-start 7
-phase_5_scenario_simulation_slice_1: 5/10 PASS  # S1~S5 baseline + S6~S10 Slice 2~4 예정 (의도된 PARTIAL)
-total_commits: 54  # 53 + Slice 1 entry commit
+  scenario_simulation_v2: yes  # 5 → 10 scenarios (Slice 1, 10/10 Slice 5)
+phase_5_skills_first_trigger:
+  - security_review_first_and_second  # 첫 정식 (Slice 1) + 두 번째 final (Slice 5)
+  - contract_change_second_formal  # 두 번째 본격 실 변경 (Slice 2 db_schema.md 신규)
+  - multi_llm_validation_formal_third  # 세 번째 트리거 (Slice 1 V1~V6) — 정식 패턴 확정
+  - phase_complete_v1_2_0_third  # P-X2 자동 게이트 세 번째 트리거 (Slice 5)
+  - agent_io_check_second  # 두 번째 회귀 검증 (Slice 5)
+phase_5_contracts_changed:
+  - db_schema.md  # 신규 (DB schema 첫 정식 contract — 4계층 + plans + users + JSONB)
+phase_5_adr_created:
+  - ADR-020  # Supabase 채택 (phase_5_supabase_adoption.md, Slice 1)
+  - ADR-021  # RLS Policy (phase_5_rls_policy.md, Slice 4)
+  - ADR-022  # SSE Progress (phase_5_sse_progress.md, Slice 4)
+phase_5_new_patterns:
+  - P-RLS-001  # RLS 정책 + 인증/익명 분리
+  - P-SSE-001  # SSE 4단계 progress + Origin + cookie
+  - P-SECURITY-REVIEW-001  # security-review 2-trigger 패턴 (신규 후보)
+  - P-X1-EFFECT-001 (update 22연속)  # large + 보안 phase 확장 입증
+  - P-VALIDATION-FORMAL-001 (update 세 번째)  # 정식 패턴 확정 (3회 누적)
+phase_5_mitigated_patterns:
+  - P-AGENT-SCOPE-001  # 22연속 누적 입증
+phase_5_retrospective_proposals: in_retrospective  # 본 회고 §개선 제안 (Phase 6+ legacy 통합 외 5개)
+phase_5_deferred_to_next:
+  - legacy_db_integration  # Phase 6+ (개선 제안 §1)
+  - testclient_cookies_migrate  # Phase 6+ (개선 제안 §2)
+  - emailstr_dependency  # Phase 6+ (개선 제안 §3)
+  - sse_worker_real_integration  # Phase 8+ MOA Lite (개선 제안 §4)
+  - per_user_rate_limit_and_audit_log  # Phase 9+ (개선 제안 §5)
+  - pgtap_rls_auto_verification  # Phase 9+ (개선 제안 §6)
+  - refresh_token_rotation  # Phase 21+ MFA
+total_commits: 59  # 54 + Slice 2 + Slice 3 + Slice 4 + Slice 5 close = 59 (Slice 1 entry는 commit 54에 이미 포함)
 last_updated: 2026-05-29
 ```
 
@@ -357,58 +411,42 @@ last_updated: 2026-05-29
 ## 다음 액션
 
 ```
-Phase 5 (DB/Auth) — ★ active, Slice 1 entry 완료. Slice 2 sub-agent dispatch 대기.
+Phase 5 (DB/Auth) — ✅ done (2026-05-29). 🟡 pending_user_decision.
 
-Slice 1 entry 완료 항목 (2026-05-29):
-- (M1) multi-llm-validation formal 세 번째 트리거 — V1~V6 PASS
-   → meta/validations/2026-05-29_phase-5-pre-entry_self.md
-   → meta/validations/2026-05-29_phase-5-pre-entry_external.md (placeholder)
-- (M2) security-review Skill ★ 첫 정식 트리거 — T1~T6 위협 모델 + §4 영역 1~10 점검
-   → meta/security_reviews/2026-05-29_phase-5-auth-rls.md
-- (의무) ADR-020 Supabase 채택 결정 — docs/decisions/phase_5_supabase_adoption.md
-- (M3) scenario_simulation.ps1 v2 — 5 → 10 scenarios (Slice 1 시점 5/10 의도된 PARTIAL)
-- (필수) PROJECT_STATE + skill_usage_log 갱신
-- (필수) Slice 1 entry commit
+다음 phase 옵션 (사용자 결정 대기):
 
-다음 액션 (Slice 2~5 sub-agent dispatch 순서):
+A. Phase 7 — RAG Lite (8~12h)
+   - candidate_knowledge 5단계 승격 (pending → filtered → evaluated → approved → promoted)
+   - pgvector 활용 (Supabase 기본 제공)
+   - rag-design + rag-update Skill 첫 정식 트리거 예상
+   - prompt-version-review P-007/P-008 정식화 (NG8 해소)
 
-1. Slice 2 sub-agent (4~5h) — Supabase + Schema migration + plans_repo
-   → backend/fastapi/db/__init__.py + client.py 신규 (Supabase python client)
-   → backend/fastapi/db/migrations/0001_init.sql (4계층 + plans + users)
-   → backend/fastapi/db/migrations/0002_phase_4_5_revise_history.sql (JSONB)
-   → backend/fastapi/db/repositories/plans_repo.py (graceful fallback)
-   → backend/fastapi/config.py 수정 (SUPABASE_URL/SUPABASE_ANON_KEY/SUPABASE_SERVICE_KEY)
-   → backend/fastapi/routers/plans.py 수정 (호환만, _plan_store → plans_repo)
-   → backend/fastapi/tests/test_db.py 신규 (mock + CRUD 5+ 케이스)
-   → contract-change Skill: docs/contracts/db_schema.md 신규 (5번째 트리거)
+B. Phase 6+ legacy DB 통합 mini-phase (4~6h) + Phase 7
+   - Phase 5 발견 §1: Phase 1 db/supabase_client.py + Phase 5 db/client.py 통합
+   - migrations zero-padding 통합
+   - Protocol-based DI 일원화
 
-2. Slice 3 sub-agent (4~5h) — Auth + JWT + Frontend Login + AuthGuard
-   → backend/fastapi/routers/auth.py + middleware/auth_middleware.py 신규
-   → backend/fastapi/tests/test_auth.py 신규 (JWT mock 3+ 케이스)
-   → apps/web/app/login/page.tsx + components/AuthGuard.tsx + lib/auth.ts 신규
-   → apps/web/lib/types.ts 수정 (AuthSession + User)
-   → apps/web/app/plan/[plan_id]/page.tsx 수정 (AuthGuard wrapping, PlanCard 무수정 유지)
+C. Phase 9 — 결과 저장 + 피드백 (6~10h)
+   - 사용자 plan 선택 / 수정 / 반려 누적
+   - Phase 5 plans_repo + RLS 활용
+   - Brand Memory 자동 추출 (확정 결정 [8]) baseline 활성화
 
-3. Slice 4 sub-agent (3~4h) — RLS + SSE Progress D7 + ADR-021/022
-   → backend/fastapi/db/migrations/0003_rls_policy.sql (auth.uid() 강제)
-   → backend/fastapi/routers/sse.py 신규 (4단계 progress + 부분 결과)
-   → backend/fastapi/tests/test_rls.py + test_sse.py 신규
-   → apps/web/lib/sse.ts 신규 + apps/web/app/plan/[plan_id]/page.tsx 수정 (Progress wrapper)
-   → docs/decisions/phase_5_rls_policy.md (ADR-021) + phase_5_sse_progress.md (ADR-022)
+D. Phase 8 — MOA Lite 본격 (12~16h)
+   - Intent / Planner / Critic / Rewriter 완전 분리
+   - Phase 5 SSE Progress worker 통합 (Slice 4 mock → 실 worker)
+   - ai-architecture-review Skill 첫 정식 트리거 예상
 
-4. Slice 5 sub-agent (2~3h) — Close + 회귀 검증
-   → scripts/smoke_test_phase_5.ps1 신규 (12 체크)
-   → scenario_simulation v2 final 실행 (10/10 목표, P-X2 세 번째 자동 게이트)
-   → security-review Skill 두 번째 트리거 (의도된 시행 + 결과 검증)
-   → design-review impl §B (PlanCard 13연속 0줄 baseline)
-   → agent-io-check 두 번째 (회귀 검증)
-   → meta/retrospectives/phase-5.md + patterns.md (P-RLS-001 + P-SSE-001 + P-SECURITY-REVIEW-001 신규 후보 + P-X1-EFFECT-001 22연속)
-   → phase-complete v1.2.0 (P-X2 자동 게이트 세 번째)
-   → archive 이동 + PROJECT_STATE/PHASE_REGISTRY/00_START_HERE/README × 2 갱신
+진입 전 권장 (옵션 무관):
+   - [ ] Legacy DB 통합 결정 (Phase 5 발견 §1)
+   - [ ] Brand Memory 자동 추출 (확정 결정 [8]) baseline 활성화
+   - [ ] external validation 사용자 채움 (Phase 5 placeholder)
+   - [ ] phase-start v1.3.0 4점검
+   - [ ] multi-llm-validation formal self (네 번째 트리거)
 
-5. Phase 5 deferred 처리 계획 (이전 baseline 그대로)
-   → Phase 7+: RAG Lite + prompt_registry P-007/P-008 정식화 (NG8)
-   → Phase 9+: revise effect eval + Critic fallback 완전 제거
-   → Phase 11+: cost-review Skill 활성 (Supabase quota 추적)
-   → Phase 21+: 자체 PostgreSQL 마이그 검토 + MFA / WebAuthn
+Phase 5 deferred 처리 계획:
+   → Phase 6+: legacy DB 통합 + TestClient cookies 마이그 + EmailStr 검토
+   → Phase 7+: RAG Lite + prompt_registry P-007/P-008 정식화
+   → Phase 8+: SSE worker 실 plan 생성 worker와 연동 + MOA Lite 본격
+   → Phase 9+: per-user rate-limit + audit-log + revise effect eval + pgtap RLS
+   → Phase 21+: 자체 PostgreSQL 마이그 검토 + MFA / WebAuthn + Refresh token rotation
 ```
