@@ -46,29 +46,30 @@
 
 ## 현재 active Phase
 
-**🟡 pending_user_decision — 다음 phase 옵션 A/B/C (사용자 결정 3-c)**
+**🟡 pending_user_decision — 다음 phase 옵션 A/B/C**
 
-Phase 4 완료 (2026-05-28). 다음 phase 진입 대기.
+Phase 4.5 ✅ done (2026-05-28). 다음 phase 진입 대기.
 
-- Phase 4 archive: `phases/archive/phase-4-fastapi-extension/` (참조 가능 — backend + frontend baseline + closing_notes + A/B/C 옵션 명시)
+- Phase 4.5 archive: `phases/archive/phase-4.5-critic-revise-loop/` (참조 가능 — closing_notes + 회고 + 다음 옵션)
+- Phase 4 archive: `phases/archive/phase-4-fastapi-extension/` (참조 가능 — backend + frontend baseline)
 - Phase 3 archive: `phases/archive/phase-3-pwa-impl/` (참조 가능 — frontend baseline)
 - Phase 2 archive: `phases/archive/phase-2-pwa-design/` (참조 가능 — design spec baseline)
 - Phase 1 archive: `phases/archive/phase-1-mvp-basic-flow/` (참조 가능 — backend baseline)
 - Phase 0 archive: `phases/archive/phase-0-migration/` (참조 금지)
-- **진입 전 권장**: `meta/proposals/2026-05-28_phase-4-retrospective-proposals.md` (Z-X1~Z-X3 + Phase 2 P-X2 채택) 검토 + multi-llm-validation Skill formal 호출 (옵션 B 시 의무)
+- **진입 전 권장**: `meta/retrospectives/phase-4.5.md` + `meta/validations/2026-05-28_phase-4.5-pre-entry_external.md` (외부 검증 추가 가능) + multi-llm-validation Skill **formal external** (Phase 5 진입 시 의무)
 
-**Phase 4 핵심 성과**:
-- **P-X1 §SELF-VERIFICATION 9연속 PASS** (Phase 3 5 + Phase 4 4)
-- **component_map.md 15연속 0줄** (Phase 2 6 + Phase 3 5 + Phase 4 4)
-- **PlanCard.tsx 4연속 0줄** (Phase 4 전체, 사용자 결정 6-a)
-- GPT 검토 채택 효과: 6→4 Slices (▼33%), 18~26h → 6~8h (▼66%)
-- audit_naming + audit_page_component 0 drift (D-1 Slice 4 해소)
-- smoke_test_phase_4 8/8 PASS
-- pytest 93/93 + next build 11 routes + tsc 0 + lint clean
+**Phase 4.5 핵심 성과**:
+- **P-X1 §SELF-VERIFICATION 13연속 PASS** (Phase 3 5 + Phase 4 4 + Phase 4.5 4)
+- **PlanCard.tsx 9연속 0줄** (Phase 4 4 + Phase 4.5 5)
+- **component_map.md 19연속 0줄** (Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4)
+- **multi-llm-validation formal 첫 트리거** (Claude Code 자가 검증 V1~V4 PASS + 외부 placeholder 분리)
+- **P-X2 자동 게이트 첫 작동** (scenario_simulation.ps1 5/5 PASS via phase-complete v1.2.0 §1.6)
+- pytest 109/109 (+16 신규) + smoke 9/9 + audit 0 drift × 2 + tsc 0 + lint clean
+- 신규 패턴: P-X2-EFFECT-001 + P-VALIDATION-FORMAL-001 + P-X1-EFFECT-001 update (13연속)
 
 **다음 phase 옵션**:
-- **A**: Phase 4.5 mini-phase (Critic revise loop + Rewriter, 8~12h)
-- **B**: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h)
-- **C**: 다른 우선순위 (Phase 6 / 9 / 11+ 등 사용자 시점 재평가)
+- **A**: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h) — multi-llm-validation formal external 의무
+- **B**: Phase 6 Output Schema + Agent IO 안정화 (Phase 4.5 산출물 stress test + Critic verdict 단일 표준)
+- **C**: 다른 우선순위 (Phase 9 결과 저장 / Phase 11+ 안정화 등)
 
 사용자가 셋 중 선택 후 phase-start v1.3.0 호출로 진입.

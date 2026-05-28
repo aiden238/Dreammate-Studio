@@ -100,24 +100,25 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **재평가 시점**: Phase 3 코드 phase 진행 중 (같은 .tsx 파일 sub-section 동시 수정 위험 ↑) — P-X1 적용 후 효과 측정
 - **연관 Skill / Contract**: phase-start §6.3, multi_slice_plan template, sub-agent prompt format
 
-### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 9연속 PASS 효과 측정 (update 2026-05-28 Phase 4)
+### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 13연속 PASS 효과 측정 (update 2026-05-28 Phase 4.5)
 
-- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 = **9 Slice 누적**, 0 deviation)
-- **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 **9연속 누적 update**
-- **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md §P-X1 9연속 효과 측정
-- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 PASS → Phase 4 4/4 PASS = **9연속**. Phase 4는 backend phase (apps/web/ + backend/fastapi/ + docs/decisions/ 다영역 동시 작업)에서도 0건 재발. **proposal → 적용 → 2 phase 누적 효과 측정 사이클 완성**.
-- **증거 (Phase 3 + Phase 4)**:
-  - Slice 1~9 (Phase 3 5 + Phase 4 4) 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
-  - `git diff f50bc74..HEAD -- harness/apps/web/component_map.md` → **0줄 (15연속, Phase 2 6 + Phase 3 5 + Phase 4 4)**
-  - `git diff 76b4d2c..HEAD -- harness/apps/web/components/PlanCard.tsx` → **0줄 (4연속, Phase 4 전체 — 사용자 결정 6-a)**
+- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 = **13 Slice 누적**, 0 deviation)
+- **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 **13연속 누적 update**
+- **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md + meta/retrospectives/phase-4.5.md §P-X1 13연속 효과 측정
+- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 PASS → Phase 4 4/4 PASS → Phase 4.5 4/4 PASS = **13연속**. Phase 4.5는 mini-phase 형식(4 Slice 모두 sub-agent dispatch)에서도 0건 재발. **proposal → 적용 → 3 phase 누적 효과 측정 사이클 완성**.
+- **증거 (Phase 3 + Phase 4 + Phase 4.5)**:
+  - Slice 1~13 (Phase 3 5 + Phase 4 4 + Phase 4.5 4) 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
+  - `git diff f50bc74..HEAD -- harness/apps/web/component_map.md` → **0줄 (19연속, Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4)**
+  - `git diff 76b4d2c..HEAD -- harness/apps/web/components/PlanCard.tsx` → **0줄 (9연속, Phase 4 4 + Phase 4.5 5 — 사용자 결정 6-a 계승)**
   - phases/active/phase-3-pwa-impl/deviations.md → 0건 entry
   - phases/active/phase-4-fastapi-extension/deviations.md → 1건 entry (D-1 audit drift, intended → Slice 4 해소)
+  - phases/active/phase-4.5-critic-revise-loop/deviations.md → 0건 entry
 - **권장 대응**:
   - Phase 5+ 모든 sub-agent prompt에 §SELF-VERIFICATION 의무 유지
   - phase-start v1.3.0 §6.3 의무 절차 보존
   - main session sub-agent 완료 후 `git diff --stat` 검증 의무 절차 보존
 - **재평가 시점**: Phase 5+ DB/Auth phase (Supabase + RLS 새 영역 도입) — 재발 시 P-X4 (worktree isolation) 재검토 트리거
-- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 9연속), P-GPT-REVIEW-001 (Phase 4 신규)
+- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 13연속), P-GPT-REVIEW-001 (Phase 4 신규), P-VALIDATION-FORMAL-001 (Phase 4.5 신규)
 
 ### Pattern P-THIN-VERTICAL-001: Thin Vertical Slice 효과 (코드 phase entry 표준)
 
@@ -170,3 +171,57 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - Phase 4 PlanComparisonCard 추가 시 ADR 갱신 후 4-layer 작성
   - Phase 11+ dark mode / i18n 시 본 패턴 효과 재측정 (변경성 시뮬레이션 회귀)
 - **연관 Skill / Contract**: design-review, component_contract.md, variant_format.md, replaceability_score.md, ADR-010, ADR-011, design_handoff.md
+
+### Pattern P-X2-EFFECT-001: 변경성 시뮬 자동 게이트 효과 (Phase 4.5 첫 트리거)
+
+- **유형**: 반복 성공 (Phase 4.5 첫 적용, scenario_simulation.ps1 5/5 PASS)
+- **최초 식별**: 2026-05-28 (Phase 4.5 Slice 4 — 첫 자동 게이트 작동)
+- **관련 회고**: meta/retrospectives/phase-4.5.md §잘된 것 3 + §P-X2-EFFECT-001
+- **요약**: Phase 4 회고에서 P-X2 (변경성 시뮬 phase-complete 자동 게이트) 제안 → Phase 4.5 진입 시 사용자가 채택 결정. Phase 4.5 Slice 1에서 phase-complete SKILL.md v1.1.0 → v1.2.0 (§1.6) + `scripts/scenario_simulation.ps1` 신규 작성. Slice 4에서 phase-complete 자동 호출 → 변경성 시뮬 **5/5 PASS** 확인.
+- **핵심 메커니즘**:
+  1. **phase-complete SKILL.md §1.6 자동 호출**: Phase 종료 시 `scripts/scenario_simulation.ps1` 1단계 실행 (PowerShell 5.1 호환, 1초 미만)
+  2. **5 시나리오 fixed (Phase 4.5 baseline)**: PlanCard visual tone / component_map entry / wrapper UI ring / revise loop max / recommended_idx disable
+  3. **판정 기록**: PASS → PROJECT_STATE.md yaml `phase_X_changeability_simulation: 5/5 PASS (auto-gate)` / FAIL → Phase 종료 차단 + 회고 §개선 제안
+- **효과 측정 (Phase 4.5)**:
+  - 기존 manual walkthrough: ~30분 / phase × 5 phase = ~2.5h
+  - 자동 게이트: ~1초 / phase × 5 phase = 5초 (**▼ ~99% 시간**)
+  - 시나리오 누락 위험 ↓ (Phase 4까지 4/5 + 1 WARN 수준 → Phase 4.5 5/5 일관성 ↑)
+  - 5 시나리오 모두 file count 기반 grep 휴리스틱 — 깊이는 보통, 도입 비용 ▼
+- **다음 단계**:
+  - Phase 5+에서 시나리오 1~5를 환경별로 분기 (DB 도입 시 시나리오 4/5 갱신)
+  - 시나리오 추가/수정 절차를 contract-change Skill로 정식화 (Phase 6+ 권장)
+  - 시나리오 표현력 보강 (file count → stub patch + rollback 시뮬레이션) — 회고 §개선 제안 4
+- **권장 대응**:
+  - Phase 5+ 모든 phase 종료 시 phase-complete v1.2.0 §1.6 호출 의무 유지
+  - 시나리오 변경 시 ADR 작성 (Phase 4.5 ADR-016/017 패턴 복제)
+- **연관 Skill / Contract**: phase-complete v1.2.0 §1.6, scenario_simulation.ps1, P-X1-EFFECT-001 (13연속과 함께 회귀 차단 baseline)
+- **관련 회고**:
+  - meta/retrospectives/phase-4.5.md
+  - meta/proposals/2026-05-28_phase-4-retrospective-proposals.md §P-X2 (채택 권장)
+
+### Pattern P-VALIDATION-FORMAL-001: multi-llm-validation formal self + 외부 분리 패턴 (Phase 4.5 첫 트리거)
+
+- **유형**: 반복 성공 (Phase 4.5 첫 적용, formal self V1~V4 PASS + external placeholder 분리)
+- **최초 식별**: 2026-05-28 (Phase 4.5 Slice 1 — 첫 formal 트리거)
+- **관련 회고**: meta/retrospectives/phase-4.5.md §잘된 것 2 + §P-VALIDATION-FORMAL-001
+- **요약**: 사용자 결정 "검증 모델은 너가 직접 (Claude Code, 혹은 codex가 지침 참고하면서 자가 검증), 외부 검증은 따로 작성되도록 할 것" → multi-llm-validation Skill formal 트리거를 다음 패턴으로 정의:
+  1. **Self validation**: Claude Code가 지침(CLAUDE.md, contracts, eval, patterns)을 참조하여 자가 검증 → `meta/validations/{date}_{phase}_self.md`
+  2. **External validation**: 외부 LLM(GPT/Gemini) 검증은 placeholder로 별도 파일 → `meta/validations/{date}_{phase}_external.md` (사용자가 외부에서 진행 후 채움)
+  3. 두 결과의 차이 항목 발견 시 phase notes.md에 기록 + 회고 §개선 제안 반영
+- **효과 측정 (Phase 4.5)**:
+  - 큰 phase 진입 시 단일 모델 편향 회피 baseline 확립
+  - 외부 검증 의무화 부담 없이 분리 가능 → 사용자가 외부에서 진행 여부를 phase별로 결정 가능
+  - `meta/validations/` 폴더 누적 시작 → 추후 audit / 회고 / pattern 추출 가능
+  - Phase 4.5 self V1~V4 4/4 PASS (지침 정합성, contract 정합성, eval 정합성, 패턴 정합성)
+- **다음 단계**:
+  - Phase 5 (큰 phase, DB/Auth) 진입 전 동일 패턴 적용 (사용자 결정 의무, external 채움 권장)
+  - skill_usage_log.md에 formal vs informal 트리거 구분 기록 (이미 Phase 4.5 entry에서 구분)
+  - Phase 5+ external 채움 시 V1~V4 cross-check (self vs external 차이 회고 §개선 제안)
+- **권장 대응**:
+  - Phase 5+ 모든 큰 phase 진입 전 self.md + external.md 2 파일 생성 의무
+  - phase entry commit message에 "multi-llm-validation formal self PASS" 명시 (재현 가능성 ↑)
+- **연관 Skill / Contract**: multi-llm-validation Skill, P-GPT-REVIEW-001 (informal GPT 검토 — Phase 4 baseline)
+- **관련 회고**:
+  - meta/retrospectives/phase-4.5.md
+  - meta/validations/2026-05-28_phase-4.5-pre-entry_self.md (V1~V4 PASS)
+  - meta/validations/2026-05-28_phase-4.5-pre-entry_external.md (placeholder)

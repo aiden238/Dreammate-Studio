@@ -11,10 +11,10 @@
 
 | 항목 | 내용 |
 |---|---|
-| **Phase** | 🟡 pending_user_decision — 다음 phase 옵션 A/B/C (사용자 결정 3-c) |
-| **이전 Phase** | Phase 4 — FastAPI 기본 백엔드 구현 (확장) ✅ done (2026-05-28, 4 Slices + acceptance 10/10 + audit_naming + audit_page_component 0 drift + smoke 8/8 + P-X1 9연속 + component_map 15연속 0줄 + PlanCard 4연속 0줄 + GPT 검토 ▼66% 시간) |
-| **하네스 규모** | 305+ 파일, ~73,800줄 (Phase 4 +15 신규 / +8 수정 ~1850 backend 코드 + ~280 frontend) |
-| **Skill 구조** | `.claude/skills/` 단일 (20개, applies_to 태그, v1.3.0 — Phase 1 P1~P4 + Phase 2 P-X1 적용 9연속 입증) |
+| **Phase** | 🟡 pending_user_decision — 다음 phase 옵션 A/B/C (Phase 5 / 6 / 9+) |
+| **이전 Phase** | Phase 4.5 — Critic Revise Loop + Rewriter + Z-X3 + P-X2 ✅ done (2026-05-28, 4 Slices + A1~A10 + M1~M3 + P-X1 13연속 + PlanCard 9연속 + component_map 19연속 + multi-llm-validation formal 첫 + P-X2 자동 게이트 첫 + pytest 109/109) |
+| **하네스 규모** | ~74,500줄 (Phase 4.5 +12 신규 / +10 수정 ~+650 backend/scripts/docs + ~+50 frontend + ~+200 meta) |
+| **Skill 구조** | `.claude/skills/` 단일 (20개, v1.3.0 + phase-complete v1.2.0 P-X2 §1.6 — 13연속 P-X1 입증 + multi-llm-validation formal 첫) |
 | **Repository** | https://github.com/aiden238/Dreammate-Studio (Private) |
 
 ---
@@ -77,8 +77,9 @@ Dreammate_Studio/
 | 2 | design.md 기반 PWA 설계 | ✅ done | 2026-05-27 |
 | 3 | Next.js PWA 기본 UI 구현 | ✅ done | 2026-05-28 |
 | 4 | FastAPI 기본 백엔드 구현 (확장) | ✅ done | 2026-05-28 |
-| **next** | **🟡 pending_user_decision (옵션 A/B/C, 사용자 결정 3-c)** | **next** | — |
-| 5 | DB / Auth 기본 구조 | planned (option B 후보) | — |
+| 4.5 | Critic Revise Loop + Rewriter + Z-X3 + P-X2 | ✅ done | 2026-05-28 |
+| **next** | **🟡 pending_user_decision (옵션 A Phase 5 / B Phase 6 / C Phase 9+)** | **next** | — |
+| 5 | DB / Auth 기본 구조 | planned (option A 후보) | — |
 | 6~10 | AI System + 통합 테스트 | planned | — |
 | 11~30 | 안정화 / 확장 / 고도화 | future | — |
 
@@ -87,6 +88,7 @@ Phase 1 — 13 commit, 8/8 implementation acceptance + pytest 62/62 + smoke 5/5 
 Phase 2 — 6 commit, 10/10 acceptance + 변경성 시뮬레이션 5/5 PASS + audit_naming 0 drift.
 Phase 3 — 7 commit, 10/10 acceptance + audit_naming + audit_page_component 0 drift + smoke 7/7 PASS + P-X1 5/5 PASS + component_map 6연속 0줄.
 Phase 4 — 5 commit, 10/10 acceptance + audit_naming + audit_page_component 0 drift (D-1 Slice 4 해소) + smoke 8/8 PASS + **P-X1 §SELF-VERIFICATION 9연속 PASS** + **component_map.md 15연속 0줄** + **PlanCard.tsx 4연속 0줄** + **GPT 검토 채택 효과 ▼66% 시간 (6→4 Slices)**.
+Phase 4.5 — 4 commit, 10/10 acceptance + 3/3 메타 검증 + audit 0 drift × 2 + smoke 9/9 PASS + scenario_simulation 5/5 PASS (**P-X2 자동 게이트 첫 작동**) + pytest 109/109 + **P-X1 13연속 PASS** + **PlanCard.tsx 9연속 0줄** + **component_map.md 19연속 0줄** + **multi-llm-validation formal 첫 트리거**.
 
 ---
 
@@ -126,12 +128,13 @@ Phase 4 — 5 commit, 10/10 acceptance + audit_naming + audit_page_component 0 d
 ```
 1. harness/00_START_HERE.md  ← 첫 진입 시 여기부터
 2. harness/PROJECT_STATE.md  ← 현재 작업 위치 확인 (pending_user_decision 옵션 A/B/C)
-3. harness/phases/archive/phase-4-fastapi-extension/  ← Phase 4 backend + frontend baseline + closing_notes (참조, 다음 phase A/B/C 옵션 명시)
-4. harness/phases/archive/phase-3-pwa-impl/  ← Phase 3 frontend baseline + closing_notes (참조)
-5. harness/phases/archive/phase-2-pwa-design/  ← Phase 2 design spec baseline (참조)
-6. harness/apps/web/design_handoff.md  ← Phase 2 핵심 산출물 (변경 가이드)
-7. harness/meta/proposals/2026-05-28_phase-4-retrospective-proposals.md  ← 다음 phase 진입 전 Z-X1~Z-X3 + Phase 2 P-X2 (우선순위 ↑) 검토 권장
-8. harness/meta/retrospectives/phase-4.md  ← Phase 4 회고 + 다음 phase A/B/C 옵션 권장 사항
+3. harness/phases/archive/phase-4.5-critic-revise-loop/closing_notes.md  ← Phase 4.5 종료 메모 + 다음 phase A/B/C 옵션 명시
+4. harness/phases/archive/phase-4-fastapi-extension/  ← Phase 4 backend + frontend baseline + closing_notes (참조)
+5. harness/phases/archive/phase-3-pwa-impl/  ← Phase 3 frontend baseline + closing_notes (참조)
+6. harness/phases/archive/phase-2-pwa-design/  ← Phase 2 design spec baseline (참조)
+7. harness/apps/web/design_handoff.md  ← Phase 2 핵심 산출물 (변경 가이드)
+8. harness/meta/retrospectives/phase-4.5.md  ← Phase 4.5 회고 + 다음 phase A/B/C 옵션 권장 사항
+9. harness/meta/patterns.md  ← P-X1-EFFECT-001 13연속, P-X2-EFFECT-001 신규, P-VALIDATION-FORMAL-001 신규
 ```
 
 ---

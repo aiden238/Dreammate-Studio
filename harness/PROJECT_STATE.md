@@ -2,9 +2,9 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 모두 완료 + Phase 4.5 active (entry 2026-05-28)**.
-Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-model 인터페이스 + Critic verdict 노출 모두 동작.
-**Phase 4.5 진행 중** — Slice 1 (Pre-Entry) validations + P-X2 채택 + scenario_simulation.ps1 작업 중.
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 모두 완료**.
+Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-model 인터페이스 + Critic verdict + **revise loop (max 2) + recommended_plan_index** 모두 동작.
+**🟡 pending_user_decision — 다음 phase 옵션 A/B/C (Phase 5 DB/Auth / Phase 6 Output Schema / Phase 9+)**
 
 ## 현재 Active Phase
 
@@ -22,19 +22,28 @@ Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-m
 - smoke_test_phase_4 8/8 PASS
 - 신규 패턴: P-GPT-REVIEW-001 + P-X1-EFFECT-001 update (9연속)
 
-**Phase 4.5 ★ active (entry 2026-05-28)** — Critic Revise Loop + Rewriter + Z-X3 Best-Plan + P-X2 자동 게이트 (mini-phase, 12~16h)
-- 사용자 결정: 옵션 A 선택 + Z-X3 포함 + P-X2 채택 + multi-llm-validation **formal** 첫 트리거 (Claude Code 자가 검증, 외부 검증 별도 파일 분리)
-- Slice 4개 모두 sub-agent dispatch (사용자 결정)
-- Slice 1 (entry): 진행 중 — validations 자가 + P-X2 채택 (phase-complete v1.2.0) + scenario_simulation.ps1
+**Phase 4.5. Critic Revise Loop + Rewriter + Z-X3 Best-Plan + P-X2 ✅ done (2026-05-28)** — archive 이동 완료
+- A1~A10 10/10 PASS + M1~M3 3/3 PASS / audit_naming + audit_page_component 0 drift × 2 / 변경성 시뮬 5/5 PASS (P-X2 첫 자동 게이트) / smoke_test_phase_4_5 9/9 PASS / pytest 109/109 (+16 신규)
+- **P-X1 13연속 PASS (Phase 3 5 + Phase 4 4 + Phase 4.5 4) + PlanCard 9연속 0줄 + component_map 19연속 0줄** ★
+- **multi-llm-validation formal 첫 트리거** (Claude Code 자가 검증 V1~V4 PASS + 외부 placeholder 분리)
+- **P-X2 자동 게이트 첫 작동** (scenario_simulation.ps1 5/5 PASS via phase-complete v1.2.0 §1.6)
+- 신규 패턴: P-X2-EFFECT-001 + P-VALIDATION-FORMAL-001 + P-X1-EFFECT-001 update (13연속)
+- Sub-agent 4/4 (모두 sub-agent dispatch) + Slice 4 close (final)
+
+## 다음 Phase — 🟡 pending_user_decision
+
+**옵션 A**: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h) — multi-llm-validation formal external 의무
+**옵션 B**: Phase 6 Output Schema + Agent IO 안정화 (Phase 4.5 산출물 stress test)
+**옵션 C**: 다른 우선순위 (Phase 9 결과 저장 + 피드백 / Phase 11+ 등)
 
 ## migration_progress
 
 ```yaml
-current_sprint: phase-4.5-slice-1
-current_sprint_step: 6
-total_steps_in_sprint: 6
-last_completed_action: "Phase 4.5 entry — 8 entry files 작성 (goals/scope/non_goals/dependencies/acceptance/assumptions/multi_slice_plan/notes) + assumptions.md 4-check 통과 + audit_naming 0 drift"
-next_action: "Slice 1 sub-agent commit 후 Slice 2 dispatch (Rewriter + Revise Loop)"
+current_sprint: completed
+current_sprint_step: completed
+total_steps_in_sprint: completed
+last_completed_action: "Phase 4.5 종료 — A1~A10 10/10 + M1~M3 3/3 + P-X1 13연속 + PlanCard 9연속 + component_map 19연속 + P-X2 자동 게이트 첫 트리거 + multi-llm-validation formal 첫 트리거"
+next_action: "다음 phase 옵션 사용자 결정 대기 (A: Phase 5 DB/Auth / B: Phase 6 Output Schema / C: Phase 9/11+)"
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
@@ -139,18 +148,45 @@ phase_4_deferred_to_next:
   - D2_QuickInputCard_alt_variants  # Phase 9
   - Phase_1_endpoint_removal  # Phase 8+
 phase_4_retrospective_proposals: proposed (Z-X1~Z-X3 + Phase 2 P-X2 재평가, awaiting user review)
-phase_4_5_status: in_progress
+phase_4_5_status: completed
 phase_4_5_entry_date: 2026-05-28
+phase_4_5_completion_date: 2026-05-28
+phase_4_5_archive_location: phases/archive/phase-4.5-critic-revise-loop/
 phase_4_5_total_slices: 4  # 모두 sub-agent
-phase_4_5_completed_slices: 0  # Slice 1 진행 중
+phase_4_5_completed_slices: 4  # Slice 1~4 모두 PASS
 phase_4_5_estimated_hours_total: 12-16
-phase_4_5_assumptions_check: PASS  # 4-check 통과
+phase_4_5_actual_hours: ~12-14  # Z-X3/P-X2 추가에도 ▼20% 절감
+phase_4_5_assumptions_check: PASS  # 4-check 통과 (entry)
+phase_4_5_acceptance_passed: 10/10  # A1~A10
+phase_4_5_meta_acceptance_passed: 3/3  # M1~M3
+phase_4_5_pytest_result: 109/109  # Phase 4 baseline 93 + Phase 4.5 신규 16
+phase_4_5_smoke_test: 9/9 PASS  # smoke_test_phase_4_5.ps1 신규
+phase_4_5_scenario_simulation: 5/5 PASS (auto-gate)  # P-X2 첫 자동 게이트 트리거 ★
+phase_4_5_audit_naming_final: 0 drift  # Slice 1 + Slice 4
+phase_4_5_audit_page_component_final: 0 drift  # Slice 1 + Slice 4
+phase_4_5_p_x1_self_verification: 4/4 PASS  # Slice 1~4 모두
+phase_4_5_p_x1_cumulative_streak: 13  # Phase 3 5 + Phase 4 4 + Phase 4.5 4 ★
+phase_4_5_component_map_zero_lines_streak: 19  # Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 ★
+phase_4_5_plan_card_zero_lines_streak: 9  # Phase 4 4 + Phase 4.5 5 ★
+phase_4_5_deviation_count: 0
 phase_4_5_user_decisions_applied:
   z_x3_include: yes  # Best-Plan Selection 본 scope 포함
   p_x2_adopt: yes  # phase-complete v1.2.0 §1.6 자동 게이트
   multi_llm_validation_formal: yes  # Claude Code 자가 검증, 외부 placeholder 분리
   all_slices_sub_agent: yes  # 4개 모두 sub-agent dispatch
-total_commits: 45  # 44 + Phase 4.5 Slice 1 entry commit
+phase_4_5_new_patterns:
+  - P-X2-EFFECT-001  # 변경성 시뮬 자동 게이트 첫 트리거 (▼99% 시간)
+  - P-VALIDATION-FORMAL-001  # multi-llm-validation formal self + 외부 분리 패턴
+  - P-X1-EFFECT-001 (update 13연속)  # P-X1 13연속 PASS 누적 입증
+phase_4_5_mitigated_patterns:
+  - P-AGENT-SCOPE-001  # 13연속 누적 입증 (Phase 3 5 + Phase 4 4 + Phase 4.5 4)
+phase_4_5_retrospective_proposals: in_retrospective  # 본 회고 §개선 제안에 직접 기록 (mini-phase)
+next_phase_status: pending_user_decision
+next_phase_options:
+  option_a: Phase_5_DB_Auth  # 15~20h, multi-llm-validation formal external 의무
+  option_b: Phase_6_Output_Schema_Stress  # medium, Critic verdict 단일 표준 + agent_io 강화
+  option_c: Phase_9_or_11_plus  # 결과 저장 + 피드백 / 안정화
+total_commits: 48  # 45 + Slice 2 (3e7a33b) + Slice 3 (ca7cbca) + Slice 4 final
 last_updated: 2026-05-28
 ```
 
@@ -225,37 +261,37 @@ last_updated: 2026-05-28
 ## 다음 액션
 
 ```
-다음 phase 진입 준비 (🟡 pending_user_decision — 사용자 결정 3-c 옵션 A/B/C):
+다음 phase 진입 준비 (🟡 pending_user_decision — Phase 4.5 종료, 다음 옵션 A/B/C):
 
-1. (필수) Phase 4 회고 + proposals 검토
-   → meta/retrospectives/phase-4.md
-   → meta/proposals/2026-05-28_phase-4-retrospective-proposals.md
-   → Z-X1 (audit_page_component dynamic route 정규화 표준화) — 우선순위: 보통
-   → Z-X2 (multi-provider client factory baseline) — 우선순위: 낮음
-   → Z-X3 (Critic best-plan 선택 로직) — 우선순위: 낮음
+1. (필수) Phase 4.5 회고 + closing_notes 검토
+   → meta/retrospectives/phase-4.5.md (개선 제안 §1~4)
+   → phases/archive/phase-4.5-critic-revise-loop/closing_notes.md (다음 phase 옵션 A/B/C 명시)
+   → 신규 패턴: P-X2-EFFECT-001 + P-VALIDATION-FORMAL-001 + P-X1-EFFECT-001 update (13연속)
 
-2. Phase 2 P-X 후속 재평가 결과 적용
-   → P-X1: ✅ applied + 9/9 효과 입증 (유지)
-   → **P-X2 (변경성 시뮬 phase-complete 게이트): 채택 권장 (Y-X1 통합) — 우선순위 ↑**
-   → P-X3 / P-X4 / P-X5: deferred 유지
+2. Phase 4 회고 권장 사항 재평가 (Phase 4.5 채택 결과 반영)
+   → Z-X1 (audit_page_component dynamic route 정규화): deferred 유지 (Phase 5+ 새 dynamic route 추가 시 검토)
+   → Z-X2 (multi-provider client factory): deferred 유지 (Phase 21+ 검토)
+   → Z-X3 (Critic best-plan): ✅ Phase 4.5에서 채택 완료
+   → P-X2 (변경성 시뮬 자동 게이트): ✅ Phase 4.5에서 채택 + 첫 자동 작동 완료
 
-3. (권장) multi-llm-validation Skill **formal 호출**
-   → 다음 phase가 옵션 B (Phase 5 DB/Auth) 또는 큰 phase일 경우 의무
-   → meta/validations/ 누적 시작
+3. (권장) multi-llm-validation Skill formal external
+   → Phase 4.5 패턴 계승: self.md + external.md 2 파일 작성
+   → 옵션 A (Phase 5 DB/Auth) 진입 시 external 의무
+   → V1~V4 cross-check 권장
 
 4. 사용자 결정 (다음 phase 옵션 A/B/C)
-   → 옵션 A: Phase 4.5 mini-phase (Critic revise + Rewriter, 8~12h)
-   → 옵션 B: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h)
-   → 옵션 C: 다른 우선순위 (사용자 시점 재평가)
+   → 옵션 A: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h) — formal external 의무
+   → 옵션 B: Phase 6 Output Schema 안정화 (Phase 4.5 산출물 stress test + Critic verdict 단일 표준)
+   → 옵션 C: Phase 9 결과 저장 + 피드백 / Phase 11+ 안정화 등 사용자 시점 재평가
 
 5. 다음 phase 진입 (phase-start v1.3.0 호출 — 옵션 채택 후)
    → phases/active/<chosen-phase>/ 폴더 생성
    → 4점검 (assumptions / Simplest Slice / Surgical Scope / Verification)
-   → Phase 4 backend + frontend baseline 로드
+   → Phase 4.5 backend (revise loop + best-plan) + frontend (wrapper UI) baseline 로드
    → 첫 작업: 채택 옵션에 따라
 
 6. 다음 phase deferred 처리 계획 (옵션별)
-   → 옵션 A: D6 (Critic revise + Rewriter)
-   → 옵션 B: D7 (SSE) + plan_store DB migration
+   → 옵션 A: D7 (SSE Progress) + plan_store DB migration
+   → 옵션 B: Critic verdict 4-fallback → 단일 표준 통합 + revise effect eval
    → 옵션 C: 사용자 시점 재평가
 ```

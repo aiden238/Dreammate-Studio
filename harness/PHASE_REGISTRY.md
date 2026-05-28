@@ -17,8 +17,9 @@
 | 2 | design.md 기반 PWA 설계 (Discovery + Quick 분기) | **done** (2026-05-27) | 6 Slices + design_handoff 5/5 PASS + design-review 7원칙 + audit_naming 0 + P-AGENT-SCOPE-001 발견 |
 | 3 | Next.js PWA 기본 UI 구현 (Discovery + Quick 분기) | **done** (2026-05-28) | 6 Slices + acceptance 10/10 + audit_naming + audit_page_component 0 drift + smoke 7/7 + 변경성 4/5+1 WARN + **P-X1 5/5 PASS + component_map 6연속 0줄** |
 | 4 | FastAPI 기본 백엔드 구현 (확장) | **done** (2026-05-28) | 4 Slices (GPT 검토 6→4 채택) + acceptance 10/10 + audit_naming + audit_page_component 0 drift (D-1 해소) + smoke 8/8 + **P-X1 9연속 PASS + component_map 15연속 0줄 + PlanCard 4연속 0줄 + GPT 검토 ▼66% 시간** |
-| **next** | **🟡 pending_user_decision (옵션 A/B/C, 사용자 결정 3-c)** | **next** | 옵션 A: Phase 4.5 mini-phase (Critic revise + Rewriter, 8~12h) / 옵션 B: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h) / 옵션 C: Phase 6 / 9 / 11+ |
-| 5 | DB / Auth 기본 구조 구현 | planned (option B 후보) | Supabase / PostgreSQL 연결 + RLS + SSE Progress (D7) |
+| 4.5 | Critic Revise Loop + Rewriter + Z-X3 + P-X2 | **done** (2026-05-28) | 4 Slices (모두 sub-agent) + A1~A10 + M1~M3 + P-X1 13연속 + PlanCard 9연속 + component_map 19연속 + P-X2 자동 게이트 첫 + multi-llm-validation formal 첫 + pytest 109/109 + smoke 9/9 |
+| **next** | **🟡 pending_user_decision (옵션 A Phase 5 / B Phase 6 / C Phase 9+)** | **next** | 옵션 A: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h) / 옵션 B: Phase 6 Output Schema 안정화 / 옵션 C: Phase 9 결과 저장 / Phase 11+ 안정화 |
+| 5 | DB / Auth 기본 구조 구현 | planned (option A 후보) | Supabase / PostgreSQL 연결 + RLS + SSE Progress (D7) |
 | 6 | Output Schema + Agent IO 구현 | planned | AI 입출력 안정화 |
 | 7 | RAG Lite 구현 | planned | 초기 지식 검색 + candidate_knowledge 5단계 |
 | 8 | MOA Lite 구현 | planned | Intent / Planner / Critic / Rewriter |
@@ -103,7 +104,26 @@ Mitigated  : P-AGENT-SCOPE-001 (9연속 누적 입증 — Phase 3 5 + Phase 4 4)
 개선 제안  : meta/proposals/2026-05-28_phase-4-retrospective-proposals.md (Z-X1~Z-X3, proposed) + Phase 2 P-X2 채택 권장 (우선순위 ↑)
 GPT 검토   : 채택 (6→4 Slices ▼33% / 18~26h → 6~8h ▼66%)
 핵심 성과  : **P-X1 9연속 PASS + component_map.md 15연속 0줄 + PlanCard.tsx 4연속 0줄 + GPT 검토 채택 효과 실증**
-다음 Phase : **🟡 pending_user_decision (옵션 A/B/C, 사용자 결정 3-c)**
+다음 Phase : Phase 4.5 mini-phase (사용자 결정 옵션 A 채택)
+```
+
+## Phase 4.5 done (archive)
+
+`phases/archive/phase-4.5-critic-revise-loop/`
+
+```
+Status     : ✅ DONE (2026-05-28)
+유형       : mini-phase (Phase 4 후속 + Phase 5 진입 전 안정화)
+Goal       : Critic revise loop + Rewriter + Z-X3 best-plan + P-X2 자동 게이트
+Result     : 4 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M3 3/3 + smoke 9/9 + scenario_simulation 5/5 (P-X2 첫) + pytest 109/109 (+16) + audit 0 drift × 2
+산출물     : ~12 신규 + ~10 수정 (backend +450 / frontend +45 / scripts +200 / docs +300 / meta +200)
+Sub-agent  : 4 dispatches (Slice 1~4 모두), 충돌 0 — P-X1 §SELF-VERIFICATION 4/4 PASS
+회고       : meta/retrospectives/phase-4.5.md
+신규 패턴  : P-X2-EFFECT-001 + P-VALIDATION-FORMAL-001 + P-X1-EFFECT-001 update (13연속)
+Mitigated  : P-AGENT-SCOPE-001 (13연속 누적 입증 — Phase 3:5 + Phase 4:4 + Phase 4.5:4)
+사용자 결정 : Z-X3 포함 + P-X2 채택 + multi-llm-validation formal (Claude Code 자가 검증, 외부 placeholder 분리) + 4 Slice 모두 sub-agent
+핵심 성과  : **P-X1 13연속 PASS + PlanCard 9연속 + component_map 19연속 + multi-llm-validation formal 첫 + P-X2 자동 게이트 첫**
+다음 Phase : **🟡 pending_user_decision (A Phase 5 / B Phase 6 / C Phase 9+)**
 ```
 
 ## 🟡 Next phase pending_user_decision (2026-05-28)
@@ -111,27 +131,34 @@ GPT 검토   : 채택 (6→4 Slices ▼33% / 18~26h → 6~8h ▼66%)
 ```
 사용자가 셋 중 선택 후 다음 phase 진입 (phase-start v1.3.0 호출):
 
-옵션 A: Phase 4.5 mini-phase (Critic revise loop + Rewriter)
-  - D6 본격 구현 (P-008 Rewriter + Critic revise 최대 2회)
-  - 추정 시간: 8~12h
-  - 다음 → Phase 5
-  - 권장 시점: 영상기획 품질 안정화 우선시
-
-옵션 B: Phase 5 DB/Auth (Critic revise는 Phase 6+)
-  - Supabase Auth + RLS + plan_store DB migration + SSE Progress (D7)
+옵션 A: Phase 5 DB/Auth (Supabase + RLS + SSE)
+  - Supabase Auth + JWT + RLS 정책 (4계층 데이터 모델 첫 영속화)
+  - plan_store DB migration (in-memory → Supabase row)
+  - SSE Progress streaming (D7)
   - 추정 시간: 15~20h
-  - 다음 → Phase 6 (Critic revise loop 통합)
+  - 다음 → Phase 6 (Output Schema 안정화)
   - 권장 시점: 다중 사용자 데이터 누적 + 보안 우선시
+  - **multi-llm-validation formal external 의무** (Phase 4.5 패턴 계승)
 
-옵션 C: 다른 우선순위 (Phase 6 / 9 / 11+ 등)
-  - 사용자 시점에서 우선순위 재평가
-  - 권장 시점: 본 Phase 4 산출물 실 사용 + 데이터 누적 후
+옵션 B: Phase 6 Output Schema + Agent IO 안정화
+  - Phase 4.5 산출물 (revise_history + recommended_plan_index) stress test
+  - Critic verdict 단일 표준 (overall_score / dimensions 통합)
+  - agent_io_contract 정합 강화 + prompt_registry 정식화 (P-007 + P-008 semver)
+  - 추정 시간: medium
+  - 다음 → Phase 5 또는 Phase 7
+  - 권장 시점: schema baseline 확정 우선시
+
+옵션 C: 다른 우선순위 (Phase 9 / 11+ 등)
+  - Phase 9: 결과 저장 + Brand Memory 자동 추출
+  - Phase 11+: 안정화 (eval / cost / UX 검증)
+  - 권장 시점: 본 Phase 4.5 산출물 실 사용 + 데이터 누적 후
 
 진입 전 권장 검토:
-  - meta/retrospectives/phase-4.md
-  - meta/proposals/2026-05-28_phase-4-retrospective-proposals.md (Z-X1~Z-X3 + P-X2)
-  - phases/archive/phase-4-fastapi-extension/closing_notes.md
-  - multi-llm-validation Skill **formal 호출** (옵션 B 또는 큰 phase 시 의무)
+  - meta/retrospectives/phase-4.5.md
+  - meta/patterns.md (P-X1-EFFECT-001 13연속, P-X2-EFFECT-001 신규, P-VALIDATION-FORMAL-001 신규)
+  - phases/archive/phase-4.5-critic-revise-loop/closing_notes.md
+  - meta/validations/2026-05-28_phase-4.5-pre-entry_external.md (placeholder — 사용자 외부 채움 가능)
+  - multi-llm-validation Skill **formal external 호출** (옵션 A 또는 큰 phase 시 의무)
 ```
 
 ## Phase 2~3 Hybrid UX 분기 (planned, 중간 상세화)
