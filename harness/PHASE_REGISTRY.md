@@ -86,22 +86,24 @@ Mitigated  : P-AGENT-SCOPE-001 (Phase 2 발견 → Phase 3 P-X1 적용 후 0건 
 다음 Phase : 4. FastAPI 기본 백엔드 구현 (active, 진입 대기)
 ```
 
-## Phase 4 active (next)
+## Phase 4 active (2026-05-28, GPT 검토 채택 4 Slices)
 
 ```
-Goal       : FastAPI 백엔드 확장 (MOA Lite 진입 - 3-plan + Critic revise + SSE)
-Scope      :
-  - 3-plan generate endpoint 활성화 (P-006 plan_candidates 3개 생성)
-  - Critic revise loop 도입 (최대 2회, 무한 루프 차단)
-  - Rewriter 통합 (Critic 결과 반영)
-  - SSE / multi-step endpoint (30~60초 대기 backend UX)
-  - D3 PlanCard 4-layer 정합 (조정 3번 — PlanComparisonCard와 함께 재정의)
-  - D4 PlanComparisonCard 상세 spec + 4-layer
-  - D2 QuickInputCard alt variants (Phase 9 데이터 베이스 — Phase 4에서는 deferred 유지 가능)
-Acceptance : phase-start Skill로 진입 시 작성
-의존성     : Phase 1 (done — backend baseline) + Phase 2 (done — design spec) + Phase 3 (done — frontend baseline)
-진입 전 권장: meta/proposals/2026-05-28_phase-3-retrospective-proposals.md (Y-X1~Y-X3 + Phase 2 P-X2 채택) 검토
-다음 Phase : 5. DB / Auth 기본 구조 (Supabase / PostgreSQL 연결)
+Goal       : 기존 /generate 유지 + 새 /plans/{plan_id}/generate + 3-plan + Critic verdict + 회귀 0
+Scope (재조율, GPT 검토):
+  - 4 contract endpoints (POST /plans/start, /plans/{id}/wizard/{step}, /plans/{id}/generate, GET /plans/{id})
+  - 3-plan parallel async (asyncio.gather, multi-model 가능 구조)
+  - Critic 8-dim verdict 노출 (revise loop은 Phase 4.5+ 이관)
+  - Phase 1 endpoint header만 추가 (X-API-Deprecation, 실 동작 무변경)
+  - Frontend 3-plan minimal (/plan/[plan_id], PlanCard × 3, PlanCard 무수정)
+  - Critic revise loop / SSE / 4-layer 재정의 모두 deferred
+사용자 결정 7 모두 반영 (4-b multi-model / 5-a Phase 8+ 제거 / 6-a PlanCard 무수정)
+Slice 분해 : 4 Slices (sequential, 4 Waves)
+  S1 Foundation contract endpoints / S2 Thin Vertical 3-plan / S3 Frontend minimal / S4 Final
+추정 시간  : 7~11h (Phase 3의 50%)
+Acceptance : A1~A10 (acceptance.md)
+의존성     : Phase 1 (backend) + Phase 2 (spec) + Phase 3 (frontend) 모두 done
+다음 Phase : Slice 4 retrospective에서 사용자 결정 (옵션 A: Phase 4.5 mini-phase / B: Phase 5 DB/Auth / C: 다른 우선순위)
 ```
 
 ## Phase 2~3 Hybrid UX 분기 (planned, 중간 상세화)

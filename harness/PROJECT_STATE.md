@@ -15,9 +15,13 @@ Next.js PWA 기본 화면 11 routes 빌드 + 4-layer 컴포넌트 4개 + Discove
 **Phase 3. Next.js PWA 기본 UI 구현 ✅ done (2026-05-28)** — archive 이동 완료
 - A1~A10 10/10 PASS / audit_naming + audit_page_component 0 drift / 변경성 4/5+1 WARN / P-X1 5/5 / component_map 6연속 0줄
 
-**Phase 4. FastAPI 기본 백엔드 구현 (확장)** — 🟡 **pending_entry (next, 진입 대기)**
-- 진입 전 검토 권장: `meta/proposals/2026-05-28_phase-3-retrospective-proposals.md` (Y-X1~Y-X3 + Phase 2 P-X2 채택)
-- 첫 작업 후보: 3-plan generate endpoint + D3 PlanCard 4-layer + D4 PlanComparisonCard 정합 + Critic revise loop 도입
+**Phase 4. FastAPI 기본 백엔드 구현 (확장)** — 🔵 **active (2026-05-28 진입, GPT 검토 채택 4 Slices)**
+- 진입 점검: phase-start v1.3.0 §6 4점검 통과 (audit_naming 0 drift)
+- GPT 검토 채택: 6→4 Slices (revise loop / SSE / 4-layer 재정의 모두 Phase 4.5/5+ 이관)
+- 핵심: contract endpoints 4개 + 3-plan parallel + multi-model 인터페이스 + Critic verdict 노출 + Phase 1 endpoint 회귀 0
+- 사용자 결정 7개 모두 반영 (4-b: 3 parallel + multi-model / 5-a: Phase 1 endpoint Phase 8+ 제거 / 6-a: PlanCard 무수정)
+- 첫 작업: Wave 1 Slice 1 — Foundation contract endpoints (`routers/plans.py` 4 endpoints)
+- 다음 phase 선택: **Slice 4 retrospective에서** (옵션 A: Phase 4.5 / B: Phase 5 / C: 다른 우선순위)
 
 ## migration_progress
 
@@ -25,8 +29,8 @@ Next.js PWA 기본 화면 11 routes 빌드 + 4-layer 컴포넌트 4개 + Discove
 current_sprint: completed
 current_sprint_step: 6
 total_steps_in_sprint: 6
-last_completed_action: "Phase 3 pre-entry: P-X1 선적용 (phase-start v1.2.0 → v1.3.0, §6.3 Sub-agent 자기 검증 절차 추가, P-AGENT-SCOPE-001 대응). 변경 로그: docs/contract_changes/2026-05-28-px1-sub-agent-self-verification.md"
-next_action: "Phase 3 entry — 4 조정 반영 (P-X1 적용 완료 / Thin Vertical Slice 2 / D3 Phase 4 이관 / component_map.md read-only 절대 보장). phase-start v1.3.0로 9 entry files 생성 후 Wave 1 dispatch"
+last_completed_action: "Phase 4 entry: phase-start v1.3.0 §6 4점검 통과 + 9 entry files + audit_naming 0 drift. GPT 검토 채택 (6→4 Slices). 사용자 결정 7개 모두 반영 (4-b multi-model / 5-a Phase 8+ 제거 / 6-a PlanCard 무수정 등)"
+next_action: "Wave 1 Slice 1 sub-agent dispatch — Foundation contract endpoints (routers/plans.py 4 endpoints + schemas/plans.py + ADR-014)"
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
@@ -84,13 +88,35 @@ phase_3_deferred_to_phase_4:
   - D3_PlanCard_4layer_reconcile  # 조정 3번 — PlanComparisonCard와 함께 재정의
   - D4_PlanComparisonCard_detailed
 phase_3_retrospective_proposals: proposed (Y-X1~Y-X3 + Phase 2 P-X2 재평가)
-phase_4_status: pending_entry
-phase_4_estimated_entry: TBD (Y-X1~Y-X3 + P-X2 검토 후)
-phase_4_pre_entry_checklist:
-  - "1. meta/proposals/2026-05-28_phase-3-retrospective-proposals.md 검토 (Y-X1~Y-X3)"
-  - "2. Phase 2 P-X2 (변경성 시뮬 phase-complete 게이트) 채택 결정"
-  - "3. D2 / D3 / D4 처리 순서 확정"
-total_commits: 38  # ~3d0b0fb + Phase 3 (entry + Slice 1~5 + Slice 6 본 commit)
+phase_4_status: active
+phase_4_entry_date: 2026-05-28
+phase_4_current_wave: 1
+phase_4_current_slice: 1
+phase_4_total_slices: 4  # GPT 검토 채택 (6→4)
+phase_4_total_waves: 4  # all sequential (사용자 결정 2-a)
+phase_4_completed_slices: []
+phase_4_estimated_hours_total: 7-11  # Phase 3 50%
+phase_4_user_decisions_applied:
+  decision_1: a  # 4 Slices
+  decision_2: a  # Sequential
+  decision_3: c  # 다음 phase Slice 4 결정
+  decision_4: b + multi-model  # 3 parallel + 모델 추가 가능 구조
+  decision_5: a  # Phase 1 endpoint Phase 8+ 제거
+  decision_6: a  # PlanCard 무수정
+  decision_7: a  # 그대로 진입
+  decision_8: deferred 명시
+phase_4_deferred_in_advance:
+  - D6_Critic_revise_loop_+_Rewriter  # Phase 4.5+
+  - D7_SSE_Progress_streaming  # Phase 5+
+  - D8_PlanComparisonCard_4layer  # Phase 5+
+  - D3_PlanCard_4layer_redefinition  # Phase 5+
+  - D4_PlanComparisonCard_detail  # Phase 5+
+  - D2_QuickInputCard_alt_variants  # Phase 9
+  - Phase_1_endpoint_removal  # Phase 8+
+phase_4_p_x1_streak_target: 4  # 9 total (Phase 3 5 + Phase 4 4)
+phase_4_component_map_zero_lines_target: 4  # 11+ total (Phase 3 7 + Phase 4 4)
+phase_4_plan_card_zero_lines_target: 4  # 사용자 결정 6-a
+total_commits: 39  # 38 + Phase 4 entry
 last_updated: 2026-05-28
 ```
 
