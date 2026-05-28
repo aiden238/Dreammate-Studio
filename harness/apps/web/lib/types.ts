@@ -9,6 +9,14 @@
  *   - CriticEvaluation / RAGReference 타입 추가 (Slice 3/4 백엔드 응답 매칭)
  *   - Meta.project_id 옵셔널 (Slice 5 — DB graceful failure 시 null)
  *   - Slice 6 backward compatibility 유지 (critic_evaluation/rag_references 옵셔널)
+ *
+ * Phase 6 Slice 3 확장 (ADR-018 / ADR-019 frontend mirror):
+ *   - CriticDimensions / CriticVerdictAction / canonical fields (overall_score / dimensions)
+ *     추가. 기존 필드(overall_score_avg / scores / overall_verdict / revise_round /
+ *     blocking_issues / target_plan_id) 는 page.tsx 회귀 0 위해 그대로 유지 (Optional 강등 X).
+ *   - ReviseAttempt interface 추가 + Body.revise_history typing 강화
+ *     (union: ReviseAttempt[][] | Record<string, unknown>[][]).
+ *   - 본 파일 외 모든 frontend 파일 0줄 변경 (PlanCard.tsx / component_map.md / page.tsx).
  */
 
 // ─── Meta ─────────────────────────────────────────────────────────────
@@ -84,7 +92,50 @@ export interface CriticScores {
 
 export type CriticVerdict = "approve" | "revise" | "reject";
 
+/**
+ * Phase 6 Slice 3 (ADR-018): Critic verdict action — revise_history attempt 의
+ * action 필드. backend `ReviseAttempt.action` 과 정합 (Literal["approve" |
+ * "revise" | "reject" | "unknown"]).
+ *
+ * "unknown" 은 Critic 이 미정의 verdict 를 반환했을 때 server-side 폴백 마커.
+ * `CriticVerdict` (approve|revise|reject) 의 superset.
+ */
+export type CriticVerdictAction = CriticVerdict | "unknown";
+
+/**
+ * Phase 6 Slice 3 (ADR-018): Critic dimensions canonical type.
+ *
+ * backend canonical `dimensions: dict[str, float]` (정규화 0.0~1.0) 의 frontend mirror.
+ * 8 차원 키 (intent_fit / target_clarity / ...) 는 일반 string key 로 받아 미래
+ * 차원 확장에 대비 (`CriticScores` 의 고정 8 키와 별개).
+ *
+ * 값 범위:
+ *   - Phase 6 canonical: 0.0 ~ 1.0 (float)
+ *   - Phase 1~4.5 호환 `scores` (CriticScores): 0~5 (int) — 별도 필드 유지.
+ */
+export type CriticDimensions = Record<string, number>;
+
 export interface CriticEvaluation {
+  /**
+   * Phase 6 canonical (ADR-018): 종합 점수 (정규화 0.0 ~ 1.0).
+   * deprecated `overall_score_avg` (0~5) 와 공존. Phase 9+ eval-run 안정화 후
+   * `overall_score_avg` 제거 예정 (별도 contract-change 절차).
+   *
+   * Optional — Phase 1~4.5 응답은 미포함 가능 (backward-compat).
+   */
+  overall_score?: number | null;
+  /**
+   * Phase 6 canonical (ADR-018): 8 차원 점수 dict (정규화 0.0 ~ 1.0).
+   * 미래 차원 추가에 대비해 일반 `Record<string, number>` 로 정의.
+   *
+   * Optional — Phase 1~4.5 응답은 미포함 가능.
+   */
+  dimensions?: CriticDimensions;
+
+  // ── Phase 1~4.5 호환 필드 (page.tsx 회귀 0 위해 그대로 non-optional 유지) ──
+  // backend 는 Optional 로 강등됐지만 frontend 는 page.tsx 가 직접 호출 (.toFixed,
+  // .map 등) 하므로 non-optional 유지. Phase 9+ deprecated 필드 제거 시
+  // page.tsx 와 함께 동시 마이그레이션.
   target_plan_id: string;
   scores: CriticScores;
   reasons: Record<string, string>;
@@ -93,6 +144,30 @@ export interface CriticEvaluation {
   overall_verdict: CriticVerdict;
   blocking_issues: string[];
   revise_round: number;
+}
+
+/**
+ * Phase 6 Slice 3 (ADR-018): Rewriter revise loop attempt log entry.
+ *
+ * backend `ReviseAttempt` (schemas/output.py) 의 frontend mirror — Body.revise_history
+ * 의 내부 배열 entry 1 건. routers/plans.py 가 dict 로 직렬화하므로 frontend 는
+ * 본 interface 또는 `Record<string, unknown>` 둘 다 허용 (union).
+ *
+ * Fields:
+ *   - attempt: 0,1,2... (0 = 초기 critic, 1+ = revise 후 재평가)
+ *   - action: "approve" | "revise" | "reject" | "unknown"
+ *   - revised: boolean — 본 attempt 에서 Rewriter 호출 여부
+ *   - max_reached?: max_revise 도달 시 true
+ *   - critic_warning?: Critic 호출 실패 graceful 마커
+ *   - rewriter_warning?: Rewriter 호출 실패 graceful 마커
+ */
+export interface ReviseAttempt {
+  attempt: number;
+  action: CriticVerdictAction;
+  revised: boolean;
+  max_reached?: boolean;
+  critic_warning?: string;
+  rewriter_warning?: string;
 }
 
 // ─── RAG Reference (Slice 4) ──────────────────────────────────────────
@@ -124,12 +199,20 @@ export interface Body {
    */
   rag_references?: RAGReference[];
   /**
-   * Phase 4.5 Slice 2: plan별 revise attempt log.
+   * Phase 4.5 Slice 2 / Phase 6 Slice 3 (ADR-018) typing 강화:
+   * plan별 revise attempt log.
    *  - 외부 배열: plan_candidates 순서 (length === plan_candidates.length)
-   *  - 내부 배열: attempt 0,1,2,... 순차 dict (action / revised / max_reached? / critic_warning?)
+   *  - 내부 배열: attempt 0,1,2,... 순차 entry
+   *
+   * Union typing — backend 직렬화는 dict 유지 (회귀 0). canonical
+   * `ReviseAttempt` 모델은 typing 검증 + frontend mirror 용도이므로 양쪽 다 허용.
+   *
    * loop 비활성 또는 Phase 4 이하 응답 시 미포함 또는 null.
    */
-  revise_history?: Array<Array<Record<string, unknown>>> | null;
+  revise_history?:
+    | Array<Array<ReviseAttempt>>
+    | Array<Array<Record<string, unknown>>>
+    | null;
   /**
    * Phase 4.5 Slice 3 (Z-X3): Critic 8-dim 기준 best-plan index.
    * plan_candidates 순서 0~2. 모든 verdict invalid / critic skip 시 null.
