@@ -2,18 +2,14 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 완료 + Phase 5.5 active**.
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 완료**.
 Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /auth/* + /sse/* 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계** 모두 동작.
-**Phase 5.5 ★ active (entry 2026-05-29)** — Legacy DB Consolidation + Validation Strengthening + Phase 7 Prep (mini-phase).
+**Phase 5.5 ✅ done (2026-05-29)** — Legacy DB Consolidation + Validation Strengthening + Phase 7 Prep (consolidation mini-phase, ADR-023/024 신규).
+**🟡 Next: pending_phase_7_planning** (사용자 명시: "Phase 5.5 진행 후 페이즈 7 기획 시작").
 
 ## 현재 Active Phase
 
-**Phase 5.5 ★ active (entry 2026-05-29)** — Legacy DB Consolidation + Validation Strengthening + Phase 7 Prep (mini-phase, 4~6h, 4 Slice 모두 sub-agent)
-- Slice 1 (entry): 진행 중
-- Slice 2: Legacy DB 통합 (옵션 A 공존 + deprecated note + ADR-023)
-- Slice 3: External validation × 3 강화 + ADR-024 RAG scope evolution + Brand Memory Phase 9+ confirmation
-- Slice 4: Close + 회고 + archive + Phase 7 prep
-- 사용자 결정 5건 모두 반영
+**🟡 pending_phase_7_planning** — Phase 7 (RAG Lite — candidate_knowledge 5단계 MVP) 기획 시작 대기 (사용자 명시)
 
 **Phase 1. MVP 기본 플로우 ✅ done (2026-05-26)** — archive 이동 완료
 
@@ -64,11 +60,18 @@ Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /a
 - graceful fallback 일관 적용 — Supabase 미설정 시 in-memory dict 회귀 0
 - 실측 시간 ~14-16h (추정 15~20h 내)
 
-**🟡 Next: pending_user_decision** — 다음 phase 옵션:
-- A. Phase 7 RAG Lite (8~12h)
-- B. Phase 6+ legacy DB 통합 mini-phase (4~6h) + Phase 7
-- C. Phase 9 결과 저장 + 피드백 (6~10h)
-- D. Phase 8 MOA Lite 본격 (12~16h)
+**Phase 5.5. Legacy DB Consolidation + Validation Strengthening + Phase 7 Prep ✅ done (2026-05-29)** — archive 이동 완료
+- A1~A8 8/8 PASS + M1~M2 2/2 PASS / audit_naming 0 drift / audit_page_component 2 intended drift WARN (Phase 5 baseline 유지) / scenario_simulation v2 10/10 (P-X2 네 번째 자동 게이트) / schema_stress 5/5 / smoke_test_phase_5 12/12 / pytest 170→172 (+2 legacy deprecation 검증)
+- **P-X1 26연속 PASS (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4) + PlanCard 18연속 0줄 + component_map 28연속 0줄** ★
+- **Legacy DB 옵션 A 채택** (ADR-023 — 공존 + deprecated note + 지연 통합) + **ADR-024 Phase 7 RAG scope evolution** (5단계 MVP + 확대 지점 A~F)
+- **External validation × 3 self-strengthen** — V-form 합의 추정 PASS (Phase 4.5/6/5)
+- **Brand Memory Phase 9+ confirmation** (NG2 + ADR-024 cross-ref)
+- **legacy backward-compat 100% 유지** (Phase 1 baseline 보호 + Phase 5 baseline 보호 동시 달성)
+- 신규 패턴: P-LEGACY-CONSOLIDATION-001 신규 후보 + P-X1-EFFECT-001 update (26연속) + P-VALIDATION-FORMAL-001 update (self-strengthen V-form sub-pattern)
+- Sub-agent 4/4 (모두 sub-agent dispatch) + Slice 4 close (final)
+- mini-phase consolidation 패턴 효과 입증 (실측 ~4-5h, 추정 4~6h 내)
+
+**🟡 Next: pending_phase_7_planning** — Phase 7 (RAG Lite — candidate_knowledge 5단계 MVP) 기획 시작 (사용자 명시)
 
 ## 이전 결정 (옵션 B 변형: Phase 6 선행)
 
@@ -81,13 +84,14 @@ Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /a
 ## migration_progress
 
 ```yaml
-current_sprint: phase-5.5-slice-1
-current_sprint_step: phase_5_5_slice_1_entry
+current_sprint: completed
+current_sprint_step: phase_5_5_completed
 total_steps_in_sprint: 4
-last_completed_action: "Phase 5.5 entry — 8 entry files + 4-check PASS + audit_naming 0 drift"
-next_action: "Slice 2 sub-agent (Legacy DB 통합 + ADR-023)"
+last_completed_action: "Phase 5.5 종료 — A1~A8 + M1~M2 + P-X1 26연속 + ADR-023/024 + external × 3 강화 + pytest 172/172"
+next_action: "Phase 7 (RAG Lite — candidate_knowledge 5단계 MVP) 기획 시작 (사용자 명시)"
 blocker: null
-next_phase: phase-5.5-legacy-db-consolidation
+next_phase: phase-7-rag-lite-candidate-knowledge-5stage
+next_phase_status: pending_phase_7_planning
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
 phase_1_status: completed
@@ -342,20 +346,57 @@ phase_5_deferred_to_next:
   - per_user_rate_limit_and_audit_log  # Phase 9+ (개선 제안 §5)
   - pgtap_rls_auto_verification  # Phase 9+ (개선 제안 §6)
   - refresh_token_rotation  # Phase 21+ MFA
-phase_5_5_status: in_progress
+phase_5_5_status: completed
 phase_5_5_entry_date: 2026-05-29
+phase_5_5_completion_date: 2026-05-29
+phase_5_5_archive_location: phases/archive/phase-5.5-legacy-db-consolidation/
 phase_5_5_total_slices: 4
-phase_5_5_completed_slices: 0
+phase_5_5_completed_slices: 4  # Slice 1~4 모두 PASS
 phase_5_5_estimated_hours_total: 4-6
+phase_5_5_actual_hours: ~4-5  # consolidation mini-phase 압축 효과
 phase_5_5_assumptions_check: PASS
+phase_5_5_acceptance_passed: 8/8  # A1~A8
+phase_5_5_meta_acceptance_passed: 2/2  # M1~M2
+phase_5_5_pytest_result: 172/172  # Phase 5 170 baseline + Phase 5.5 신규 2 (legacy deprecation 검증)
+phase_5_5_smoke_test: 12/12 (11 PASS + 1 WARN intended)  # Phase 5 smoke 재실행
+phase_5_5_scenario_simulation_v2: 10/10 PASS (auto-gate, 네 번째)  # P-X2 네 번째 자동 게이트
+phase_5_5_schema_stress_test: 5/5 PASS (Phase 6 v2 유지)
+phase_5_5_audit_naming_final: 0 drift
+phase_5_5_audit_page_component_final: 2 intended drift WARN  # Phase 5 baseline 유지 (AuthGuard + /login), phase-complete v1.2.0 §1.6 허용
+phase_5_5_audit_page_component_intended_drift:
+  - AuthGuard  # Phase 5 Slice 3 신규 (baseline 유지)
+  - /login  # Phase 5 Slice 3 신규 (baseline 유지)
+phase_5_5_p_x1_self_verification: 4/4 PASS  # Slice 1~4 모두
+phase_5_5_p_x1_cumulative_streak: 26  # Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 ★
+phase_5_5_component_map_zero_lines_streak: 28  # Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 ★
+phase_5_5_plan_card_zero_lines_streak: 18  # Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 ★
+phase_5_5_deviation_count: 0
+phase_5_5_legacy_backward_compat: 100  # Phase 1 baseline 보호 + Phase 5 baseline 보호 동시 달성
 phase_5_5_user_decisions_applied:
-  legacy_db_consolidation: yes  # 결정 1
-  external_validation_strengthen: yes  # 결정 2
-  phase_7_rag_lite_keep: yes  # 결정 3
-  candidate_knowledge_5stage_mvp_all: yes  # 결정 4
-  brand_memory_phase_9_plus: yes  # 결정 5
-  all_slices_sub_agent: yes
-total_commits: 60  # 59 + Phase 5.5 Slice 1 entry
+  legacy_db_consolidation: yes  # 결정 1 (옵션 A 채택, ADR-023)
+  external_validation_strengthen: yes  # 결정 2 (self-strengthen V-form × 3, V-form 합의 추정 PASS)
+  phase_7_rag_lite_keep: yes  # 결정 3 (ADR-024)
+  candidate_knowledge_5stage_mvp_all: yes  # 결정 4 (ADR-024 §5단계 MVP, 12~16h)
+  brand_memory_phase_9_plus: yes  # 결정 5 (NG2 + ADR-024 cross-ref)
+  all_slices_sub_agent: yes  # 4 Slice 모두 sub-agent dispatch
+phase_5_5_skills_first_trigger:
+  - phase_complete_v1_2_0_fourth  # P-X2 자동 게이트 네 번째 트리거 (Slice 4)
+phase_5_5_adrs:
+  - ADR-023  # Legacy DB consolidation 옵션 A (phase_5_5_legacy_db_consolidation.md)
+  - ADR-024  # Phase 7 RAG scope evolution (phase_7_rag_scope_evolution.md)
+phase_5_5_new_patterns:
+  - P-LEGACY-CONSOLIDATION-001  # 다중 layer 공존 시 옵션 A (신규 후보)
+  - P-X1-EFFECT-001 (update 26연속)  # consolidation mini-phase 확장 입증
+  - P-VALIDATION-FORMAL-001 (update self-strengthen V-form sub-pattern)
+phase_5_5_mitigated_patterns:
+  - P-AGENT-SCOPE-001  # 26연속 누적 입증
+phase_5_5_retrospective_proposals: in_retrospective  # 본 회고 §개선 제안 §1~3
+phase_5_5_deferred_to_next:
+  - legacy_real_integration  # Phase 7+ RAG 통합 후 mini-phase (Phase 7.5? 권장)
+  - external_validation_real_external_review  # 사용자 외부 GPT/Gemini (Phase 7+ 진입 전 권장)
+  - adr_024_expansion_a_to_f_early_activation  # Phase 11+ 분기별 검토
+  - brand_memory_auto_extract_adr  # Phase 9+ MVP 본격 운영 후
+total_commits: 64  # 60 + Phase 5.5 Slice 1 entry (=61) + Slice 2 (62) + Slice 3 (63) + Slice 4 final (64)
 last_updated: 2026-05-29
 ```
 
@@ -430,42 +471,38 @@ last_updated: 2026-05-29
 ## 다음 액션
 
 ```
-Phase 5 (DB/Auth) — ✅ done (2026-05-29). 🟡 pending_user_decision.
+Phase 5.5 (Legacy DB Consolidation + Validation Strengthening + Phase 7 Prep) — ✅ done (2026-05-29).
+🟡 pending_phase_7_planning (사용자 명시: "Phase 5.5 진행 후 페이즈 7 기획 시작").
 
-다음 phase 옵션 (사용자 결정 대기):
-
-A. Phase 7 — RAG Lite (8~12h)
-   - candidate_knowledge 5단계 승격 (pending → filtered → evaluated → approved → promoted)
-   - pgvector 활용 (Supabase 기본 제공)
-   - rag-design + rag-update Skill 첫 정식 트리거 예상
+다음 phase: Phase 7 (RAG Lite — candidate_knowledge 5단계 MVP, 12~16h)
+   - candidate_knowledge 5단계 승격 전부 (pending → filtered → evaluated → approved → promoted)
+     - 사용자 결정 4 (Phase 5.5 명시) — ADR-024 §5단계 MVP
+   - pgvector 활용 (Supabase 기본 제공, Phase 5 ADR-020 baseline)
+   - **rag-design Skill ★ 첫 정식 트리거** (RAG architecture 결정)
+   - rag-update Skill 진행 중 (5단계 승격 절차 강제)
+   - contract-change Skill (rag_data_contract.md 갱신 또는 신규)
    - prompt-version-review P-007/P-008 정식화 (NG8 해소)
+   - 4~5 Slice 분할 예상 (sequential, 모두 sub-agent dispatch)
 
-B. Phase 6+ legacy DB 통합 mini-phase (4~6h) + Phase 7
-   - Phase 5 발견 §1: Phase 1 db/supabase_client.py + Phase 5 db/client.py 통합
-   - migrations zero-padding 통합
-   - Protocol-based DI 일원화
+Phase 7 진입 전 권장:
+   - [ ] phase-start v1.3.0 4점검 (9번째 trigger)
+   - [ ] multi-llm-validation formal self (네 번째 트리거, V형식 + external placeholder)
+   - [ ] ADR-024 (Phase 7 RAG scope evolution) 재확인
+   - [ ] candidate_knowledge 5단계 MVP scope 재확인 (사용자 결정 4)
+   - [ ] (옵션) External validation × 3 진짜 외부 검토 (사용자 외부 GPT/Gemini, Phase 5.5 §개선 제안 §2)
 
-C. Phase 9 — 결과 저장 + 피드백 (6~10h)
-   - 사용자 plan 선택 / 수정 / 반려 누적
-   - Phase 5 plans_repo + RLS 활용
-   - Brand Memory 자동 추출 (확정 결정 [8]) baseline 활성화
+확대 지점 (ADR-024 §확대 지점, 다른 phase 확장 경로):
+   → Phase 11+ 사용자 데이터 자동 promotion
+   → Phase 21+ Custom RAG / Graph RAG
+   → Phase 7+ Hybrid retrieval (BM25 + vector)
+   → Phase 8+ Multi-modal RAG (제한)
+   → Phase 9+ Re-ranking model
 
-D. Phase 8 — MOA Lite 본격 (12~16h)
-   - Intent / Planner / Critic / Rewriter 완전 분리
-   - Phase 5 SSE Progress worker 통합 (Slice 4 mock → 실 worker)
-   - ai-architecture-review Skill 첫 정식 트리거 예상
-
-진입 전 권장 (옵션 무관):
-   - [ ] Legacy DB 통합 결정 (Phase 5 발견 §1)
-   - [ ] Brand Memory 자동 추출 (확정 결정 [8]) baseline 활성화
-   - [ ] external validation 사용자 채움 (Phase 5 placeholder)
-   - [ ] phase-start v1.3.0 4점검
-   - [ ] multi-llm-validation formal self (네 번째 트리거)
-
-Phase 5 deferred 처리 계획:
-   → Phase 6+: legacy DB 통합 + TestClient cookies 마이그 + EmailStr 검토
-   → Phase 7+: RAG Lite + prompt_registry P-007/P-008 정식화
+Phase 5.5 deferred 처리 계획:
+   → Phase 7+ (현재): RAG Lite + candidate_knowledge 5단계
+   → Phase 7.5+ (권장): legacy 실 통합 mini-phase (Phase 5.5 §개선 제안 §1)
    → Phase 8+: SSE worker 실 plan 생성 worker와 연동 + MOA Lite 본격
-   → Phase 9+: per-user rate-limit + audit-log + revise effect eval + pgtap RLS
-   → Phase 21+: 자체 PostgreSQL 마이그 검토 + MFA / WebAuthn + Refresh token rotation
+   → Phase 9+: Brand Memory 자동 추출 ADR + per-user rate-limit + audit-log + revise effect eval + pgtap RLS
+   → Phase 11+: ADR-024 확대 지점 A~F 조기 활성화 검토 (cost-review Skill 활성 시)
+   → Phase 21+: 자체 PostgreSQL 마이그 검토 + MFA / WebAuthn + Refresh token rotation + Custom RAG
 ```
