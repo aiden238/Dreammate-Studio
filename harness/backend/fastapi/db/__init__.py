@@ -1,24 +1,32 @@
-"""DB persistence 모듈.
+"""Phase 5 — Supabase / PostgreSQL database layer (canonical).
 
-Phase 1 Slice 5 public API (legacy save_video_planning):
-  - get_supabase_client(): Supabase Client or None (graceful)
-  - save_video_planning(...): orchestrator — Intent/RAG/Planning/Critic 결과 저장
-  - PersistenceResult / SaveStatus: 저장 결과 타입
-
-Phase 5 Slice 2 신규 public API:
-  - get_supabase(): Protocol-based Supabase client factory (graceful)
-  - SupabaseClientLike: Protocol type for client (or mock)
-  - PlansRepo: graceful CRUD wrapper for plans table (in-memory fallback)
-
-Phase 1 graceful 정책 계승:
+graceful 정책 (Phase 1 계승):
   - 모든 실패는 graceful (raise 금지). 사용자 응답 차단 0건.
-  - env 미설정 → status="skipped_no_db" (legacy) or None (Phase 5)
-  - client init / insert 실패 → status="failed_db_error" (legacy) or in-memory fallback (Phase 5)
+  - env 미설정 → None (Phase 5) or status="skipped_no_db" (legacy).
+  - client init / insert 실패 → in-memory fallback (Phase 5) or status="failed_db_error" (legacy).
+
+---
+
+Phase 5 canonical (권장 — 신규 코드 사용):
+  - get_supabase(): Protocol-based Supabase client factory (graceful).
+  - SupabaseClientLike: Protocol type for client (or mock).
+  - PlansRepo: graceful CRUD wrapper for plans table (in-memory fallback).
+
+Legacy backward-compat (Phase 1 Slice 5, DEPRECATED Phase 5.5):
+  - get_supabase_client(): Phase 1 legacy factory.
+  - save_video_planning(...): Phase 1 legacy orchestrator (Intent/RAG/Planning/Critic).
+  - PersistenceResult / SaveStatus: legacy 저장 결과 타입.
+
+Removal 일정: Phase 7+ RAG 통합 후 검토 (ADR-023 참조).
+legacy 사용 시 DeprecationWarning 발행:
+  - supabase_client 모듈 import 시 1회.
+  - save_video_planning() 호출 시 1회/호출.
 """
 
 from __future__ import annotations
 
 import logging
+import warnings as _warnings
 from typing import Any
 
 from .client import SupabaseClientLike, get_supabase
@@ -38,7 +46,12 @@ def save_video_planning(
     critic_dict: dict[str, Any] | None,
     rag_refs: list[dict[str, Any]],
 ) -> PersistenceResult:
-    """Intent → RAG → Planning → Critic 결과를 Supabase에 저장.
+    """DEPRECATED (Phase 5.5) — Intent → RAG → Planning → Critic 결과를 Supabase에 저장.
+
+    Phase 1 Slice 5 legacy orchestrator. Phase 5 신규 코드는 `PlansRepo.create() / .update()`
+    인터페이스 사용을 권장한다 (ADR-023 참조).
+
+    Removal 일정: Phase 7+ RAG 통합 후 검토.
 
     저장 단계:
       1. Supabase client 획득 (None이면 status="skipped_no_db" 즉시 반환).
@@ -47,10 +60,19 @@ def save_video_planning(
       3. project_id 가 있으면 plan_candidates insert → plan_candidate_id.
          (plan_candidates 실패는 부분 성공으로 간주: video_projects 만 saved)
 
-    Phase 1 정책:
+    Phase 1 정책 (계승):
       - 모든 실패는 graceful — raise 안 함.
       - 호출자(router)는 결과를 meta.project_id 와 validation.checks 에 반영만 함.
     """
+    # Phase 5.5 ADR-023 — legacy orchestrator deprecation marker.
+    _warnings.warn(
+        "save_video_planning is deprecated (Phase 5.5). "
+        "Use PlansRepo.create() / .update() (from backend.fastapi.db import PlansRepo) instead. "
+        "Scheduled removal: Phase 7+ (see ADR-023).",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     client = get_supabase_client()
 
     if client is None:
@@ -111,6 +133,11 @@ def save_video_planning(
 
 
 __all__ = [
+    # Phase 5 canonical (권장)
+    "get_supabase",
+    "SupabaseClientLike",
+    "PlansRepo",
+    # Legacy backward-compat (Phase 1 Slice 5, DEPRECATED Phase 5.5 — ADR-023)
     "get_supabase_client",
     "save_video_planning",
     "PersistenceResult",

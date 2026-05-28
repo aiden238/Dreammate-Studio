@@ -501,3 +501,47 @@ async def test_phase_5_plans_repo_update_nonexistent_returns_none() -> None:
     repo = PlansRepo(supabase_client=None, in_memory_store={})
     result = await repo.update("nonexistent-plan-id", {"status": "finalized"})
     assert result is None
+
+
+# ─── Phase 5.5 — Legacy DB consolidation (ADR-023) ────────────────────────
+#
+# Slice 2: 옵션 A — 공존 + deprecated note + Phase 7+ 실 통합.
+# 검증: legacy import / 호출 시 DeprecationWarning 발행, backward-compat 100%.
+
+
+def test_phase_5_5_legacy_supabase_client_emits_deprecation_warning() -> None:
+    """Phase 1 legacy supabase_client 모듈 import 시 DeprecationWarning 발행 (ADR-023).
+
+    importlib.reload 로 모듈 top-level warnings.warn 재실행을 강제한다.
+    """
+    import importlib
+    import backend.fastapi.db.supabase_client as legacy
+
+    with pytest.warns(DeprecationWarning, match="deprecated"):
+        importlib.reload(legacy)
+
+
+def test_phase_5_5_legacy_save_video_planning_emits_deprecation_warning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Phase 1 legacy save_video_planning 호출 시 DeprecationWarning 발행 (ADR-023).
+
+    실 Supabase 미호출: get_supabase_client → None 으로 stub → skipped_no_db 경로.
+    """
+    monkeypatch.setattr(
+        "backend.fastapi.db.get_supabase_client", lambda: None
+    )
+
+    with pytest.warns(DeprecationWarning, match="deprecated"):
+        result = save_video_planning(
+            request_id="req-deprecated",
+            input_text="legacy 호출",
+            locale="ko-KR",
+            plan_dict={"name": "테스트", "option_index": 0},
+            critic_dict=None,
+            rag_refs=[],
+        )
+
+    # backward-compat: graceful skip 경로는 유지된다.
+    assert result.status == "skipped_no_db"
+    assert result.project_id is None

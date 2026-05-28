@@ -1,4 +1,15 @@
-"""Supabase 클라이언트 wrapper — Phase 1 Slice 5.
+"""DEPRECATED (Phase 5.5, 2026-05-29).
+
+Phase 1 Slice 5 에서 작성된 legacy Supabase client factory.
+Phase 5 에서 신규 `backend.fastapi.db.client.get_supabase()` 도입 → 본 모듈은 backward-compat 용.
+
+새 코드는 `from backend.fastapi.db import get_supabase` 사용 권장.
+
+Removal 일정: Phase 7+ RAG 통합 후 검토 (ADR-023 참조).
+
+---
+
+Supabase 클라이언트 wrapper — Phase 1 Slice 5 (원본 docstring).
 
 graceful 정책:
   - SUPABASE_URL 또는 SUPABASE_ANON_KEY 미설정 → None 반환 (정상 skip).
@@ -11,11 +22,22 @@ graceful 정책:
 from __future__ import annotations
 
 import logging
+import warnings as _warnings
 from typing import Any
 
 from ..config import get_settings
 
 logger = logging.getLogger(__name__)
+
+# Phase 5.5 ADR-023 — legacy factory deprecation marker.
+# import 시 한 번만 발행 (호출 시 발행은 노이즈가 너무 큼).
+_warnings.warn(
+    "backend.fastapi.db.supabase_client is deprecated (Phase 5.5). "
+    "Use backend.fastapi.db.client.get_supabase() instead. "
+    "Scheduled removal: Phase 7+ (see ADR-023).",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 def get_supabase_client() -> Any | None:
