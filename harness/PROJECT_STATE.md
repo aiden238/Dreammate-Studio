@@ -2,9 +2,9 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) 완료**.
-GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sprint 작업으로 운영 가능한 하네스 완성.
-다음 단계는 Phase 1 MVP 기본 플로우 진입 준비.
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) 완료 + Phase 1 (MVP 기본 플로우) 완료 + Phase 2 (PWA 설계) 완료 + Phase 3 (PWA UI 구현) 완료**.
+Next.js PWA 기본 화면 11 routes 빌드 + 4-layer 컴포넌트 4개 + Discovery wizard / Quick mode 분기 / Mode Branching middleware 모두 동작.
+다음 단계는 Phase 4 FastAPI 백엔드 확장 (3-plan + Critic + SSE) 진입.
 
 ## 현재 Active Phase
 
@@ -12,17 +12,12 @@ GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sp
 
 **Phase 2. design.md 기반 PWA 설계 ✅ done (2026-05-27)** — archive 이동 완료
 
-**Phase 3. Next.js PWA 기본 UI 구현 (Discovery + Quick 분기)** — 🔵 **active (2026-05-28 진입)**
-- 진입 점검: phase-start v1.3.0 §6 4점검 통과 + audit_naming 0 drift
-- 4 조정 적용:
-  1. P-X1 선적용 ✅ (commit 3d0b0fb, phase-start v1.3.0)
-  2. Thin Vertical Flow (Slice 2 = Discovery Step 1 end-to-end)
-  3. D3 PlanCard 4-layer 정합 Phase 4 이관
-  4. component_map.md read-only 절대 보장 (deviations.md 운영)
-- 작업: 6 Slices, 5 Waves, 14~20h 추정
-- 첫 작업: Wave 1 Slice 1 — Foundation (Tailwind tokens 매핑)
-- Phase 2 17 spec 모두 read-only (조정 4번)
-- Phase 1 backend / frontend baseline 유지 (pytest 62/62)
+**Phase 3. Next.js PWA 기본 UI 구현 ✅ done (2026-05-28)** — archive 이동 완료
+- A1~A10 10/10 PASS / audit_naming + audit_page_component 0 drift / 변경성 4/5+1 WARN / P-X1 5/5 / component_map 6연속 0줄
+
+**Phase 4. FastAPI 기본 백엔드 구현 (확장)** — 🟡 **pending_entry (next, 진입 대기)**
+- 진입 전 검토 권장: `meta/proposals/2026-05-28_phase-3-retrospective-proposals.md` (Y-X1~Y-X3 + Phase 2 P-X2 채택)
+- 첫 작업 후보: 3-plan generate endpoint + D3 PlanCard 4-layer + D4 PlanComparisonCard 정합 + Critic revise loop 도입
 
 ## migration_progress
 
@@ -61,24 +56,41 @@ phase_2_deferred_to_phase_3:
   - audit_page_component_script
 phase_2_deferred_to_phase_4:
   - PlanComparisonCard_detailed
-phase_3_status: active
+phase_3_status: completed
 phase_3_entry_date: 2026-05-28
-phase_3_current_wave: 1
-phase_3_current_slice: 1
-phase_3_total_slices: 6
+phase_3_completion_date: 2026-05-28
+phase_3_archive_location: phases/archive/phase-3-pwa-impl/
+phase_3_total_slices_completed: 6  # Slice 1~6 모두 PASS
 phase_3_total_waves: 5
-phase_3_completed_slices: []
-phase_3_estimated_hours_total: 14-20
-phase_3_estimated_hours_elapsed: 0.5  # P-X1 pre-entry
-phase_3_deviation_count: 0  # 조정 4번 — component_map.md 직접 수정 시도 (0 강제)
-phase_3_adjustments_applied:
-  - "1. P-X1 선적용 (phase-start v1.3.0, commit 3d0b0fb)"
-  - "2. Thin Vertical Flow (Slice 2 = Discovery Step 1 end-to-end)"
-  - "3. D3 PlanCard 4-layer Phase 4 이관 (Slice 6에서 처리 X)"
-  - "4. component_map.md read-only 절대 (deviations.md 운영)"
-phase_3_pre_entry_completed: P-X1 (commit 3d0b0fb)
-phase_3_remaining_proposals: [P-X2, P-X3, P-X4, P-X5]  # pending, Phase 3 진행 중/종료 시점 재검토
-total_commits: 32  # ~3d0b0fb + Phase 3 entry
+phase_3_acceptance_passed: 10/10  # A1~A10
+phase_3_changeability_simulation: 4/5 PASS + 1 WARN  # 시나리오 5 code phase 자연 증가
+phase_3_design_review: 7 principles aligned (PASS, impl phase)
+phase_3_audit_naming_final: 0 drift
+phase_3_audit_page_component_final: 0 drift  # D5 신규 도구
+phase_3_smoke_test: 7/7 PASS  # pytest 62/62 + audit×2 + build + tsc + lint + BUILD_ID
+phase_3_simplicity_check: 5/5 PASS
+phase_3_qa_check_v1_2_0: 11 categories applied (8 PASS / 3 skip - AI/cost/logs Phase 4+)
+phase_3_p_x1_self_verification: 5/5 PASS  # Slice 1~5 모두 sub-agent §SELF-VERIFICATION PASS
+phase_3_component_map_zero_lines_streak: 6  # Slice 1~6 모두 0줄, 조정 4번 강제 성공
+phase_3_deviation_count: 0
+phase_3_new_patterns:
+  - P-X1-EFFECT-001  # P-X1 §SELF-VERIFICATION 5연속 효과 측정
+  - P-THIN-VERTICAL-001  # Thin Vertical Slice 효과 (코드 phase entry 표준)
+phase_3_mitigated_patterns:
+  - P-AGENT-SCOPE-001  # Phase 2 발견 → Phase 3 P-X1 적용 후 0건 재발
+phase_3_d5_completed: audit_page_component.ps1  # Slice 6 신규
+phase_3_deferred_to_phase_4:
+  - D2_QuickInputCard_alt_variants
+  - D3_PlanCard_4layer_reconcile  # 조정 3번 — PlanComparisonCard와 함께 재정의
+  - D4_PlanComparisonCard_detailed
+phase_3_retrospective_proposals: proposed (Y-X1~Y-X3 + Phase 2 P-X2 재평가)
+phase_4_status: pending_entry
+phase_4_estimated_entry: TBD (Y-X1~Y-X3 + P-X2 검토 후)
+phase_4_pre_entry_checklist:
+  - "1. meta/proposals/2026-05-28_phase-3-retrospective-proposals.md 검토 (Y-X1~Y-X3)"
+  - "2. Phase 2 P-X2 (변경성 시뮬 phase-complete 게이트) 채택 결정"
+  - "3. D2 / D3 / D4 처리 순서 확정"
+total_commits: 38  # ~3d0b0fb + Phase 3 (entry + Slice 1~5 + Slice 6 본 commit)
 last_updated: 2026-05-28
 ```
 
@@ -153,25 +165,29 @@ last_updated: 2026-05-28
 ## 다음 액션
 
 ```
-Phase 3 진입 준비:
+Phase 4 진입 준비:
 
-1. (필수) Phase 2 회고 5 proposals 검토
-   → meta/proposals/2026-05-27_phase-2-retrospective-proposals.md
-   → P-X1 (sub-agent enforcement 강화) 채택 권장 — Phase 3 진입 전 필수
-   → P-X2 / P-X3 채택 검토
-   → P-X4 / P-X5 deferred 적정성 확인
+1. (권장) Phase 3 회고 3 proposals 검토
+   → meta/proposals/2026-05-28_phase-3-retrospective-proposals.md
+   → Y-X1 (design_handoff §6.1 매핑표 spec/code 칸 분리) 검토
+   → Y-X2 (audit_page_component 사용 가이드) 검토
+   → Y-X3 (Sub-path 분리 패턴 표준 등록) 검토
 
-2. (P-X1 채택 시) phase-start SKILL.md v1.2.0 → v1.3.0 갱신
-   → §6.3 Surgical Scope에 sub-agent 자기 검증 절차 추가
-   → multi_slice_plan template 갱신
+2. Phase 2 P-X 후속 재평가 결과 적용
+   → P-X1: ✅ applied + 5/5 효과 입증 (유지)
+   → P-X2 (변경성 시뮬 phase-complete 게이트): 채택 권장 (Y-X1 통합)
+   → P-X3 (design-review spec-only): Phase 11+ 재진입 시
+   → P-X4 / P-X5: deferred 유지
 
-3. Phase 3 진입 (phase-start 호출)
-   → phases/active/phase-3-pwa-impl/ 폴더 생성
+3. Phase 4 진입 (phase-start 호출)
+   → phases/active/phase-4-fastapi-extension/ 폴더 생성
    → 4점검 (assumptions / Simplest Slice / Surgical Scope / Verification)
-   → Phase 2 산출물 17 + Phase 1 archive 3 = 20 baseline 문서 로드
-   → 첫 작업: Tailwind config tokens.md 매핑 (시나리오 1 자동 반영 보장)
+   → Phase 1 backend baseline + Phase 3 frontend + Phase 2 design spec baseline 로드
+   → 첫 작업 후보: 3-plan generate endpoint (P-006 plan_candidates 활성화)
 
-4. Phase 3 deferred 처리 계획
-   → D1 Step 2~7 wireframe / D2 QuickInputCard variants / D3 PlanCard 4-layer
-   / D5 audit_page_component.ps1
+4. Phase 4 deferred 처리 계획
+   → D2 QuickInputCard alt variants (Phase 9 데이터 베이스)
+   → D3 PlanCard 4-layer 정합 (조정 3번 — PlanComparisonCard 함께)
+   → D4 PlanComparisonCard 상세 spec + 4-layer
+   → D1 Step 2~7 wireframe (Phase 11+ 또는 Phase 4 직전 deferred)
 ```

@@ -82,7 +82,9 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 
 ### Pattern P-AGENT-SCOPE-001: sub-agent forbidden 영역 침범 (sub-section)
 
-- **유형**: 반복 실패 (잠재) — 1회 발생, 큰 위험은 미발현 (무충돌)
+- **유형**: 반복 실패 (잠재) → **Mitigated (2026-05-28)** — Phase 3 P-X1 적용으로 5/5 PASS, 0건 재발
+- **Mitigation 증거**: phase-3 회고 §P-X1 효과 측정 + P-X1-EFFECT-001 패턴 등록. component_map.md 6연속 0줄 보존
+- **유형 (이전)**: 1회 발생, 큰 위험은 미발현 (무충돌)
 - **최초 식별**: 2026-05-27 (Phase 2 Wave 3)
 - **관련 회고**: meta/retrospectives/phase-2.md §근본 원인 (5 Whys)
 - **요약**: Wave 3 Slice 3 sub-agent (Direction Approval)가 forbidden 명시된 `QuickInputCard` sub-section을 `component_map.md`에 추가. Slice 4 (Quick) 작업 영역 침범. 결과적으로 동일 내용 + append-only로 무충돌이었으나, 의도 다를 시 conflict / 데이터 손실 / 내용 불일치 가능. P-FOLDER-PARALLEL-001 (다른 폴더 분리)의 한계 케이스 — "같은 파일 다른 sub-section" 케이스에서는 폴더 분리가 보호하지 않음.
@@ -97,6 +99,38 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **상태**: meta/proposals/2026-05-27_phase-2-retrospective-proposals.md §P-X1 등록 (Phase 3 진입 전 사용자 검토 필수)
 - **재평가 시점**: Phase 3 코드 phase 진행 중 (같은 .tsx 파일 sub-section 동시 수정 위험 ↑) — P-X1 적용 후 효과 측정
 - **연관 Skill / Contract**: phase-start §6.3, multi_slice_plan template, sub-agent prompt format
+
+### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 5연속 PASS 효과 측정
+
+- **유형**: 반복 성공 (Phase 3 5 Slice 적용, 0 deviation)
+- **최초 식별**: 2026-05-28 (Phase 3)
+- **관련 회고**: meta/retrospectives/phase-3.md §잘된 것 1 + §P-X1 효과 측정
+- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1 (phase-start v1.3.0 §6.3 sub-agent 자기 검증 + main session 사후 git diff)을 Phase 3 pre-entry 적용. Phase 3 5 sub-agent 모두 §SELF-VERIFICATION PASS, component_map.md 6연속 0줄 보존 (조정 4번 강제 성공), forbidden 영역 침범 0건 재발. **proposal → 적용 → 1 phase 내 효과 측정 사이클 완성**.
+- **증거**:
+  - Slice 1~5 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
+  - `git diff 3d0b0fb..HEAD -- harness/apps/web/component_map.md` → 0줄
+  - phases/active/phase-3-pwa-impl/deviations.md → 0건 entry
+- **권장 대응**:
+  - Phase 4+ 모든 sub-agent prompt에 §SELF-VERIFICATION 의무 유지
+  - phase-start v1.3.0 §6.3 의무 절차 보존
+  - main session sub-agent 완료 후 `git diff --stat` 검증 의무 절차 보존
+- **재평가 시점**: Phase 4+ Wave 3+ 병렬 dispatch 시 재발 여부 — 재발 시 P-X4 (worktree isolation) 재검토 트리거
+- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated)
+
+### Pattern P-THIN-VERTICAL-001: Thin Vertical Slice 효과 (코드 phase entry 표준)
+
+- **유형**: 반복 성공 (Phase 3 Slice 2 → Slice 3 패턴 복제 성공)
+- **최초 식별**: 2026-05-28 (Phase 3)
+- **관련 회고**: meta/retrospectives/phase-3.md §잘된 것 3
+- **요약**: Phase 3 Slice 2를 Discovery Step 1 end-to-end (component + page + state + token + Tailwind 연결 = 5 파일)로 정의 → Slice 3 (Step 2~7 확장)이 dynamic route + 패턴 복제만으로 진행. drift 0건 + §SELF-VERIFICATION PASS. phase-start §6.2 Simplest Slice의 강화 형태 — "한 페이지 통째 작동 후 확장".
+- **핵심 메커니즘**:
+  1. **end-to-end working slice**: 1 페이지 (`/new/discovery/step/1`)가 컴포넌트 / state / API mock / Tailwind class 모두 작동
+  2. **패턴 복제 단순화**: Slice 3은 dynamic route (`/step/[n]`)로 Step 1 코드 패턴 그대로 적용
+  3. **drift 자동 회피**: spec ↔ 코드 일치성 Slice 2에서 한 번 확보 → Slice 3+ 자동 상속
+- **권장 대응**:
+  - Phase 4+ 첫 코드 작업 단계 (예: Phase 4 Slice 2~3, 3-plan generate endpoint)에서 동일 패턴 적용 — "한 endpoint 통째 작동 후 확장"
+  - phase-start v1.3.0 §6.2 Simplest Slice 보강 후보 (Y-X 흡수 가능)
+- **연관 Skill / Contract**: phase-start §6.2 Simplest Slice, P-SLICE-001 (Phase 1)
 
 ### Pattern P-DESIGN-LAYERED-001: 4-layer 4개 + Variants Bank 3개 minimal 정책의 변경성 보장 효과
 

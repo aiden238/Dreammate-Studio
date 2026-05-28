@@ -46,11 +46,12 @@
 
 ## 현재 active Phase
 
-**Phase 3. Next.js PWA 기본 UI 구현 (Discovery + Quick 분기)** — 🔵 active (next, 진입 대기)
-- 진입: phase-start Skill로 시작 (phases/active/phase-3-pwa-impl/ 폴더 생성)
-- Phase 2 archive: `phases/archive/phase-2-pwa-design/` (참조 가능, 기본 미참조 — design spec baseline)
-- Phase 1 archive: `phases/archive/phase-1-mvp-basic-flow/` (참조 가능, 기본 미참조 — backend baseline)
+**Phase 4. FastAPI 기본 백엔드 구현 (확장)** — 🔵 active (next, 진입 대기)
+- 진입: phase-start Skill로 시작 (phases/active/phase-4-fastapi-extension/ 폴더 생성)
+- Phase 3 archive: `phases/archive/phase-3-pwa-impl/` (참조 가능 — frontend baseline + closing_notes)
+- Phase 2 archive: `phases/archive/phase-2-pwa-design/` (참조 가능 — design spec baseline)
+- Phase 1 archive: `phases/archive/phase-1-mvp-basic-flow/` (참조 가능 — backend baseline)
 - Phase 0 archive: `phases/archive/phase-0-migration/` (참조 금지)
-- **진입 전 필수**: `meta/proposals/2026-05-27_phase-2-retrospective-proposals.md` **P-X1** 검토 (sub-agent enforcement 강화 — 코드 phase 위험 ↑)
-- 진입 전 권장: P-X2 + P-X3 검토. P-X4/P-X5는 deferred
-- Phase 2 핵심 산출물 참조 권장: `apps/web/design_handoff.md` (변경 가이드, 변경성 시뮬레이션 5/5 PASS) + `apps/web/component_map.md` (4-layer 4 컴포넌트) + `apps/web/design_system/*` (tokens / 4-layer template / variants / replaceability)
+- **진입 전 권장**: `meta/proposals/2026-05-28_phase-3-retrospective-proposals.md` (Y-X1~Y-X3 + Phase 2 P-X2 채택) 검토
+- Phase 3 핵심 성과: **P-X1 §SELF-VERIFICATION 5/5 PASS** + **component_map.md 6연속 0줄** + audit_naming + audit_page_component 0 drift + smoke 7/7 PASS + 변경성 4/5+1 WARN
+- Phase 4 첫 작업 후보: 3-plan generate endpoint + D3 PlanCard 4-layer + D4 PlanComparisonCard (조정 3번 — 함께 재정의) + Critic revise loop + SSE

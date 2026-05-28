@@ -33,16 +33,17 @@
 
 > 누적 시작: 2026-05-26 (Phase 1 완료 시점)
 > Phase 2 갱신: 2026-05-27 (Phase 2 종료 시점)
+> Phase 3 갱신: 2026-05-28 (Phase 3 종료 시점)
 
 | Skill | 첫 트리거 | 마지막 트리거 | 누적 | 최근 30일 | 상태 | 비고 |
 |---|---|---|---|---|---|---|
-| phase-start | 2026-05-26 | 2026-05-27 | 2 | 2 | active | v1.0.0 → v1.1.0 → v1.2.0 (P2 적용). Phase 1+2 진입 |
-| qa-check | 2026-05-26 | 2026-05-27 | 15 | 15 | active | v1.1.0 → v1.2.0 (P3 적용, 카테고리 11 Contract Drift). Phase 1: 8 + Phase 2: 7 (entry + Slice 1~5 + final) |
-| contract-change | 2026-05-26 | 2026-05-27 | 2 | 2 | active | CC-001 (Option B) + P1~P4 Skill 갱신. Phase 2는 contract 변경 0 |
-| meta-retrospective | 2026-05-26 | 2026-05-27 | 2 | 2 | active | Phase 1 + Phase 2 회고 |
-| phase-complete | 2026-05-26 | 2026-05-27 | 2 | 2 | active | v1.0.0 → v1.1.0 (P4 적용, §1.5 자동 smoke test). Phase 1+2 종료 |
-| harness-audit | 2026-05-27 | 2026-05-27 | 1 | 1 | active | v1.0.0 → v1.1.0 (P1 적용, §6.5 audit_naming) — audit_naming.ps1 매 Slice 자동 호출 (수동 Skill 호출은 1회) |
-| design-review | 2026-05-27 | 2026-05-27 | 1 | 1 | active | Phase 2 Slice 6 첫 사용 — spec-only phase 절차 부재 발견 (P-X3 proposal 등록) |
+| phase-start | 2026-05-26 | 2026-05-28 | 3 | 3 | active | v1.0.0 → v1.1.0 → v1.2.0 (P2) → v1.3.0 (P-X1 §6.3 §SELF-VERIFICATION). Phase 1+2+3 진입 |
+| qa-check | 2026-05-26 | 2026-05-28 | 21 | 21 | active | v1.1.0 → v1.2.0 (P3, 카테고리 11). Phase 1:8 + Phase 2:7 + Phase 3:6 (entry + Slice 1~5 + final) |
+| contract-change | 2026-05-26 | 2026-05-28 | 3 | 3 | active | CC-001 (Option B) + P1~P4 Skill 갱신 + P-X1 phase-start v1.3.0. Phase 3는 contract 변경 0 (P-X1 Skill 갱신만) |
+| meta-retrospective | 2026-05-26 | 2026-05-28 | 3 | 3 | active | Phase 1 + Phase 2 + Phase 3 회고 |
+| phase-complete | 2026-05-26 | 2026-05-28 | 3 | 3 | active | v1.0.0 → v1.1.0 (P4 §1.5 smoke test). Phase 1+2+3 종료. Phase 3는 smoke_test_phase_3.ps1 자동 호출 (7/7 PASS) |
+| harness-audit | 2026-05-27 | 2026-05-28 | 1 | 1 | active | audit_naming + audit_page_component 모두 자동 호출 (Phase 3 Slice 6 audit_page_component 신규) — 수동 Skill 호출 0 (Phase 3) |
+| design-review | 2026-05-27 | 2026-05-28 | 2 | 2 | active | Phase 2 Slice 6 (spec-only 첫 사용 — P-X3) + Phase 3 Slice 6 (impl phase 두 번째 사용 — §B 절차 적용) |
 | eval-design | - | - | 0 | 0 | unused | failure_cases.md 작성은 INDEX + ADR로 처리 (skill 미사용) |
 | eval-run | - | - | 0 | 0 | unused | Phase 4+ Critic revise 도입 시 활성화 |
 | rag-design | - | - | 0 | 0 | unused | Phase 7 RAG 본격화 시 활성화 |
@@ -61,4 +62,6 @@
 
 **Phase 2 사용 요약**: 6 Skill 활용 (phase-start + qa-check 7회 + meta-retrospective + phase-complete + harness-audit + ★ design-review 첫 사용). Phase 1 누적 + Phase 2 = 7 Skill 활성화, 13 unused.
 
-**Phase 3 진입 시 활성 예상 Skill**: phase-start (v1.2.0 또는 v1.3.0 — P-X1 적용 시) + qa-check (코드 phase는 카테고리 2/3/4/5/6/8/9 모두 활성) + design-review (impl 절차 SKILL.md §B 분기 적용 — P-X3 적용 시).
+**Phase 3 사용 요약**: 7 Skill 활용 (phase-start v1.3.0 + qa-check 6회 + contract-change (P-X1 적용) + meta-retrospective + phase-complete + harness-audit (audit_page_component.ps1 신규) + design-review 두 번째 사용 — impl 절차 §B). Phase 1~3 누적 = 7 Skill 활성화, 13 unused.
+
+**Phase 4 진입 시 활성 예상 Skill**: phase-start v1.3.0 (유지) + qa-check (backend phase는 카테고리 2/6/7/8/9 모두 활성) + contract-change (3-plan endpoint output_schema 변경 가능성) + agent-io-check (Phase 4 첫 활성화 — MOA Lite Intent/Planner/Critic 도입) + ai-architecture-review (Phase 4 MOA Lite 설계).
