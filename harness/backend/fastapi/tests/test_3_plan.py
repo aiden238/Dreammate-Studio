@@ -73,17 +73,25 @@ def test_warnings_phase_1_single_plan_removed(mock_plans_pipeline_ok) -> None:
     assert "phase_1_single_plan" not in warnings
 
 
-# ─── 4. validation.warnings: phase_4_no_revise_loop 추가 ─────────────
+# ─── 4. validation.warnings: phase_4_no_revise_loop (Phase 4.5 Slice 2 갱신) ────
 
 def test_warnings_phase_4_no_revise_loop_present(mock_plans_pipeline_ok) -> None:
-    """Phase 4는 revise loop 미동작 → phase_4_no_revise_loop warning 추가."""
+    """Phase 4.5 Slice 2 갱신: critic approve 일 때도 revise loop 자체는 동작했으므로
+    `phase_4_no_revise_loop` warning 은 제거된다.
+
+    이전 (Phase 4 baseline): revise loop 미동작 → phase_4_no_revise_loop 포함.
+    현재 (Phase 4.5 Slice 2): plan 별 critic+revise loop 실행 (approve 면 attempt 0 만)
+    → revise_history 가 채워지고 warning 제거.
+    """
     start = client.post(
         "/api/v1/plans/start", json={"user_input": "테스트"}
     ).json()
     plan_id = start["plan_id"]
     r = client.post(f"/api/v1/plans/{plan_id}/generate", json={})
     warnings = r.json()["validation"]["warnings"]
-    assert "phase_4_no_revise_loop" in warnings
+    assert "phase_4_no_revise_loop" not in warnings
+    # Phase 4.5 Slice 2: revise_history 가 body 에 노출됨.
+    assert r.json()["body"]["revise_history"] is not None
 
 
 # ─── 5. Phase 1 endpoint 회귀 0 — 여전히 1-plan ───────────────────────

@@ -14,6 +14,7 @@ Phase 5+: Supabase 본격 — in-memory store → DB, SSE Progress, Auth/RLS.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Any
@@ -37,6 +38,7 @@ from ..agents.planning import (
     PARALLEL_3_PROMPT_VERSION,
     run_planning_parallel_3,
 )
+from ..agents.rewriter import run_rewriter
 from ..config import get_settings
 from ..db import save_video_planning
 from ..rag import RetrievalResult, run_rag_retrieval
@@ -337,15 +339,124 @@ async def plans_generate(plan_id: str, req: GenerateRequest):
             retry_allowed=True,
         )
 
-    # 5. Critic 1회 평가 (Phase 4: revise loop 없음) ──────────────────
+    # 5. Critic + revise loop (Phase 4.5 Slice 2) ────────────────────
+    # Plan별로 Critic 평가 → verdict가 'revise' 면 Rewriter(P-008) 호출 → 다시 Critic
+    # 최대 critic_max_revise(기본 2) 회 차단. attempt 별 dict 를 revise_history 에 누적.
     critic_evaluation: CriticEvaluation | None = None
+    revise_histories: list[list[dict[str, Any]]] | None = None
+
     if req.use_critic:
+        max_revise = settings.critic_max_revise
+
+        async def _critic_revise_for_plan(
+            plan_model: Plan, plan_idx: int,
+        ) -> tuple[Plan, dict[str, Any] | None, list[dict[str, Any]]]:
+            """Returns (final_plan, final_verdict_dict_or_none, history)."""
+            history: list[dict[str, Any]] = []
+            current_plan_dict: dict[str, Any] = plan_model.model_dump(mode="json")
+            final_verdict_dict: dict[str, Any] | None = None
+
+            for attempt in range(max_revise + 1):
+                # critic 호출 (sync 함수 — thread pool 에서 실행하여 다른 plan 과 병렬 가능).
+                try:
+                    loop = asyncio.get_event_loop()
+                    verdict = await loop.run_in_executor(
+                        None, run_critic, current_plan_dict,
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "Critic call failed plan_idx=%d attempt=%d: %s — graceful skip",
+                        plan_idx, attempt, exc,
+                    )
+                    history.append({
+                        "attempt": attempt,
+                        "action": "approve",
+                        "revised": False,
+                        "critic_warning": f"critic_failed: {exc.__class__.__name__}",
+                    })
+                    break
+
+                final_verdict_dict = verdict
+                action = str(verdict.get("overall_verdict") or "").lower()
+                entry: dict[str, Any] = {
+                    "attempt": attempt,
+                    "action": action or "unknown",
+                    "revised": False,
+                }
+                history.append(entry)
+
+                if action != "revise":
+                    break  # approve / reject / unknown → loop 종료
+                if attempt >= max_revise:
+                    entry["max_reached"] = True
+                    break  # max 도달 — revise 시도하지 않음
+
+                # revise 실행 (Rewriter — async).
+                try:
+                    revised_plan_dict = await run_rewriter(current_plan_dict, verdict)
+                    current_plan_dict = revised_plan_dict
+                    entry["revised"] = True
+                except Exception as exc:  # pragma: no cover — run_rewriter 가 graceful 처리
+                    logger.warning(
+                        "Rewriter raised unexpectedly plan_idx=%d attempt=%d: %s",
+                        plan_idx, attempt, exc,
+                    )
+                    entry["revised"] = False
+                    entry["rewriter_warning"] = f"rewriter_raised: {exc.__class__.__name__}"
+                    break
+
+            # Plan 모델 재구성 — rewriter가 dict 를 반환하므로 schema 재검증.
+            try:
+                final_plan = Plan(
+                    plan_id=str(current_plan_dict.get("plan_id") or plan_model.plan_id),
+                    option_index=int(current_plan_dict.get("option_index", plan_model.option_index)),
+                    name=(str(current_plan_dict.get("name") or plan_model.name))[:20],
+                    concept=str(current_plan_dict.get("concept") or plan_model.concept),
+                    hook=str(current_plan_dict.get("hook") or plan_model.hook),
+                    flow=[
+                        PlanFlowBeat(
+                            beat_index=int(b.get("beat_index", j)),
+                            beat=str(b.get("beat", "") or "—"),
+                            duration_sec=int(b.get("duration_sec", 5)),
+                            purpose=str(b.get("purpose", "") or "—"),
+                        )
+                        for j, b in enumerate(current_plan_dict.get("flow") or [])
+                    ] or list(plan_model.flow),
+                    pros=str(current_plan_dict.get("pros") or plan_model.pros or ""),
+                    risks=str(current_plan_dict.get("risks") or plan_model.risks or ""),
+                    approach_label=current_plan_dict.get("approach_label") or plan_model.approach_label,
+                    rag_used=current_plan_dict.get("rag_used") or list(plan_model.rag_used),
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Plan re-schema after revise failed plan_idx=%d: %s — using original",
+                    plan_idx, exc,
+                )
+                final_plan = plan_model
+            return final_plan, final_verdict_dict, history
+
+        # 모든 plan 에 대해 parallel 실행 (asyncio.gather — Planning parallel 패턴과 동일).
         try:
-            critic_dict = run_critic(plans_list[0].model_dump(mode="json"))
-            critic_evaluation = CriticEvaluation(**critic_dict)
+            results = await asyncio.gather(
+                *(_critic_revise_for_plan(p, i) for i, p in enumerate(plans_list)),
+                return_exceptions=False,
+            )
+            plans_list = [r[0] for r in results]
+            revise_histories = [r[2] for r in results]
+            # 대표 verdict — 첫 plan 의 마지막 verdict (output_schema 호환 유지).
+            first_verdict = results[0][1] if results else None
+            if first_verdict is not None:
+                try:
+                    critic_evaluation = CriticEvaluation(**first_verdict)
+                except Exception as e:
+                    logger.warning(
+                        "CriticEvaluation schema fail: %s — graceful skip", e,
+                    )
+                    critic_evaluation = None
         except Exception as e:
-            logger.warning("Critic 평가 실패: %s — graceful skip (Phase 4 Slice 2)", e)
+            logger.warning("Critic+revise loop unexpectedly failed: %s — graceful skip", e)
             critic_evaluation = None
+            revise_histories = None
 
     # 6. DB save (graceful) ──────────────────────────────────────────
     request_id = str(uuid4())
@@ -377,11 +488,16 @@ async def plans_generate(plan_id: str, req: GenerateRequest):
     )
 
     # 7. Envelope 조립 ───────────────────────────────────────────────
+    has_revise_loop_engaged = (
+        req.use_critic
+        and revise_histories is not None
+        and any(h for h in revise_histories)
+    )
     warnings = compute_validation_warnings_phase4(
         plans_count=len(plans_list),
         rag_used_fallback=rag_result.used_fallback,
         critic_present=critic_evaluation is not None,
-        has_revise_loop=False,  # Phase 4: revise loop deferred to Phase 4.5+
+        has_revise_loop=has_revise_loop_engaged,  # Phase 4.5 Slice 2: revise loop 동작 여부
     )
 
     models_list = settings.openai_models_for_3plan_list
@@ -404,6 +520,7 @@ async def plans_generate(plan_id: str, req: GenerateRequest):
             plan_candidates=plans_list,
             critic_evaluation=critic_evaluation,
             rag_references=rag_refs,
+            revise_history=revise_histories,  # Phase 4.5 Slice 2
         ),
         validation=Validation(
             passed=True,

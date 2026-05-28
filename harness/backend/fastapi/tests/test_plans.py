@@ -1,6 +1,6 @@
-"""Phase 4 plans router smoke tests (Slice 1).
+"""Phase 4 plans router smoke tests (Slice 1) + Phase 4.5 Slice 2 revise loop.
 
-검증 항목 (acceptance.md A1 + A4):
+검증 항목 (acceptance.md A1 + A4 + Phase 4.5 A2/A3):
   - POST /api/v1/plans/start → 201 + plan_id 발급
   - POST /api/v1/plans/{plan_id}/wizard/{step} → 200 + next_step hint
   - POST /api/v1/plans/{plan_id}/generate → 202 (Slice 1 skeleton)
@@ -8,10 +8,15 @@
   - 미발견 plan_id → 404 + ErrorEnvelope (INV-006)
   - Phase 1 endpoint X-API-Deprecation header (A4 회귀 0)
   - Phase 1 endpoint body 무변경 (A4 회귀 0)
+  - [Phase 4.5 Slice 2] revise_history 응답 포함 + 최대 2회 차단 + approve no-revise
 """
 
 from __future__ import annotations
 
+from typing import Any
+from unittest.mock import MagicMock
+
+import pytest
 from fastapi.testclient import TestClient
 
 from backend.fastapi.main import app
@@ -208,6 +213,170 @@ def test_phase_1_generate_intent_block_has_deprecation_header(mock_intent_block)
     assert "X-API-Deprecation" in r.headers
     body = r.json()
     assert body["error"]["code"] == "INV-001"  # Phase 1 error 코드 그대로
+
+
+# ─── Phase 4.5 Slice 2 — Critic revise loop 통합 케이스 ──────────────
+
+
+def _build_revise_verdict(plan: dict[str, Any]) -> dict[str, Any]:
+    """revise verdict — overall_verdict 강제."""
+    target_id = str(plan.get("plan_id") or "")
+    scores = {
+        "intent_fit": 3, "target_clarity": 1, "hook_strength": 1,
+        "message_clarity": 3, "structure": 3, "feasibility": 3,
+        "brand_consistency": 4, "differentiation": 2,
+    }
+    return {
+        "target_plan_id": target_id,
+        "scores": scores,
+        "reasons": {k: "—" for k in scores},
+        "suggestions": {k: "—" for k in scores},
+        "overall_score_avg": round(sum(scores.values()) / len(scores), 4),
+        "overall_verdict": "revise",
+        "blocking_issues": ["hook 약함"],
+        "revise_round": 0,
+    }
+
+
+def _build_approve_verdict(plan: dict[str, Any]) -> dict[str, Any]:
+    """approve verdict."""
+    target_id = str(plan.get("plan_id") or "")
+    scores = {
+        "intent_fit": 4, "target_clarity": 4, "hook_strength": 4,
+        "message_clarity": 4, "structure": 4, "feasibility": 4,
+        "brand_consistency": 5, "differentiation": 4,
+    }
+    return {
+        "target_plan_id": target_id,
+        "scores": scores,
+        "reasons": {k: "—" for k in scores},
+        "suggestions": {k: "—" for k in scores},
+        "overall_score_avg": round(sum(scores.values()) / len(scores), 4),
+        "overall_verdict": "approve",
+        "blocking_issues": [],
+        "revise_round": 0,
+    }
+
+
+@pytest.fixture
+def mock_critic_always_revise_plans(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """routers.plans.run_critic → 항상 revise (revise loop max 차단 테스트용)."""
+
+    def fake(plan: dict[str, Any], *args: Any, **kwargs: Any) -> dict[str, Any]:
+        return _build_revise_verdict(plan)
+
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_critic", fake)
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_rewriter_ok_plans(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """routers.plans.run_rewriter → 입력 plan을 그대로 반환 (revise 시도는 카운트됨)."""
+
+    async def fake(
+        plan: dict[str, Any], verdict: dict[str, Any], **kwargs: Any,
+    ) -> dict[str, Any]:
+        out = dict(plan)
+        out["_rewriter_model"] = "gpt-4o-mini"
+        # name 갱신 → revise 가 실제 일어났음을 추적 가능
+        out["name"] = f"개선-{out.get('name', 'x')}"[:20]
+        return out
+
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_rewriter", fake)
+    return MagicMock()
+
+
+def test_revise_history_present_in_response(
+    mock_intent_ok_plans,
+    mock_rag_fallback_plans,
+    mock_planning_parallel_3_ok,
+    mock_critic_ok_plans,  # approve — revise 시도 0
+    mock_db_save_ok_plans,
+) -> None:
+    """Phase 4.5 A3: 응답 Body 에 revise_history 키 존재 + plans_count 일치.
+
+    Critic approve verdict → revise attempt 0회. revise_history 는
+    plan별 [{"attempt": 0, "action": "approve", "revised": False}] 1개 entry.
+    """
+    start = client.post(
+        "/api/v1/plans/start", json={"user_input": "유튜브 쇼츠"},
+    ).json()
+    plan_id = start["plan_id"]
+    r = client.post(f"/api/v1/plans/{plan_id}/generate", json={})
+    assert r.status_code == 200
+    body = r.json()["body"]
+    assert "revise_history" in body
+    histories = body["revise_history"]
+    assert histories is not None
+    # plans_count 와 outer list 길이 일치
+    assert len(histories) == len(body["plan_candidates"])
+    # 각 plan 의 첫 attempt 는 approve (revise 안 일어남)
+    for h in histories:
+        assert isinstance(h, list)
+        assert len(h) >= 1
+        assert h[0]["attempt"] == 0
+        assert h[0]["action"] == "approve"
+        assert h[0]["revised"] is False
+
+
+def test_revise_loop_max_2_blocks_third_revise(
+    mock_intent_ok_plans,
+    mock_rag_fallback_plans,
+    mock_planning_parallel_3_ok,
+    mock_critic_always_revise_plans,
+    mock_rewriter_ok_plans,
+    mock_db_save_ok_plans,
+) -> None:
+    """Phase 4.5 A2: Critic이 항상 revise를 반환해도 revise 횟수 ≤ 2 (max 차단).
+
+    settings.critic_max_revise = 2 (기본).
+    revise_history per plan 길이 = 3 (attempt 0 / 1 / 2). attempt 2 에서 max_reached=True.
+    """
+    start = client.post(
+        "/api/v1/plans/start", json={"user_input": "유튜브 쇼츠"},
+    ).json()
+    plan_id = start["plan_id"]
+    r = client.post(f"/api/v1/plans/{plan_id}/generate", json={})
+    assert r.status_code == 200
+    histories = r.json()["body"]["revise_history"]
+    assert histories is not None
+    for h in histories:
+        # 3 attempts: 0,1,2 (max_revise=2 + 초기 attempt 1 = 총 3 entries)
+        assert len(h) == 3, f"expected 3 attempts, got {len(h)}: {h}"
+        # 마지막 attempt 는 max_reached
+        assert h[-1].get("max_reached") is True
+        # 마지막 attempt 는 revise 시도하지 않음
+        assert h[-1]["revised"] is False
+        # 처음 2개 attempt (0, 1) 은 revised=True (revise 실행됨)
+        assert h[0]["revised"] is True
+        assert h[1]["revised"] is True
+        # 모든 attempt 의 action 은 'revise'
+        for entry in h:
+            assert entry["action"] == "revise"
+
+
+def test_critic_approve_no_revise(
+    mock_intent_ok_plans,
+    mock_rag_fallback_plans,
+    mock_planning_parallel_3_ok,
+    mock_critic_ok_plans,  # 첫 critic approve
+    mock_db_save_ok_plans,
+) -> None:
+    """Phase 4.5: 첫 critic 이 approve 면 revise 시도 0 + history 길이 1."""
+    start = client.post(
+        "/api/v1/plans/start", json={"user_input": "유튜브 쇼츠"},
+    ).json()
+    plan_id = start["plan_id"]
+    r = client.post(f"/api/v1/plans/{plan_id}/generate", json={})
+    assert r.status_code == 200
+    histories = r.json()["body"]["revise_history"]
+    assert histories is not None
+    for h in histories:
+        assert len(h) == 1  # attempt 0 만 (approve 즉시 종료)
+        assert h[0]["action"] == "approve"
+        assert h[0]["revised"] is False
+        # max_reached 키 없음 (revise 시도 안 함)
+        assert "max_reached" not in h[0]
 
 
 # ─── OpenAPI 노출 확인 ────────────────────────────────────────────────

@@ -160,13 +160,16 @@ class CriticEvaluation(BaseModel):
 
 
 class Body(BaseModel):
-    """envelope body — Phase 1 Slice 4 + Phase 4 Slice 2 구조.
+    """envelope body — Phase 1 Slice 4 + Phase 4 Slice 2 + Phase 4.5 Slice 2 구조.
 
     Slice 1 (Phase 1): plans 길이 1 (vs contract 3). validation.warnings에 phase_1_single_plan.
     Slice 3 (Phase 1): critic_evaluation 활성화 (revise 없음).
     Slice 4 (Phase 1): rag_references 활성화 (fallback 시 빈 배열).
     Slice 2 (Phase 4): plan_candidates max_length=3 enforce 활성 (3-plan 본격).
                        Phase 1 호환 위해 min_length=1 유지 (Phase 1 endpoint 1-plan).
+    Slice 2 (Phase 4.5): revise_history Optional 추가 — plan별 revise attempt log.
+                          외부 list = plan index, 내부 list = attempt 순차 dict.
+                          Optional 필드 추가이므로 회귀 0 (output_schema.md 호환).
     """
 
     plan_candidates: list[Plan] = Field(..., min_length=1, max_length=3)
@@ -179,6 +182,16 @@ class Body(BaseModel):
         description=(
             "Phase 1 Slice 4: RAG 검색 결과 (fallback 시 빈 배열). "
             "rag_data_contract.md §5.5 정합 — chunk_id / title / similarity 등 메타 포함."
+        ),
+    )
+    revise_history: list[list[dict[str, Any]]] | None = Field(
+        default=None,
+        description=(
+            "Phase 4.5 Slice 2: plan별 revise attempt log. "
+            "외부 list = plan index (plan_candidates 와 동일 순서), "
+            "내부 list = attempt 0,1,2,... 순차 dict "
+            "(예: {attempt, action, revised, max_reached?, critic_warning?})."
+            "loop 비활성 또는 Phase 4 이하 호출 시 None."
         ),
     )
 

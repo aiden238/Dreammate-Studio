@@ -54,6 +54,20 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 4.5 — Critic revise loop ─────────────────────────────
+    # 0=loop 비활성, 1~2 권장. 환경변수 CRITIC_MAX_REVISE 로 override 가능.
+    # Critic verdict 가 'revise' 일 때 Rewriter(P-008) 를 최대 N회 호출한다.
+    critic_max_revise: int = Field(
+        default=2,
+        ge=0,
+        le=5,
+        description=(
+            "Phase 4.5: Critic revise loop 최대 횟수 (0=비활성). "
+            "확정 결정 [5]: 무한 루프 차단 위해 2회 상한. "
+            "환경변수 CRITIC_MAX_REVISE 로 override 가능."
+        ),
+    )
+
     # App
     app_env: Literal["development", "staging", "production"] = "development"
     app_host: str = "0.0.0.0"
