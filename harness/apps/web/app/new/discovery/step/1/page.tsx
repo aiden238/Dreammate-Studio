@@ -109,15 +109,8 @@ export default function DiscoveryStep1Page() {
         selectedCardId === USER_INPUT_SLOT.card_id ? userInputText : undefined,
     };
     saveDiscoveryStep1(state);
-    // TODO(Slice 3): router.push('/new/discovery/step/2');
-    // Slice 2 단독에서는 alert (Thin Vertical 검증 목적).
-    if (typeof window !== 'undefined') {
-      window.alert(
-        `Step 1 완료. 선택된 카드: ${selectedCardId}` +
-          (userInputText ? `\n입력: ${userInputText}` : '') +
-          `\n(Slice 3에서 Step 2 라우팅 추가 예정)`,
-      );
-    }
+    // Slice 3: Step 2 dynamic route 활성
+    router.push('/new/discovery/step/2');
   };
 
   const ctaDisabled =
