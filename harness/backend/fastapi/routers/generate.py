@@ -23,12 +23,17 @@ Slice 4 변경:
   - validation.checks에 rag_retrieval 추가 (status=ok|warn)
   - validation.warnings에서 "phase_1_no_rag" 제거
 
-Slice 5 변경 (이번):
+Slice 5 변경:
   - Critic 후 Supabase 저장 단계 추가 (video_projects + plan_candidates).
   - DB 실패는 절대 사용자 차단 금지 (graceful 정책 — RAG와 동일).
   - meta.project_id 노출 (성공 시 uuid, skip/fail 시 None).
   - validation.checks에 db_persistence 추가 (status=ok|warn).
   - 익명 저장 (user_id=NULL) — Phase 5 Auth 도입 시 사용자 binding.
+
+Phase 4 Slice 1 변경 (이번):
+  - X-API-Deprecation 응답 header 추가 (실 동작 / body / status 무변경).
+  - ADR-014 채택: Phase 1 endpoint Phase 8+ 제거 (마이그 완료 후, 사용자 결정 5-a).
+  - 새 contract endpoint: POST /api/v1/plans/{plan_id}/generate (Slice 2에서 본격).
 """
 
 from __future__ import annotations
@@ -37,7 +42,7 @@ import logging
 from typing import Union
 from uuid import uuid4
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Response, status
 from fastapi.responses import JSONResponse
 
 from ..agents.critic import (
@@ -78,6 +83,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["generate"])
 
 
+# Phase 4 Slice 1: ADR-014 채택 — Phase 1 endpoint deprecation 안내.
+# 실 동작 / body / status 무변경 — header만 추가 (사용자 결정 5-a, Phase 8+ 제거).
+# HTTP header 값은 latin-1만 허용되므로 ASCII로만 작성한다 (em-dash 등 unicode 금지).
+_DEPRECATION_HEADER_VALUE = (
+    "Phase 4 - use POST /api/v1/plans/{plan_id}/generate"
+)
+
+
 # ─── Helpers ─────────────────────────────────────────────────────────
 
 def _error_response(
@@ -88,7 +101,10 @@ def _error_response(
     user_message: str,
     retry_allowed: bool = False,
 ) -> JSONResponse:
-    """ErrorEnvelope를 JSONResponse로 변환 (error_response_contract.md §1)."""
+    """ErrorEnvelope를 JSONResponse로 변환 (error_response_contract.md §1).
+
+    Phase 4 Slice 1: X-API-Deprecation header 동봉 (success path와 동일하게 안내).
+    """
     envelope = ErrorEnvelope(
         error=ErrorBody(
             code=code,
@@ -101,6 +117,7 @@ def _error_response(
     return JSONResponse(
         status_code=status_code,
         content=envelope.model_dump(mode="json"),
+        headers={"X-API-Deprecation": _DEPRECATION_HEADER_VALUE},
     )
 
 
@@ -124,8 +141,15 @@ def _error_response(
         "Intent 차단 시 INV-001 ErrorEnvelope 반환."
     ),
 )
-def generate(req: GenerateRequest) -> Union[Envelope, JSONResponse]:
-    """Intent → RAG → Planning(rag_context) → Critic 직렬 호출 → envelope 반환."""
+def generate(req: GenerateRequest, response: Response) -> Union[Envelope, JSONResponse]:
+    """Intent → RAG → Planning(rag_context) → Critic 직렬 호출 → envelope 반환.
+
+    Phase 4 Slice 1: X-API-Deprecation header 추가 (success path 동봉).
+    Error path는 _error_response()가 동일 header 동봉 (ADR-014).
+    """
+    # Phase 4 Slice 1: deprecation 안내 — 실 동작 무변경.
+    response.headers["X-API-Deprecation"] = _DEPRECATION_HEADER_VALUE
+
     settings = get_settings()
 
     # ── 1. Intent Agent (P-001) ──────────────────────────────────────
