@@ -46,12 +46,29 @@
 
 ## 현재 active Phase
 
-**Phase 4. FastAPI 기본 백엔드 구현 (확장)** — 🔵 active (next, 진입 대기)
-- 진입: phase-start Skill로 시작 (phases/active/phase-4-fastapi-extension/ 폴더 생성)
-- Phase 3 archive: `phases/archive/phase-3-pwa-impl/` (참조 가능 — frontend baseline + closing_notes)
+**🟡 pending_user_decision — 다음 phase 옵션 A/B/C (사용자 결정 3-c)**
+
+Phase 4 완료 (2026-05-28). 다음 phase 진입 대기.
+
+- Phase 4 archive: `phases/archive/phase-4-fastapi-extension/` (참조 가능 — backend + frontend baseline + closing_notes + A/B/C 옵션 명시)
+- Phase 3 archive: `phases/archive/phase-3-pwa-impl/` (참조 가능 — frontend baseline)
 - Phase 2 archive: `phases/archive/phase-2-pwa-design/` (참조 가능 — design spec baseline)
 - Phase 1 archive: `phases/archive/phase-1-mvp-basic-flow/` (참조 가능 — backend baseline)
 - Phase 0 archive: `phases/archive/phase-0-migration/` (참조 금지)
-- **진입 전 권장**: `meta/proposals/2026-05-28_phase-3-retrospective-proposals.md` (Y-X1~Y-X3 + Phase 2 P-X2 채택) 검토
-- Phase 3 핵심 성과: **P-X1 §SELF-VERIFICATION 5/5 PASS** + **component_map.md 6연속 0줄** + audit_naming + audit_page_component 0 drift + smoke 7/7 PASS + 변경성 4/5+1 WARN
-- Phase 4 첫 작업 후보: 3-plan generate endpoint + D3 PlanCard 4-layer + D4 PlanComparisonCard (조정 3번 — 함께 재정의) + Critic revise loop + SSE
+- **진입 전 권장**: `meta/proposals/2026-05-28_phase-4-retrospective-proposals.md` (Z-X1~Z-X3 + Phase 2 P-X2 채택) 검토 + multi-llm-validation Skill formal 호출 (옵션 B 시 의무)
+
+**Phase 4 핵심 성과**:
+- **P-X1 §SELF-VERIFICATION 9연속 PASS** (Phase 3 5 + Phase 4 4)
+- **component_map.md 15연속 0줄** (Phase 2 6 + Phase 3 5 + Phase 4 4)
+- **PlanCard.tsx 4연속 0줄** (Phase 4 전체, 사용자 결정 6-a)
+- GPT 검토 채택 효과: 6→4 Slices (▼33%), 18~26h → 6~8h (▼66%)
+- audit_naming + audit_page_component 0 drift (D-1 Slice 4 해소)
+- smoke_test_phase_4 8/8 PASS
+- pytest 93/93 + next build 11 routes + tsc 0 + lint clean
+
+**다음 phase 옵션**:
+- **A**: Phase 4.5 mini-phase (Critic revise loop + Rewriter, 8~12h)
+- **B**: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h)
+- **C**: 다른 우선순위 (Phase 6 / 9 / 11+ 등 사용자 시점 재평가)
+
+사용자가 셋 중 선택 후 phase-start v1.3.0 호출로 진입.

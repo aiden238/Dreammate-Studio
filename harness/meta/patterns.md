@@ -100,22 +100,24 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **재평가 시점**: Phase 3 코드 phase 진행 중 (같은 .tsx 파일 sub-section 동시 수정 위험 ↑) — P-X1 적용 후 효과 측정
 - **연관 Skill / Contract**: phase-start §6.3, multi_slice_plan template, sub-agent prompt format
 
-### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 5연속 PASS 효과 측정
+### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 9연속 PASS 효과 측정 (update 2026-05-28 Phase 4)
 
-- **유형**: 반복 성공 (Phase 3 5 Slice 적용, 0 deviation)
-- **최초 식별**: 2026-05-28 (Phase 3)
-- **관련 회고**: meta/retrospectives/phase-3.md §잘된 것 1 + §P-X1 효과 측정
-- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1 (phase-start v1.3.0 §6.3 sub-agent 자기 검증 + main session 사후 git diff)을 Phase 3 pre-entry 적용. Phase 3 5 sub-agent 모두 §SELF-VERIFICATION PASS, component_map.md 6연속 0줄 보존 (조정 4번 강제 성공), forbidden 영역 침범 0건 재발. **proposal → 적용 → 1 phase 내 효과 측정 사이클 완성**.
-- **증거**:
-  - Slice 1~5 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
-  - `git diff 3d0b0fb..HEAD -- harness/apps/web/component_map.md` → 0줄
+- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 = **9 Slice 누적**, 0 deviation)
+- **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 **9연속 누적 update**
+- **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md §P-X1 9연속 효과 측정
+- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 PASS → Phase 4 4/4 PASS = **9연속**. Phase 4는 backend phase (apps/web/ + backend/fastapi/ + docs/decisions/ 다영역 동시 작업)에서도 0건 재발. **proposal → 적용 → 2 phase 누적 효과 측정 사이클 완성**.
+- **증거 (Phase 3 + Phase 4)**:
+  - Slice 1~9 (Phase 3 5 + Phase 4 4) 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
+  - `git diff f50bc74..HEAD -- harness/apps/web/component_map.md` → **0줄 (15연속, Phase 2 6 + Phase 3 5 + Phase 4 4)**
+  - `git diff 76b4d2c..HEAD -- harness/apps/web/components/PlanCard.tsx` → **0줄 (4연속, Phase 4 전체 — 사용자 결정 6-a)**
   - phases/active/phase-3-pwa-impl/deviations.md → 0건 entry
+  - phases/active/phase-4-fastapi-extension/deviations.md → 1건 entry (D-1 audit drift, intended → Slice 4 해소)
 - **권장 대응**:
-  - Phase 4+ 모든 sub-agent prompt에 §SELF-VERIFICATION 의무 유지
+  - Phase 5+ 모든 sub-agent prompt에 §SELF-VERIFICATION 의무 유지
   - phase-start v1.3.0 §6.3 의무 절차 보존
   - main session sub-agent 완료 후 `git diff --stat` 검증 의무 절차 보존
-- **재평가 시점**: Phase 4+ Wave 3+ 병렬 dispatch 시 재발 여부 — 재발 시 P-X4 (worktree isolation) 재검토 트리거
-- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated)
+- **재평가 시점**: Phase 5+ DB/Auth phase (Supabase + RLS 새 영역 도입) — 재발 시 P-X4 (worktree isolation) 재검토 트리거
+- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 9연속), P-GPT-REVIEW-001 (Phase 4 신규)
 
 ### Pattern P-THIN-VERTICAL-001: Thin Vertical Slice 효과 (코드 phase entry 표준)
 
@@ -131,6 +133,27 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - Phase 4+ 첫 코드 작업 단계 (예: Phase 4 Slice 2~3, 3-plan generate endpoint)에서 동일 패턴 적용 — "한 endpoint 통째 작동 후 확장"
   - phase-start v1.3.0 §6.2 Simplest Slice 보강 후보 (Y-X 흡수 가능)
 - **연관 Skill / Contract**: phase-start §6.2 Simplest Slice, P-SLICE-001 (Phase 1)
+
+### Pattern P-GPT-REVIEW-001: 외부 LLM 검토 (GPT) 채택 효과 — scope 축소 + 시간 절감
+
+- **유형**: 반복 성공 (Phase 4 첫 적용, 6→4 Slices)
+- **최초 식별**: 2026-05-28 (Phase 4)
+- **관련 회고**: meta/retrospectives/phase-4.md §GPT 검토 채택 효과 측정 + §잘된 것 2
+- **요약**: Phase 4 원안 6 Slices (Critic revise + SSE + 4-layer 재정의 본격 포함) → 사용자 외부 GPT 검토 후 4 Slices로 축소 (revise/SSE/4-layer Phase 4.5/5+ 이관). 시간 18~26h → 6~8h (▼66%), Slices 6→4 (▼33%), scope 명확화 (ADR-014 + ADR-015 명문화), 회귀 위험 ↓. multi-llm-validation Skill 정식 호출은 아니었으나 패턴은 동일.
+- **핵심 메커니즘**:
+  1. **외부 LLM 검토** (GPT) — 단일 모델 (Claude) 편향 회피
+  2. **채택 결정 후 사용자 7개 결정**으로 세부 조율 (4-b multi-model / 5-a Phase 8+ 제거 / 6-a PlanCard 무수정 등)
+  3. **Slice 분해 후 deferred 명세** (D6/D7/D8/D3/D4/D2/Phase 1 endpoint 제거) — 각 항목 권장 다음 phase 명시
+- **증거**:
+  - entry commit 76b4d2c message + scope.md §GPT 검토 항목
+  - acceptance.md A1~A10 모두 4 Slices 범위에서 충족
+  - 실측 시간 ~6~8h (acceptance.md 추정 7~11h 내, 원안 18~26h 대비 ▼66%)
+- **권장 대응**:
+  - 후속 큰 phase (Phase 5+) 진입 전 multi-llm-validation Skill 정식 호출 권장 (meta/validations/ 누적)
+  - 외부 검토 결과 채택 시 entry commit message + scope.md에 명시 (재현 가능성 ↑)
+  - 채택 항목별 ADR 작성 (Phase 4 ADR-014/015 패턴 복제)
+- **연관 Skill / Contract**: multi-llm-validation Skill, ADR-014 (endpoint migration), ADR-015 (3-plan multi-model)
+- **누적 외부 검토 채택 횟수**: 3회 (Phase 2 GPT 80점 채택 → Phase 3 P-X1 적용 → Phase 4 GPT 6→4 채택)
 
 ### Pattern P-DESIGN-LAYERED-001: 4-layer 4개 + Variants Bank 3개 minimal 정책의 변경성 보장 효과
 

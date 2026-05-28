@@ -80,6 +80,19 @@ if ('/new/discovery/step/[n]' -in $actual_routes) {
     $actual_only = @($actual_only | Where-Object { $_ -ne '/new/discovery/step/[n]' })
 }
 
+# Phase 4 동적 라우트 정규화 (Slice 4 — D-1 해소):
+#   spec: /plan (Phase 1) — Phase 4에서 dynamic /plan/[plan_id] 추가
+#   actual: /plan + /plan/[plan_id]
+# /plan/[plan_id] 는 Phase 4 dynamic route — page_map.md 갱신 전까지 audit이 자동 허용
+# (scope.md §3 Slice 3에서 명시 산출물로 지정 — intended drift)
+if ('/plan/[plan_id]' -in $actual_only) {
+    # actual_only에서 /plan/[plan_id] 제거 (Phase 4 dynamic route는 page_map /plan + scope.md §3 매핑)
+    $actual_only = @($actual_only | Where-Object { $_ -ne '/plan/[plan_id]' })
+    $phase4_dynamic_planid = $true
+} else {
+    $phase4_dynamic_planid = $false
+}
+
 if ($spec_only.Count -gt 0) {
     Write-Host "[INFO] spec only (Phase 4+ deferred 또는 dynamic 커버) :" -ForegroundColor Cyan
     foreach ($r in $spec_only) { Write-Host "  $r" -ForegroundColor Cyan }
@@ -89,6 +102,11 @@ if ($dynamic_coverage.Count -gt 0) {
     Write-Host ''
     Write-Host "[INFO] dynamic route 커버됨 (step/[n] -> step/2~7) :" -ForegroundColor Cyan
     foreach ($r in $dynamic_coverage.Keys) { Write-Host "  $r" -ForegroundColor Cyan }
+}
+if ($phase4_dynamic_planid) {
+    Write-Host ''
+    Write-Host "[INFO] Phase 4 dynamic route 정규화 :" -ForegroundColor Cyan
+    Write-Host '  /plan/[plan_id]  (Phase 4 Slice 3 scope.md §3 산출물, page_map.md 갱신 전까지 허용)' -ForegroundColor Cyan
 }
 
 if ($actual_only.Count -gt 0) {

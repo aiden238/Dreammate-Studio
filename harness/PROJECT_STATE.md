@@ -2,9 +2,9 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) 완료 + Phase 1 (MVP 기본 플로우) 완료 + Phase 2 (PWA 설계) 완료 + Phase 3 (PWA UI 구현) 완료**.
-Next.js PWA 기본 화면 11 routes 빌드 + 4-layer 컴포넌트 4개 + Discovery wizard / Quick mode 분기 / Mode Branching middleware 모두 동작.
-다음 단계는 Phase 4 FastAPI 백엔드 확장 (3-plan + Critic + SSE) 진입.
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 모두 완료**.
+Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-model 인터페이스 + Critic verdict 노출 모두 동작.
+다음 단계는 **다음 phase 옵션 A/B/C 사용자 결정 대기** (사용자 결정 3-c).
 
 ## 현재 Active Phase
 
@@ -15,13 +15,18 @@ Next.js PWA 기본 화면 11 routes 빌드 + 4-layer 컴포넌트 4개 + Discove
 **Phase 3. Next.js PWA 기본 UI 구현 ✅ done (2026-05-28)** — archive 이동 완료
 - A1~A10 10/10 PASS / audit_naming + audit_page_component 0 drift / 변경성 4/5+1 WARN / P-X1 5/5 / component_map 6연속 0줄
 
-**Phase 4. FastAPI 기본 백엔드 구현 (확장)** — 🔵 **active (2026-05-28 진입, GPT 검토 채택 4 Slices)**
-- 진입 점검: phase-start v1.3.0 §6 4점검 통과 (audit_naming 0 drift)
-- GPT 검토 채택: 6→4 Slices (revise loop / SSE / 4-layer 재정의 모두 Phase 4.5/5+ 이관)
-- 핵심: contract endpoints 4개 + 3-plan parallel + multi-model 인터페이스 + Critic verdict 노출 + Phase 1 endpoint 회귀 0
-- 사용자 결정 7개 모두 반영 (4-b: 3 parallel + multi-model / 5-a: Phase 1 endpoint Phase 8+ 제거 / 6-a: PlanCard 무수정)
-- 첫 작업: Wave 1 Slice 1 — Foundation contract endpoints (`routers/plans.py` 4 endpoints)
-- 다음 phase 선택: **Slice 4 retrospective에서** (옵션 A: Phase 4.5 / B: Phase 5 / C: 다른 우선순위)
+**Phase 4. FastAPI 기본 백엔드 구현 (확장) ✅ done (2026-05-28)** — archive 이동 완료
+- A1~A10 10/10 PASS / audit_naming + audit_page_component 0 drift (D-1 Slice 4 해소) / 변경성 4/5+1 WARN (Phase 3 결과 유지, Phase 4 +0 영향)
+- **P-X1 9연속 PASS (Phase 3 5 + Phase 4 4) + component_map 15연속 0줄 + PlanCard 4연속 0줄** ★
+- GPT 검토 채택 효과: 6→4 Slices (▼33%), 18~26h → 6~8h (▼66%)
+- smoke_test_phase_4 8/8 PASS
+- 신규 패턴: P-GPT-REVIEW-001 + P-X1-EFFECT-001 update (9연속)
+
+**다음 Phase — 🟡 pending_user_decision (사용자 결정 3-c 옵션 A/B/C)**
+- 옵션 A: Phase 4.5 mini-phase (Critic revise loop + Rewriter, 8~12h)
+- 옵션 B: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h)
+- 옵션 C: 다른 우선순위 (Phase 6 / 9 / 11+ 등)
+- 사용자가 셋 중 선택 후 다음 phase 진입 (phase-start v1.3.0 호출)
 
 ## migration_progress
 
@@ -88,35 +93,59 @@ phase_3_deferred_to_phase_4:
   - D3_PlanCard_4layer_reconcile  # 조정 3번 — PlanComparisonCard와 함께 재정의
   - D4_PlanComparisonCard_detailed
 phase_3_retrospective_proposals: proposed (Y-X1~Y-X3 + Phase 2 P-X2 재평가)
-phase_4_status: active
+phase_4_status: completed
 phase_4_entry_date: 2026-05-28
-phase_4_current_wave: 1
-phase_4_current_slice: 1
+phase_4_completion_date: 2026-05-28
+phase_4_archive_location: phases/archive/phase-4-fastapi-extension/
 phase_4_total_slices: 4  # GPT 검토 채택 (6→4)
 phase_4_total_waves: 4  # all sequential (사용자 결정 2-a)
-phase_4_completed_slices: []
-phase_4_estimated_hours_total: 7-11  # Phase 3 50%
+phase_4_completed_slices: 4  # Slice 1~4 모두 PASS
+phase_4_estimated_hours_total: 7-11  # acceptance.md
+phase_4_actual_hours: ~6-8  # 실측 (원안 18-26h 대비 ▼66%)
+phase_4_acceptance_passed: 10/10  # A1~A10
+phase_4_changeability_simulation: 4/5 PASS + 1 WARN  # Phase 3 결과 유지, Phase 4 +0 영향
+phase_4_changeability_aux_scenarios: 3/3 PASS  # 보조 시나리오 6/7/8 (Phase 1 제거 / 3→5 plan / multi-provider)
+phase_4_design_review: 7 principles aligned (PASS, impl phase, PlanCard 무수정 정합)
+phase_4_audit_naming_final: 0 drift
+phase_4_audit_page_component_final: 0 drift  # D-1 Slice 4 해소
+phase_4_smoke_test: 8/8 PASS  # smoke_test_phase_4.ps1 신규
+phase_4_simplicity_check: 5/5 PASS
+phase_4_qa_check_v1_2_0: 11 categories applied (9 PASS / 2 skip - 관측성 Phase 5+ / RAG 본격 Phase 7+)
+phase_4_p_x1_self_verification: 4/4 PASS  # Slice 1~4 모두
+phase_4_p_x1_cumulative_streak: 9  # Phase 3 5 + Phase 4 4 ★
+phase_4_component_map_zero_lines_streak: 15  # Phase 2 6 + Phase 3 5 + Phase 4 4 ★
+phase_4_plan_card_zero_lines_streak: 4  # Phase 4 전체 (사용자 결정 6-a) ★
+phase_4_deviation_count: 1  # D-1 audit drift (intended → Slice 4 해소)
 phase_4_user_decisions_applied:
   decision_1: a  # 4 Slices
   decision_2: a  # Sequential
-  decision_3: c  # 다음 phase Slice 4 결정
+  decision_3: c  # 다음 phase Slice 4 결정 (옵션 A/B/C 명시)
   decision_4: b + multi-model  # 3 parallel + 모델 추가 가능 구조
   decision_5: a  # Phase 1 endpoint Phase 8+ 제거
-  decision_6: a  # PlanCard 무수정
+  decision_6: a  # PlanCard 무수정 (4연속 0줄 PASS)
   decision_7: a  # 그대로 진입
-  decision_8: deferred 명시
-phase_4_deferred_in_advance:
-  - D6_Critic_revise_loop_+_Rewriter  # Phase 4.5+
+  decision_8: deferred 명시 (D6/D7/D8/D3/D4/D2/Phase 1 endpoint 제거)
+phase_4_new_patterns:
+  - P-GPT-REVIEW-001  # 외부 LLM 검토 채택 효과 (6→4 Slices, ▼66% 시간)
+  - P-X1-EFFECT-001 (update 9연속)  # P-X1 9연속 PASS — Phase 3 + Phase 4 누적
+phase_4_mitigated_patterns:
+  - P-AGENT-SCOPE-001  # 9연속 누적 입증 (Phase 3 5 + Phase 4 4)
+phase_4_d1_completed: audit_page_component_phase4_dynamic_route_normalize  # Slice 4 D-1 해소
+phase_4_deferred_to_next:
+  - D6_Critic_revise_loop_+_Rewriter  # Phase 4.5+ 또는 Phase 6
   - D7_SSE_Progress_streaming  # Phase 5+
   - D8_PlanComparisonCard_4layer  # Phase 5+
-  - D3_PlanCard_4layer_redefinition  # Phase 5+
+  - D3_PlanCard_4layer_redefinition  # Phase 5+ (D4와 함께, 조정 3번)
   - D4_PlanComparisonCard_detail  # Phase 5+
   - D2_QuickInputCard_alt_variants  # Phase 9
   - Phase_1_endpoint_removal  # Phase 8+
-phase_4_p_x1_streak_target: 4  # 9 total (Phase 3 5 + Phase 4 4)
-phase_4_component_map_zero_lines_target: 4  # 11+ total (Phase 3 7 + Phase 4 4)
-phase_4_plan_card_zero_lines_target: 4  # 사용자 결정 6-a
-total_commits: 39  # 38 + Phase 4 entry
+phase_4_retrospective_proposals: proposed (Z-X1~Z-X3 + Phase 2 P-X2 재평가, awaiting user review)
+next_phase_status: pending_user_decision  # 옵션 A/B/C (사용자 결정 3-c)
+next_phase_options:
+  option_a: Phase_4.5_mini_phase  # Critic revise + Rewriter, 8~12h
+  option_b: Phase_5_DB_Auth  # Supabase + RLS + SSE, 15~20h
+  option_c: 다른 우선순위  # Phase 6 / 9 / 11+ 사용자 시점 재평가
+total_commits: 44  # 39 + Phase 4 (entry + Slice 1~3 + Slice 4 본 commit)
 last_updated: 2026-05-28
 ```
 
@@ -191,29 +220,37 @@ last_updated: 2026-05-28
 ## 다음 액션
 
 ```
-Phase 4 진입 준비:
+다음 phase 진입 준비 (🟡 pending_user_decision — 사용자 결정 3-c 옵션 A/B/C):
 
-1. (권장) Phase 3 회고 3 proposals 검토
-   → meta/proposals/2026-05-28_phase-3-retrospective-proposals.md
-   → Y-X1 (design_handoff §6.1 매핑표 spec/code 칸 분리) 검토
-   → Y-X2 (audit_page_component 사용 가이드) 검토
-   → Y-X3 (Sub-path 분리 패턴 표준 등록) 검토
+1. (필수) Phase 4 회고 + proposals 검토
+   → meta/retrospectives/phase-4.md
+   → meta/proposals/2026-05-28_phase-4-retrospective-proposals.md
+   → Z-X1 (audit_page_component dynamic route 정규화 표준화) — 우선순위: 보통
+   → Z-X2 (multi-provider client factory baseline) — 우선순위: 낮음
+   → Z-X3 (Critic best-plan 선택 로직) — 우선순위: 낮음
 
 2. Phase 2 P-X 후속 재평가 결과 적용
-   → P-X1: ✅ applied + 5/5 효과 입증 (유지)
-   → P-X2 (변경성 시뮬 phase-complete 게이트): 채택 권장 (Y-X1 통합)
-   → P-X3 (design-review spec-only): Phase 11+ 재진입 시
-   → P-X4 / P-X5: deferred 유지
+   → P-X1: ✅ applied + 9/9 효과 입증 (유지)
+   → **P-X2 (변경성 시뮬 phase-complete 게이트): 채택 권장 (Y-X1 통합) — 우선순위 ↑**
+   → P-X3 / P-X4 / P-X5: deferred 유지
 
-3. Phase 4 진입 (phase-start 호출)
-   → phases/active/phase-4-fastapi-extension/ 폴더 생성
+3. (권장) multi-llm-validation Skill **formal 호출**
+   → 다음 phase가 옵션 B (Phase 5 DB/Auth) 또는 큰 phase일 경우 의무
+   → meta/validations/ 누적 시작
+
+4. 사용자 결정 (다음 phase 옵션 A/B/C)
+   → 옵션 A: Phase 4.5 mini-phase (Critic revise + Rewriter, 8~12h)
+   → 옵션 B: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h)
+   → 옵션 C: 다른 우선순위 (사용자 시점 재평가)
+
+5. 다음 phase 진입 (phase-start v1.3.0 호출 — 옵션 채택 후)
+   → phases/active/<chosen-phase>/ 폴더 생성
    → 4점검 (assumptions / Simplest Slice / Surgical Scope / Verification)
-   → Phase 1 backend baseline + Phase 3 frontend + Phase 2 design spec baseline 로드
-   → 첫 작업 후보: 3-plan generate endpoint (P-006 plan_candidates 활성화)
+   → Phase 4 backend + frontend baseline 로드
+   → 첫 작업: 채택 옵션에 따라
 
-4. Phase 4 deferred 처리 계획
-   → D2 QuickInputCard alt variants (Phase 9 데이터 베이스)
-   → D3 PlanCard 4-layer 정합 (조정 3번 — PlanComparisonCard 함께)
-   → D4 PlanComparisonCard 상세 spec + 4-layer
-   → D1 Step 2~7 wireframe (Phase 11+ 또는 Phase 4 직전 deferred)
+6. 다음 phase deferred 처리 계획 (옵션별)
+   → 옵션 A: D6 (Critic revise + Rewriter)
+   → 옵션 B: D7 (SSE) + plan_store DB migration
+   → 옵션 C: 사용자 시점 재평가
 ```
