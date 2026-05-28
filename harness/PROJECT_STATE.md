@@ -2,9 +2,9 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 모두 완료**.
-Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-model 인터페이스 + Critic verdict + **revise loop (max 2) + recommended_plan_index** 모두 동작.
-**🟡 pending_user_decision — 다음 phase 옵션 A/B/C (Phase 5 DB/Auth / Phase 6 Output Schema / Phase 9+)**
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 모두 완료, Phase 6 ★ active (entry 2026-05-29)**.
+Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-model 인터페이스 + Critic verdict + revise loop (max 2) + recommended_plan_index 모두 동작.
+**🟢 Phase 6 진행 중 — Output Schema + Agent IO Stabilization** (Phase 5 DB/Auth 진입 전 contract 안정화, 8~10h, 4 Slice 모두 sub-agent)
 
 ## 현재 Active Phase
 
@@ -30,20 +30,29 @@ Next.js PWA 11 routes + FastAPI 4 contract endpoints + 3-plan parallel + multi-m
 - 신규 패턴: P-X2-EFFECT-001 + P-VALIDATION-FORMAL-001 + P-X1-EFFECT-001 update (13연속)
 - Sub-agent 4/4 (모두 sub-agent dispatch) + Slice 4 close (final)
 
-## 다음 Phase — 🟡 pending_user_decision
+**Phase 6. Output Schema + Agent IO Stabilization 🟢 active (entry 2026-05-29)** — mini-phase 8~10h, 4 Slice 모두 sub-agent
+- 8 entry files (goals/scope/non_goals/dependencies/acceptance/assumptions/multi_slice_plan/notes) 작성 완료
+- assumptions.md §6 4-check PASS (audit_naming 0 drift entry, simplest slice CriticEvaluation canonical 1 모델)
+- Slice 1 (Pre-Entry) sub-agent 진행 중 — validations self V1~V5 PASS + external placeholder + contract gap analysis
+- GPT 검토안 7.5/10 채택 + 6→4 Slice 압축 (P-GPT-REVIEW-001 정신 계승)
+- 사용자 결정: Phase 6 선행 → Phase 5 순차 진행 ("플랜을 세워서 순차적으로")
 
-**옵션 A**: Phase 5 DB/Auth (Supabase + RLS + SSE, 15~20h) — multi-llm-validation formal external 의무
-**옵션 B**: Phase 6 Output Schema + Agent IO 안정화 (Phase 4.5 산출물 stress test)
-**옵션 C**: 다른 우선순위 (Phase 9 결과 저장 + 피드백 / Phase 11+ 등)
+## 이전 결정 (옵션 B 변형: Phase 6 선행)
+
+사용자 결정 (2026-05-29): 옵션 A/B/C 중 **옵션 B 변형 채택** → Phase 6 선행 → Phase 5 순차 진행.
+- Phase 6 = Output Schema + Agent IO Stabilization (8~10h, mini-phase)
+- Phase 5 = DB/Auth (Phase 6 종료 후 진입, formal external validation 의무)
+- GPT 검토안 7.5/10 채택 (Critic canonical / Rewriter contract / fallback 축소 / frontend 정합)
+- 6→4 Slice 압축 (P-GPT-REVIEW-001 정신)
 
 ## migration_progress
 
 ```yaml
-current_sprint: completed
-current_sprint_step: completed
-total_steps_in_sprint: completed
-last_completed_action: "Phase 4.5 종료 — A1~A10 10/10 + M1~M3 3/3 + P-X1 13연속 + PlanCard 9연속 + component_map 19연속 + P-X2 자동 게이트 첫 트리거 + multi-llm-validation formal 첫 트리거"
-next_action: "다음 phase 옵션 사용자 결정 대기 (A: Phase 5 DB/Auth / B: Phase 6 Output Schema / C: Phase 9/11+)"
+current_sprint: phase-6-slice-1
+current_sprint_step: 1
+total_steps_in_sprint: 4
+last_completed_action: "Phase 6 entry — 8 entry files (4-check PASS, audit_naming 0 drift) + GPT 검토안 7.5/10 채택 + 6→4 Slice 압축"
+next_action: "Slice 1 commit 후 Slice 2 sub-agent dispatch (contract-change + Critic canonical + Rewriter contract)"
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
@@ -181,13 +190,21 @@ phase_4_5_new_patterns:
 phase_4_5_mitigated_patterns:
   - P-AGENT-SCOPE-001  # 13연속 누적 입증 (Phase 3 5 + Phase 4 4 + Phase 4.5 4)
 phase_4_5_retrospective_proposals: in_retrospective  # 본 회고 §개선 제안에 직접 기록 (mini-phase)
-next_phase_status: pending_user_decision
-next_phase_options:
-  option_a: Phase_5_DB_Auth  # 15~20h, multi-llm-validation formal external 의무
-  option_b: Phase_6_Output_Schema_Stress  # medium, Critic verdict 단일 표준 + agent_io 강화
-  option_c: Phase_9_or_11_plus  # 결과 저장 + 피드백 / 안정화
-total_commits: 48  # 45 + Slice 2 (3e7a33b) + Slice 3 (ca7cbca) + Slice 4 final
-last_updated: 2026-05-28
+phase_6_status: in_progress
+phase_6_entry_date: 2026-05-29
+phase_6_total_slices: 4  # 모두 sub-agent
+phase_6_completed_slices: 0
+phase_6_estimated_hours_total: 8-10
+phase_6_assumptions_check: PASS  # 4-check 통과 (entry)
+phase_6_user_decisions_applied:
+  next_phase_choice: phase_6_first_then_phase_5  # GPT 검토안 채택 (옵션 B 변형 — Phase 6 선행 → Phase 5)
+  slice_compression: 6_to_4  # P-GPT-REVIEW-001 정신
+  all_slices_sub_agent: yes
+  multi_llm_validation_formal: yes  # 두 번째 트리거
+  prompt_registry_defer_phase_7_plus: yes  # NG8
+  critic_fallback_keep_with_deprecation: yes  # NG12
+total_commits: 49  # 48 + Slice 1 entry (Phase 6)
+last_updated: 2026-05-29
 ```
 
 ## 확정 방향
