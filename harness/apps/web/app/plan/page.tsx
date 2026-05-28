@@ -57,6 +57,19 @@ export default function PlanPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    // Phase 4 Slice 3: `?plan_id=xxx` query 감지 시 dynamic route 로 redirect.
+    // Phase 1 호환 (sessionStorage envelope) 동작은 그대로 보존.
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const phase4PlanId = params.get("plan_id");
+      if (phase4PlanId) {
+        router.replace(`/plan/${encodeURIComponent(phase4PlanId)}`);
+        return;
+      }
+    } catch {
+      // ignore — Phase 1 sessionStorage 경로로 fallback
+    }
+
     // 에러 우선 확인 (Slice 7: 일부 흐름에서 /plan 로 에러 동반 진입 가능)
     const errRaw = window.sessionStorage.getItem(SESSION_ERROR_KEY);
     if (errRaw) {
@@ -86,6 +99,7 @@ export default function PlanPage() {
       // 손상된 sessionStorage 항목 → 무시 (empty state)
     }
     setHydrated(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleRestart() {

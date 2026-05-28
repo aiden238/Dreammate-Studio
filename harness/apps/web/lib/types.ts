@@ -209,3 +209,53 @@ export function isFastAPIDetailError(
   if (typeof value !== "object" || value === null) return false;
   return "detail" in (value as Record<string, unknown>);
 }
+
+// ─── Phase 4 Slice 3 — Multi-plan endpoint 타입 ────────────────────────
+//
+// 참조: harness/backend/fastapi/schemas/output.py (Envelope/Body 정합)
+//       harness/backend/fastapi/schemas/plans.py  (PlanStartResponse / PlanResource 정합)
+//
+// 본 타입들은 기존 Phase 1 `Envelope`/`Body` 타입과 호환 (alias 수준).
+// Phase 4 endpoint(`/api/v1/plans/{id}/generate`)는 `plan_candidates.length === 3`을
+// 활성화한다. critic_evaluation / rag_references 는 Phase 4에서 모두 포함.
+
+/**
+ * Phase 4 envelope. 구조적으로 Phase 1 Envelope와 동일하지만,
+ * - body.plan_candidates 가 length 1~3 활성 (Phase 1은 항상 1)
+ * - body.critic_evaluation / rag_references 가 항상 채워짐 (Phase 1은 nullable)
+ *
+ * critic 호출 실패 시에는 graceful 로 null 가능.
+ */
+export type MultiPlanEnvelope = Envelope;
+
+/**
+ * GET /api/v1/plans/{plan_id} 응답.
+ * - status: "created" | "wizard_in_progress" | "generated" | "selected"
+ * - envelope: generate 완료 후 채워짐 (length 3 Envelope). 미생성 상태 = null.
+ */
+export interface PlanResource {
+  plan_id: string;
+  status: "created" | "wizard_in_progress" | "generated" | "selected" | string;
+  created_at: string;
+  updated_at: string;
+  envelope: MultiPlanEnvelope | null;
+}
+
+/**
+ * POST /api/v1/plans/start 응답.
+ */
+export interface PlanStartResponse {
+  plan_id: string;
+  created_at: string;
+  locale: string;
+}
+
+/**
+ * POST /api/v1/plans/{id}/wizard/{step} 응답.
+ */
+export interface WizardStepResponse {
+  plan_id: string;
+  step: string;
+  accepted: boolean;
+  next_step: string | null;
+}
