@@ -2,11 +2,18 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 모두 완료**.
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 완료 + Phase 5.5 active**.
 Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /auth/* + /sse/* 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계** 모두 동작.
-**Phase 5 ✅ done (2026-05-29)** — 🟡 **pending_user_decision** (Phase 7 RAG / Phase 6+ legacy / Phase 8 MOA / Phase 9 저장-피드백).
+**Phase 5.5 ★ active (entry 2026-05-29)** — Legacy DB Consolidation + Validation Strengthening + Phase 7 Prep (mini-phase).
 
 ## 현재 Active Phase
+
+**Phase 5.5 ★ active (entry 2026-05-29)** — Legacy DB Consolidation + Validation Strengthening + Phase 7 Prep (mini-phase, 4~6h, 4 Slice 모두 sub-agent)
+- Slice 1 (entry): 진행 중
+- Slice 2: Legacy DB 통합 (옵션 A 공존 + deprecated note + ADR-023)
+- Slice 3: External validation × 3 강화 + ADR-024 RAG scope evolution + Brand Memory Phase 9+ confirmation
+- Slice 4: Close + 회고 + archive + Phase 7 prep
+- 사용자 결정 5건 모두 반영
 
 **Phase 1. MVP 기본 플로우 ✅ done (2026-05-26)** — archive 이동 완료
 
@@ -74,14 +81,13 @@ Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /a
 ## migration_progress
 
 ```yaml
-current_sprint: completed
-current_sprint_step: phase_5_done
-total_steps_in_sprint: 5
-last_completed_action: "Phase 5 종료 — A1~A10 10/10 + M1~M4 + P-X1 22연속 + security-review 첫+두 번째 + 4 ADR + pytest 170/170 + smoke 12/12 + scenario_sim v2 10/10 (P-X2 세 번째) + contract-change 두 번째 본격 (db_schema.md) + agent-io-check 두 번째 회귀 + retrospective + archive"
-next_action: "다음 phase 사용자 결정 대기 (옵션 A Phase 7 RAG / B Phase 6+legacy / C Phase 9 저장-피드백 / D Phase 8 MOA)"
+current_sprint: phase-5.5-slice-1
+current_sprint_step: phase_5_5_slice_1_entry
+total_steps_in_sprint: 4
+last_completed_action: "Phase 5.5 entry — 8 entry files + 4-check PASS + audit_naming 0 drift"
+next_action: "Slice 2 sub-agent (Legacy DB 통합 + ADR-023)"
 blocker: null
-next_phase: pending_user_decision
-next_phase_status: pending_user_decision
+next_phase: phase-5.5-legacy-db-consolidation
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
 phase_1_status: completed
@@ -336,7 +342,20 @@ phase_5_deferred_to_next:
   - per_user_rate_limit_and_audit_log  # Phase 9+ (개선 제안 §5)
   - pgtap_rls_auto_verification  # Phase 9+ (개선 제안 §6)
   - refresh_token_rotation  # Phase 21+ MFA
-total_commits: 59  # 54 + Slice 2 + Slice 3 + Slice 4 + Slice 5 close = 59 (Slice 1 entry는 commit 54에 이미 포함)
+phase_5_5_status: in_progress
+phase_5_5_entry_date: 2026-05-29
+phase_5_5_total_slices: 4
+phase_5_5_completed_slices: 0
+phase_5_5_estimated_hours_total: 4-6
+phase_5_5_assumptions_check: PASS
+phase_5_5_user_decisions_applied:
+  legacy_db_consolidation: yes  # 결정 1
+  external_validation_strengthen: yes  # 결정 2
+  phase_7_rag_lite_keep: yes  # 결정 3
+  candidate_knowledge_5stage_mvp_all: yes  # 결정 4
+  brand_memory_phase_9_plus: yes  # 결정 5
+  all_slices_sub_agent: yes
+total_commits: 60  # 59 + Phase 5.5 Slice 1 entry
 last_updated: 2026-05-29
 ```
 

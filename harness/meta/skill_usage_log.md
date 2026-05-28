@@ -41,10 +41,11 @@
 > Phase 6 종료 갱신: 2026-05-29 (Slice 4)
 > Phase 5 entry 갱신: 2026-05-29 (Slice 1 sub-agent)
 > Phase 5 종료 갱신: 2026-05-29 (Slice 5 sub-agent)
+> Phase 5.5 entry 갱신: 2026-05-29 (Slice 1 sub-agent)
 
 | Skill | 첫 트리거 | 마지막 트리거 | 누적 | 최근 30일 | 상태 | 비고 |
 |---|---|---|---|---|---|---|
-| phase-start | 2026-05-26 | 2026-05-29 | 7 | 7 | active | v1.0.0 → v1.1.0 → v1.2.0 (P2) → v1.3.0 (P-X1 §6.3 §SELF-VERIFICATION). Phase 1+2+3+4+4.5+6+5 진입 (Phase 5 entry Slice 1 트리거) |
+| phase-start | 2026-05-26 | 2026-05-29 | 8 | 8 | active | v1.0.0 → v1.1.0 → v1.2.0 (P2) → v1.3.0 (P-X1 §6.3 §SELF-VERIFICATION). Phase 1+2+3+4+4.5+6+5+5.5 진입 (Phase 5.5 entry Slice 1 트리거) |
 | qa-check | 2026-05-26 | 2026-05-29 | 31 | 31 | active | v1.1.0 → v1.2.0 (P3, 카테고리 11). Phase 1:8 + Phase 2:7 + Phase 3:6 + Phase 4:5 + Phase 4.5:1 + Phase 6:2 + Phase 5:2 (Slice 1 entry + Slice 5 final) |
 | contract-change | 2026-05-26 | 2026-05-29 | 5 | 5 | active | CC-001 (Option B) + P1~P4 Skill 갱신 + P-X1 phase-start v1.3.0 + **Phase 6 Slice 2 첫 본격 실 변경 ★** (output_schema §9 canonical + §10 Body + agent_io_contract §6 Rewriter v1.1.0 + api_contract §8.3 + ADR-018/019) + **Phase 5 Slice 2 두 번째 본격 ★** (`db_schema.md` 신규 — DB schema 첫 정식 contract + 4계층 + plans + users + JSONB 컬럼). 회귀 0 유지. Phase 3+4+4.5는 contract 변경 0 |
 | meta-retrospective | 2026-05-26 | 2026-05-29 | 7 | 7 | active | Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 4.5 + Phase 6 + **Phase 5 (지금)** 회고 |
@@ -85,3 +86,4 @@
 > Phase 6 종료 갱신: 2026-05-29 (Slice 4)
 > Phase 5 entry 갱신: 2026-05-29 (Slice 1 sub-agent)
 > Phase 5 종료 갱신: 2026-05-29 (Slice 5 sub-agent)
+> Phase 5.5 entry 갱신: 2026-05-29 (Slice 1 sub-agent)
