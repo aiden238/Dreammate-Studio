@@ -26,6 +26,7 @@ import ErrorCard from "@/components/ErrorCard";
 import PlanCard from "@/components/PlanCard"; // ★ 무수정 import (사용자 결정 6-a)
 import ProgressStepper from "@/components/ProgressStepper";
 import { generateMultiPlan, getPlan } from "@/lib/api";
+import { subscribeToPlanProgress, type ProgressEvent } from "@/lib/sse";
 import type {
   CriticEvaluation,
   CriticVerdict,
@@ -72,6 +73,9 @@ function PlanResultPageContent() {
   const [envelope, setEnvelope] = useState<MultiPlanEnvelope | null>(null);
   const [error, setError] = useState<ErrorEnvelope | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  // Phase 5 Slice 4 — SSE Progress 상태 (D7). PlanCard 무수정 정신 계승:
+  // 본 state 와 UI 는 PlanCard 외부 wrapper 에만 영향.
+  const [progress, setProgress] = useState<ProgressEvent | null>(null);
 
   // sessionStorage 에서 이전 선택 복원
   useEffect(() => {
@@ -129,6 +133,19 @@ function PlanResultPageContent() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Phase 5 Slice 4 — SSE Progress 구독 (ADR-022).
+  // PlanCard.tsx 무수정 유지: progress UI 는 본 컴포넌트 상단 외부 wrapper 에만 렌더.
+  useEffect(() => {
+    if (!planId) return;
+    if (typeof window === "undefined") return; // SSR 안전
+    const sub = subscribeToPlanProgress(planId, (event) => {
+      setProgress(event);
+    });
+    return () => {
+      sub.close();
+    };
+  }, [planId]);
 
   const handleSelect = useCallback(
     (clickedPlanId: string) => {
@@ -237,6 +254,25 @@ function PlanResultPageContent() {
           </span>
         </p>
       </header>
+
+      {/* Phase 5 Slice 4 — SSE Progress (PlanCard 외부 wrapper, ADR-022) */}
+      {progress && progress.type === "progress" && (
+        <section
+          aria-label="생성 진행 상황"
+          aria-live="polite"
+          className="rounded-lg bg-primary-50 border border-primary-200 px-3 py-2 text-sm text-primary-900"
+        >
+          <p className="font-semibold">
+            단계 {progress.step} / 4 — {progress.name ?? ""}
+          </p>
+          <p className="mt-1 text-xs">{progress.message}</p>
+          {typeof progress.duration_estimate_sec === "number" && (
+            <p className="mt-0.5 text-xs text-primary-700">
+              예상 {progress.duration_estimate_sec}초
+            </p>
+          )}
+        </section>
+      )}
 
       {/* Critic 점수 + RAG 참조 */}
       {critic && (
