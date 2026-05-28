@@ -13,7 +13,7 @@ related_state:
   - PROJECT_STATE.md
   - PHASE_REGISTRY.md
   - phases/active/
-version: v1.2.0
+version: v1.3.0
 ---
 
 # phase-start
@@ -168,6 +168,44 @@ Simplest Slice가 동작하면 → 점진적으로 확장 (UI, DB, Critic 등).
 수정 가능 목록은 `phases/active/{phase-name}/scope.md`의 "예상 파일 변경 목록"과 일치해야 한다.
 **범위 밖 파일을 건드릴 필요가 생기면 → scope creep 신호, 즉시 사용자에게 알림.**
 
+##### Sub-agent 자기 검증 절차 (v1.3.0 추가, P-X1)
+
+**배경**: P-AGENT-SCOPE-001 패턴 (meta/patterns.md) — Phase 2 Wave 3 Slice 3 sub-agent가 forbidden 영역 (Slice 4의 QuickInputCard sub-section) 침범. 결과적으로 무충돌이었으나 잠재 위험.
+
+**모든 sub-agent prompt에 다음 section 포함 의무화**:
+
+```markdown
+## SELF-VERIFICATION (P-X1, 작업 완료 직전 필수)
+
+작업 완료 직전 git commit 전 다음을 자체 실행:
+
+1. `git status` — staged + unstaged 파일 목록
+2. `git diff --stat HEAD` — 본인이 수정한 파일 목록
+3. 본인 프롬프트의 editable / forbidden 목록과 비교
+4. 의도하지 않은 forbidden 파일 변경 발견 시:
+   - 즉시 RETURN A SUMMARY § "deviations / open issues"에 명시
+   - 의도된 변경이면 사유 명시
+   - 의도하지 않은 변경이면 `git checkout HEAD -- {file}`로 revert
+
+**판정**:
+- staged 파일이 editable 목록 외 0건 → PASS
+- 1건이라도 forbidden 영역 변경 → FAIL (revert 후 재검증)
+
+이 절차는 P-AGENT-SCOPE-001 대응. 무시 시 같은 패턴 재발 위험.
+```
+
+**Main session 후속 검증** (sub-agent 완료 후):
+
+```bash
+git log -1 --stat
+# 또는
+git diff HEAD~1 HEAD --stat
+```
+
+forbidden 영역 변경 발견 시 즉시 사용자에게 알림 + revert 결정.
+
+**근거 회고**: `meta/retrospectives/phase-2.md` §근본 원인 (P-AGENT-SCOPE-001 5 Whys), `meta/proposals/2026-05-27_phase-2-retrospective-proposals.md` §P-X1.
+
 #### 6.4 Verification (검증)
 
 ```
@@ -252,3 +290,5 @@ phase-start의 종료는 다음 중 하나:
   (Assumptions / Simplest Slice / Surgical Scope / Verification)
 - v1.2.0 (2026-05-27 Phase 1 회고 P2 적용): §6.1 Assumptions에 "Contract cross-reference 점검" 항목 추가
   (`scripts/audit_naming.ps1` 호출, P-DRIFT-001 대응)
+- v1.3.0 (2026-05-28 Phase 2 회고 P-X1 적용, Phase 3 pre-entry): §6.3 Surgical Scope에 "Sub-agent 자기 검증 절차" 추가
+  (git diff --stat 자기 검증, P-AGENT-SCOPE-001 대응)

@@ -124,6 +124,14 @@ deferred:
 
 ---
 
+## 후속 (Phase 2 회고에서 도출된 P-X1~P-X5)
+
+Phase 2 회고 결과 추가 proposals는 `meta/proposals/2026-05-27_phase-2-retrospective-proposals.md` 별도 파일 참조.
+
+핵심: **P-X1 (sub-agent self-verification) 2026-05-28 Phase 3 pre-entry에 선적용** → phase-start v1.2.0 → v1.3.0. 변경 로그: `docs/contract_changes/2026-05-28-px1-sub-agent-self-verification.md`.
+
+---
+
 ## 변경 이력
 
 - 2026-05-26: Phase 1 회고 결과 4 제안 배치 작성

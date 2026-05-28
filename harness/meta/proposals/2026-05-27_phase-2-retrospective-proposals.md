@@ -2,8 +2,11 @@
 
 > 출처: `meta/retrospectives/phase-2.md` §개선 제안
 > 작성일: 2026-05-27
-> 상태: **proposed (사용자 검토 대기, Phase 3 진입 전 필수)**
-> 결정 권장: P-X1 / P-X2 채택 권장, P-X3 보통, P-X4 / P-X5 deferred
+> 상태: **partial accepted (P-X1 적용, 2026-05-28 Phase 3 pre-entry)**
+> 결정:
+>   - **P-X1: ✅ accepted + applied (2026-05-28)** — phase-start v1.2.0 → v1.3.0
+>     변경 로그: docs/contract_changes/2026-05-28-px1-sub-agent-self-verification.md
+>   - P-X2, P-X3, P-X4, P-X5: pending (Phase 3 진행 중 또는 종료 시점 재검토)
 
 ---
 

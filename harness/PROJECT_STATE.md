@@ -26,8 +26,8 @@ GPT 155-파일 하네스 골격 + 자체 18-파일 깊은 콘텐츠 + S0~S5 6 Sp
 current_sprint: completed
 current_sprint_step: 6
 total_steps_in_sprint: 6
-last_completed_action: "Phase 2 종료 절차 완료: Slice 6 final QA (qa-check v1.2.0 11 카테고리 PASS + Simplicity 5/5 + Contract Drift 0) + design-review (7 원칙 정합 PASS) + 변경성 시뮬레이션 5/5 PASS + meta-retrospective (P-AGENT-SCOPE-001 + P-DESIGN-LAYERED-001 신규 패턴 등록) + 5 proposals (P-X1~P-X5) + archive 이동"
-next_action: "Phase 3 진입 — 진입 전 P-X1 검토 → phase-start v1.2.0 (또는 P-X1 적용 시 v1.3.0)로 시작"
+last_completed_action: "Phase 3 pre-entry: P-X1 선적용 (phase-start v1.2.0 → v1.3.0, §6.3 Sub-agent 자기 검증 절차 추가, P-AGENT-SCOPE-001 대응). 변경 로그: docs/contract_changes/2026-05-28-px1-sub-agent-self-verification.md"
+next_action: "Phase 3 entry — 4 조정 반영 (P-X1 적용 완료 / Thin Vertical Slice 2 / D3 Phase 4 이관 / component_map.md read-only 절대 보장). phase-start v1.3.0로 9 entry files 생성 후 Wave 1 dispatch"
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
