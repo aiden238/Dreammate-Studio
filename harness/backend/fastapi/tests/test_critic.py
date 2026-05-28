@@ -313,23 +313,33 @@ def test_critic_raises_on_partial_scores() -> None:
 
 
 def test_select_best_plan_index_returns_highest_score() -> None:
-    """overall_score_avg 기준 가장 높은 verdict 의 index 반환."""
+    """overall_score_avg (deprecated) 기준 가장 높은 verdict 의 index 반환.
+
+    Phase 6 ADR-018: overall_score_avg 는 deprecated 이지만 backward-compat 유지 +
+    DeprecationWarning 발행. 정렬 결과 자체는 동일.
+    """
     verdicts = [
         {"overall_score_avg": 2.5},
         {"overall_score_avg": 4.5},
         {"overall_score_avg": 3.0},
     ]
-    assert select_best_plan_index(verdicts) == 1
+    # deprecated 키 사용 → DeprecationWarning 발행
+    with pytest.warns(DeprecationWarning, match="overall_score_avg"):
+        assert select_best_plan_index(verdicts) == 1
 
 
 def test_select_best_plan_index_tie_breaking_prefers_lower_index() -> None:
-    """동점 시 plan_index 가 더 작은 쪽 (deterministic)."""
+    """동점 시 plan_index 가 더 작은 쪽 (deterministic).
+
+    Phase 6 ADR-018: overall_score_avg deprecated — DeprecationWarning 발행.
+    """
     verdicts = [
         {"overall_score_avg": 4.0},
         {"overall_score_avg": 4.0},  # tie with idx 0
         {"overall_score_avg": 3.0},
     ]
-    assert select_best_plan_index(verdicts) == 0
+    with pytest.warns(DeprecationWarning):
+        assert select_best_plan_index(verdicts) == 0
 
 
 def test_select_best_plan_index_empty_returns_none() -> None:
@@ -344,25 +354,140 @@ def test_select_best_plan_index_all_invalid_returns_none() -> None:
         {},
         {"overall_score_avg": "not a number"},
     ]
+    # invalid 만으로는 deprecated key 가 score 추출에 도달하지 않거나, "not a number" 는
+    # DeprecationWarning 발행 후 None 반환 (graceful). warning 발행 여부는 elastic.
     assert select_best_plan_index(verdicts) is None
 
 
 def test_select_best_plan_index_uses_scores_dimension_fallback() -> None:
-    """overall_score_avg 부재 시 scores dict 8-dim 평균 사용."""
+    """overall_score_avg / overall_score / dimensions 부재 시 scores dict 8-dim 평균 fallback.
+
+    Phase 6 ADR-018: scores key 는 deprecated — DeprecationWarning 발행.
+    """
     verdicts = [
         {"scores": {k: 2 for k in DIMENSIONS}},  # avg 2.0
         {"scores": {k: 4 for k in DIMENSIONS}},  # avg 4.0
         {"scores": {k: 3 for k in DIMENSIONS}},  # avg 3.0
     ]
-    assert select_best_plan_index(verdicts) == 1
+    with pytest.warns(DeprecationWarning, match="scores"):
+        assert select_best_plan_index(verdicts) == 1
 
 
 def test_select_best_plan_index_skips_invalid_uses_remaining() -> None:
-    """일부 invalid 섞여 있어도 유효한 verdict 중 최고 점수 index 반환."""
+    """일부 invalid 섞여 있어도 유효한 verdict 중 최고 점수 index 반환.
+
+    Phase 6 ADR-018: overall_score_avg deprecated — DeprecationWarning 발행.
+    """
     verdicts: list[dict[str, Any]] = [
         {"overall_score_avg": None},  # invalid → skip
         {"overall_score_avg": 3.0},
         {},  # invalid → skip
         {"overall_score_avg": 4.0},
     ]
-    assert select_best_plan_index(verdicts) == 3
+    with pytest.warns(DeprecationWarning):
+        assert select_best_plan_index(verdicts) == 3
+
+
+# ─── Phase 6 Slice 2: canonical priority (ADR-018) ───────────────────
+
+
+def test_select_best_plan_index_canonical_overall_score_preferred() -> None:
+    """Phase 6 ADR-018: overall_score (canonical) 가 dimensions / overall_score_avg 보다 우선.
+
+    canonical key 만 있는 verdict 는 DeprecationWarning 발행 없이 동작.
+    """
+    verdicts = [
+        {"overall_score": 0.3},  # canonical
+        {"overall_score": 0.9},  # canonical — best
+        {"overall_score": 0.6},  # canonical
+    ]
+    # canonical key 사용 → DeprecationWarning 발행 없어야 함
+    import warnings as _warnings
+    with _warnings.catch_warnings():
+        _warnings.simplefilter("error", DeprecationWarning)
+        # canonical key 만 사용하므로 DeprecationWarning 발생 시 즉시 fail
+        assert select_best_plan_index(verdicts) == 1
+
+
+def test_select_best_plan_index_canonical_dimensions_fallback() -> None:
+    """Phase 6 ADR-018: overall_score 부재 시 dimensions (canonical) 평균 사용.
+
+    canonical fallback — DeprecationWarning 발행 없이 동작.
+    """
+    verdicts = [
+        {"dimensions": {"hook": 0.2, "target": 0.3}},  # avg 0.25
+        {"dimensions": {"hook": 0.8, "target": 0.9}},  # avg 0.85 — best
+        {"dimensions": {"hook": 0.5, "target": 0.6}},  # avg 0.55
+    ]
+    import warnings as _warnings
+    with _warnings.catch_warnings():
+        _warnings.simplefilter("error", DeprecationWarning)
+        assert select_best_plan_index(verdicts) == 1
+
+
+def test_select_best_plan_index_canonical_overrides_deprecated() -> None:
+    """Phase 6 ADR-018: overall_score (canonical) + overall_score_avg (deprecated) 동시 존재.
+
+    canonical 우선 — overall_score_avg 미사용이므로 DeprecationWarning 발행 없음.
+    """
+    verdicts = [
+        # canonical 0.9 vs deprecated avg 1.0 (의도적 불일치 — canonical 우선 검증)
+        {"overall_score": 0.9, "overall_score_avg": 1.0},
+        {"overall_score": 0.5, "overall_score_avg": 5.0},
+        {"overall_score": 0.3, "overall_score_avg": 4.0},
+    ]
+    # canonical 만 사용되어야 함 → idx 0 (0.9 가 최고)
+    import warnings as _warnings
+    with _warnings.catch_warnings():
+        _warnings.simplefilter("error", DeprecationWarning)
+        assert select_best_plan_index(verdicts) == 0
+
+
+def test_select_best_plan_index_eight_dim_scores_deprecated_warns() -> None:
+    """Phase 6 ADR-018: eight_dim_scores 도 deprecated — DeprecationWarning 발행."""
+    verdicts = [
+        {"eight_dim_scores": {k: 2 for k in DIMENSIONS}},
+        {"eight_dim_scores": {k: 4 for k in DIMENSIONS}},
+    ]
+    with pytest.warns(DeprecationWarning, match="eight_dim_scores"):
+        assert select_best_plan_index(verdicts) == 1
+
+
+# ─── Phase 6 Slice 2: CriticEvaluation canonical fields (ADR-018) ────
+
+
+def test_critic_evaluation_canonical_fields_optional() -> None:
+    """Phase 6 ADR-018: CriticEvaluation canonical (overall_score + dimensions) 단독 인스턴스화."""
+    evaluation = CriticEvaluation(
+        overall_score=0.85,
+        dimensions={"hook_strength": 0.8, "target_clarity": 0.9},
+        overall_verdict="approve",
+    )
+    assert evaluation.overall_score == pytest.approx(0.85)
+    assert evaluation.dimensions["hook_strength"] == pytest.approx(0.8)
+    # Phase 1~4.5 호환 필드는 None / 기본값
+    assert evaluation.target_plan_id is None
+    assert evaluation.scores is None
+    assert evaluation.overall_score_avg is None
+
+
+def test_critic_evaluation_backward_compat_phase_1_45() -> None:
+    """Phase 6 ADR-018: Phase 1~4.5 패턴 (scores + overall_score_avg + target_plan_id) 호환 유지.
+
+    routers/plans.py 의 CriticEvaluation(**first_verdict) 호출 회귀 0 보장.
+    """
+    evaluation = CriticEvaluation(
+        target_plan_id="plan-abc",
+        scores={k: 4 for k in DIMENSIONS},
+        overall_score_avg=4.0,
+        overall_verdict="approve",
+        blocking_issues=[],
+        revise_round=0,
+    )
+    # 호환 필드는 그대로
+    assert evaluation.target_plan_id == "plan-abc"
+    assert evaluation.scores.hook_strength == 4
+    assert evaluation.overall_score_avg == pytest.approx(4.0)
+    # canonical 필드는 None / 빈 dict
+    assert evaluation.overall_score is None
+    assert evaluation.dimensions == {}

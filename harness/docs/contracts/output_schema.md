@@ -414,11 +414,32 @@ Direction Summary. 한 줄 기획 방향.
 
 품질 평가. plan 1개당 1번 호출.
 
-### 9.1 Body 스키마
+> **Phase 6 ADR-018 (2026-05-29)**: Critic verdict canonical 결정.
+> - canonical 필드: `overall_score: float [0.0~1.0]` + `dimensions: dict[str, float]`
+> - deprecated 필드: `overall_score_avg`, `scores`, `eight_dim_scores` (Phase 9+ eval 후 제거)
+> - `select_best_plan_index` fallback chain 축소 + `DeprecationWarning` 발행 (`agents/critic.py`)
+> - 결정 근거: `docs/decisions/phase_6_critic_canonical.md`
+
+### 9.1 Body 스키마 (Phase 6 canonical)
 
 ```json
 {
-  "target_plan_id": "string (uuid)",
+  "overall_score": 0.85,
+  "dimensions": {
+    "intent_fit": 0.8,
+    "target_clarity": 0.7,
+    "hook_strength": 0.9,
+    "message_clarity": 0.8,
+    "structure": 0.7,
+    "feasibility": 0.8,
+    "brand_consistency": 0.9,
+    "differentiation": 0.7
+  },
+  "overall_verdict": "approve | revise | reject",
+  "blocking_issues": ["string"],
+
+  /* --- Phase 1~4.5 호환 필드 (deprecated, Phase 9+ 제거 예정) --- */
+  "target_plan_id": "string (uuid)?",
   "scores": {
     "intent_fit": 0,
     "target_clarity": 0,
@@ -429,43 +450,54 @@ Direction Summary. 한 줄 기획 방향.
     "brand_consistency": 0,
     "differentiation": 0
   },
-  "reasons": {
-    "intent_fit": "string",
-    "target_clarity": "string",
-    "hook_strength": "string",
-    "message_clarity": "string",
-    "structure": "string",
-    "feasibility": "string",
-    "brand_consistency": "string",
-    "differentiation": "string"
-  },
-  "suggestions": {
-    "intent_fit": "string",
-    "target_clarity": "string",
-    "hook_strength": "string",
-    "message_clarity": "string",
-    "structure": "string",
-    "feasibility": "string",
-    "brand_consistency": "string",
-    "differentiation": "string"
-  },
+  "reasons": { /* 8-dim 문자열 dict */ },
+  "suggestions": { /* 8-dim 문자열 dict */ },
   "overall_score_avg": 0.0,
-  "overall_verdict": "approve | revise | reject",
-  "blocking_issues": ["string"],
   "revise_round": 0
 }
 ```
 
+### 9.1.1 canonical 필드 (Phase 6 ADR-018)
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `overall_score` | float [0.0~1.0] | **canonical** | Critic 종합 점수 (정규화). dimensions 평균과 다를 수 있음 (Phase 9+ 가중치 도입 대비) |
+| `dimensions` | dict[str, float] | **canonical** | 8-dim 점수 dict (정규화 0~1). 표준 키 8개는 §9.1.3 참조 |
+| `overall_verdict` | Literal["approve", "revise", "reject"] | 필수 | 의사결정 카테고리 |
+| `blocking_issues` | list[str] | Optional | 최대 3개 |
+
+### 9.1.2 Deprecated 필드 (Phase 9+ eval 후 제거)
+
+| 필드 | 사유 | 대체 |
+|---|---|---|
+| `overall_score_avg` | 0~5 float (비정규화) | `overall_score` (0~1) |
+| `scores` | 0~5 정수 dict | `dimensions` (0~1 float) |
+| `eight_dim_scores` | 별칭 | `dimensions` |
+| `target_plan_id` | echo back 만 (라우터가 별도 관리) | (제거 예정) |
+| `reasons`, `suggestions`, `revise_round` | (당분간 유지, Phase 9+ 결정) | — |
+
+Deprecated 필드 사용 시 `agents/critic.py::select_best_plan_index` 에서 `DeprecationWarning` 발행.
+
+### 9.1.3 dimensions 표준 키 8개 (Phase 1~4.5 호환)
+
+```
+intent_fit / target_clarity / hook_strength / message_clarity /
+structure / feasibility / brand_consistency / differentiation
+```
+
+Phase 9+ eval-run 정식화 시 별도 contract-change 절차로 키 확장 가능.
+
 ### 9.2 검증 규칙
 
 ```
-- 8개 차원의 점수 0~5 정수
-- reasons, suggestions의 키는 scores의 키와 1:1 매칭 (8개 모두 필수)
-- overall_score_avg는 8개 점수의 산술 평균
+- canonical: overall_score 0.0~1.0, dimensions 값 0.0~1.0
+- deprecated 호환: 8개 차원의 scores 점수 0~5 정수
+- reasons, suggestions의 키는 scores 의 키와 1:1 매칭 (8개 — 호환 모드)
+- overall_score_avg 는 8개 scores 점수의 산술 평균 (deprecated)
 - overall_verdict:
-    approve:  avg ≥ 3.5 AND 모든 점수 ≥ 2
-    revise:   2.5 ≤ avg < 3.5 OR 1~2개 점수가 < 2
-    reject:   avg < 2.5 OR 3개 이상 점수가 < 2 OR 광고적 표현 위반 발견
+    approve:  overall_score ≥ 0.7 (canonical)  OR  avg ≥ 3.5 AND 모든 점수 ≥ 2 (호환)
+    revise:   0.5 ≤ overall_score < 0.7  OR  2.5 ≤ avg < 3.5 OR 1~2개 점수가 < 2
+    reject:   overall_score < 0.5  OR  avg < 2.5 OR 3개 이상 점수가 < 2 OR 광고적 표현 위반
 - blocking_issues 최대 3개
 - revise_round는 server-side에서 주입 (LLM은 항상 0 반환)
 ```
@@ -475,6 +507,68 @@ Direction Summary. 한 줄 기획 방향.
 `revise_round`는 server-side가 관리한다. `revise_round ≥ 2`에서 verdict가 다시 `revise`면 강제로 `approve`로 승격하거나 사용자에게 직접 검토 요청 (→ `agent_io_contract.md` §3.3).
 
 → DB 매핑: `quality_scores` 테이블에 그대로 매핑. `target_kind='plan_option'`, `target_id=target_plan_id`.
+
+### 9.4 select_best_plan_index 우선순위 (Phase 6 ADR-018)
+
+`agents/critic.py::select_best_plan_index(verdicts) -> int | None` 의 score 추출 우선순위:
+
+```
+1. overall_score (canonical)
+2. dimensions 평균 (canonical fallback)
+3. overall_score_avg (deprecated + DeprecationWarning)
+4. scores 평균 (deprecated + DeprecationWarning)
+5. eight_dim_scores 평균 (deprecated + DeprecationWarning)
+```
+
+Tie-breaking: 동점 시 plan_index 가 더 작은 쪽 (deterministic).
+모든 verdict 가 invalid 시 `None` 반환 (frontend wrapper highlight 생략).
+
+---
+
+## 9-A. Body 정식 등록 (Phase 6 Slice 2)
+
+Phase 4.5 ADR-016 (revise loop) + ADR-017 (best-plan selection) 에서 도입된 필드를 Phase 6 contract 에 정식 등록.
+
+### 9-A.1 Body.revise_history (Phase 4.5 ADR-016 + Phase 6 typing 강화 ADR-018)
+
+```jsonc
+"revise_history": [
+  /* plan_candidates 와 동일 순서 (외부 list) */
+  [
+    /* attempt 0,1,2,... 순차 (내부 list) */
+    {
+      "attempt": 0,
+      "action": "revise",
+      "revised": true,
+      "max_reached": false,
+      "critic_warning": null,
+      "rewriter_warning": null
+    },
+    { "attempt": 1, "action": "approve", "revised": false }
+  ]
+]
+```
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `attempt` | int [0~max_revise] | 필수 | 0 = 초기 critic, 1+ = revise 후 재평가 |
+| `action` | Literal["approve", "revise", "reject", "unknown"] | 필수 | Critic verdict (미정의 → "unknown" 폴백) |
+| `revised` | bool | 필수 | 본 attempt 에서 Rewriter 호출 여부 |
+| `max_reached` | bool | Optional | max_revise 도달 시 true |
+| `critic_warning` | string | Optional | Critic 호출 실패 graceful 마커 |
+| `rewriter_warning` | string | Optional | Rewriter 호출 실패 graceful 마커 |
+
+Pydantic 모델: `backend/fastapi/schemas/output.py::ReviseAttempt` (extra="allow" — 미래 확장 메타 허용).
+
+### 9-A.2 Body.recommended_plan_index (Phase 4.5 ADR-017, Z-X3)
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `recommended_plan_index` | int [0~plan_count-1] \| null | Optional | Critic best-plan idx. 모든 verdict invalid / critic skip 시 null. Tie 발생 시 더 작은 index. Frontend wrapper highlight 용 (PlanCard.tsx 무수정 정책 — 사용자 결정 6-a 계승) |
+
+### 9-A.3 Body.critic_evaluation (Phase 1 Slice 3 + Phase 6 canonical)
+
+Phase 1 Slice 3 에서 도입. Phase 6 (§9.1) canonical fields (`overall_score`, `dimensions`) 추가. 기존 deprecated 필드는 backward-compat 위해 Optional 유지.
 
 ---
 
@@ -846,4 +940,11 @@ PATCH: 설명 수정, 검증 규칙 강화 (기존 통과 케이스 영향 없�
 
 ```
 v1.0.0 (2026-05-26): Sprint S3-1 초안. 10 prompt 전체 스키마, envelope, 검증 흐름, enum 사전.
+v1.1.0 (2026-05-29, Phase 6 Slice 2):
+  - §9 Critic canonical 결정 (overall_score [0~1] + dimensions: dict[str, float]) — ADR-018
+  - §9.1.2 deprecated 필드 표 추가 (overall_score_avg / scores / eight_dim_scores)
+  - §9.4 select_best_plan_index 우선순위 명시 (canonical → deprecated + DeprecationWarning)
+  - §9-A Body 정식 등록: revise_history (ReviseAttempt typing 강화) + recommended_plan_index
+    + critic_evaluation canonical 추가
+  - semver minor bump: 신규 필드 (overall_score / dimensions) 추가 + Optional 호환 유지.
 ```

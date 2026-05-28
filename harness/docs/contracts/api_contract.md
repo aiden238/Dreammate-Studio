@@ -667,13 +667,26 @@ Discovery 5단계 진행. 각 호출이 1단계 카드 생성.
       { /* plan 2 */ },
       { /* plan 3 */ }
     ],
-    "quality_scores": [
-      { /* P-007 body 1개, output_schema §9 */ }
+    "critic_evaluation": { /* output_schema §9 canonical (Phase 6 ADR-018: overall_score + dimensions) */ },
+    "revise_history": [
+      /* output_schema §9-A.1: plan_candidates 순서 외부 list, attempt 순차 내부 list */
+      [ { "attempt": 0, "action": "revise", "revised": true }, { "attempt": 1, "action": "approve", "revised": false } ]
     ],
+    "recommended_plan_index": 1, /* output_schema §9-A.2 (Phase 4.5 ADR-017): Critic best-plan idx or null */
     "rag_references": [ /* rag_used 통합 */ ]
   }
 }
 ```
+
+**Phase 4.5+6 응답 필드** (output_schema.md 정합):
+
+| 필드 | 출처 | 비고 |
+|---|---|---|
+| `critic_evaluation` | output_schema §9 | Phase 6 canonical (overall_score + dimensions). deprecated 필드 (overall_score_avg / scores) Optional 호환 |
+| `revise_history` | output_schema §9-A.1 (Phase 4.5 ADR-016) | plan별 revise loop attempt log (max 2회) |
+| `recommended_plan_index` | output_schema §9-A.2 (Phase 4.5 ADR-017 Z-X3) | Critic best-plan idx (null = critic skip / all invalid) |
+
+레거시 응답 (Phase 4.5 이전) 에서는 `quality_scores: [...]` 키를 사용했으나 Phase 6 부터는 `critic_evaluation` 단일 객체로 통합 (output_schema §9 정합).
 
 **Status:** 200 (생성 시작 ack), 400, 401, 403, 404, 422 (E-INV-006 4계층 검증 실패), 429 (E-RL-001 비용 한도), 502 (E-LLM-*), 503.
 

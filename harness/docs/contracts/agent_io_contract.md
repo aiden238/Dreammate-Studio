@@ -337,41 +337,57 @@ revise_round = 2에서 verdict가 다시 revise:
 
 ---
 
-## 6. Rewriter Agent
+## 6. Rewriter Agent (P-008)
+
+> **Phase 6 ADR-019 (2026-05-29)**: P-008 semver v1.0.0 → **v1.1.0**.
+> - Pydantic 모델 (`RewriterInput` / `RewriterOutput`) 정식 등록 — typing 검증 + frontend type mirror용.
+> - graceful failure 정책 명시: LLM 실패 / non-dict 응답 → 원본 plan + `_rewriter_warning` 마커.
+> - 기존 dict 반환 패턴 호환 유지 (breaking change 없음, `routers/plans.py` 회귀 0).
+> - 결정 근거: `docs/decisions/phase_6_rewriter_contract.md`
 
 ### 6.1 책임
 
 - Critic이 revise 판정한 plan을 개선 (P-008)
 - changes_made 명시
 
-### 6.2 Input 스키마
+### 6.2 Input 스키마 (Pydantic: `RewriterInput`)
 
 ```json
 {
-  "target_plan": { /* P-006 plan, 또는 직전 Rewriter 출력의 improved_plan */ },
-  "critic_result": { /* P-007 body 전체 */ },
-  "selected_context": { /* Planning와 동일 */ },
-  "brand_memory": {
-    "preferred_phrases": ["string"],
-    "avoid_phrases": ["string"],
-    "preferred_tone": "string | null"
-  },
-  "revise_round": 1
+  "plan": { /* P-006 plan dict, 또는 직전 Rewriter 출력의 improved_plan */ },
+  "critic_verdict": { /* P-007 body 전체 (overall_verdict / blocking_issues / suggestions 등) */ },
+  "model": "gpt-4o-mini"
 }
 ```
 
-### 6.3 Output 스키마
+추가 컨텍스트 (`selected_context`, `brand_memory`) 는 Phase 4.5 구현에서 prompt 인라인 (NG8 — Phase 7+ prompt_registry 정식화 후 분리). 호출 패턴은 `run_rewriter(plan, critic_verdict, *, model, client)` 시그니처 유지.
 
-`output_schema.md` §10 P-008 body.
+### 6.3 Output 스키마 (Pydantic: `RewriterOutput`)
+
+```json
+{
+  "revised_plan": { /* 개선된 plan (P-006 구조 + revised meta keys) */ },
+  "_rewriter_model": "gpt-4o-mini",
+  "_rewriter_warning": null
+}
+```
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `revised_plan` | dict | 필수 | 개선된 plan dict (`output_schema.md` §10 P-008 body 정합) |
+| `_rewriter_model` | string | Optional | 사용된 LLM 모델 메타 마커 |
+| `_rewriter_warning` | string | Optional | graceful 실패 시 마커 (`"rewriter_failed: <ErrorClass>"`). 이 마커가 있으면 `revised_plan` 은 원본 plan 과 동일 |
+
+실제 `run_rewriter` 함수는 backward-compat 위해 dict 반환 (revised_plan 본문 + `_rewriter_model` / `_rewriter_warning` 키 inline). Pydantic 모델은 typing 검증 + frontend type mirror 용도.
 
 ### 6.4 실행 정책
 
 ```
 model:           gpt-4o-mini
 timeout:         45s
-max_retries:     2
-temperature:     0.6 (개선이라 너무 다양하지 않게)
-max_tokens:      2500
+max_retries:     0 (revise loop 자체가 max 2회 시도하므로 단일 호출 retry 불필요)
+temperature:     0.4 (개선이라 너무 다양하지 않게 — Phase 4.5 구현 기준)
+max_tokens:      1500
 cost per call:   ~$0.001
 cost per session 상한: $0.003 (최대 3개 plan 재작성)
 ```
@@ -381,7 +397,9 @@ cost per session 상한: $0.003 (최대 3개 plan 재작성)
 ```
 Phase 1 (현재): 사용자가 "AI에게 개선 맡기기" 클릭 시에만 실행.
                 Critic 결과는 점수+이유만 보여주고, Rewriter는 명시적 요청 필요.
-Phase 2+ (검토): revise 판정 시 자동 실행 옵션 (사용자 설정).
+Phase 4.5+ (구현 완료): Critic revise verdict 시 자동 호출 (revise loop, max 2회).
+                        `config.critic_max_revise` (기본 2) 가 회로 차단.
+Phase 2+ (검토): 사용자 설정으로 자동 실행 on/off 토글 (Phase 7+ 이관).
 ```
 
 ### 6.6 의존성
@@ -389,8 +407,23 @@ Phase 2+ (검토): revise 판정 시 자동 실행 옵션 (사용자 설정).
 ```
 이전 단계 출력: Critic의 결과 + 원본 plan
 RAG: 사용 안 함
-Brand Memory: 항상 주입
+Brand Memory: 항상 주입 (Phase 4.5 구현에서는 prompt 인라인 — NG8)
 prompt_registry P-ID: P-008
+prompt_version: v1.1.0 (Phase 6 ADR-019)
+```
+
+### 6.7 Graceful failure 정책 (Phase 6 ADR-019)
+
+```
+LLM 호출 실패 (네트워크 / API 에러 / JSON 파싱 실패):
+  → 원본 plan 반환 + _rewriter_warning: "rewriter_failed: <ErrorClass>"
+
+LLM 응답이 dict 가 아닌 경우 (JSON string / array / null):
+  → 원본 plan + _rewriter_warning: "rewriter_failed: ValueError" (non-object JSON)
+
+회로 차단:
+  → revise loop max 2 (config.critic_max_revise — ADR-016)
+  → max 도달 시 routers/plans.py 가 max_reached=True 마커 추가
 ```
 
 ---
@@ -754,4 +787,10 @@ Memory Extractor 60s        백그라운드 (사용자에게 보이지 않음)
 ```
 v1.0.0 (2026-05-26): Sprint S3-1 초안. 4 agent + Memory Extractor IO, 실행 정책, 비용 상한,
                       재시도/폴백, revise 무한 루프 차단, agent_io_logs 기록 정책.
+v1.1.0 (2026-05-29, Phase 6 Slice 2):
+  - §6 Rewriter (P-008) v1.0.0 → v1.1.0 — ADR-019
+    - Pydantic 모델 (RewriterInput / RewriterOutput) 정식 등록 (typing + frontend mirror)
+    - §6.7 Graceful failure 정책 명시 (_rewriter_warning 마커, 회로 차단 max 2)
+    - 기존 dict 반환 호환 유지 (회귀 0, routers/plans.py 변경 없음)
+    - semver minor bump: breaking change 없음.
 ```

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import logging
+import warnings
 from typing import Any
 
 from openai import OpenAI, OpenAIError
@@ -264,18 +265,26 @@ def run_critic(
 
 
 # ─── Phase 4.5 Slice 3: Best-plan selection (Z-X3) ────────────────────
+# ─── Phase 6 Slice 2: canonical 우선순위 + DeprecationWarning (ADR-018) ─
 
 def select_best_plan_index(verdicts: list[dict[str, Any]]) -> int | None:
-    """Critic verdict list 에서 가장 좋은 plan 의 index 를 반환 (Z-X3).
+    """Critic verdict list 에서 가장 좋은 plan 의 index 를 반환 (Z-X3 / ADR-018).
 
     Phase 4.5 Slice 3 — 3 plan 동등 노출 부담 완화. recommended_plan_index 로
     frontend wrapper(`/plan/[plan_id]/page.tsx`) highlight 에 사용. PlanCard.tsx
     무수정 정책 유지 (사용자 결정 6-a 계승).
 
+    Phase 6 (ADR-018) canonical 우선순위:
+      1. `overall_score` (float [0.0~1.0]) — canonical
+      2. `dimensions` (dict[str, float]) 평균 — canonical fallback
+      3. `overall_score_avg` (float [0~5]) — deprecated + DeprecationWarning
+      4. `scores` / `eight_dim_scores` (dict[str, int|float]) 평균 — deprecated + DeprecationWarning
+
+      Deprecated key 발견 시 `warnings.warn(DeprecationWarning, ...)` 발행.
+      Phase 9+ eval-run Skill 정식화 후 deprecated fallback 완전 제거 (별도 contract-change 절차).
+
     Args:
         verdicts: plan별 verdict dict list.
-                  각 verdict 는 `overall_score_avg` (Critic primary 키, 0~5 float)
-                  또는 `scores` dict (8-dim 정수) 를 보유.
                   None 또는 invalid 항목은 skip.
 
     Returns:
@@ -291,26 +300,51 @@ def select_best_plan_index(verdicts: list[dict[str, Any]]) -> int | None:
     def _score(v: Any) -> float | None:
         if not isinstance(v, dict):
             return None
-        # Critic primary: overall_score_avg (float, 0~5)
-        if v.get("overall_score_avg") is not None:
-            try:
-                return float(v["overall_score_avg"])
-            except (TypeError, ValueError):
-                pass
-        # Generic fallback: overall_score
+        # Phase 6 canonical (ADR-018): overall_score (float, 0~1)
         if v.get("overall_score") is not None:
             try:
                 return float(v["overall_score"])
             except (TypeError, ValueError):
                 pass
-        # 8-dim 평균 fallback (scores dict — Critic 표준 키)
-        dims = v.get("scores") or v.get("dimensions") or v.get("eight_dim_scores")
-        if isinstance(dims, dict) and dims:
+        # Phase 6 canonical (ADR-018): dimensions dict 평균 (float, 0~1)
+        dims_canonical = v.get("dimensions")
+        if isinstance(dims_canonical, dict) and dims_canonical:
             try:
-                vals = [float(x) for x in dims.values() if x is not None]
-                return sum(vals) / len(vals) if vals else None
+                vals = [float(x) for x in dims_canonical.values() if x is not None]
+                if vals:
+                    return sum(vals) / len(vals)
             except (TypeError, ValueError):
-                return None
+                pass
+        # Deprecated (Phase 1~4.5 호환): overall_score_avg (float, 0~5)
+        if v.get("overall_score_avg") is not None:
+            warnings.warn(
+                "Critic verdict 'overall_score_avg' is deprecated (Phase 6 ADR-018); "
+                "use canonical 'overall_score' (0.0~1.0). "
+                "Phase 9+ eval-run 안정화 후 제거 예정.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            try:
+                return float(v["overall_score_avg"])
+            except (TypeError, ValueError):
+                pass
+        # Deprecated: scores / eight_dim_scores dict 평균
+        for legacy_key in ("scores", "eight_dim_scores"):
+            legacy = v.get(legacy_key)
+            if isinstance(legacy, dict) and legacy:
+                warnings.warn(
+                    f"Critic verdict '{legacy_key}' is deprecated (Phase 6 ADR-018); "
+                    "use canonical 'dimensions: dict[str, float]'. "
+                    "Phase 9+ eval-run 안정화 후 제거 예정.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                try:
+                    vals = [float(x) for x in legacy.values() if x is not None]
+                    if vals:
+                        return sum(vals) / len(vals)
+                except (TypeError, ValueError):
+                    pass
         return None
 
     best_idx: int | None = None

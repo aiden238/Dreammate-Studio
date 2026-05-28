@@ -1,13 +1,18 @@
-"""Rewriter Agent (P-008) — Phase 4.5 Slice 2.
+"""Rewriter Agent (P-008) — Phase 4.5 Slice 2 + Phase 6 Slice 2 (ADR-019).
 
 Critic verdict가 `revise`일 때 plan의 weakness를 반영하여 plan을 1회 개선한다.
 
 설계 원칙:
-- 인라인 prompt (NG7: Phase 6+ 정식 prompt 카탈로그 등록 전까지)
+- 인라인 prompt (NG8: Phase 7+ 정식 prompt 카탈로그 등록 전까지)
 - graceful: LLM 실패 시 원본 plan을 반환 + ``_rewriter_warning`` 마커 추가
 - retry 0 (Phase 4.5 1차 — Critic revise loop 자체가 최대 2회 시도하므로 단일 호출 retry 불필요)
 - Planning agent (P-006) 의 sync OpenAI 패턴과 호환: async 함수지만 OpenAI client는
   AsyncOpenAI 또는 호환 mock 사용. 테스트는 client를 주입한다.
+
+Phase 6 Slice 2 강화 (ADR-019, P-008 v1.0.0 → v1.1.0):
+- `RewriterInput` / `RewriterOutput` Pydantic 모델 도입 (typing 검증 + frontend type mirror용 export).
+- 기존 dict 반환 패턴은 호환 유지 (routers/plans.py 변경 X — 회귀 0).
+- graceful failure 정책 명시: LLM 실패 / non-dict 응답 → 원본 plan + `_rewriter_warning` 마커.
 
 호출 흐름:
   plan(dict) + critic_verdict(dict) → gpt-4o-mini async 호출 (JSON mode)
@@ -19,7 +24,56 @@ import json
 import logging
 from typing import Any
 
+from pydantic import BaseModel, Field
+
 logger = logging.getLogger(__name__)
+
+
+# ─── Phase 6 Slice 2: Pydantic 모델 (ADR-019, P-008 v1.1.0) ──────────
+
+class RewriterInput(BaseModel):
+    """Rewriter 입력 envelope (Phase 6 ADR-019, agent_io_contract §6 v1.1.0).
+
+    기존 `run_rewriter(plan, critic_verdict, ...)` 호출 패턴은 호환 유지.
+    이 모델은 typing 검증 + frontend type mirror 용도 (실 함수는 dict 인자 그대로 받음).
+    """
+
+    plan: dict[str, Any] = Field(..., description="원본 plan dict (P-006 구조)")
+    critic_verdict: dict[str, Any] = Field(
+        ...,
+        description="Critic 평가 결과 dict (overall_verdict / blocking_issues / suggestions 등)",
+    )
+    model: str = Field(default="gpt-4o-mini", description="사용할 LLM 모델명")
+
+
+class RewriterOutput(BaseModel):
+    """Rewriter 출력 envelope (Phase 6 ADR-019, agent_io_contract §6 v1.1.0).
+
+    실제 `run_rewriter` 는 dict 반환을 유지 (routers/plans.py 호환). 이 모델은 typing
+    검증 + frontend type mirror 용도.
+
+    Fields:
+      - revised_plan: dict[str, Any] — 개선된 plan (P-006 구조 + revised meta keys).
+      - _rewriter_model: Optional[str] — 사용된 LLM 모델 (메타 마커).
+      - _rewriter_warning: Optional[str] — graceful 실패 시 마커 ("rewriter_failed: <ErrorClass>").
+    """
+
+    revised_plan: dict[str, Any] = Field(..., description="개선된 plan dict")
+    rewriter_model: str | None = Field(
+        default=None,
+        alias="_rewriter_model",
+        description="사용된 LLM 모델 (메타 마커).",
+    )
+    rewriter_warning: str | None = Field(
+        default=None,
+        alias="_rewriter_warning",
+        description=(
+            "graceful 실패 시 마커. 'rewriter_failed: <ErrorClass>' 형식. "
+            "이 마커가 있으면 revised_plan 은 원본 plan 과 동일 (LLM 호출 실패)."
+        ),
+    )
+
+    model_config = {"populate_by_name": True}
 
 
 # ─── 시스템 프롬프트 (Rewriter only, 인라인 — NG7) ────────────────────
@@ -120,4 +174,6 @@ async def run_rewriter(
 # ─── 메타 ────────────────────────────────────────────────────────────
 
 PROMPT_ID = "P-008"
-PROMPT_VERSION = "v1.0.0"
+# Phase 6 ADR-019: v1.0.0 → v1.1.0 (Pydantic 모델 정식 등록 + graceful 정책 명시).
+# semver: minor bump (breaking change 없음, dict 반환 호환 유지).
+PROMPT_VERSION = "v1.1.0"

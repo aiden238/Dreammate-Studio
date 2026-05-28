@@ -27,6 +27,15 @@ Slice 5 추가:
   - Meta.project_id (Optional) — Supabase 저장 성공 시 video_projects.id, 실패/skip 시 None
   - validation.checks에 "db_persistence" 항목 추가 (status=ok/warn)
   - DB 실패는 사용자 차단 금지 (graceful 정책 — Slice 4 RAG 와 동일)
+
+Phase 6 Slice 2 추가 (ADR-018 / ADR-019):
+  - ReviseAttempt Pydantic 모델 — typing 검증 + frontend mirror 용 standalone export
+    (attempt / action / revised / max_reached / critic_warning / rewriter_warning)
+    Note: Body.revise_history 직렬화는 dict 유지 (Phase 4.5 응답 호환성 — None 키 미노출).
+          Pydantic 모델은 stress test / frontend type generation 에 사용.
+  - CriticEvaluation canonical 필드 추가 (overall_score: float [0~1], dimensions: dict[str, float])
+    - 기존 Phase 1 필드 (target_plan_id / scores / overall_score_avg) 는 deprecated 표시,
+      backward-compat 위해 Optional 로 유지 (Phase 9+ eval 후 제거 예정).
 """
 
 from datetime import datetime, timezone
@@ -143,20 +152,93 @@ class CriticScores(BaseModel):
 
 
 class CriticEvaluation(BaseModel):
-    """Critic 평가 결과 (output_schema.md §9.1).
+    """Critic 평가 결과 (output_schema.md §9.1 + Phase 6 canonical ADR-018).
 
     Phase 1: revise_round 항상 0 (revise 호출 없음).
     overall_verdict는 평가만 노출 (Phase 4+에서 revise 트리거로 사용).
+
+    Phase 6 (ADR-018) canonical 필드:
+      - overall_score: float [0.0~1.0] (정규화된 종합 점수) — canonical
+      - dimensions: dict[str, float] — 8-dim 점수 dict — canonical
+
+    Phase 1~4.5 호환 필드 (deprecated, Phase 9+ eval 후 제거 예정):
+      - target_plan_id / scores (CriticScores) / overall_score_avg / reasons / suggestions
+      - 모두 Optional 로 변경하여 backward-compat 보장 (회귀 0).
     """
 
-    target_plan_id: str
-    scores: CriticScores
+    # Phase 6 canonical (ADR-018) — 신규 필드
+    overall_score: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Phase 6 canonical (ADR-018): Critic 종합 점수 (정규화 0.0~1.0). "
+            "Phase 9+ 에서 dimensions 가중치 도입 시 단순 평균이 아닌 weighted score 로 확장."
+        ),
+    )
+    dimensions: dict[str, float] = Field(
+        default_factory=dict,
+        description=(
+            "Phase 6 canonical (ADR-018): 8-dim 점수 dict[str, float] "
+            "(예: {'hook_strength': 0.8, 'target_clarity': 0.7, ...}). "
+            "정규화 0.0~1.0 (Phase 1~4.5 의 0~5 정수 scores 와 별개 — 호환성 유지)."
+        ),
+    )
+
+    # Phase 1~4.5 호환 필드 (deprecated, Optional 로 강등)
+    target_plan_id: str | None = Field(
+        default=None,
+        description="Phase 1 호환 (output_schema.md §9.1). Phase 9+ 제거 예정.",
+    )
+    scores: CriticScores | None = Field(
+        default=None,
+        description=(
+            "Phase 1~4.5 호환: 8-dim 0~5 정수 (CriticScores). "
+            "Phase 6 canonical 은 dimensions: dict[str, float] (정규화 0~1). "
+            "Phase 9+ eval 후 제거 예정 — DeprecationWarning 발행."
+        ),
+    )
     reasons: dict[str, str] = Field(default_factory=dict)
     suggestions: dict[str, str] = Field(default_factory=dict)
-    overall_score_avg: float
+    overall_score_avg: float | None = Field(
+        default=None,
+        description=(
+            "Phase 1~4.5 호환: 0~5 float 평균. Phase 6 canonical 은 overall_score (0~1). "
+            "Phase 9+ 제거 예정 — DeprecationWarning 발행."
+        ),
+    )
     overall_verdict: Literal["approve", "revise", "reject"]
     blocking_issues: list[str] = Field(default_factory=list, max_length=3)
     revise_round: int = Field(default=0, ge=0)
+
+
+# ─── Phase 6 Slice 2: ReviseAttempt (ADR-018 typing 강화) ─────────────
+
+class ReviseAttempt(BaseModel):
+    """Phase 4.5 Slice 2 revise loop attempt log — Phase 6 typing 강화 (ADR-018).
+
+    routers/plans.py 의 `_critic_revise_for_plan` 가 attempt 별로 dict 를 누적하던 것을
+    Phase 6 에서 Pydantic 모델로 강화. backward-compat 위해 Body.revise_history 가
+    list[list[ReviseAttempt]] 로 변경되어도 Pydantic v2 가 dict → 모델 자동 변환하므로
+    routers 변경 없이 호환된다 (회귀 0).
+
+    Fields:
+      - attempt: int [0~max_revise]. 0 = 초기 critic, 1+ = revise 후 재평가.
+      - action: Literal — Critic verdict. "unknown" 은 Critic 이 미정의 값 반환 시 폴백.
+      - revised: bool — 본 attempt 에서 Rewriter 호출 여부.
+      - max_reached: Optional[bool] — max_revise 도달 시 True.
+      - critic_warning: Optional[str] — Critic 호출 실패 graceful 마커.
+      - rewriter_warning: Optional[str] — Rewriter 호출 실패 graceful 마커.
+    """
+
+    attempt: int = Field(..., ge=0)
+    action: Literal["approve", "revise", "reject", "unknown"]
+    revised: bool
+    max_reached: bool | None = None
+    critic_warning: str | None = None
+    rewriter_warning: str | None = None
+
+    model_config = {"extra": "allow"}  # 미래 확장 메타 허용 (typing drift 방지)
 
 
 class Body(BaseModel):
@@ -187,10 +269,12 @@ class Body(BaseModel):
     revise_history: list[list[dict[str, Any]]] | None = Field(
         default=None,
         description=(
-            "Phase 4.5 Slice 2: plan별 revise attempt log. "
+            "Phase 4.5 Slice 2 (ADR-016) / Phase 6 typing canonical 명시 (ADR-018): "
+            "plan별 revise attempt log. "
             "외부 list = plan index (plan_candidates 와 동일 순서), "
             "내부 list = attempt 0,1,2,... 순차 dict "
-            "(예: {attempt, action, revised, max_reached?, critic_warning?})."
+            "(canonical Pydantic 모델 = `ReviseAttempt` — typing 검증 + frontend mirror 용 export. "
+            "Body 직렬화는 dict 유지 — JSON 응답 키 호환성 (None 키 미노출, Phase 4.5 호환)). "
             "loop 비활성 또는 Phase 4 이하 호출 시 None."
         ),
     )
