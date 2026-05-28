@@ -1,9 +1,11 @@
 # db_schema.md — 영상기획 AI 에이전트 DB 스키마
 
 > 위치: `docs/contracts/db_schema.md`
-> 상태: Phase 0–1 진입용 핵심 contract 초안
+> 상태: Phase 5 Slice 2 갱신 (v1 → v1.1.0 — plans 테이블 + 4계층 migration baseline 등록)
 > DB: PostgreSQL 15+ on Supabase, with pgvector extension
 > 계층: User → Brand → Domain → Series → Video Project (4-layer)
+> Related: ADR-020 (Supabase 채택), upcoming ADR-021 (RLS, Slice 4)
+> Migration files: `backend/fastapi/db/migrations/0001_init.sql` (Phase 5 baseline), `0002_phase_4_5_revise_history.sql` (Phase 4.5/6 정합), `0003_rls_policy.sql` (Slice 4 예정)
 
 ---
 
@@ -154,6 +156,49 @@ create table video_projects (
 create index idx_video_series on video_projects(series_id) where deleted_at is null;
 create index idx_video_status on video_projects(status);
 ```
+
+### 3.6 plans (Phase 5 Slice 2 신규 — _plan_store 영속화)
+
+Phase 4 router 의 in-memory `_plan_store: dict` 를 PostgreSQL 영속화하는 테이블.
+Phase 4.5 (revise loop) + Phase 6 (canonical Critic) 의 모든 산출물 컬럼 포함.
+
+```sql
+create table plans (
+    id                      uuid primary key default gen_random_uuid(),
+    auth_user_id            uuid,                          -- nullable: Phase 1 anonymous endpoint 호환 (Slice 4 ADR-021)
+    video_project_id        uuid references video_projects(video_id) on delete set null,
+    mode                    text not null,                 -- 'discovery' | 'quick'
+    status                  text not null default 'draft', -- draft | generated | finalized
+    wizard_state            jsonb default '{}'::jsonb,     -- Discovery 7-step / Quick 4-step 진행 상태
+    plan_candidates         jsonb default '[]'::jsonb,     -- Phase 4 3-plan 결과
+    critic_evaluation       jsonb,                         -- Phase 6 canonical (overall_score + dimensions)
+    revise_history          jsonb,                         -- Phase 4.5 ADR-016 + Phase 6 ReviseAttempt
+    recommended_plan_index  integer,                       -- Phase 4.5 ADR-017 best-plan (0~2)
+    created_at              timestamptz not null default now(),
+    updated_at              timestamptz not null default now()
+);
+
+create index idx_plans_auth_user_id     on plans(auth_user_id);
+create index idx_plans_video_project_id on plans(video_project_id);
+```
+
+**JSONB schemas**:
+
+- `critic_evaluation` (Phase 6 ADR-018 canonical):
+  - `overall_score`: float [0.0~1.0]
+  - `dimensions`: dict[str, float] (8-dim or subset)
+  - `overall_verdict`: "approve" | "revise" | "reject"
+  - (deprecated 필드 `overall_score_avg`, `scores`, `eight_dim_scores` 는 DB 미저장 — Phase 9+ 제거)
+- `revise_history` (Phase 4.5 ADR-016 + Phase 6 ReviseAttempt typing):
+  - `list[list[dict]]` — plan별 attempt list of dicts (`attempt`, `action`, `revised`, `max_reached?`, `critic_warning?`, `rewriter_warning?`)
+- `wizard_state`:
+  - Discovery 7-step (`step1`~`step7`) 또는 Quick 4-step (`quick.initial`/`quick.clarify`/`quick.direction`/`quick.generate`) 진행 상태
+- `plan_candidates`:
+  - 3-plan Plan model 배열 (output_schema.md §4 Plan)
+
+**graceful fallback** (PlansRepo, Phase 5 Slice 2):
+- Supabase 실패 시 (URL/Key 미설정, 패키지 미설치, 연결 에러) `_plan_store: dict` 로 in-memory fallback.
+- `routers/plans.py` 는 PlansRepo 인터페이스 통해 호출 → Supabase or in-memory 자동 선택.
 
 ---
 
@@ -509,7 +554,7 @@ create index idx_logs_cost on agent_io_logs(created_at) where cost_usd > 0;
 
 ## 9. RLS (Row Level Security)
 
-Supabase 기준.
+Supabase 기준. **Phase 5 Slice 4 (ADR-021) 에서 본격 활성화 예정** — 본 Slice 2 는 컬럼 baseline 만 등록.
 
 ```sql
 alter table brands enable row level security;
@@ -523,9 +568,22 @@ create policy domains_owner on domains
     );
 
 -- series, video_projects, video_briefs, plan_options, ... 동일 패턴
+
+-- Phase 5 Slice 4 plans RLS (ADR-021 예정):
+alter table plans enable row level security;
+create policy plans_user_isolation on plans
+    for all
+    using (auth_user_id = auth.uid() or auth_user_id is null)
+    with check (auth_user_id = auth.uid());
 ```
 
-서비스 롤(`service_role`)은 RLS 우회 가능하지만, 일반 API는 항상 사용자 토큰으로 작동.
+### Phase 5 anonymous endpoint 분리 (Slice 4 ADR-021)
+
+- `/api/v1/generate` (Phase 1 endpoint, NG7 → Phase 8+ 제거) → anon role (RLS 미적용)
+- `/plans/start` (Phase 5) → anon role 가능, auth_user_id NULL 허용 (임시 게스트 ID)
+- `/plans/{plan_id}/generate`, `/plans/{plan_id}` (GET/UPDATE/DELETE) → authenticated role (RLS 강제)
+
+서비스 롤(`service_role`)은 RLS 우회 가능하지만, 일반 API는 항상 사용자 토큰으로 작동. service_role key 는 backend .env only (NEXT_PUBLIC_* prefix 절대 금지 — llm_security_contract.md §5.2).
 
 ---
 
@@ -552,9 +610,28 @@ candidate_knowledge: 이미 promoted된 항목은 익명화 후 보존
 
 ## 11. 마이그레이션 노트
 
-### Phase 1 (MVP)
+### Phase 1 (MVP, legacy)
 
-위 모든 테이블 생성.
+- `backend/fastapi/db/migrations/001_init.sql` — video_projects + plan_candidates 익명 저장 minimal.
+- 3-digit zero-padded naming (legacy 보존).
+- 익명 저장 (user_id NULL allow), 4계층 미도입.
+
+### Phase 5 Slice 2 (현)
+
+- `backend/fastapi/db/migrations/0001_init.sql` — brands / domains / series / video_projects / plans 4계층 baseline (Phase 5 신규).
+- `backend/fastapi/db/migrations/0002_phase_4_5_revise_history.sql` — ALTER IF NOT EXISTS revise_history + recommended_plan_index + critic_evaluation (idempotent).
+- 4-digit zero-padded naming (Phase 5+).
+- Phase 4.5 (revise loop) + Phase 6 (canonical Critic) 산출물 컬럼 정합.
+- ADR-020 (Supabase 채택) 정합 — graceful fallback (Supabase 실패 시 in-memory dict).
+
+### Phase 5 Slice 3 (Auth, 예정)
+
+- ALTER TABLE plans / video_projects / brands ALTER COLUMN auth_user_id SET NOT NULL + REFERENCES auth.users(id) ON DELETE CASCADE (Supabase Auth 도입 후).
+
+### Phase 5 Slice 4 (RLS, 예정 ADR-021)
+
+- `backend/fastapi/db/migrations/0003_rls_policy.sql` — plans / video_projects / brands / domains / series RLS 활성화.
+- anonymous endpoint (/api/v1/generate, /plans/start) 별도 anon role 분리.
 
 ### Phase 11+ (확장)
 

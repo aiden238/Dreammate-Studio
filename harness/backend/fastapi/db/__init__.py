@@ -1,15 +1,19 @@
-"""DB persistence 모듈 — Phase 1 Slice 5.
+"""DB persistence 모듈.
 
-Public API:
+Phase 1 Slice 5 public API (legacy save_video_planning):
   - get_supabase_client(): Supabase Client or None (graceful)
   - save_video_planning(...): orchestrator — Intent/RAG/Planning/Critic 결과 저장
   - PersistenceResult / SaveStatus: 저장 결과 타입
 
-Phase 1 정책:
+Phase 5 Slice 2 신규 public API:
+  - get_supabase(): Protocol-based Supabase client factory (graceful)
+  - SupabaseClientLike: Protocol type for client (or mock)
+  - PlansRepo: graceful CRUD wrapper for plans table (in-memory fallback)
+
+Phase 1 graceful 정책 계승:
   - 모든 실패는 graceful (raise 금지). 사용자 응답 차단 0건.
-  - env 미설정 → status="skipped_no_db"
-  - client init / insert 실패 → status="failed_db_error"
-  - 성공 → status="saved" + project_id, plan_candidate_ids 채움
+  - env 미설정 → status="skipped_no_db" (legacy) or None (Phase 5)
+  - client init / insert 실패 → status="failed_db_error" (legacy) or in-memory fallback (Phase 5)
 """
 
 from __future__ import annotations
@@ -17,7 +21,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from .repositories import insert_plan_candidate, insert_video_project
+from .client import SupabaseClientLike, get_supabase
+from .repositories import PlansRepo, insert_plan_candidate, insert_video_project
 from .supabase_client import get_supabase_client
 from .types import PersistenceResult, SaveStatus
 

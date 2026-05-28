@@ -112,6 +112,15 @@ class Settings(BaseSettings):
         default="",
         description="Supabase anon key (Phase 1 익명 저장용; Phase 5 Auth 도입 시 RLS + service_role 전환)",
     )
+    # Phase 5 Slice 2 신규 — RLS 우회 server-side 운영용 (Auth/RLS 도입 Slice 3/4 + ADR-021).
+    # 절대 NEXT_PUBLIC_* prefix 금지 (llm_security_contract.md §5.2).
+    supabase_service_key: str = Field(
+        default="",
+        description=(
+            "Supabase service role key (server-side only, RLS bypass). "
+            "Phase 5 Slice 2 신규. NEXT_PUBLIC_* prefix 절대 금지."
+        ),
+    )
 
     @property
     def cors_origins_list(self) -> list[str]:

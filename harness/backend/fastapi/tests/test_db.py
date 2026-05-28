@@ -281,3 +281,223 @@ def test_router_returns_200_even_when_db_fails(
     assert db_check is not None, "db_persistence check가 validation에 노출되어야 함"
     assert db_check["status"] == "warn"
     assert "failed_db_error" in db_check["detail"]
+
+
+# ─── Phase 5 Slice 2 — Supabase client (Protocol-based) + PlansRepo CRUD ──
+#
+# multi_slice_plan.md §Slice 2 작업 단위 (9): test_db.py — Supabase client mock + plans_repo CRUD 5+ 케이스.
+# graceful 정책 검증:
+#   - env 미설정 → get_supabase() == None → in-memory fallback
+#   - Supabase 실패 → in-memory fallback (회귀 0)
+#   - revise_history JSONB round-trip (Phase 4.5 ADR-016 + Phase 6 ReviseAttempt)
+#   - canonical critic_evaluation JSONB round-trip (Phase 6 ADR-018)
+
+from unittest.mock import MagicMock
+
+from backend.fastapi.db.client import get_supabase
+from backend.fastapi.db.repositories.plans_repo import PlansRepo
+
+
+# ─── P5S2-1. get_supabase: env 미설정 시 None (graceful) ───────────────
+
+
+def test_phase_5_get_supabase_no_env_returns_none(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """SUPABASE_URL / SUPABASE_ANON_KEY 미설정 시 None (Phase 5 graceful)."""
+    monkeypatch.setenv("SUPABASE_URL", "")
+    monkeypatch.setenv("SUPABASE_ANON_KEY", "")
+    from backend.fastapi.config import get_settings
+
+    get_settings.cache_clear()
+
+    client_obj = get_supabase()
+    assert client_obj is None
+
+
+# ─── P5S2-2. PlansRepo in-memory create + get ─────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_phase_5_plans_repo_in_memory_create_get() -> None:
+    """Supabase 없을 때 in-memory dict 로 CRUD round-trip."""
+    repo = PlansRepo(supabase_client=None, in_memory_store={})
+    result = await repo.create("plan-1", {"mode": "discovery", "status": "draft"})
+    assert result["mode"] == "discovery"
+    assert result["status"] == "draft"
+
+    fetched = await repo.get("plan-1")
+    assert fetched is not None
+    assert fetched["mode"] == "discovery"
+
+
+# ─── P5S2-3. PlansRepo in-memory update ────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_phase_5_plans_repo_in_memory_update() -> None:
+    """update 시 기존 dict patch 적용."""
+    store: dict[str, dict[str, Any]] = {
+        "plan-1": {"mode": "discovery", "status": "draft"},
+    }
+    repo = PlansRepo(supabase_client=None, in_memory_store=store)
+    updated = await repo.update("plan-1", {"status": "generated"})
+    assert updated is not None
+    assert updated["status"] == "generated"
+    assert updated["mode"] == "discovery"  # 기존 값 보존
+
+
+# ─── P5S2-4. PlansRepo in-memory delete ────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_phase_5_plans_repo_in_memory_delete() -> None:
+    """delete 후 store 에서 제거."""
+    store: dict[str, dict[str, Any]] = {
+        "plan-1": {"mode": "discovery"},
+    }
+    repo = PlansRepo(supabase_client=None, in_memory_store=store)
+    deleted = await repo.delete("plan-1")
+    assert deleted is True
+    assert "plan-1" not in store
+
+
+# ─── P5S2-5. PlansRepo Supabase mock — revise_history JSONB round-trip ──
+
+
+@pytest.mark.asyncio
+async def test_phase_5_plans_repo_supabase_create_with_revise_history() -> None:
+    """Phase 4.5 revise_history JSONB round-trip via Supabase mock.
+
+    multi_slice_plan.md §V5: revise_history JSONB 영속화 검증.
+    Phase 4.5 ADR-016 (list[list[dict]]) + Phase 6 ReviseAttempt typing 호환.
+    """
+    revise_payload = [
+        [
+            {"attempt": 0, "action": "revise", "revised": True},
+            {"attempt": 1, "action": "approve", "revised": False},
+        ],
+        [{"attempt": 0, "action": "approve", "revised": False}],
+        [{"attempt": 0, "action": "approve", "revised": False}],
+    ]
+
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.data = [
+        {
+            "id": "plan-1",
+            "mode": "discovery",
+            "revise_history": revise_payload,
+        }
+    ]
+    mock_client.table.return_value.insert.return_value.execute.return_value = mock_resp
+
+    repo = PlansRepo(supabase_client=mock_client, in_memory_store={})
+    result = await repo.create(
+        "plan-1",
+        {
+            "mode": "discovery",
+            "revise_history": revise_payload,
+        },
+    )
+    assert "revise_history" in result
+    assert result["revise_history"] == revise_payload
+    # plan별 attempt list 구조 보존 확인
+    assert len(result["revise_history"]) == 3
+    assert result["revise_history"][0][0]["action"] == "revise"
+
+
+# ─── P5S2-6. PlansRepo Supabase 실패 시 in-memory fallback (graceful) ──
+
+
+@pytest.mark.asyncio
+async def test_phase_5_plans_repo_supabase_failure_falls_back_to_in_memory() -> None:
+    """graceful: Supabase 실패 → in-memory 저장 (사용자 차단 0건).
+
+    multi_slice_plan.md §Slice 2: graceful fallback 정책 검증.
+    """
+    mock_client = MagicMock()
+    mock_client.table.return_value.insert.return_value.execute.side_effect = (
+        RuntimeError("simulated network failure")
+    )
+
+    store: dict[str, dict[str, Any]] = {}
+    repo = PlansRepo(supabase_client=mock_client, in_memory_store=store)
+    result = await repo.create("plan-1", {"mode": "discovery"})
+    # in-memory fallback PASS
+    assert result["mode"] == "discovery"
+    assert "plan-1" in store
+
+
+# ─── P5S2-7. PlansRepo Supabase mock — canonical critic_evaluation 호환 ──
+
+
+@pytest.mark.asyncio
+async def test_phase_5_plans_repo_supabase_canonical_critic_round_trip() -> None:
+    """Phase 6 canonical Critic verdict JSONB round-trip via Supabase mock.
+
+    multi_slice_plan.md §V6: canonical (overall_score + dimensions) DB 호환 검증.
+    Phase 6 ADR-018 정합.
+    """
+    canonical_critic = {
+        "overall_score": 0.85,
+        "overall_verdict": "approve",
+        "dimensions": {
+            "intent_fit": 0.9,
+            "target_clarity": 0.8,
+            "hook_strength": 0.85,
+            "message_clarity": 0.85,
+            "structure": 0.8,
+            "feasibility": 0.9,
+            "brand_consistency": 1.0,
+            "differentiation": 0.7,
+        },
+    }
+
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.data = [
+        {
+            "id": "plan-2",
+            "mode": "discovery",
+            "critic_evaluation": canonical_critic,
+            "recommended_plan_index": 0,
+        }
+    ]
+    mock_client.table.return_value.insert.return_value.execute.return_value = mock_resp
+
+    repo = PlansRepo(supabase_client=mock_client, in_memory_store={})
+    result = await repo.create(
+        "plan-2",
+        {
+            "mode": "discovery",
+            "critic_evaluation": canonical_critic,
+            "recommended_plan_index": 0,
+        },
+    )
+    assert result["critic_evaluation"]["overall_score"] == 0.85
+    assert result["critic_evaluation"]["overall_verdict"] == "approve"
+    assert len(result["critic_evaluation"]["dimensions"]) == 8
+    assert result["recommended_plan_index"] == 0
+
+
+# ─── P5S2-8. PlansRepo get nonexistent → None ──────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_phase_5_plans_repo_get_nonexistent_returns_none() -> None:
+    """존재하지 않는 plan_id 조회 시 None (graceful)."""
+    repo = PlansRepo(supabase_client=None, in_memory_store={})
+    result = await repo.get("nonexistent-plan-id")
+    assert result is None
+
+
+# ─── P5S2-9. PlansRepo update nonexistent → None ───────────────────────
+
+
+@pytest.mark.asyncio
+async def test_phase_5_plans_repo_update_nonexistent_returns_none() -> None:
+    """존재하지 않는 plan_id update 시 None (graceful, raise X)."""
+    repo = PlansRepo(supabase_client=None, in_memory_store={})
+    result = await repo.update("nonexistent-plan-id", {"status": "finalized"})
+    assert result is None

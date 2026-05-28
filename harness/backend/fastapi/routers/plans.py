@@ -41,7 +41,7 @@ from ..agents.planning import (
 )
 from ..agents.rewriter import run_rewriter
 from ..config import get_settings
-from ..db import save_video_planning
+from ..db import PlansRepo, get_supabase, save_video_planning
 from ..rag import RetrievalResult, run_rag_retrieval
 from ..schemas.output import (
     Body,
@@ -72,9 +72,16 @@ router = APIRouter(prefix="/api/v1", tags=["plans"])
 
 
 # ─── Phase 4 in-memory plan store ─────────────────────────────────────
-# Phase 5 Auth/DB 도입 전까지 단일 프로세스 in-memory 저장.
-# 재시작 시 휘발됨. Phase 5에서 Supabase video_projects + wizard_states로 교체.
+# Phase 4: 단일 프로세스 in-memory 저장 (재시작 시 휘발).
+# Phase 5 Slice 2: PlansRepo (graceful — Supabase 사용 가능 시 영속화, 아니면 in-memory).
+#   - 본 _plan_store 는 그대로 유지 (graceful fallback 저장소 역할 + 회귀 0 보장).
+#   - _plans_repo 는 PlansRepo wrapper. Slice 3 Auth 활성 후 본격 사용.
+#     현 Slice 2 baseline: _plan_store 직접 사용 = PlansRepo(supabase=None, store=_plan_store) 와 동일 동작.
 _plan_store: dict[str, dict[str, Any]] = {}
+_plans_repo: PlansRepo = PlansRepo(
+    supabase_client=get_supabase(),   # None if SUPABASE_URL/ANON_KEY 미설정 (graceful)
+    in_memory_store=_plan_store,      # graceful fallback 저장소
+)
 
 
 def _now_iso() -> str:
