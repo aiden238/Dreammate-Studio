@@ -3,8 +3,11 @@
 api_contract.md §8 정합. Phase 1 endpoint `/api/v1/generate`와 공존.
 ADR-014 (phase_4_endpoint_migration.md) 채택: Phase 8+ 제거 정책.
 
-Slice 1 (이번): skeleton — 4 endpoints baseline + in-memory plan_store.
-Slice 2: POST /plans/{id}/generate 본격 구현 (Intent → RAG → 3-plan parallel → Critic → DB → Envelope).
+Slice 1: skeleton — 4 endpoints baseline + in-memory plan_store.
+Slice 2 (이번): POST /plans/{id}/generate 본격 — Intent → RAG → 3-plan parallel
+                 (multi-model 인터페이스) → Critic 1회 평가 → DB save → Envelope.
+  - 사용자 결정 4-b: 3 parallel async + 모델 추가 가능 구조 (ADR-015).
+  - Critic revise loop / Rewriter / SSE는 Phase 4.5+ deferred (GPT 검토 채택).
 Slice 3: frontend 연동 (`/plan/[plan_id]` 페이지 3-plan 표시).
 Phase 5+: Supabase 본격 — in-memory store → DB, SSE Progress, Auth/RLS.
 """
@@ -16,10 +19,41 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
-from ..schemas.output import ErrorBody, ErrorEnvelope, ErrorMeta
+from ..agents.critic import (
+    PROMPT_ID as CRITIC_PROMPT_ID,
+    PROMPT_VERSION as CRITIC_PROMPT_VERSION,
+    run_critic,
+)
+from ..agents.intent import (
+    PROMPT_ID as INTENT_PROMPT_ID,
+    PROMPT_VERSION as INTENT_PROMPT_VERSION,
+    run_intent,
+)
+from ..agents.planning import (
+    PARALLEL_3_PROMPT_ID,
+    PARALLEL_3_PROMPT_VERSION,
+    run_planning_parallel_3,
+)
+from ..config import get_settings
+from ..db import save_video_planning
+from ..rag import RetrievalResult, run_rag_retrieval
+from ..schemas.output import (
+    Body,
+    CriticEvaluation,
+    Envelope,
+    ErrorBody,
+    ErrorEnvelope,
+    ErrorMeta,
+    Meta,
+    Plan,
+    PlanFlowBeat,
+    Validation,
+    ValidationCheck,
+    compute_validation_warnings_phase4,
+)
 from ..schemas.plans import (
     GenerateRequest,
     PlanResource,
@@ -57,6 +91,27 @@ def _not_found_response(plan_id: str) -> JSONResponse:
         meta=ErrorMeta.make(),
     )
     return JSONResponse(status_code=404, content=envelope.model_dump(mode="json"))
+
+
+def _error_envelope_response(
+    *,
+    status_code: int,
+    code: str,
+    message: str,
+    user_message: str,
+    retry_allowed: bool = True,
+) -> JSONResponse:
+    """generic ErrorEnvelope 응답 (E-LLM-* / INV-* 등)."""
+    envelope = ErrorEnvelope(
+        error=ErrorBody(
+            code=code,
+            message=message,
+            user_message=user_message,
+            retry_allowed=retry_allowed,
+        ),
+        meta=ErrorMeta.make(),
+    )
+    return JSONResponse(status_code=status_code, content=envelope.model_dump(mode="json"))
 
 
 # ─── POST /plans/start ────────────────────────────────────────────────
@@ -138,46 +193,275 @@ def plans_wizard_step(plan_id: str, step: str, req: WizardStepRequest):
     )
 
 
-# ─── POST /plans/{plan_id}/generate ───────────────────────────────────
+# ─── POST /plans/{plan_id}/generate — Slice 2 본격 ────────────────────
 
 @router.post(
     "/plans/{plan_id}/generate",
     responses={
-        202: {"description": "Accepted — Phase 4 Slice 1 skeleton (Slice 2에서 본격)"},
+        200: {"model": Envelope, "description": "3-plan Envelope (Phase 4 Slice 2)"},
         404: {"model": ErrorEnvelope, "description": "plan_id 미발견 (INV-006)"},
+        422: {"model": ErrorEnvelope, "description": "Intent 차단 (INV-001) 등"},
+        502: {"model": ErrorEnvelope, "description": "LLM 호출 실패 (E-LLM-*)"},
     },
-    summary="3-plan generation — Phase 4 Slice 1 skeleton",
+    summary="3-plan generation — Phase 4 Slice 2 본격",
     description=(
-        "Phase 4 Slice 1은 skeleton (202 Accepted). "
-        "Slice 2에서 본격 — Intent → RAG → 3-plan parallel (multi-model 가능) → "
-        "Critic 8-dim verdict → DB 저장 → Envelope 응답."
+        "Phase 4 Slice 2: Intent → RAG → 3-plan parallel (multi-model 인터페이스) → "
+        "Critic 1회 평가 → DB save → Envelope 200 응답. "
+        "사용자 결정 4-b: 3 parallel async (asyncio.gather) + 향후 모델 추가 가능 구조 (ADR-015). "
+        "Critic revise loop / Rewriter / SSE는 Phase 4.5+ deferred."
     ),
 )
-def plans_generate(plan_id: str, req: GenerateRequest) -> JSONResponse:
-    plan = _plan_store.get(plan_id)
-    if not plan:
+async def plans_generate(plan_id: str, req: GenerateRequest):
+    """Phase 4 Slice 2 본격 — 3-plan parallel + Critic + DB save."""
+    plan_entry = _plan_store.get(plan_id)
+    if not plan_entry:
         return _not_found_response(plan_id)
 
-    plan["status"] = "generated"
-    plan["updated_at"] = _now_iso()
-    logger.info(
-        "plans/generate skeleton accepted plan_id=%s use_rag=%s use_critic=%s",
-        plan_id, req.use_rag, req.use_critic,
+    settings = get_settings()
+    user_input = plan_entry.get("initial_input") or "(빈 입력)"
+    locale = plan_entry.get("locale", "ko-KR")
+
+    # 1. Intent ──────────────────────────────────────────────────────
+    try:
+        intent_result = run_intent(user_input)
+    except ValueError as e:
+        logger.warning("Intent LLM JSON 파싱 실패: %s", e)
+        return _error_envelope_response(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            code="E-LLM-002",
+            message=f"Intent LLM response parse failed: {e}",
+            user_message="AI 응답을 정리하는 중 문제가 생겼어요. 다시 시도해주세요.",
+            retry_allowed=True,
+        )
+    except Exception as e:
+        logger.exception("Intent LLM 호출 실패")
+        return _error_envelope_response(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            code="E-LLM-001",
+            message=f"Intent LLM call failed: {e}",
+            user_message="AI 응답이 늦어져서 멈췄어요. 다시 시도해주세요.",
+            retry_allowed=True,
+        )
+
+    if not intent_result.get("intent_ok", False):
+        reason = intent_result.get("reason", "영상기획 외 요청")
+        logger.info("Intent 차단: %s", reason)
+        return _error_envelope_response(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            code="INV-001",
+            message=f"Intent blocked: {reason}",
+            user_message="영상기획과 거리가 있는 내용 같아요. 다른 방식으로 도와드릴까요?",
+            retry_allowed=False,
+        )
+
+    # 2. RAG (graceful) ──────────────────────────────────────────────
+    if req.use_rag:
+        try:
+            rag_result = run_rag_retrieval(user_input)
+        except Exception as e:  # pragma: no cover — retriever swallow하지만 방어
+            logger.warning("RAG retriever raised unexpectedly: %s", e)
+            rag_result = RetrievalResult(
+                references=[], used_fallback=True, fallback_reason="pgvector_unreachable",
+            )
+    else:
+        rag_result = RetrievalResult(
+            references=[], used_fallback=True, fallback_reason=None,
+        )
+
+    rag_refs = list(rag_result.references)
+
+    # 3. 3-plan parallel (★ multi-model 인터페이스) ────────────────────
+    try:
+        planning_results = await run_planning_parallel_3(
+            user_input,
+            rag_context=rag_refs,
+            # models=None → settings.openai_models_for_3plan_list 사용.
+            # 향후 req에 models 파라미터 추가 시 여기서 주입 (Phase 21+).
+        )
+    except Exception as e:
+        logger.exception("Planning parallel 3 호출 실패")
+        return _error_envelope_response(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            code="E-LLM-001",
+            message=f"Planning parallel call failed: {e}",
+            user_message="AI 응답이 늦어져서 멈췄어요. 다시 시도해주세요.",
+            retry_allowed=True,
+        )
+
+    # 4. plan dict → Pydantic Plan × 3 ────────────────────────────────
+    plans_list: list[Plan] = []
+    rag_used_payload = [
+        {
+            "source_id": r.source_id,
+            "title": r.title,
+            "used_reason": r.used_reason,
+        }
+        for r in rag_refs
+    ]
+    for i, planning_dict in enumerate(planning_results):
+        plan_raw = planning_dict.get("plan", {}) if isinstance(planning_dict, dict) else {}
+        try:
+            p = Plan(
+                plan_id=str(uuid4()),
+                option_index=i,
+                name=(plan_raw.get("name") or f"(생성 {i + 1})")[:20],
+                concept=plan_raw.get("concept") or "(콘셉트 없음)",
+                hook=plan_raw.get("hook") or "후크 미생성 (재시도 권장)",
+                flow=[
+                    PlanFlowBeat(
+                        beat_index=b.get("beat_index", j),
+                        beat=b.get("beat", "") or "—",
+                        duration_sec=int(b.get("duration_sec", 5)),
+                        purpose=b.get("purpose", "") or "—",
+                    )
+                    for j, b in enumerate(plan_raw.get("flow") or [])
+                ] or [
+                    PlanFlowBeat(beat_index=0, beat="—", duration_sec=1, purpose="—"),
+                    PlanFlowBeat(beat_index=1, beat="—", duration_sec=1, purpose="—"),
+                ],
+                pros=plan_raw.get("pros", ""),
+                risks=plan_raw.get("risks", ""),
+                approach_label=plan_raw.get("approach_label", "informational"),
+                rag_used=rag_used_payload,
+            )
+            plans_list.append(p)
+        except Exception as e:
+            logger.warning("plan %d schema fail: %s — skipping this plan", i + 1, e)
+
+    if len(plans_list) == 0:
+        return _error_envelope_response(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            code="E-LLM-003",
+            message="all 3 plans failed schema validation",
+            user_message="AI가 형식에 맞지 않게 답했어요. 다시 시도해주세요.",
+            retry_allowed=True,
+        )
+
+    # 5. Critic 1회 평가 (Phase 4: revise loop 없음) ──────────────────
+    critic_evaluation: CriticEvaluation | None = None
+    if req.use_critic:
+        try:
+            critic_dict = run_critic(plans_list[0].model_dump(mode="json"))
+            critic_evaluation = CriticEvaluation(**critic_dict)
+        except Exception as e:
+            logger.warning("Critic 평가 실패: %s — graceful skip (Phase 4 Slice 2)", e)
+            critic_evaluation = None
+
+    # 6. DB save (graceful) ──────────────────────────────────────────
+    request_id = str(uuid4())
+    rag_refs_serialized = [r.model_dump(mode="json") for r in rag_refs]
+    try:
+        persistence = save_video_planning(
+            request_id=request_id,
+            input_text=user_input,
+            locale=locale,
+            plan_dict=plans_list[0].model_dump(mode="json"),
+            critic_dict=critic_evaluation.model_dump(mode="json") if critic_evaluation else None,
+            rag_refs=rag_refs_serialized,
+        )
+    except Exception as e:  # pragma: no cover — save_video_planning이 graceful 흡수
+        logger.warning("save_video_planning raised unexpectedly: %s", e)
+        from ..db.types import PersistenceResult
+
+        persistence = PersistenceResult(
+            status="failed_db_error",
+            project_id=None,
+            plan_candidate_ids=[],
+            error_reason="unexpected_exception",
+        )
+
+    db_check_status = "ok" if persistence.status == "saved" else "warn"
+    db_check_detail = (
+        f"status={persistence.status}, project_id={persistence.project_id}"
+        + (f", reason={persistence.error_reason}" if persistence.error_reason else "")
     )
-    return JSONResponse(
-        status_code=202,
-        content={
-            "ok": True,
-            "data": {
-                "plan_id": plan_id,
-                "status": "accepted",
-                "message": (
-                    "Phase 4 Slice 1 skeleton — Slice 2에서 본격 3-plan generation 구현. "
-                    "GET /api/v1/plans/{plan_id}로 결과 폴링 (Slice 2 후 envelope 채워짐)."
+
+    # 7. Envelope 조립 ───────────────────────────────────────────────
+    warnings = compute_validation_warnings_phase4(
+        plans_count=len(plans_list),
+        rag_used_fallback=rag_result.used_fallback,
+        critic_present=critic_evaluation is not None,
+        has_revise_loop=False,  # Phase 4: revise loop deferred to Phase 4.5+
+    )
+
+    models_list = settings.openai_models_for_3plan_list
+    rag_check_status = "ok" if not rag_result.used_fallback else "warn"
+    rag_check_detail = (
+        f"references={len(rag_refs)}, fallback={rag_result.used_fallback}"
+        + (f", reason={rag_result.fallback_reason}" if rag_result.fallback_reason else "")
+    )
+
+    envelope = Envelope(
+        meta=Meta.make(
+            prompt_id=PARALLEL_3_PROMPT_ID,
+            prompt_version=PARALLEL_3_PROMPT_VERSION,
+            model=models_list[0],  # 대표 모델 (multi-model 정보는 validation.checks에 상세 노출)
+            locale=locale,
+            request_id=request_id,
+            project_id=persistence.project_id,
+        ),
+        body=Body(
+            plan_candidates=plans_list,
+            critic_evaluation=critic_evaluation,
+            rag_references=rag_refs,
+        ),
+        validation=Validation(
+            passed=True,
+            checks=[
+                ValidationCheck(name="schema_envelope", status="ok"),
+                ValidationCheck(
+                    name="intent_filter",
+                    status="ok",
+                    detail=f"{INTENT_PROMPT_ID}@{INTENT_PROMPT_VERSION}",
                 ),
-            },
-        },
+                ValidationCheck(
+                    name="rag_retrieval",
+                    status=rag_check_status,
+                    detail=rag_check_detail,
+                ),
+                ValidationCheck(
+                    name="plan_count",
+                    status="ok" if len(plans_list) == 3 else "warn",
+                    detail=f"{len(plans_list)} plans (Phase 4 target: 3)",
+                ),
+                ValidationCheck(
+                    name="critic_evaluation",
+                    status="ok" if critic_evaluation else "warn",
+                    detail=(
+                        f"{CRITIC_PROMPT_ID}@{CRITIC_PROMPT_VERSION}"
+                        if critic_evaluation
+                        else "skipped or failed"
+                    ),
+                ),
+                ValidationCheck(
+                    name="db_persistence",
+                    status=db_check_status,
+                    detail=db_check_detail,
+                ),
+                ValidationCheck(
+                    name="multi_model",
+                    status="ok",
+                    detail=f"models={models_list}",
+                ),
+            ],
+            warnings=warnings,
+        ),
     )
+
+    # plan_store 저장 (GET /plans/{plan_id} 에서 envelope 반환).
+    plan_entry["status"] = "generated"
+    plan_entry["envelope"] = envelope.model_dump(mode="json")
+    plan_entry["updated_at"] = _now_iso()
+
+    logger.info(
+        "plans/generate ok plan_id=%s plans=%d verdict=%s rag_refs=%d db_status=%s",
+        plan_id,
+        len(plans_list),
+        critic_evaluation.overall_verdict if critic_evaluation else "skipped",
+        len(rag_refs),
+        persistence.status,
+    )
+    return envelope
 
 
 # ─── GET /plans/{plan_id} ─────────────────────────────────────────────
@@ -189,7 +473,7 @@ def plans_generate(plan_id: str, req: GenerateRequest) -> JSONResponse:
     summary="plan 상태 + envelope 조회",
     description=(
         "Slice 1: status + 메타데이터만 반환 (envelope=null). "
-        "Slice 2 generate 완료 후 envelope 필드에 3-plan Envelope (Phase 1 호환 구조) 채워짐."
+        "Slice 2 generate 완료 후 envelope 필드에 3-plan Envelope 채워짐."
     ),
 )
 def plans_get(plan_id: str):

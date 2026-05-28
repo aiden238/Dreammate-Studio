@@ -1,23 +1,29 @@
 """pytest fixtures — OPENAI_API_KEY 없이도 테스트 통과시키기 위한 mock 주입.
 
-Slice 2 변경:
+Slice 2 변경 (Phase 1):
   - mock_openai_intent_ok / mock_openai_intent_block (Slice 1 통합 호출용) 제거
   - mock_intent_ok / mock_intent_block / mock_planning_ok 분리
   - mock_pipeline_ok: 라우터 e2e용 (Intent allow + Planning success) 조합 fixture
 
-Slice 3 변경:
+Slice 3 변경 (Phase 1):
   - mock_critic_ok / mock_critic_flagged 추가 (P-007 Critic Agent)
   - mock_pipeline_ok가 critic도 포함하도록 확장
 
-Slice 4 변경:
+Slice 4 변경 (Phase 1):
   - mock_rag_ok / mock_rag_fallback 추가 (RAG Lite + graceful fallback)
   - mock_pipeline_ok가 rag 도 포함 (Intent → RAG → Planning → Critic 전 구간 mock)
   - 기본 정책: e2e 테스트는 RAG fallback 으로 동작 (knowledge base 없는 Phase 1 환경 모사)
 
-Slice 5 변경:
+Slice 5 변경 (Phase 1):
   - mock_db_save_ok / mock_db_save_fail / mock_db_save_skipped 추가 (Supabase 저장 + graceful)
   - mock_pipeline_ok 가 DB save 도 포함 (Intent → RAG → Planning → Critic → DB save 전 구간 mock)
   - 기본 정책: e2e 테스트는 DB save_ok 로 동작 (성공적 저장 케이스 — meta.project_id 노출 검증)
+
+Slice 2 변경 (Phase 4):
+  - mock_intent_ok_plans / mock_critic_ok_plans / mock_db_save_ok_plans 추가
+    (routers.plans 모듈 대상 patch — generate.py와 별도 함수 참조)
+  - mock_planning_parallel_3_ok 추가 — 3 unique plans (narrative + informational + experiment)
+  - mock_rag_fallback_plans 추가 — routers.plans 의 RAG fallback
 """
 
 from __future__ import annotations
@@ -372,4 +378,156 @@ def mock_pipeline_ok(
     RAG가 references를 반환하는 케이스는 mock_rag_ok 를 직접 사용한다.
     DB save 가 실패/skip 하는 케이스는 mock_db_save_fail / mock_db_save_skipped 를 직접 사용한다.
     """
+    return MagicMock()
+
+
+# ─── Phase 4 Slice 2 mocks (routers.plans 모듈 대상) ──────────────────
+
+
+@pytest.fixture
+def mock_intent_ok_plans(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """routers.plans.run_intent → allow 응답 mock."""
+
+    def fake(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        return dict(_INTENT_OK_RESPONSE)
+
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_intent", fake)
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_intent_block_plans(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """routers.plans.run_intent → block 응답 mock."""
+
+    def fake(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        return dict(_INTENT_BLOCK_RESPONSE)
+
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_intent", fake)
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_critic_ok_plans(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """routers.plans.run_critic → approve 응답 mock."""
+
+    def fake(plan: dict[str, Any], *args: Any, **kwargs: Any) -> dict[str, Any]:
+        return _make_critic_ok_payload(plan)
+
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_critic", fake)
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_rag_fallback_plans(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """routers.plans.run_rag_retrieval → fallback (빈 references)."""
+
+    def fake(*args: Any, **kwargs: Any) -> RetrievalResult:
+        return RetrievalResult(
+            references=[], used_fallback=True, fallback_reason="pgvector_unreachable",
+        )
+
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_rag_retrieval", fake)
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_rag_ok_plans(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """routers.plans.run_rag_retrieval → 2개 references + fallback False."""
+
+    def fake(*args: Any, **kwargs: Any) -> RetrievalResult:
+        return RetrievalResult(
+            references=[r.model_copy() for r in _RAG_SEEDS],
+            used_fallback=False,
+            fallback_reason=None,
+        )
+
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_rag_retrieval", fake)
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_db_save_ok_plans(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """routers.plans.save_video_planning → status="saved" mock."""
+
+    def fake(**kwargs: Any) -> PersistenceResult:
+        return PersistenceResult(
+            status="saved",
+            project_id=_FAKE_PROJECT_ID,
+            plan_candidate_ids=[_FAKE_PLAN_CANDIDATE_ID],
+            error_reason=None,
+        )
+
+    monkeypatch.setattr("backend.fastapi.routers.plans.save_video_planning", fake)
+    return MagicMock()
+
+
+def _make_parallel_3_payload() -> list[dict[str, Any]]:
+    """3 unique plans (narrative + informational + experiment) — Phase 4 Slice 2 ok 모사."""
+    hooks = [
+        "구독자 0명에서 시작한 채널이 첫 영상으로 한 일",
+        "유튜브 알고리즘이 첫 영상을 푸시하는 5가지 조건",
+        "친구 두 명과 함께 30일 동안 영상을 매일 올리면 생기는 일",
+    ]
+    labels = ["narrative", "informational", "experiment"]
+    payloads: list[dict[str, Any]] = []
+    for i in range(3):
+        payloads.append(
+            {
+                "plan": {
+                    "name": f"기획안 {i + 1}",
+                    "concept": f"콘셉트 {i + 1} 설명",
+                    "hook": hooks[i],
+                    "flow": [
+                        {
+                            "beat_index": 0,
+                            "beat": "도입 — 시청자 공감",
+                            "duration_sec": 3,
+                            "purpose": "관심 유발",
+                        },
+                        {
+                            "beat_index": 1,
+                            "beat": "전개 — 본론 전달",
+                            "duration_sec": 20,
+                            "purpose": "핵심 메시지",
+                        },
+                        {
+                            "beat_index": 2,
+                            "beat": "마무리 — CTA",
+                            "duration_sec": 7,
+                            "purpose": "구독 유도",
+                        },
+                    ],
+                    "pros": f"plan {i + 1} 장점",
+                    "risks": f"plan {i + 1} 위험",
+                    "approach_label": labels[i],
+                }
+            }
+        )
+    return payloads
+
+
+@pytest.fixture
+def mock_planning_parallel_3_ok(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """run_planning_parallel_3 → 3 unique plans (narrative + informational + experiment)."""
+
+    async def fake(*args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+        import copy as _copy
+
+        return _copy.deepcopy(_make_parallel_3_payload())
+
+    monkeypatch.setattr(
+        "backend.fastapi.routers.plans.run_planning_parallel_3", fake,
+    )
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_plans_pipeline_ok(
+    mock_intent_ok_plans: MagicMock,
+    mock_rag_fallback_plans: MagicMock,
+    mock_planning_parallel_3_ok: MagicMock,
+    mock_critic_ok_plans: MagicMock,
+    mock_db_save_ok_plans: MagicMock,
+) -> MagicMock:
+    """Phase 4 Slice 2 e2e 정상 경로 — Phase 4 endpoint용 조합 fixture."""
     return MagicMock()

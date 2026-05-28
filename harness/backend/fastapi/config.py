@@ -41,6 +41,19 @@ class Settings(BaseSettings):
         description="Critic 모델 (Slice 3 사용)",
     )
 
+    # ─── Phase 4 Slice 2: multi-model (사용자 결정 4-b) ─────────────────
+    # 향후 모델 추가 가능 구조 — Phase 4는 OpenAI만 (default 동일 모델 × 3).
+    # Anthropic / Google 등 multi-provider 확장은 Phase 21+에서 검토.
+    openai_models_for_3plan: str = Field(
+        default="gpt-4o-mini,gpt-4o-mini,gpt-4o-mini",
+        description=(
+            "Comma-separated 3 model names for parallel 3-plan generation. "
+            "Phase 4 default: 동일 모델 × 3 (cost 효율). "
+            "향후 모델 추가 가능 (예: 'gpt-4o-mini,gpt-4o-mini,gpt-4o' 또는 multi-provider). "
+            "사용자 결정 4-b: 모델 추가 가능성 염두."
+        ),
+    )
+
     # App
     app_env: Literal["development", "staging", "production"] = "development"
     app_host: str = "0.0.0.0"
@@ -89,6 +102,21 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def openai_models_for_3plan_list(self) -> list[str]:
+        """3 model names list (length exactly 3, padding/truncating to 3 if mismatch).
+
+        Phase 4 Slice 2 (사용자 결정 4-b): comma-separated env var → list of 3.
+        graceful: 부족 시 default 단일 모델로 padding, 초과 시 truncate.
+        """
+        parts = [m.strip() for m in self.openai_models_for_3plan.split(",") if m.strip()]
+        if len(parts) == 3:
+            return parts
+        default = parts[0] if parts else "gpt-4o-mini"
+        if len(parts) < 3:
+            return parts + [default] * (3 - len(parts))
+        return parts[:3]
 
 
 @lru_cache

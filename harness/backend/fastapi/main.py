@@ -1,4 +1,4 @@
-"""Dreammate Studio FastAPI app — Phase 1 Slice 5 + Phase 4 Slice 1.
+"""Dreammate Studio FastAPI app — Phase 1 Slice 5 + Phase 4 Slice 2.
 
 Run:
     uvicorn backend.fastapi.main:app --reload --port 8000
@@ -69,7 +69,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Dreammate Studio API",
         description=(
-            "영상기획 AI 에이전트 백엔드 (Phase 1 Slice 5 + Phase 4 Slice 1).\n\n"
+            "영상기획 AI 에이전트 백엔드 (Phase 1 Slice 5 + Phase 4 Slice 2).\n\n"
             "Phase 1 endpoint (Phase 8+ 제거 예정 — ADR-014): "
             "`POST /api/v1/generate` "
             "(Intent → RAG → Planning(rag_context) → Critic → DB save, 1 plan).\n"
@@ -77,13 +77,14 @@ def create_app() -> FastAPI:
             "Phase 4 contract endpoints (api_contract.md §8):\n"
             "  - `POST /api/v1/plans/start` — 신규 plan_id 발급\n"
             "  - `POST /api/v1/plans/{plan_id}/wizard/{step}` — Discovery/Quick step (skeleton)\n"
-            "  - `POST /api/v1/plans/{plan_id}/generate` — 3-plan generation (Slice 1 skeleton, Slice 2 본격)\n"
-            "  - `GET /api/v1/plans/{plan_id}` — 결과 조회\n\n"
+            "  - `POST /api/v1/plans/{plan_id}/generate` — 3-plan generation "
+            "(Slice 2 본격, 3 parallel async + multi-model 인터페이스 — ADR-015)\n"
+            "  - `GET /api/v1/plans/{plan_id}` — 결과 조회 (envelope 채워짐 after generate)\n\n"
             "RAG는 pgvector 미가용 시 graceful fallback (빈 references).\n"
             "DB 저장은 Supabase 미설정/실패 시 graceful skip (meta.project_id=null, 200 응답).\n"
-            "Critic은 8 차원 평가만 수행 (revise 없음, Phase 4.5+에서 추가)."
+            "Critic은 8 차원 평가만 수행 (revise loop 없음, Phase 4.5+에서 추가)."
         ),
-        version="0.6.0",  # Phase 4 Slice 1 (contract endpoints 추가)
+        version="0.7.0",  # Phase 4 Slice 2 (3-plan parallel + multi-model)
         lifespan=lifespan,
     )
 

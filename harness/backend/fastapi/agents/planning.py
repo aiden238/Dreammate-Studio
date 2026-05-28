@@ -1,19 +1,28 @@
-"""Planning Agent — P-006 (Phase 1 Slice 2 + Slice 4 RAG context).
+"""Planning Agent — P-006 (Phase 1 Slice 2 + Slice 4 RAG context + Phase 4 Slice 2 3-plan parallel).
 
-승인된 영상기획 요청에 대해 단일 plan_candidate를 생성한다.
-Phase 1 deviation: contract는 plans 3개, 본 Phase는 1개만 (validation.warnings로 추적).
+승인된 영상기획 요청에 대해 plan_candidate(s)를 생성한다.
+
+Phase 1 (run_planning): 1 plan (deviation from contract 3 plans).
+Phase 4 Slice 2 (run_planning_parallel_3): 3 plans parallel (asyncio.gather) + multi-model interface.
+  - 사용자 결정 4-b: 3 parallel async call + 향후 모델 추가 가능 구조.
+  - approach_label 분기 (narrative + informational + experiment) — 각 호출마다 다른 hint.
+  - parallel error graceful (retry 1회 → fallback dict).
+  - approach_label unique 강제 (중복 시 fallback label 사용).
 
 호출 흐름:
-  user_input(str) → gpt-4o-mini 1회 호출 (JSON mode) → dict 반환
-  {"plan": {name, concept, hook, flow[...], pros, risks, approach_label}}
+  Phase 1: user_input(str) → gpt-4o-mini 1회 호출 (JSON mode) → dict 반환
+           {"plan": {name, concept, hook, flow[...], pros, risks, approach_label}}
+  Phase 4: user_input(str) → 3 parallel gpt-4o-mini async 호출 → list[dict] 반환 (length 3)
 
-Slice 4 추가:
+Slice 4 (Phase 1) 추가:
   - run_planning(user_input, rag_context=[...]) — RAG 참고 자료를 시스템 프롬프트에 주입.
   - rag_context=None 또는 빈 배열이면 Slice 2 동작과 동일 (backward compat).
 """
 
 from __future__ import annotations
 
+import asyncio
+import copy
 import json
 import logging
 from typing import Any, Sequence
@@ -155,6 +164,226 @@ def run_planning(
         raise ValueError("Planning LLM 응답에 plan 필드 없음")
 
     return parsed
+
+
+# ─── Phase 4 Slice 2: 3-plan parallel + multi-model 인터페이스 ────────
+
+# approach_label hint per parallel call.
+# 3 plans 각각 다른 접근으로 작성되도록 system prompt에 hint 주입 (사용자 결정 4-b).
+_APPROACH_HINTS: tuple[str, ...] = (
+    "narrative — 스토리텔링 중심, 감정 연결",
+    "informational — 명확한 정보 전달, 전문성 강조",
+    "experiment — 실험적 / 비교 / 챌린지 / 새 접근",
+)
+
+# Phase 4 Slice 2 메타 (P-006 동일, parallel 3-call extension).
+PARALLEL_3_PROMPT_ID = "P-006"
+PARALLEL_3_PROMPT_VERSION = "v1.0.0"
+
+
+def _build_system_prompt_with_hint(approach_hint: str) -> str:
+    """기존 SYSTEM_PROMPT (1-plan용)에 approach_hint 추가.
+
+    Phase 4 Slice 2: parallel 3 호출 시 각 plan이 다른 approach_label 갖도록 hint 추가.
+    """
+    addendum = (
+        f"\n\n[Phase 4 Slice 2 approach hint — 이 plan은 다음 방향으로 작성]:\n"
+        f"{approach_hint}\n"
+        f"\napproach_label 필드에 위 hint에 맞는 값을 정확히 선택하세요 "
+        f"(narrative / informational / empathy / experiment / review / other)."
+    )
+    return SYSTEM_PROMPT + addendum
+
+
+async def _run_planning_single(
+    user_input: str,
+    *,
+    rag_context: Sequence[Any] | None = None,
+    model: str,
+    approach_hint: str,
+    client: OpenAI | None = None,
+) -> dict[str, Any]:
+    """Single planning call with custom model + approach hint (async).
+
+    Phase 4 Slice 2 (multi-model 인터페이스):
+      - OpenAI 동기 client를 thread pool에서 실행 (asyncio 호환 + 기존 코드 호환).
+      - approach_hint를 system prompt에 추가 → 3개 plan의 다양성 확보.
+
+    Raises:
+        OpenAIError / ValueError / JSONDecodeError (호출자가 graceful 처리).
+    """
+    settings = get_settings()
+    _client = client or OpenAI(api_key=settings.openai_api_key)
+
+    rag_block = _format_rag_context(rag_context or [])
+    base_prompt = _build_system_prompt_with_hint(approach_hint)
+    system_prompt = base_prompt + (("\n" + rag_block) if rag_block else "")
+
+    logger.info(
+        "planning(parallel) call start model=%s input_len=%d rag_refs=%d hint=%s",
+        model,
+        len(user_input),
+        len(rag_context or []),
+        approach_hint.split(" ", 1)[0],
+    )
+
+    def _sync_call() -> dict[str, Any]:
+        response = _client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_input},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.8,  # 약간 높여 다양성 확보 (3 parallel)
+            max_tokens=1500,
+        )
+        raw = response.choices[0].message.content or "{}"
+        parsed = json.loads(raw)
+        if "plan" not in parsed:
+            raise ValueError("Planning(parallel) response missing 'plan' key")
+        return parsed
+
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _sync_call)
+
+
+def _fallback_plan_dict(index: int) -> dict[str, Any]:
+    """graceful fallback plan — retry 실패 시에도 length 3 보장.
+
+    Phase 4 Slice 2: parallel error graceful 정책 (사용자 응답 차단 금지).
+    """
+    return {
+        "plan": {
+            "name": f"(생성 실패 {index + 1})",
+            "concept": "(LLM 응답 실패 — graceful fallback)",
+            "hook": "재시도 권장 — 잠시 후 다시 시도해주세요",
+            "flow": [
+                {
+                    "beat_index": 0,
+                    "beat": "—",
+                    "duration_sec": 1,
+                    "purpose": "—",
+                },
+                {
+                    "beat_index": 1,
+                    "beat": "—",
+                    "duration_sec": 1,
+                    "purpose": "—",
+                },
+            ],
+            "pros": "",
+            "risks": "graceful fallback (Phase 4 Slice 2)",
+            "approach_label": "other",
+        }
+    }
+
+
+def _enforce_unique_approach_labels(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """3개 plan의 approach_label이 unique하도록 강제 (중복 시 fallback label 사용).
+
+    Phase 4 Slice 2 (사용자 결정 4-b): unique 보장.
+    강한 정합은 Phase 5+ prompt 개선에서 (현재는 fallback label 적용).
+    """
+    if len(results) < 3:
+        return results
+
+    fallback_pool: list[str] = [
+        "narrative", "informational", "experiment", "empathy", "review", "other",
+    ]
+    seen: set[str] = set()
+    for i, r in enumerate(results):
+        plan = r.get("plan", {}) if isinstance(r, dict) else {}
+        label = plan.get("approach_label", "other")
+        if label in seen:
+            for candidate in fallback_pool:
+                if candidate not in seen:
+                    plan["approach_label"] = candidate
+                    label = candidate
+                    break
+        seen.add(label)
+    return results
+
+
+async def run_planning_parallel_3(
+    user_input: str,
+    *,
+    rag_context: Sequence[Any] | None = None,
+    models: list[str] | None = None,
+    client: OpenAI | None = None,
+) -> list[dict[str, Any]]:
+    """Phase 4 Slice 2 — 3 parallel async planning calls with multi-model interface.
+
+    사용자 결정 4-b 반영:
+      - 3 parallel (asyncio.gather)
+      - models: list[str] of 3 (default config.openai_models_for_3plan_list)
+      - 향후 multi-provider 확장 가능 (Anthropic / Google 등 Phase 21+).
+
+    Args:
+        user_input: 사용자 입력 텍스트 (Intent 통과 후).
+        rag_context: RAGReference 또는 dict 시퀀스 (Slice 4 호환). None 또는 빈 배열 허용.
+        models: 3개 모델 list (None이면 settings.openai_models_for_3plan_list 사용).
+        client: OpenAI client (테스트 mock 주입).
+
+    Returns:
+        list of 3 planning dicts. 각 dict은 {"plan": {...}} 형식.
+        파싱 실패 시 graceful fallback dict 포함 (length 3 보장).
+
+    Raises:
+        ValueError: 모델 list가 3개가 아닐 때 (settings padding/truncating으로 통상 raise X).
+    """
+    settings = get_settings()
+    _models = models if models is not None else settings.openai_models_for_3plan_list
+    if len(_models) != 3:
+        raise ValueError(f"Expected 3 models, got {len(_models)}")
+
+    rag_context_list = list(rag_context or [])
+
+    # 3 parallel async calls.
+    tasks = [
+        _run_planning_single(
+            user_input,
+            rag_context=rag_context_list,
+            model=_models[i],
+            approach_hint=_APPROACH_HINTS[i],
+            client=client,
+        )
+        for i in range(3)
+    ]
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # 일부 실패 시 retry 1회 (parallel error graceful).
+    final_results: list[dict[str, Any]] = []
+    for i, r in enumerate(results):
+        if isinstance(r, BaseException):
+            logger.warning(
+                "planning %d/3 failed (%s), retrying once", i + 1, type(r).__name__,
+            )
+            try:
+                retry = await _run_planning_single(
+                    user_input,
+                    rag_context=rag_context_list,
+                    model=_models[i],
+                    approach_hint=_APPROACH_HINTS[i],
+                    client=client,
+                )
+                final_results.append(retry)
+            except Exception as e2:
+                logger.warning(
+                    "planning %d/3 retry also failed: %s — using fallback dict",
+                    i + 1,
+                    e2,
+                )
+                final_results.append(_fallback_plan_dict(i))
+        else:
+            # deepcopy 효과 (호출자가 mutate 해도 다른 결과에 영향 없도록).
+            final_results.append(copy.deepcopy(r))
+
+    # approach_label unique 강제 (사용자 결정 4-b).
+    final_results = _enforce_unique_approach_labels(final_results)
+
+    return final_results
 
 
 # ─── 메타 ────────────────────────────────────────────────────────────

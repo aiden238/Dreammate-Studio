@@ -110,18 +110,33 @@ def test_plans_wizard_step_quick_chain() -> None:
     assert r.json()["next_step"] == "quick.clarify"
 
 
-# ─── POST /plans/{plan_id}/generate (Slice 1 skeleton) ────────────────
+# ─── POST /plans/{plan_id}/generate (Slice 2 본격 — 200 Envelope) ─────
 
-def test_plans_generate_skeleton_returns_202() -> None:
-    """Phase 4 Slice 1: skeleton 202 Accepted (Slice 2에서 본격)."""
-    start = client.post("/api/v1/plans/start", json={}).json()
+def test_plans_generate_returns_200_envelope(
+    mock_intent_ok_plans,
+    mock_rag_fallback_plans,
+    mock_planning_parallel_3_ok,
+    mock_critic_ok_plans,
+    mock_db_save_ok_plans,
+) -> None:
+    """Phase 4 Slice 2: skeleton 202 → 본격 200 Envelope (3-plan).
+
+    Slice 1 (이전): skeleton 202 + {"ok": True, "data": {"status": "accepted"}}.
+    Slice 2 (현재): 본격 — Intent → RAG → 3-plan parallel → Critic → DB → Envelope 200.
+    """
+    start = client.post(
+        "/api/v1/plans/start", json={"user_input": "유튜브 쇼츠"}
+    ).json()
     plan_id = start["plan_id"]
     r = client.post(f"/api/v1/plans/{plan_id}/generate", json={})
-    assert r.status_code == 202
+    assert r.status_code == 200
     data = r.json()
-    assert data["ok"] is True
-    assert data["data"]["plan_id"] == plan_id
-    assert data["data"]["status"] == "accepted"
+    # Slice 2 본격: Envelope 구조 (meta / body / validation)
+    assert "meta" in data
+    assert "body" in data
+    assert "validation" in data
+    # 3-plan 본격 활성 (Slice 2 acceptance A2)
+    assert len(data["body"]["plan_candidates"]) == 3
 
 
 # ─── GET /plans/{plan_id} (정상) ──────────────────────────────────────

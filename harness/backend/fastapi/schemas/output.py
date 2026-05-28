@@ -160,11 +160,13 @@ class CriticEvaluation(BaseModel):
 
 
 class Body(BaseModel):
-    """envelope body — Phase 1 Slice 4 구조.
+    """envelope body — Phase 1 Slice 4 + Phase 4 Slice 2 구조.
 
-    Slice 1: plans 길이 1 (vs contract 3). validation.warnings에 phase_1_single_plan.
-    Slice 3: critic_evaluation 활성화 (revise 없음).
-    Slice 4: rag_references 활성화 (fallback 시 빈 배열).
+    Slice 1 (Phase 1): plans 길이 1 (vs contract 3). validation.warnings에 phase_1_single_plan.
+    Slice 3 (Phase 1): critic_evaluation 활성화 (revise 없음).
+    Slice 4 (Phase 1): rag_references 활성화 (fallback 시 빈 배열).
+    Slice 2 (Phase 4): plan_candidates max_length=3 enforce 활성 (3-plan 본격).
+                       Phase 1 호환 위해 min_length=1 유지 (Phase 1 endpoint 1-plan).
     """
 
     plan_candidates: list[Plan] = Field(..., min_length=1, max_length=3)
@@ -179,6 +181,47 @@ class Body(BaseModel):
             "rag_data_contract.md §5.5 정합 — chunk_id / title / similarity 등 메타 포함."
         ),
     )
+
+
+# ─── Phase 4 Slice 2: validation.warnings 동적 계산 helper ────────────
+
+def compute_validation_warnings_phase4(
+    plans_count: int,
+    *,
+    rag_used_fallback: bool,
+    critic_present: bool,
+    has_revise_loop: bool = False,
+) -> list[str]:
+    """Phase 4 Slice 2: validation.warnings 동적 계산.
+
+    Rules:
+      - plans_count < 3 → phase_1_single_plan (Phase 1 endpoint 또는 부분 실패 시 유지)
+      - plans_count == 3 → phase_1_single_plan 제거
+      - rag_used_fallback == True → phase_1_no_rag (Slice 4에서 일반적으로 해소되었지만 Phase 4 reuse)
+      - critic_present == False → phase_1_no_critic
+      - has_revise_loop == False AND plans_count == 3 → phase_4_no_revise_loop 추가
+        (Phase 4는 revise loop deferred — Phase 4.5+ 이관)
+
+    Args:
+        plans_count: 생성된 plan 개수 (1~3).
+        rag_used_fallback: RAG fallback 사용 여부.
+        critic_present: Critic 평가 결과 포함 여부.
+        has_revise_loop: revise loop 동작 여부 (Phase 4는 항상 False).
+
+    Returns:
+        warning 키 list (output_schema.md §8.2 정합).
+    """
+    warnings: list[str] = []
+    if plans_count < 3:
+        warnings.append("phase_1_single_plan")
+    if rag_used_fallback:
+        warnings.append("phase_1_no_rag")
+    if not critic_present:
+        warnings.append("phase_1_no_critic")
+    if not has_revise_loop and plans_count == 3:
+        # Phase 4: revise loop 미동작 (Phase 4.5+ deferred).
+        warnings.append("phase_4_no_revise_loop")
+    return warnings
 
 
 # ─── Validation ───────────────────────────────────────────────────────
