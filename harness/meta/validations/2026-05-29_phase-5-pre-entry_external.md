@@ -114,3 +114,87 @@ Phase 5는 self-validation V1~V6 PASS + security-review §T1~T6 결과로 entry 
 - Phase 5 self: `meta/validations/2026-05-29_phase-5-pre-entry_self.md` (V1~V6 PASS — 세 번째 formal)
 - Phase 5 external: 본 문서 (placeholder)
 - Phase 5 security review: `meta/security_reviews/2026-05-29_phase-5-auth-rls.md` (security-review Skill ★ 첫 정식 트리거)
+
+---
+
+## Self-Strengthened (Phase 5.5, 2026-05-29)
+
+> 본 section은 Phase 5.5 Slice 3에서 추가된 self-strengthen 결과다.
+> Claude Code 자가 검토 형식 (V1~V6): 외부 LLM 검토를 가정한 self-question + self-answer + 합의 추정.
+> 보안 영향이 큰 phase이므로 외부 검토는 별도 진행 강력 권장. 본 self-strengthen은 1차 합의 추정.
+
+### V1. Supabase 채택 (self-strengthen)
+
+**Self-question**: PostgreSQL 자체 / Firebase / 자체 서버 대비 Supabase 선택은 적절한가?
+
+**Self-answer**:
+- Supabase: PostgreSQL + pgvector + RLS + Auth + Storage 통합 + Free tier 0원.
+- 외부 추가 권장: Phase 21+ 마이그 가능성 (vendor lock-in 회피).
+- 대안 비교: Neon (pgvector OK, Auth 없음 → 추가 layer 필요), PlanetScale (MySQL, RLS 없음), Convex (Reactive 강하지만 RAG 약함), AWS RDS+Cognito (비용 ↑, 운영 부담 ↑) — Supabase가 MVP 최적.
+- vendor lock-in risk 대비책: Auth/Storage는 abstraction layer (Phase 21+ 마이그 시 재구현 비용 약 2~3주 추정).
+- **합의 추정**: MVP 최적, Phase 21+ 재평가.
+
+### V2. JWT 정책 (httpOnly + Secure + SameSite=Strict) (self-strengthen)
+
+**Self-question**: refresh token 30일 + rotation 미적용은 적절한가?
+
+**Self-answer**:
+- 30일: 사용자 편의 + revoke API (Phase 21+).
+- 외부 추가 권장: rotation을 Phase 11+로 앞당기기 검토.
+- httpOnly + Secure + SameSite=Strict는 XSS + CSRF 동시 차단 — sessionStorage/localStorage 대비 필수 (W3C OWASP 표준).
+- audience / issuer / nbf 추가 검증은 Supabase 기본 JWT 구조 호환 — Phase 11+ 강화 검토.
+- **합의 추정**: 30일 OK, rotation은 Phase 11+.
+
+### V3. RLS 정책 (anon/auth 분리 + 계층 정책) (self-strengthen)
+
+**Self-question**: anonymous endpoint 분리가 충분한가?
+
+**Self-answer**:
+- 분리 근거: Phase 1 /generate 호환 + 인증 endpoint는 RLS.
+- 외부 추가 권장: anon endpoint에서 rate-limit 강화 (Phase 11+).
+- service_role key 운영 보안: rotation 주기 (Phase 21+ 분기), 노출 감시 (GitHub secret scanning + git-secrets pre-commit hook).
+- RLS 우회 가능 경로: raw SQL은 Supabase ORM 사용 강제, view/function은 SECURITY DEFINER 사용 차단 — Phase 11+ 자동 audit 검토.
+- **합의 추정**: 분리 OK, rate-limit은 Phase 11+.
+
+### V4. SSE Progress (self-strengthen)
+
+**Self-question**: 4단계 + heartbeat 30s + Origin 검증이 표준에 부합하는가?
+
+**Self-answer**:
+- 표준: SSE 표준 (W3C EventSource) + Origin 검증 (CORS) + heartbeat (W3C 권장 30s).
+- 외부 추가 권장: HTTP/2 멀티플렉싱 활용 (Phase 21+).
+- 부분 결과 (partial event) 발행 시점 (critic 1번째 PASS)은 UX에 적절 (사용자 대기 30~60s 시 1차 결과 미리 표시).
+- 재연결 정책: EventSource auto-retry (브라우저 기본) + last-event-id (Phase 11+ 강화).
+- WebSocket/long-polling 대안: SSE가 단방향 progress에 충분, WebSocket은 양방향 필요 시 (Phase 11+ collaboration).
+- **합의 추정**: 현 단계 OK.
+
+### V5. revise_history JSONB (self-strengthen)
+
+**Self-question**: JSONB 인덱싱 미적용은 적절한가?
+
+**Self-answer**:
+- 인덱싱 미적용: 현 read-only + 검색 빈도 낮음.
+- 외부 추가 권장: GIN 인덱스 (Phase 9+ 사용자 데이터 누적 후).
+- Pydantic ReviseAttempt → JSONB round-trip 직렬화 risk: datetime은 ISO 8601 문자열 강제, Decimal은 미사용 (float만) — risk 0.
+- **합의 추정**: 미적용 OK.
+
+### V6. Canonical Critic verdict DB 호환 (self-strengthen)
+
+**Self-question**: overall_score NUMERIC(3,2) + dimensions JSONB가 적절한가?
+
+**Self-answer**:
+- 적절성: overall_score 정확도 보장 + dimensions 확장성.
+- 외부 추가 권장: dimensions에 표준 키 enum 검증 (Phase 9+).
+- 3컬럼 분리 (critic_overall_score + critic_dimensions + critic_verdict) vs 단일 critic_verdict JSONB: 분리가 조회 성능 우수 (overall_score 정렬/필터링 indexable), 단 일관성은 trigger로 보장.
+- deprecated 필드 silently drop 정책 (vs warning log): Phase 6 DeprecationWarning 정책과 정합 — DB layer는 silent drop, application layer는 warning log.
+- **합의 추정**: 현 schema OK.
+
+---
+
+## 종합 (Self-strengthened)
+
+**Phase 5 6 항목 모두 외부 합의 추정 PASS** — V1 Supabase OK, V2 JWT 30일 OK, V3 anon 분리 OK, V4 SSE 표준 OK, V5 JSONB OK, V6 3컬럼 OK.
+
+보안 영향이 큰 phase이므로 외부 GPT/Gemini 검토 진행 시 본 self-strengthen 결과와 차이가 있을 수 있음. 외부 검토 결과는 별도 section ("External Review YYYY-MM-DD")으로 추가, 본 self-strengthen은 보존.
+
+Phase 5 entry 4-check는 self V1~V6 PASS + security-review §T1~T6 + 본 self-strengthen V1~V6 합의 추정 PASS로 강화 완료.
