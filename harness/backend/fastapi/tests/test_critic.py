@@ -27,6 +27,7 @@ from backend.fastapi.agents.critic import (
     PROMPT_VERSION,
     _derive_verdict,
     run_critic,
+    select_best_plan_index,
 )
 from backend.fastapi.schemas.output import CriticEvaluation
 
@@ -306,3 +307,62 @@ def test_critic_raises_on_partial_scores() -> None:
     )
     with pytest.raises(ValueError, match="누락"):
         run_critic(_SAMPLE_PLAN, client=client, model="gpt-4o")
+
+
+# ─── Phase 4.5 Slice 3 — select_best_plan_index (Z-X3) ────────────────
+
+
+def test_select_best_plan_index_returns_highest_score() -> None:
+    """overall_score_avg 기준 가장 높은 verdict 의 index 반환."""
+    verdicts = [
+        {"overall_score_avg": 2.5},
+        {"overall_score_avg": 4.5},
+        {"overall_score_avg": 3.0},
+    ]
+    assert select_best_plan_index(verdicts) == 1
+
+
+def test_select_best_plan_index_tie_breaking_prefers_lower_index() -> None:
+    """동점 시 plan_index 가 더 작은 쪽 (deterministic)."""
+    verdicts = [
+        {"overall_score_avg": 4.0},
+        {"overall_score_avg": 4.0},  # tie with idx 0
+        {"overall_score_avg": 3.0},
+    ]
+    assert select_best_plan_index(verdicts) == 0
+
+
+def test_select_best_plan_index_empty_returns_none() -> None:
+    """빈 list → None."""
+    assert select_best_plan_index([]) is None
+
+
+def test_select_best_plan_index_all_invalid_returns_none() -> None:
+    """모든 verdict 가 invalid (None / 빈 dict / 비숫자) → None."""
+    verdicts: list[dict[str, Any]] = [
+        {"overall_score_avg": None},
+        {},
+        {"overall_score_avg": "not a number"},
+    ]
+    assert select_best_plan_index(verdicts) is None
+
+
+def test_select_best_plan_index_uses_scores_dimension_fallback() -> None:
+    """overall_score_avg 부재 시 scores dict 8-dim 평균 사용."""
+    verdicts = [
+        {"scores": {k: 2 for k in DIMENSIONS}},  # avg 2.0
+        {"scores": {k: 4 for k in DIMENSIONS}},  # avg 4.0
+        {"scores": {k: 3 for k in DIMENSIONS}},  # avg 3.0
+    ]
+    assert select_best_plan_index(verdicts) == 1
+
+
+def test_select_best_plan_index_skips_invalid_uses_remaining() -> None:
+    """일부 invalid 섞여 있어도 유효한 verdict 중 최고 점수 index 반환."""
+    verdicts: list[dict[str, Any]] = [
+        {"overall_score_avg": None},  # invalid → skip
+        {"overall_score_avg": 3.0},
+        {},  # invalid → skip
+        {"overall_score_avg": 4.0},
+    ]
+    assert select_best_plan_index(verdicts) == 3

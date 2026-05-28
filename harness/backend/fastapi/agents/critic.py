@@ -263,6 +263,69 @@ def run_critic(
     return result
 
 
+# ─── Phase 4.5 Slice 3: Best-plan selection (Z-X3) ────────────────────
+
+def select_best_plan_index(verdicts: list[dict[str, Any]]) -> int | None:
+    """Critic verdict list 에서 가장 좋은 plan 의 index 를 반환 (Z-X3).
+
+    Phase 4.5 Slice 3 — 3 plan 동등 노출 부담 완화. recommended_plan_index 로
+    frontend wrapper(`/plan/[plan_id]/page.tsx`) highlight 에 사용. PlanCard.tsx
+    무수정 정책 유지 (사용자 결정 6-a 계승).
+
+    Args:
+        verdicts: plan별 verdict dict list.
+                  각 verdict 는 `overall_score_avg` (Critic primary 키, 0~5 float)
+                  또는 `scores` dict (8-dim 정수) 를 보유.
+                  None 또는 invalid 항목은 skip.
+
+    Returns:
+        best plan index (0-based, `plan_candidates` 순서와 동일).
+        모든 verdict 가 invalid 거나 list 가 비면 None.
+
+    Tie-breaking:
+        동점 시 plan_index 가 더 작은 쪽 (deterministic — 동일 입력 동일 출력).
+    """
+    if not verdicts:
+        return None
+
+    def _score(v: Any) -> float | None:
+        if not isinstance(v, dict):
+            return None
+        # Critic primary: overall_score_avg (float, 0~5)
+        if v.get("overall_score_avg") is not None:
+            try:
+                return float(v["overall_score_avg"])
+            except (TypeError, ValueError):
+                pass
+        # Generic fallback: overall_score
+        if v.get("overall_score") is not None:
+            try:
+                return float(v["overall_score"])
+            except (TypeError, ValueError):
+                pass
+        # 8-dim 평균 fallback (scores dict — Critic 표준 키)
+        dims = v.get("scores") or v.get("dimensions") or v.get("eight_dim_scores")
+        if isinstance(dims, dict) and dims:
+            try:
+                vals = [float(x) for x in dims.values() if x is not None]
+                return sum(vals) / len(vals) if vals else None
+            except (TypeError, ValueError):
+                return None
+        return None
+
+    best_idx: int | None = None
+    best_score: float | None = None
+    for i, v in enumerate(verdicts):
+        s = _score(v)
+        if s is None:
+            continue
+        if best_score is None or s > best_score:
+            best_score = s
+            best_idx = i
+        # tie: best_idx already lower index → 유지 (deterministic)
+    return best_idx
+
+
 # ─── 메타 ────────────────────────────────────────────────────────────
 
 PROMPT_ID = "P-007"

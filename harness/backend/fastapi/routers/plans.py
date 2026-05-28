@@ -27,6 +27,7 @@ from ..agents.critic import (
     PROMPT_ID as CRITIC_PROMPT_ID,
     PROMPT_VERSION as CRITIC_PROMPT_VERSION,
     run_critic,
+    select_best_plan_index,
 )
 from ..agents.intent import (
     PROMPT_ID as INTENT_PROMPT_ID,
@@ -344,6 +345,7 @@ async def plans_generate(plan_id: str, req: GenerateRequest):
     # 최대 critic_max_revise(기본 2) 회 차단. attempt 별 dict 를 revise_history 에 누적.
     critic_evaluation: CriticEvaluation | None = None
     revise_histories: list[list[dict[str, Any]]] | None = None
+    recommended_idx: int | None = None  # Phase 4.5 Slice 3 (Z-X3)
 
     if req.use_critic:
         max_revise = settings.critic_max_revise
@@ -443,6 +445,19 @@ async def plans_generate(plan_id: str, req: GenerateRequest):
             )
             plans_list = [r[0] for r in results]
             revise_histories = [r[2] for r in results]
+            # Phase 4.5 Slice 3 (Z-X3): plan 별 final verdict 누적 → best-plan idx.
+            final_verdicts = [r[1] for r in results if r[1] is not None]
+            if final_verdicts:
+                try:
+                    # `results` 순서 == `plans_list` 순서 보장 (asyncio.gather 정렬).
+                    # None verdict (graceful skip) 가 섞인 경우 select_best_plan_index 의
+                    # _score 가 None 반환하므로 안전. 원본 순서 보존을 위해 full list 전달.
+                    recommended_idx = select_best_plan_index([r[1] for r in results])
+                except Exception as e:
+                    logger.warning(
+                        "select_best_plan_index failed: %s — graceful skip", e,
+                    )
+                    recommended_idx = None
             # 대표 verdict — 첫 plan 의 마지막 verdict (output_schema 호환 유지).
             first_verdict = results[0][1] if results else None
             if first_verdict is not None:
@@ -457,6 +472,7 @@ async def plans_generate(plan_id: str, req: GenerateRequest):
             logger.warning("Critic+revise loop unexpectedly failed: %s — graceful skip", e)
             critic_evaluation = None
             revise_histories = None
+            recommended_idx = None
 
     # 6. DB save (graceful) ──────────────────────────────────────────
     request_id = str(uuid4())
@@ -521,6 +537,7 @@ async def plans_generate(plan_id: str, req: GenerateRequest):
             critic_evaluation=critic_evaluation,
             rag_references=rag_refs,
             revise_history=revise_histories,  # Phase 4.5 Slice 2
+            recommended_plan_index=recommended_idx,  # Phase 4.5 Slice 3 (Z-X3)
         ),
         validation=Validation(
             passed=True,

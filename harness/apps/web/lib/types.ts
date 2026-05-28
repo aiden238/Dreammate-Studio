@@ -123,6 +123,19 @@ export interface Body {
    * Slice 4 이후. RAG fallback 또는 미연결 시 빈 배열.
    */
   rag_references?: RAGReference[];
+  /**
+   * Phase 4.5 Slice 2: plan별 revise attempt log.
+   *  - 외부 배열: plan_candidates 순서 (length === plan_candidates.length)
+   *  - 내부 배열: attempt 0,1,2,... 순차 dict (action / revised / max_reached? / critic_warning?)
+   * loop 비활성 또는 Phase 4 이하 응답 시 미포함 또는 null.
+   */
+  revise_history?: Array<Array<Record<string, unknown>>> | null;
+  /**
+   * Phase 4.5 Slice 3 (Z-X3): Critic 8-dim 기준 best-plan index.
+   * plan_candidates 순서 0~2. 모든 verdict invalid / critic skip 시 null.
+   * Frontend wrapper(`/plan/[plan_id]/page.tsx`) highlight 에 사용 — PlanCard.tsx 무수정 유지.
+   */
+  recommended_plan_index?: number | null;
 }
 
 // ─── Validation ───────────────────────────────────────────────────────

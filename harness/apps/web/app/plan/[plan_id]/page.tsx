@@ -186,6 +186,11 @@ export default function PlanResultPage() {
   const ragRefs: RAGReference[] = envelope.body.rag_references ?? [];
   const projectId = envelope.meta.project_id ?? null;
   const warnings = envelope.validation.warnings ?? [];
+  // Phase 4.5 Slice 3 (Z-X3): Critic 8-dim 기준 best-plan index. null 시 highlight 없음.
+  const recommendedIdx: number | null =
+    typeof envelope.body.recommended_plan_index === "number"
+      ? envelope.body.recommended_plan_index
+      : null;
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-10 pb-32 flex flex-col gap-6">
@@ -264,12 +269,22 @@ export default function PlanResultPage() {
       >
         {plans.map((plan, i) => {
           const isSelected = selectedPlanId === plan.plan_id;
+          const isRecommended = recommendedIdx === i;
+          // selected 우선순위: 선택됨 시 primary ring, 그렇지 않고 추천일 때 emerald ring.
+          const ringClass = isSelected
+            ? "ring-2 ring-primary-500 ring-offset-2"
+            : isRecommended
+              ? "ring-2 ring-emerald-500 ring-offset-2"
+              : "ring-0 hover:ring-1 hover:ring-neutral-300";
           return (
             <div
               key={plan.plan_id}
               role="radio"
               aria-checked={isSelected}
-              aria-label={`기획안 ${i + 1} / ${plans.length} — ${plan.name}`}
+              aria-label={`기획안 ${i + 1} / ${plans.length} — ${plan.name}${
+                isRecommended ? " (AI 추천)" : ""
+              }`}
+              data-recommended={isRecommended ? "true" : "false"}
               tabIndex={0}
               onClick={() => handleSelect(plan.plan_id)}
               onKeyDown={(e) => {
@@ -278,12 +293,17 @@ export default function PlanResultPage() {
                   handleSelect(plan.plan_id);
                 }
               }}
-              className={`cursor-pointer rounded-lg transition-shadow ${
-                isSelected
-                  ? "ring-2 ring-primary-500 ring-offset-2"
-                  : "ring-0 hover:ring-1 hover:ring-neutral-300"
-              } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500`}
+              className={`relative cursor-pointer rounded-lg transition-shadow ${ringClass} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500`}
             >
+              {/* Phase 4.5 Slice 3 (Z-X3): AI 추천 badge — wrapper 에만 추가 (PlanCard 무수정). */}
+              {isRecommended && !isSelected && (
+                <span
+                  aria-hidden
+                  className="absolute -top-2 left-3 z-10 inline-flex items-center rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-semibold text-white shadow"
+                >
+                  AI 추천
+                </span>
+              )}
               <div className="flex items-center gap-2 mb-2 px-1">
                 <span className="text-xs font-medium text-neutral-500">
                   옵션 {i + 1} / {plans.length}

@@ -194,6 +194,16 @@ class Body(BaseModel):
             "loop 비활성 또는 Phase 4 이하 호출 시 None."
         ),
     )
+    recommended_plan_index: int | None = Field(
+        default=None,
+        description=(
+            "Phase 4.5 Slice 3 (Z-X3): Critic 8-dim 기준 best-plan index "
+            "(`plan_candidates` 순서 0~2). 모든 verdict 가 invalid 또는 "
+            "critic skip 시 None. Tie 발생 시 더 작은 index 선택 (deterministic). "
+            "Frontend wrapper(`/plan/[plan_id]/page.tsx`) highlight 에 사용 — "
+            "PlanCard.tsx 무수정 정책 유지 (사용자 결정 6-a 계승)."
+        ),
+    )
 
 
 # ─── Phase 4 Slice 2: validation.warnings 동적 계산 helper ────────────
