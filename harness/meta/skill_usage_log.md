@@ -43,22 +43,23 @@
 > Phase 5 종료 갱신: 2026-05-29 (Slice 5 sub-agent)
 > Phase 5.5 entry 갱신: 2026-05-29 (Slice 1 sub-agent)
 > Phase 5.5 종료 갱신: 2026-05-29 (Slice 4)
+> Phase 7 entry 갱신: 2026-05-29 (Slice 1 sub-agent)
 
 | Skill | 첫 트리거 | 마지막 트리거 | 누적 | 최근 30일 | 상태 | 비고 |
 |---|---|---|---|---|---|---|
-| phase-start | 2026-05-26 | 2026-05-29 | 8 | 8 | active | v1.0.0 → v1.1.0 → v1.2.0 (P2) → v1.3.0 (P-X1 §6.3 §SELF-VERIFICATION). Phase 1+2+3+4+4.5+6+5+5.5 진입 (Phase 5.5 entry Slice 1 트리거 — Slice 1에서 누적 8 진행) |
-| qa-check | 2026-05-26 | 2026-05-29 | 32 | 32 | active | v1.1.0 → v1.2.0 (P3, 카테고리 11). Phase 1:8 + Phase 2:7 + Phase 3:6 + Phase 4:5 + Phase 4.5:1 + Phase 6:2 + Phase 5:2 + **Phase 5.5:1 (Slice 4 final)** |
-| contract-change | 2026-05-26 | 2026-05-29 | 5 | 5 | active | CC-001 (Option B) + P1~P4 Skill 갱신 + P-X1 phase-start v1.3.0 + **Phase 6 Slice 2 첫 본격 실 변경 ★** (output_schema §9 canonical + §10 Body + agent_io_contract §6 Rewriter v1.1.0 + api_contract §8.3 + ADR-018/019) + **Phase 5 Slice 2 두 번째 본격 ★** (`db_schema.md` 신규 — DB schema 첫 정식 contract + 4계층 + plans + users + JSONB 컬럼). 회귀 0 유지. Phase 3+4+4.5+5.5는 contract 변경 0 (Phase 5.5는 ADR-023/024 신규만, contracts 직접 변경 없음) |
-| meta-retrospective | 2026-05-26 | 2026-05-29 | 8 | 8 | active | Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 4.5 + Phase 6 + Phase 5 + **Phase 5.5 (지금)** 회고 |
-| phase-complete | 2026-05-26 | 2026-05-29 | 8 | 8 | active | v1.0.0 → v1.1.0 (P4 §1.5 smoke test) → v1.2.0 (P-X2 §1.6 변경성 시뮬 자동 게이트, Phase 4.5 entry 도입). Phase 1+2+3+4+4.5+6+5+5.5 종료. Phase 4.5 Slice 4 v1.2.0 §1.6 첫 자동 게이트 (5/5) + Phase 6 Slice 4 두 번째 (5/5) + Phase 5 Slice 5 세 번째 자동 게이트 (scenario_simulation v2 10/10 PASS) + **Phase 5.5 Slice 4 네 번째 자동 게이트 (scenario_simulation v2 10/10 PASS)** ★ |
-| harness-audit | 2026-05-27 | 2026-05-29 | 5 | 5 | active | audit_naming + audit_page_component 모두 자동 호출 (Phase 4 D-1 정규화 보강 + Phase 4.5 Slice 1+4 + Phase 6 Slice 1+4 + Phase 5 Slice 1+5 + **Phase 5.5 Slice 4**) — 수동 Skill 호출 0. Phase 5.5 Slice 4 audit_naming 0 drift + audit_page_component 2 intended drift WARN (Phase 5 baseline 유지, phase-complete v1.2.0 §1.6 허용) |
-| design-review | 2026-05-27 | 2026-05-29 | 6 | 6 | active | Phase 2 Slice 6 (spec-only 첫) + Phase 3 Slice 6 (impl 두 번째 §B) + Phase 4 Slice 4 (impl 세 번째 §B) + Phase 4.5 Slice 4 (impl 네 번째 §B) + Phase 6 Slice 4 (impl 다섯 번째 §B) + **Phase 5 Slice 5 (impl 여섯 번째 §B, PlanCard 17연속 무수정 정합)** |
-| multi-llm-validation | 2026-05-28 | 2026-05-29 | 4 (1 informal + 3 formal) | 4 | active | Phase 4 informal GPT 검토 + Phase 4.5 entry formal self V1~V4 PASS (외부 placeholder 분리) + Phase 6 entry formal self 두 번째 V1~V5 PASS + **Phase 5 entry formal self ★ 세 번째** V1~V6 PASS (Supabase 채택 / JWT / RLS / SSE / revise_history JSONB / canonical DB). **P-VALIDATION-FORMAL-001 정식 패턴 확정 (3회 누적)** |
-| **agent-io-check** | **2026-05-29** | **2026-05-29** | **2** | 2 | **active** | Phase 6 Slice 4 첫 정식 트리거 (Rewriter v1.1.0 + Critic canonical 정합 PASS) + **Phase 5 Slice 5 두 번째 회귀 검증** (Phase 6 baseline 유지 PASS — Phase 5는 agents 변경 0이므로 회귀만 검증) |
+| phase-start | 2026-05-26 | 2026-05-29 | 9 | 9 | active | v1.0.0 → v1.1.0 → v1.2.0 (P2) → v1.3.0 (P-X1 §6.3 §SELF-VERIFICATION). Phase 1+2+3+4+4.5+6+5+5.5+7 진입 (Phase 7 entry Slice 1 트리거 — 누적 9) |
+| qa-check | 2026-05-26 | 2026-05-29 | 33 | 33 | active | v1.1.0 → v1.2.0 (P3, 카테고리 11). Phase 1:8 + Phase 2:7 + Phase 3:6 + Phase 4:5 + Phase 4.5:1 + Phase 6:2 + Phase 5:2 + Phase 5.5:1 + **Phase 7:1 (Slice 1 entry)** |
+| contract-change | 2026-05-26 | 2026-05-29 | 5 | 5 | active | CC-001 (Option B) + P1~P4 Skill 갱신 + P-X1 phase-start v1.3.0 + **Phase 6 Slice 2 첫 본격 실 변경 ★** (output_schema §9 canonical + §10 Body + agent_io_contract §6 Rewriter v1.1.0 + api_contract §8.3 + ADR-018/019) + **Phase 5 Slice 2 두 번째 본격 ★** (`db_schema.md` 신규 — DB schema 첫 정식 contract + 4계층 + plans + users + JSONB 컬럼). 회귀 0 유지. Phase 3+4+4.5+5.5+7 Slice 1는 contract 변경 0 (Phase 7 Slice 2 예정 — rag_data_contract.md) |
+| meta-retrospective | 2026-05-26 | 2026-05-29 | 8 | 8 | active | Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 4.5 + Phase 6 + Phase 5 + **Phase 5.5** 회고. Phase 7 회고는 Slice 5에서 예정 |
+| phase-complete | 2026-05-26 | 2026-05-29 | 8 | 8 | active | v1.0.0 → v1.1.0 (P4 §1.5 smoke test) → v1.2.0 (P-X2 §1.6 변경성 시뮬 자동 게이트, Phase 4.5 entry 도입). Phase 1+2+3+4+4.5+6+5+5.5 종료. Phase 7 종료는 Slice 5에서 예정 (다섯 번째 자동 게이트 예상) |
+| harness-audit | 2026-05-27 | 2026-05-29 | 5 | 5 | active | audit_naming + audit_page_component 모두 자동 호출 (Phase 4 D-1 정규화 보강 + Phase 4.5 Slice 1+4 + Phase 6 Slice 1+4 + Phase 5 Slice 1+5 + Phase 5.5 Slice 4) — 수동 Skill 호출 0. Phase 7 entry는 audit 신규 호출 X (entry 4-check 결과만 활용, Slice 5 final에서 정식 호출 예정) |
+| design-review | 2026-05-27 | 2026-05-29 | 6 | 6 | active | Phase 2 Slice 6 (spec-only 첫) + Phase 3 Slice 6 (impl 두 번째 §B) + Phase 4 Slice 4 (impl 세 번째 §B) + Phase 4.5 Slice 4 (impl 네 번째 §B) + Phase 6 Slice 4 (impl 다섯 번째 §B) + Phase 5 Slice 5 (impl 여섯 번째 §B, PlanCard 17연속 무수정 정합). Phase 7 Slice 5에서 일곱 번째 예정 (PlanCard 19연속 무수정 검증) |
+| multi-llm-validation | 2026-05-28 | 2026-05-29 | 5 (1 informal + 4 formal) | 5 | active | Phase 4 informal GPT 검토 + Phase 4.5 entry formal self V1~V4 PASS (외부 placeholder 분리) + Phase 6 entry formal self 두 번째 V1~V5 PASS + Phase 5 entry formal self 세 번째 V1~V6 PASS (Supabase / JWT / RLS / SSE / revise_history / canonical DB) + **Phase 7 entry formal self ★ 네 번째** V1~V7 PASS (ADR-024 5단계 / chunk 512 / top-k=5 threshold=0.7 / OpenAI embedding / graceful / LLM Wiki vs RAG / hybrid 승인). **P-VALIDATION-FORMAL-001 정식 패턴 확정 (4회 누적)** |
+| **agent-io-check** | **2026-05-29** | **2026-05-29** | **2** | 2 | **active** | Phase 6 Slice 4 첫 정식 트리거 (Rewriter v1.1.0 + Critic canonical 정합 PASS) + Phase 5 Slice 5 두 번째 회귀 검증 (Phase 6 baseline 유지 PASS). Phase 7 Slice 5 세 번째 예정 (agents/rag.py 변경 검증) |
 | eval-design | - | - | 0 | 0 | unused | failure_cases.md 작성은 INDEX + ADR로 처리 (skill 미사용) |
 | eval-run | - | - | 0 | 0 | unused | Phase 9+ Critic revise effect eval / fallback 완전 제거 시 활성화 |
-| rag-design | - | - | 0 | 0 | unused | Phase 7 RAG 본격화 시 활성화 |
-| rag-update | - | - | 0 | 0 | unused | Phase 7+ |
+| **rag-design** | **2026-05-29** | **2026-05-29** | **1 ★ 첫 정식** | 1 | **active** | **Phase 7 Slice 1 entry ★ 첫 정식 트리거** — 절차 8단계 모두 적용 (현재 자산 로드 → retrieval/metadata/chunking/quality_filter 점검 → 새 소스 검토 → LLM Wiki vs RAG 분리 → 변경 제안서). 결과: ADR-025 (RAG architecture — chunking 512 tokens + overlap 50 + embedding text-embedding-3-small + retrieval pgvector cosine top-k=5 threshold=0.7 + LLM Wiki vs RAG 분리 RAG > LLM Wiki 우선순위 + graceful 5종 marker). 후속: Slice 2 contract-change (rag_data_contract.md 갱신) |
+| rag-update | - | - | 0 | 0 | unused | Phase 7 Slice 4 첫 정식 예정 (5단계 승격 절차 강제) |
 | prompt-version-review | - | - | 0 | 0 | unused | Phase 7+ prompt_registry P-007/P-008 정식화 시 (NG8 Phase 6 defer) |
 | ai-architecture-review | - | - | 0 | 0 | unused | Phase 7/8 진입 시 활성화 |
 | context-compact | - | - | 0 | 0 | unused | Phase 1~6 컨텍스트 충분 |
@@ -92,7 +93,9 @@
 - design-review (frontend 변경 없음)
 - multi-llm-validation (Phase 4.5/6/5에서 형식 정착, Phase 5.5는 강화 작업이므로 형식 재사용)
 
-**Phase 7 진입 시 활성 예상 Skill**: phase-start + qa-check + multi-llm-validation formal 네 번째 + **rag-design ★ 첫 정식** + rag-update + contract-change (rag_data_contract.md) + harness-audit + meta-retrospective + phase-complete.
+**Phase 7 사용 요약 (예상)**: 11 Skill 활용 (phase-start v1.3.0 + qa-check + contract-change (rag_data_contract.md, Slice 2) + multi-llm-validation formal 네 번째 (Slice 1) + **rag-design ★ 첫 정식 (Slice 1)** + **rag-update ★ 첫 정식 (Slice 4)** + agent-io-check 세 번째 회귀 (Slice 5) + harness-audit (Slice 5) + design-review 일곱 번째 §B (Slice 5) + meta-retrospective (Slice 5) + phase-complete v1.2.0 다섯 번째 자동 게이트 (Slice 5)). Phase 1~7 누적 = **14 Skill 활성화**, 6 unused. **rag-design + rag-update 본격 안정화** (Phase 7 entry에서 rag-design 첫 정식 트리거).
+
+**Phase 7 entry 갱신 (현재 Slice 1)**: 4 Skill 활용 (phase-start 9번째 + qa-check + multi-llm-validation formal 네 번째 + **rag-design ★ 첫 정식**). Phase 1~7 entry 시점 누적 = 13 active (rag-update Slice 4 예정으로 14 도달 예상). rag-design 첫 정식 트리거 결과: ADR-025 (RAG architecture).
 
 > Phase 6 entry 갱신: 2026-05-29 (Slice 1 sub-agent)
 > Phase 6 종료 갱신: 2026-05-29 (Slice 4)
@@ -100,3 +103,4 @@
 > Phase 5 종료 갱신: 2026-05-29 (Slice 5 sub-agent)
 > Phase 5.5 entry 갱신: 2026-05-29 (Slice 1 sub-agent)
 > Phase 5.5 종료 갱신: 2026-05-29 (Slice 4)
+> Phase 7 entry 갱신: 2026-05-29 (Slice 1 sub-agent)
