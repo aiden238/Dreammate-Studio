@@ -122,6 +122,55 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 7 Slice 3 — RAG Lite (ADR-025) ───────────────────────
+    # Phase 1 pgvector_* baseline 보존 + Phase 7 RAG Lite 정식 env 신규.
+    # 환경변수 RAG_* prefix 자동 매핑 (pydantic_settings BaseSettings).
+    # 교체 가능 구조 (Phase 21+ Custom embedding 대비, ADR-024 §B).
+    rag_embedding_model: str = Field(
+        default="text-embedding-3-small",
+        description=(
+            "Phase 7: OpenAI embedding model (ADR-025 §2). "
+            "1536 dim. 환경변수 RAG_EMBEDDING_MODEL 로 override 가능 "
+            "(Phase 21+ Custom embedding 교체 시 사용)."
+        ),
+    )
+    rag_embedding_dim: int = Field(
+        default=1536,
+        description=(
+            "Phase 7: embedding vector dimension (ADR-025 §2). "
+            "text-embedding-3-small native 1536. "
+            "model 교체 시 migration 필요 (ADR-025 §Trade-offs)."
+        ),
+    )
+    rag_chunk_size: int = Field(
+        default=512,
+        description=(
+            "Phase 7: chunk size in tokens (ADR-025 §1). "
+            "ADR-024 글자 기준 → ADR-025 token 기준 재정의."
+        ),
+    )
+    rag_chunk_overlap: int = Field(
+        default=50,
+        description=(
+            "Phase 7: chunk overlap in tokens (ADR-025 §1, 10% 표준). "
+            "문맥 보존 + retrieval recall ↑."
+        ),
+    )
+    rag_top_k: int = Field(
+        default=5,
+        description=(
+            "Phase 7: retrieval top_k (ADR-025 §3). "
+            "Phase 1 pgvector_top_k=3 와 별개 — Phase 7 RAG Lite 정식."
+        ),
+    )
+    rag_threshold: float = Field(
+        default=0.7,
+        description=(
+            "Phase 7: cosine similarity threshold (ADR-025 §3). "
+            "표준 cutoff (0.65~0.75 범위)."
+        ),
+    )
+
     # ─── Phase 5 Slice 3 — Auth dev mode ────────────────────────────
     # Supabase 미설정 환경에서 /auth/login mock user (mock-user-1) 발급 허용.
     # 절대 production = False 강제 (배포 환경 환경변수로 override).
