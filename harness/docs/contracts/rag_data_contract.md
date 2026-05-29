@@ -774,4 +774,178 @@ ETL 실패 ≥ 3회 / 1시간             → Slack #ops-alert
 ```
 v1.0.0 (2026-05-26): Sprint S3-2 초안. 5단계 승격 흐름, 검색 정책, 임베딩 모델 선택,
                       학습 신호 연동, PII / 광고 단어 필터 hook, metadata 스키마 초안.
+v1.1.0 (2026-05-29): Phase 7 Slice 2 contract-change. candidate_knowledge 5단계 정식 등록
+                      (§18 추가) — knowledge_stage enum, promotion_history JSONB append-only,
+                      hybrid 자동/수동 승인 (ADR-026), pgvector RLS (ADR-025).
 ```
+
+---
+
+## 18. candidate_knowledge 5단계 (Phase 7 정식 등록)
+
+> Date: 2026-05-29 (Phase 7 Slice 2)
+> contract-change Skill 절차 적용 (변경 사유 + 회귀 검증 + ADR cross-ref)
+> Related: ADR-024 (Phase 5.5 scope evolution), ADR-025 (Phase 7 RAG architecture), ADR-026 (Phase 7 promotion logic)
+
+### 18.0 변경 사유 (contract-change §2)
+
+Phase 7 RAG Lite 정식 구현 진입 (ADR-024 결정). 기존 §4 5단계 흐름(`pending → filtered → evaluated → approved → promoted`)을 **DB-level enum + append-only promotion_history JSONB + hybrid 승인 로직**으로 정식화. ADR-025/026이 본 §18의 단일 출처.
+
+§4 기존 본문은 **운영자 친화 해설(Phase 1 baseline)** 으로 유지하되, **DB-level enforcement 단일 출처는 §18** 로 이관.
+
+### 18.1 5단계 Stage Enum
+
+```sql
+CREATE TYPE knowledge_stage AS ENUM (
+    'pending',     -- 1단계: 진입 (사용자 입력 / LLM Wiki 신규 / 외부 시드)
+    'filtered',    -- 2단계: quality_filter 통과 (PII + 인젝션 + 광고 차단)
+    'evaluated',   -- 3단계: eval_rubric 종합 ≥ 0.6 (relevance + clarity + safety)
+    'approved',    -- 4단계: 자동 (≥ 0.8) 또는 수동 승인 (ADR-026 §1.3 hybrid)
+    'promoted'     -- 5단계: approved_knowledge 테이블 이동 + retrieval 활성
+);
+```
+
+> §4 본문의 `rejected` 종결 상태는 별도 컬럼 또는 reason 메타로 표현 (enum 외부, ADR-026 §1.5 idempotent + reason 기록 정합).
+
+### 18.2 Tables
+
+#### candidate_knowledge (Phase 7 신규 — 0004_rag_5stage.sql)
+
+| 컬럼 | 타입 | 제약 | 비고 |
+|---|---|---|---|
+| `id` | UUID | PK, `gen_random_uuid()` | |
+| `content` | TEXT | NOT NULL | PII 마스킹 후 본문 |
+| `stage` | `knowledge_stage` | DEFAULT 'pending' | §18.1 enum |
+| `metadata` | JSONB | DEFAULT '{}'::jsonb | ADR-025 metadata schema 정합 |
+| `embedding` | `vector(1536)` | NULL 허용 | pgvector, OpenAI `text-embedding-3-small` |
+| `auth_user_id` | UUID | NULL 허용 | Phase 1 anonymous 호환 (ADR-021 패턴) |
+| `brand_id` | UUID FK → brands(id) | ON DELETE SET NULL | retrieval 격리 (ADR-025 §3) |
+| `promotion_history` | JSONB | DEFAULT '[]'::jsonb, **append-only** | §18.4 schema |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+| `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+
+#### approved_knowledge (Phase 7 신규 — 0004_rag_5stage.sql)
+
+| 컬럼 | 타입 | 제약 | 비고 |
+|---|---|---|---|
+| `id` | UUID | PK | |
+| `source_candidate_id` | UUID FK → candidate_knowledge(id) | ON DELETE SET NULL | promotion 이력 추적 |
+| `content` | TEXT | NOT NULL | |
+| `metadata` | JSONB | DEFAULT '{}'::jsonb | |
+| `embedding` | `vector(1536)` | NULL 허용 | |
+| `auth_user_id` | UUID | NULL 허용 | |
+| `brand_id` | UUID FK → brands(id) | ON DELETE SET NULL | |
+| `promoted_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+
+> §3 본문의 legacy `candidate_knowledge` 스키마(Phase 0 `db_schema.md §7.2`)는 운영자 친화 해설로 유지. Phase 7 신규 코드는 §18.2 schema 사용 (0004_rag_5stage.sql).
+
+### 18.3 Transition 규칙 (ADR-026)
+
+| 전이 | 자동/수동 | 조건 |
+|---|---|---|
+| `pending → filtered` | 자동 | `quality_filter` PASS (PII + 인젝션 + 광고) |
+| `filtered → evaluated` | 자동 | `eval_rubric` 종합 ≥ 0.6 |
+| `evaluated → approved` | **Hybrid** | 자동: 종합 ≥ 0.8 / 수동: 0.6 ≤ 종합 < 0.8 |
+| `approved → promoted` | 자동 | 즉시 (approved_knowledge 이동) |
+
+- **순서 강제**: 단계 건너뛰기 금지 (`pending → evaluated` 차단)
+- **idempotent**: partial state recovery 허용 (ADR-026 §1.5)
+- **promotion_history append-only**: DB layer + application repository에서 강제
+
+### 18.4 promotion_history JSONB schema (append-only)
+
+```json
+[
+  {
+    "from": "pending",
+    "to": "filtered",
+    "at": "2026-05-29T10:00:00Z",
+    "reason": "quality_pass"
+  },
+  {
+    "from": "filtered",
+    "to": "evaluated",
+    "at": "2026-05-29T10:01:00Z",
+    "scores": {"relevance": 0.8, "clarity": 0.7, "safety": 1.0},
+    "overall": 0.83
+  },
+  {
+    "from": "evaluated",
+    "to": "approved",
+    "at": "2026-05-29T10:02:00Z",
+    "method": "auto",
+    "threshold": 0.8,
+    "overall": 0.83
+  },
+  {
+    "from": "approved",
+    "to": "promoted",
+    "at": "2026-05-29T10:02:00Z"
+  }
+]
+```
+
+| 필드 | 필수 | 타입 | 비고 |
+|---|---|---|---|
+| `from` | ✅ | string (stage) | 전이 직전 stage |
+| `to` | ✅ | string (stage) | 전이 직후 stage |
+| `at` | ✅ | string (ISO8601 UTC) | 전이 시점 |
+| `reason` | optional | string | quality 통과 사유 등 |
+| `scores` | optional | object | eval_rubric 3 dim (`filtered → evaluated` 시) |
+| `overall` | optional | number (0.0~1.0) | 종합 점수 |
+| `method` | optional | `auto` \| `manual` | hybrid 승인 (`evaluated → approved` 시) |
+| `threshold` | optional | number | 적용된 임계값 (auto: 0.8 / manual: 0.6) |
+
+### 18.5 Retrieval (ADR-025)
+
+- pgvector cosine similarity (`<=>` operator)
+- `top_k = 5`, `threshold = 0.7`
+- `brand_id` 격리 + `source_candidate_id` 중복 제거
+- 상세: ADR-025 §3 + Slice 3 `rag/retrieval.py`
+
+### 18.6 RLS 정책 (Phase 5 baseline 계승)
+
+- 인증 endpoint: `auth_user_id = auth.uid()`
+- anonymous endpoint: `auth_user_id IS NULL` 허용 (Phase 1 호환, ADR-021 패턴)
+- `brand_id` 격리: 본인 brand만 접근
+- 상세 SQL: `db/migrations/0004_rag_5stage.sql` §6 + Phase 5 `0003_rls_policy.sql` 패턴
+
+### 18.7 Indexes (0004_rag_5stage.sql §4~5)
+
+- `idx_candidate_stage`, `idx_candidate_brand`, `idx_candidate_auth_user`
+- `idx_approved_brand`, `idx_approved_auth_user`
+- `idx_candidate_embedding ivfflat (vector_cosine_ops) WITH (lists=100)` (ADR-025 §7.2)
+- `idx_approved_embedding ivfflat (vector_cosine_ops) WITH (lists=100)`
+- GIN index on `promotion_history`: **미적용** (Phase 9+ 도입 검토, ADR-026 §2)
+
+### 18.8 영향 받는 영역 (contract-change §3)
+
+- [x] DB 스키마 (0004_rag_5stage.sql)
+- [x] Agent IO (Phase 7 Slice 4 agents/rag.py 통합 예정)
+- [x] Output Schema (§5 검색 정책 정합, Slice 3 retrieval 구현)
+- [ ] API 응답 형식 (Slice 4 선택 endpoint 추가 시)
+- [ ] Prompt
+- [x] RAG 파이프라인 (5단계 정식 등록)
+- [ ] 평가 / golden_set (Phase 9+ eval-run 정식화 시 §3.3 간이 rubric deprecated)
+- [x] 보안 / 권한 (RLS 정책 + brand 격리)
+- [x] 프론트 컴포넌트 — **변경 0** (PlanCard 19연속, component_map 29연속 보존)
+
+### 18.9 Rollback (contract-change §2)
+
+- `0004_rag_5stage.sql`은 idempotent (CREATE IF NOT EXISTS / DO $$ EXCEPTION)
+- 롤백: `DROP TABLE approved_knowledge, candidate_knowledge; DROP TYPE knowledge_stage;`
+- promotion_history는 append-only이므로 rollback 시 이력 손실 — **production 데이터 적재 후 rollback 금지**
+
+### 18.10 회귀 검증 (contract-change §3, Slice 2 acceptance)
+
+- `pytest backend/fastapi/tests/test_rag_promotion.py` — 5단계 transition 9 케이스
+- `pytest backend/fastapi/tests/test_rag_quality_filter.py` — PII + 인젝션 + 광고 8 케이스
+- `pytest backend/fastapi/tests/test_rag_eval_rubric.py` — 3 dim + overall 5 케이스
+- pytest 회귀: 172/172 → 195+/195+ 유지
+
+### 18.11 Phase별 마일스톤 (§14 보강)
+
+- **Phase 7 (현재 Slice 2)**: 5단계 enum + tables + promotion + quality_filter + eval_rubric (Slice 2). retrieval + embedding + chunking (Slice 3). LLM Wiki + 통합 (Slice 4).
+- **Phase 9+**: 간이 eval_rubric → golden_set 기반 정식 rubric으로 deprecated (ADR-026 §3.4).
+- **Phase 11+**: 사용자 데이터 누적 후 자동 승격 임계값 (0.8) 재조정 + GIN index 도입 검토 (ADR-026 §2).
+- **Phase 21+**: Custom embedding 교체 (ADR-024 §B).
