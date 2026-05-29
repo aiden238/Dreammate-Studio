@@ -100,28 +100,29 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **재평가 시점**: Phase 3 코드 phase 진행 중 (같은 .tsx 파일 sub-section 동시 수정 위험 ↑) — P-X1 적용 후 효과 측정
 - **연관 Skill / Contract**: phase-start §6.3, multi_slice_plan template, sub-agent prompt format
 
-### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 26연속 PASS 효과 측정 (update 2026-05-29 Phase 5.5)
+### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 31연속 PASS 효과 측정 (update 2026-05-29 Phase 7)
 
-- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 = **26 Slice 누적**, 0 deviation)
-- **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 13연속 update — Phase 6에서 17연속 update — Phase 5에서 22연속 update — Phase 5.5에서 **26연속 누적 update**
-- **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md + meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md §P-X1 26연속 효과 측정
-- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 → Phase 4 4/4 → Phase 4.5 4/4 → Phase 6 4/4 → Phase 5 5/5 → Phase 5.5 4/4 = **26연속 PASS**. Phase 5.5는 consolidation mini-phase (legacy DB + validation 강화 + Phase 7 prep)에서도 0건 재발. **proposal → 적용 → 6 phase 누적 효과 측정 사이클 완성 + large/보안/consolidation 모두 확장 입증**.
-- **증거 (Phase 3 + Phase 4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5)**:
-  - Slice 1~26 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4) 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
-  - `git diff f50bc74..HEAD -- harness/apps/web/component_map.md` → **0줄 (28연속, Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5 + Phase 5.5 1)**
-  - `git diff 76b4d2c..HEAD -- harness/apps/web/components/PlanCard.tsx` → **0줄 (18연속, Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 — 사용자 결정 6-a 계승)**
+- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 = **31 Slice 누적**, 0 deviation)
+- **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 13연속 update — Phase 6에서 17연속 update — Phase 5에서 22연속 update — Phase 5.5에서 26연속 update — Phase 7에서 **31연속 누적 update**
+- **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md + meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md + meta/retrospectives/phase-7.md §P-X1 31연속 효과 측정
+- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 → Phase 4 4/4 → Phase 4.5 4/4 → Phase 6 4/4 → Phase 5 5/5 → Phase 5.5 4/4 → Phase 7 5/5 = **31연속 PASS**. Phase 7은 large phase (RAG 신규 영역) 임에도 0건 재발. **proposal → 적용 → 7 phase 누적 효과 측정 사이클 완성 + large/보안/consolidation/RAG 모두 확장 입증**.
+- **증거 (Phase 3 + Phase 4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7)**:
+  - Slice 1~31 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5) 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
+  - `git diff f50bc74..HEAD -- harness/apps/web/component_map.md` → **0줄 (29연속, Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1)**
+  - `git diff 76b4d2c..HEAD -- harness/apps/web/components/PlanCard.tsx` → **0줄 (19연속, Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 — 사용자 결정 6-a 계승)**
   - phases/active/phase-3-pwa-impl/deviations.md → 0건 entry
   - phases/active/phase-4-fastapi-extension/deviations.md → 1건 entry (D-1 audit drift, intended → Slice 4 해소)
   - phases/active/phase-4.5-critic-revise-loop/deviations.md → 0건 entry
   - phases/active/phase-6-output-schema-stabilization/deviations.md → 0건 entry
   - phases/active/phase-5-db-auth/deviations.md → 0건 entry (audit_page_component 2 drift는 의도된 신규 Slice 3 — WARN 허용)
-  - phases/active/phase-5.5-legacy-db-consolidation/ → 0건 (consolidation mini-phase, deviations.md 미작성 — 0건 baseline)
+  - phases/active/phase-5.5-legacy-db-consolidation/ → 0건 (consolidation mini-phase)
+  - phases/active/phase-7-rag-lite/ → 0건 (large RAG phase, audit_page_component 2 drift는 Phase 5 baseline 계승 WARN)
 - **권장 대응**:
-  - Phase 7+ 모든 sub-agent prompt에 §SELF-VERIFICATION 의무 유지
+  - Phase 8+ 모든 sub-agent prompt에 §SELF-VERIFICATION 의무 유지
   - phase-start v1.3.0 §6.3 의무 절차 보존
   - main session sub-agent 완료 후 `git diff --stat` 검증 의무 절차 보존
-- **재평가 시점**: Phase 7 (RAG) 또는 Phase 8 (MOA Lite) — 새 영역 (RAG sources / agent 분리) 도입 시 재발 위험 ↑
-- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 26연속), P-GPT-REVIEW-001 (Phase 4 + Phase 6 두 번째 적용 + Phase 5.5 세 번째 mini-phase 정신 계승), P-VALIDATION-FORMAL-001 (Phase 4.5 + Phase 6 + Phase 5 세 번째 입증 → 정식 확정 + Phase 5.5 self-strengthen V-form sub-pattern), P-CRITIC-CANONICAL-001 (Phase 6), P-CONTRACT-FIRST-001 (Phase 6 후보 + Phase 5 db_schema.md 적용 + Phase 5.5 ADR-023/024), P-RLS-001 (Phase 5 신규), P-SSE-001 (Phase 5 신규), P-SECURITY-REVIEW-001 (Phase 5 신규 후보), **P-LEGACY-CONSOLIDATION-001 (Phase 5.5 신규 후보)**
+- **재평가 시점**: Phase 8 (MOA Lite) — agents/* 전면 재구조화 도입 시 재발 위험 ↑
+- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 31연속), P-GPT-REVIEW-001 (Phase 4 + Phase 6 두 번째 적용 + Phase 5.5 세 번째 mini-phase 정신 계승), P-VALIDATION-FORMAL-001 (Phase 4.5 + Phase 6 + Phase 5 + Phase 7 네 번째 입증), P-CRITIC-CANONICAL-001 (Phase 6), P-CONTRACT-FIRST-001 (Phase 6 후보 + Phase 5 db_schema.md + Phase 7 rag_data_contract §18 누적 3회), P-RLS-001 (Phase 5 신규), P-SSE-001 (Phase 5 신규), P-SECURITY-REVIEW-001 (Phase 5 신규 후보), P-LEGACY-CONSOLIDATION-001 (Phase 5.5 + Phase 7 누적 2회), **P-RAG-5STAGE-001 (Phase 7 신규 후보)**, **P-RAG-GRACEFUL-001 (Phase 7 신규 후보)**
 
 ### Pattern P-THIN-VERTICAL-001: Thin Vertical Slice 효과 (코드 phase entry 표준)
 
@@ -202,26 +203,27 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - meta/retrospectives/phase-4.5.md
   - meta/proposals/2026-05-28_phase-4-retrospective-proposals.md §P-X2 (채택 권장)
 
-### Pattern P-VALIDATION-FORMAL-001: multi-llm-validation formal self + 외부 분리 패턴 (Phase 4.5 첫 + Phase 6 두 번째 + Phase 5 세 번째 — 정식 확정 + Phase 5.5 self-strengthen V-form sub-pattern)
+### Pattern P-VALIDATION-FORMAL-001: multi-llm-validation formal self + 외부 분리 패턴 (Phase 4.5 첫 + Phase 6 두 번째 + Phase 5 세 번째 정식 확정 + Phase 5.5 self-strengthen V-form sub-pattern + Phase 7 네 번째 입증)
 
-- **유형**: 반복 성공 (Phase 4.5 첫 V1~V4 + Phase 6 두 번째 V1~V5 + Phase 5 세 번째 V1~V6 = 3회 누적, 정식 패턴 확정 + Phase 5.5 self-strengthen V-form sub-pattern 신규)
+- **유형**: 반복 성공 (Phase 4.5 첫 V1~V4 + Phase 6 두 번째 V1~V5 + Phase 5 세 번째 V1~V6 + Phase 7 네 번째 V1~V7 = 4회 누적, 정식 패턴 확정 + Phase 5.5 self-strengthen V-form sub-pattern 보존)
 - **최초 식별**: 2026-05-28 (Phase 4.5 Slice 1 — 첫 formal 트리거)
 - **두 번째 입증**: 2026-05-29 (Phase 6 Slice 1 — 두 번째 formal 트리거)
 - **세 번째 입증 (정식 확정)**: 2026-05-29 (Phase 5 Slice 1 — 세 번째 formal 트리거, V6 large + 보안 phase 추가: Supabase 채택 / JWT / RLS / SSE / revise_history JSONB / canonical DB)
 - **Self-strengthen V-form sub-pattern (Phase 5.5 신규)**: 2026-05-29 (Phase 5.5 Slice 3 — external placeholder 3개 모두 self-question + self-answer 형식으로 강화, V-form 합의 추정 PASS, 외부 검토 비교 baseline 확립)
-- **관련 회고**: meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md
+- **네 번째 입증 (Phase 7 RAG)**: 2026-05-29 (Phase 7 Slice 1 — 네 번째 formal 트리거, V7 RAG 영역 추가: ADR-024 5단계 채택 / chunk 512 tokens / top-k=5 threshold=0.7 / OpenAI text-embedding-3-small / graceful 5종 marker / LLM Wiki vs RAG 분리 / hybrid 승인 정책)
+- **관련 회고**: meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md + meta/retrospectives/phase-7.md
 - **요약**: 사용자 결정 "검증 모델은 너가 직접 (Claude Code, 혹은 codex가 지침 참고하면서 자가 검증), 외부 검증은 따로 작성되도록 할 것" → multi-llm-validation Skill formal 트리거를 다음 패턴으로 정의:
   1. **Self validation**: Claude Code가 지침(CLAUDE.md, contracts, eval, patterns)을 참조하여 자가 검증 → `meta/validations/{date}_{phase}_self.md`
   2. **External validation**: 외부 LLM(GPT/Gemini) 검증은 placeholder로 별도 파일 → `meta/validations/{date}_{phase}_external.md` (사용자가 외부에서 진행 후 채움)
   3. 두 결과의 차이 항목 발견 시 phase notes.md에 기록 + 회고 §개선 제안 반영
-- **효과 측정 (Phase 4.5 + Phase 6 + Phase 5 누적)**:
+- **효과 측정 (Phase 4.5 + Phase 6 + Phase 5 + Phase 7 누적)**:
   - 큰 phase 진입 시 단일 모델 편향 회피 baseline 확립
   - 외부 검증 의무화 부담 없이 분리 가능 → 사용자가 외부에서 진행 여부를 phase별로 결정 가능
   - `meta/validations/` 폴더 누적 → 추후 audit / 회고 / pattern 추출 가능
-  - **V dimension 점진 확장**: Phase 4.5 V1~V4 (지침/contract/eval/패턴) → Phase 6 +V5 (frontend types ↔ backend 1:1 매핑) → Phase 5 +V6 (보안 + DB 영속 정합성)
+  - **V dimension 점진 확장**: Phase 4.5 V1~V4 (지침/contract/eval/패턴) → Phase 6 +V5 (frontend types ↔ backend 1:1 매핑) → Phase 5 +V6 (보안 + DB 영속 정합성) → Phase 7 +V7 (RAG architecture — chunk 512 + retrieval threshold + LLM Wiki vs RAG 분리 + hybrid 승인)
 - **다음 단계**:
-  - Phase 7+ RAG / Phase 8 MOA / Phase 9 저장-피드백 등 큰 phase 진입 시 동일 패턴 적용
-  - 정식 확정 (3회 누적) → "후보" 마커 제거, 모든 큰 phase 의무
+  - Phase 8 MOA / Phase 9 저장-피드백 등 큰 phase 진입 시 동일 패턴 적용
+  - 정식 확정 (4회 누적, Phase 7 입증) — 모든 큰 phase 의무 baseline
   - external 채움 누적 시 self vs external 차이 분석 회고 별도 (Phase 11+)
 - **권장 대응**:
   - 모든 큰 phase 진입 전 self.md + external.md 2 파일 생성 의무
@@ -232,33 +234,38 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - meta/retrospectives/phase-6.md
   - meta/retrospectives/phase-5.md (세 번째 트리거 — 정식 확정)
   - meta/retrospectives/phase-5.5.md (self-strengthen V-form sub-pattern 신규)
+  - meta/retrospectives/phase-7.md (네 번째 트리거 — V7 RAG architecture)
   - meta/validations/2026-05-28_phase-4.5-pre-entry_self.md (V1~V4 PASS)
   - meta/validations/2026-05-28_phase-4.5-pre-entry_external.md (placeholder → Phase 5.5 self-strengthen)
   - meta/validations/2026-05-29_phase-6-pre-entry_self.md (V1~V5 PASS)
   - meta/validations/2026-05-29_phase-6-pre-entry_external.md (placeholder → Phase 5.5 self-strengthen)
   - meta/validations/2026-05-29_phase-5-pre-entry_self.md (V1~V6 PASS — 세 번째)
   - meta/validations/2026-05-29_phase-5-pre-entry_external.md (placeholder → Phase 5.5 self-strengthen)
+  - meta/validations/2026-05-29_phase-7-pre-entry_self.md (V1~V7 PASS — 네 번째)
+  - meta/validations/2026-05-29_phase-7-pre-entry_external.md (placeholder)
 
-### Pattern P-LEGACY-CONSOLIDATION-001: 다중 layer 공존 시 옵션 A 패턴 (Phase 5.5 신규 후보)
+### Pattern P-LEGACY-CONSOLIDATION-001: 다중 layer 공존 시 옵션 A 패턴 (Phase 5.5 신규 후보 + Phase 7 두 번째 입증)
 
-- **유형**: 반복 성공 (Phase 5.5 첫 적용, legacy DB Phase 1 supabase_client + Phase 5 client/plans_repo 공존 → deprecated note + DeprecationWarning + Phase 7+ 지연 통합)
+- **유형**: 반복 성공 (Phase 5.5 첫 적용 + Phase 7 두 번째 적용 누적 2회, legacy DB Phase 1 supabase_client + Phase 5 client/plans_repo 공존 → deprecated note + DeprecationWarning + Phase 7+ 지연 통합. Phase 7 두 번째: Phase 1 legacy rag/retriever + rag/fallback (psycopg) ↔ Phase 7 신규 rag/retrieval (Supabase RPC) 별개 공존 → Phase 11+ Custom RAG 시점 자연 통합 검토)
 - **최초 식별**: 2026-05-29 (Phase 5.5 Slice 2 — 옵션 A 채택, ADR-023)
-- **관련 회고**: meta/retrospectives/phase-5.md §개선 제안 §1 (legacy DB 통합 mini-phase) + meta/retrospectives/phase-5.5.md §잘된 것 4 + §P-LEGACY-CONSOLIDATION-001
+- **두 번째 입증**: 2026-05-29 (Phase 7 Slice 4 — agents/rag.py Phase 1 baseline 보호 + Phase 7 통합 wrapper 별개 공존, ADR-024 §B 명시)
+- **관련 회고**: meta/retrospectives/phase-5.md §개선 제안 §1 (legacy DB 통합 mini-phase) + meta/retrospectives/phase-5.5.md §잘된 것 4 + meta/retrospectives/phase-7.md §잘된 것 6 + §P-LEGACY-CONSOLIDATION-001
 - **요약**: Phase 5에서 발견된 "Phase 1 legacy `db/supabase_client.py` + Phase 5 신규 `db/client.py` + `plans_repo` 공존" 문제 → Phase 5.5 mini-phase에서 3가지 옵션 (A 공존+deprecation / B 즉시 통합 / C legacy 완전 제거) 중 **옵션 A 채택**:
   1. **공존 유지**: legacy 파일 인터페이스 그대로 + Phase 5 신규 layer canonical 우선
   2. **Deprecated docstring + DeprecationWarning**: legacy 호출 시 `warnings.warn(DeprecationWarning, ...)` 발행 + `pytest.warns(DeprecationWarning)` capture
   3. **Grace period 명시**: "Phase 7+ RAG 통합 후 별도 mini-phase (Phase 7.5?)에서 실 통합" 명시 (ADR-023)
   4. **Backward-compat 100%**: 호출 사이트 변경 0건 + Phase 1 baseline 보호
   5. **__init__.py canonical 우선 export**: Phase 5 신규 layer 우선 + legacy 분리 export
-- **효과 측정 (Phase 5.5)**:
-  - 회귀 0: pytest 170 → 172 (+2 deprecation 검증 신규) — 기존 테스트 모두 PASS
-  - 호출 사이트 변경 0건 (Phase 1 + Phase 5 baseline 동시 보호)
-  - cognitive load 잔존 (공존) ↔ 즉시 통합 risk 회피 trade-off → Phase 7+ 자연 통합 시점 baseline 확립
-  - smoke_test_phase_5 12/12 유지 (재실행 PASS)
+- **효과 측정 (Phase 5.5 + Phase 7 누적)**:
+  - 회귀 0: Phase 5.5 pytest 170 → 172 (+2 deprecation), Phase 7 pytest 172 → 223 (+51 신규) — 기존 테스트 모두 PASS
+  - 호출 사이트 변경 0건 (Phase 1 + Phase 5 + Phase 7 baseline 동시 보호)
+  - cognitive load 잔존 (공존) ↔ 즉시 통합 risk 회피 trade-off → Phase 11+ 자연 통합 시점 baseline 확립
+  - smoke_test_phase_5 12/12 유지 (Phase 5.5) + smoke_test_phase_7 13/13 PASS (Phase 7, RAG 1 추가)
+  - **두 번째 적용으로 정식 패턴 채택 임박** (Phase 11+ 실 통합 시점 효과 재측정 후 결정)
 - **다음 단계**:
-  - Phase 7+ RAG 통합 후 별도 mini-phase (Phase 7.5?)에서 legacy 완전 제거 검토 (Phase 5.5 회고 §개선 제안 §1)
-  - 다른 다중 layer 공존 케이스 (Phase 7+ RAG sources / Phase 9+ feedback schema 등) 발견 시 동일 패턴 적용 가능성 검토
-  - 두 번째 적용 phase 효과 재측정 후 정식 패턴 채택 결정
+  - Phase 11+ Custom RAG 통합 후 별도 mini-phase에서 legacy rag/retriever + rag/fallback 완전 제거 검토 (Phase 7 회고 §개선 제안 §3)
+  - 다른 다중 layer 공존 케이스 (Phase 8+ MOA agents 재구조화 / Phase 9+ feedback schema 등) 발견 시 동일 패턴 적용 가능성 검토
+  - Phase 11+ 실 통합 시점 효과 재측정 후 정식 패턴 채택 결정
 - **권장 대응**:
   - 다중 layer 공존 발견 시 3가지 옵션 (A 공존+deprecation / B 즉시 통합 / C legacy 완전 제거) 검토
   - 회귀 risk 최소화 우선 → 옵션 A 권장 (특히 baseline 보호가 critical할 때)
@@ -268,8 +275,10 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **관련 회고**:
   - meta/retrospectives/phase-5.md §개선 제안 §1
   - meta/retrospectives/phase-5.5.md
+  - meta/retrospectives/phase-7.md §잘된 것 6 + §개선 제안 §3
   - docs/decisions/phase_5_5_legacy_db_consolidation.md (ADR-023)
-- **상태**: 신규 등록 후보 (Phase 5.5 첫 적용, Phase 7+ 이후 실 통합 시점 효과 재측정 후 정식 패턴 채택 결정)
+  - docs/decisions/phase_7_rag_scope_evolution.md (ADR-024 §B 확대 지점 — Phase 11+ 실 통합 시점)
+- **상태**: 신규 등록 후보 → **정식 채택 임박** (Phase 5.5 + Phase 7 누적 2회 적용 — Phase 11+ 실 통합 시점 효과 재측정 후 정식 패턴 채택 결정)
 
 ### Pattern P-RLS-001: RLS 정책 + 인증/익명 endpoint 분리 패턴 (Phase 5 신규)
 
@@ -417,3 +426,70 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **관련 회고**:
   - meta/retrospectives/phase-6.md
   - meta/retrospectives/phase-4.5.md (Phase 4.5는 Critic revise loop 안정화 mini-phase 첫)
+
+### Pattern P-RAG-5STAGE-001: RAG candidate_knowledge 5단계 transition + hybrid 승인 + promotion_history (Phase 7 신규 후보)
+
+- **유형**: 반복 성공 (Phase 7 첫 적용, 5단계 transition pending → filtered → evaluated → approved → promoted + 자동/수동/거부 hybrid 승인 + promotion_history JSONB append-only)
+- **최초 식별**: 2026-05-29 (Phase 7 Slice 2 — promotion + quality_filter + eval_rubric 실 구현 + 0004_rag_5stage migration, ADR-026)
+- **관련 회고**: meta/retrospectives/phase-7.md §잘된 것 1 + §P-RAG-5STAGE-001
+- **요약**: 사용자 결정 4 (Phase 5.5 명시 — ADR-024 §5단계 MVP) → Phase 7 RAG Lite의 5단계 파이프라인 정식 패턴:
+  1. **5단계 stage enum**: pending (input) → filtered (quality_filter 통과) → evaluated (eval_rubric 통과) → approved (사용자 또는 자동 임계) → promoted (approved_knowledge 테이블 이동)
+  2. **Hybrid 승인 정책** (ADR-026): 자동 (score ≥ 0.8 자동 approved) / 수동 (0.6~0.8 사용자 검토 큐) / 거부 (< 0.6 자동 reject)
+  3. **promotion_history JSONB append-only**: 각 stage transition timestamp + reason + actor (auto / manual / system) 누적 기록
+  4. **간이 eval_rubric 3 dim**: relevance / clarity / safety 각 0.0~1.0 (Phase 9+ golden_set 기반 정식 rubric으로 대체 예정)
+  5. **quality_filter 3 layer**: PII (이메일/전화/주민번호) + 프롬프트 인젝션 (Phase 1 패턴) + 광고적 표현 차단 단어 (확정 결정 [9])
+- **효과 측정 (Phase 7)**:
+  - 5단계 transition 10/10 PASS (test_rag_promotion)
+  - quality_filter 8/8 PASS (test_rag_quality_filter)
+  - eval_rubric 5/5 PASS (test_rag_eval_rubric)
+  - end-to-end integration 9/9 PASS (test_rag_integration)
+  - candidate_knowledge + approved_knowledge 분리로 운영 단계 검토 큐 baseline 확립
+- **다음 단계**:
+  - Phase 11+ 사용자 데이터 자동 promotion 활성화 (ADR-024 §A 확대 지점)
+  - Phase 9+ 간이 eval_rubric → golden_set 기반 정식 rubric 전환 (Phase 7 개선 제안 §6)
+  - 두 번째 적용 (Phase 11+ 사용자 데이터 자동 promotion) 효과 재측정 후 정식 패턴 채택 결정
+- **권장 대응**:
+  - RAG 도입 phase에서 5단계 transition 의무화 (자동 ≥ 0.8 / 수동 0.6~0.8 / 거부 < 0.6 hybrid)
+  - promotion_history JSONB append-only로 audit trail 보존
+  - ADR로 결정 근거 영구 기록 (Phase 7 ADR-026 패턴 복제)
+  - 운영 단계 진입 직전 Supabase SQL function `match_approved_knowledge` 정의 (Phase 7 개선 제안 §2)
+- **연관 Skill / Contract**: rag-design Skill (Phase 7 첫 정식), rag-update Skill (Phase 7 첫 정식), contract-change Skill (rag_data_contract §18), ADR-025 (RAG architecture), ADR-026 (5단계 promotion logic), P-CONTRACT-FIRST-001 (Phase 7 누적 3회)
+- **관련 회고**:
+  - meta/retrospectives/phase-7.md
+  - docs/decisions/phase_7_rag_architecture.md (ADR-025)
+  - docs/decisions/phase_7_promotion_logic.md (ADR-026)
+  - docs/contracts/rag_data_contract.md §18 (Phase 7 Slice 2 신규)
+- **상태**: 신규 등록 후보 (Phase 7 첫 적용, Phase 11+ 사용자 데이터 자동 promotion 시점 효과 재측정 후 정식 패턴 채택 결정)
+
+### Pattern P-RAG-GRACEFUL-001: RAG 5종 marker 표준화 + RAG > LLM Wiki 우선순위 (Phase 7 신규 후보)
+
+- **유형**: 반복 성공 (Phase 7 첫 적용, RAG 실패 시 plan 생성 차단 X + 5종 marker 표준화 + RAG > LLM Wiki 우선순위)
+- **최초 식별**: 2026-05-29 (Phase 7 Slice 4 — agents/rag.py 통합, ADR-025 §4 + §5)
+- **관련 회고**: meta/retrospectives/phase-7.md §잘된 것 5 + §P-RAG-GRACEFUL-001
+- **요약**: P-GRACEFUL-001 (Phase 1 외부 의존성 graceful) 정신 5번째 입증 — RAG Lite 통합 wrapper에서 다음 패턴 표준화:
+  1. **5종 marker 표준화** (ADR-025 §5):
+     - `rag_unavailable`: retrieval 자체 실패 (Supabase 연결 실패 등)
+     - `rag_no_results`: retrieval 정상 + threshold 미달 (0 results)
+     - `llm_wiki_unavailable`: LLM Wiki 정적 lookup 실패
+     - `embedding_failed`: OpenAI embedding 호출 실패
+     - `supabase_unconfigured`: 환경변수 미설정 (개발 환경 graceful)
+  2. **RAG > LLM Wiki 우선순위** (ADR-025 §4): priority 1 = approved_knowledge (동적, retrieval.search) → priority 2 = LLM Wiki (정적, llm_wiki.search_by_tags) 보조
+  3. **plan 생성 차단 X**: 모든 실패는 `validation.warnings`에 marker 추가하고 진행 (P-GRACEFUL-001 Phase 1 정신 계승)
+  4. **wrapper 내부 try/except로 자기설명**: 각 marker는 logger.warning으로 운영 단계 관측 가능
+- **효과 측정 (Phase 7)**:
+  - graceful failure 통합 케이스 PASS (test_rag_integration 9/9)
+  - Supabase 미설정 (개발 환경) 시 응답 200 + warnings list로 자기설명
+  - Phase 5.5 legacy backward-compat 100% 정신 계승
+- **다음 단계**:
+  - Phase 8+ MOA Lite 본격화 시 동일 5종 marker 패턴 적용 (Critic / Rewriter 실패 graceful)
+  - Phase 9+ feedback schema에 동일 marker 패턴 적용
+  - cost-review Skill 활성 시 marker별 비용 영향 측정
+- **권장 대응**:
+  - 외부 의존성 (LLM / RAG / DB) 실패 시 marker 의무화 (5종 baseline 또는 phase별 확장)
+  - validation.warnings 표준 schema 유지 (P-GRACEFUL-001 정신)
+  - ADR로 marker list 영구 기록 (Phase 7 ADR-025 §5 패턴 복제)
+- **연관 Skill / Contract**: P-GRACEFUL-001 (Phase 1, 5번째 입증 — Phase 4 + Phase 4.5 + Phase 5 + Phase 5.5 + Phase 7), ADR-025 (RAG architecture §4 + §5), error_response_contract.md, agent_io_contract.md
+- **관련 회고**:
+  - meta/retrospectives/phase-7.md
+  - docs/decisions/phase_7_rag_architecture.md (ADR-025 §4 + §5)
+- **상태**: 신규 등록 후보 (Phase 7 첫 적용, Phase 8+ MOA Lite 적용 시 효과 재측정 후 정식 패턴 채택 결정)

@@ -2,14 +2,10 @@
 # scripts/scenario_simulation.ps1
 # Phase 4.5+ Changeability Simulation auto-gate (P-X2)
 # v2 (Phase 5 Slice 1): 5 -> 10 scenarios (DB / Auth / RLS / JWT / SSE 추가)
+# v3 (Phase 7 Slice 5): 10 -> 15 scenarios (RAG 5단계 + chunking + retrieval + quality_filter + LLM Wiki 추가)
 # Called automatically by phase-complete Skill v1.2.0 §1.6 at Phase close.
 #
-# Phase 5 진행 중 PASS 기대치:
-#   - Slice 1 entry 시점: 5/10 PASS (S1~S5 only; S6~S10 missing files 예정)
-#   - Slice 2 종료 시점: 7/10 PASS (S6 db/client.py + S7 0001_init + S8 0001_init 일부)
-#   - Slice 3 종료 시점: 8/10 PASS (S9 auth_middleware.py 추가)
-#   - Slice 4 종료 시점: 10/10 PASS (S7 0003_rls + S10 sse.py + apps/web/lib/sse.ts)
-#   - Slice 5 final: 10/10 PASS 목표 (P-X2 세 번째 자동 게이트)
+# Phase 7 final 목표: 15/15 PASS (P-X2 다섯 번째 자동 게이트)
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference   = 'SilentlyContinue'
@@ -17,9 +13,9 @@ $ProgressPreference   = 'SilentlyContinue'
 $ROOT = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Set-Location $ROOT
 
-Write-Host "=== scenario_simulation v2 (P-X2 auto-gate, Phase 5) ===" -ForegroundColor Cyan
+Write-Host "=== scenario_simulation v3 (P-X2 auto-gate, Phase 7) ===" -ForegroundColor Cyan
 Write-Host "Root: $ROOT"
-Write-Host "Note: Slice 1 entry expected 5/10 PASS (S6~S10 files created in Slice 2~4)"
+Write-Host "Note: Phase 7 final target 15/15 PASS (P-X2 다섯 번째 자동 게이트)"
 Write-Host ""
 
 $scenarios = @(
@@ -35,7 +31,14 @@ $scenarios = @(
     @{ Id = "S7"; Name = "RLS 정책 변경 (db/migrations/*.sql)"; Files = @("backend/fastapi/db/migrations/0001_init.sql", "backend/fastapi/db/migrations/0003_rls_policy.sql") },
     @{ Id = "S8"; Name = "user 분리 (auth_user_id 컬럼)"; Files = @("backend/fastapi/db/migrations/0001_init.sql", "backend/fastapi/middleware/auth_middleware.py") },
     @{ Id = "S9"; Name = "JWT 검증 (middleware)"; Files = @("backend/fastapi/middleware/auth_middleware.py", "backend/fastapi/routers/auth.py") },
-    @{ Id = "S10"; Name = "SSE event schema (routers/sse.py)"; Files = @("backend/fastapi/routers/sse.py", "apps/web/lib/sse.ts") }
+    @{ Id = "S10"; Name = "SSE event schema (routers/sse.py)"; Files = @("backend/fastapi/routers/sse.py", "apps/web/lib/sse.ts") },
+
+    # Phase 7 신규 (5, RAG)
+    @{ Id = "S11"; Name = "RAG 5단계 schema 변경 (db/migrations/0004 + rag_data_contract)"; Files = @("backend/fastapi/db/migrations/0004_rag_5stage.sql", "docs/contracts/rag_data_contract.md") },
+    @{ Id = "S12"; Name = "chunking 변경 (rag/chunking.py + config)"; Files = @("backend/fastapi/rag/chunking.py", "backend/fastapi/config.py") },
+    @{ Id = "S13"; Name = "retrieval threshold 변경 (rag/retrieval.py + config)"; Files = @("backend/fastapi/rag/retrieval.py", "backend/fastapi/config.py") },
+    @{ Id = "S14"; Name = "quality_filter 변경 (rag/quality_filter.py)"; Files = @("backend/fastapi/rag/quality_filter.py") },
+    @{ Id = "S15"; Name = "LLM Wiki entry 추가 (rag/llm_wiki.py)"; Files = @("backend/fastapi/rag/llm_wiki.py") }
 )
 
 $pass = 0
@@ -69,9 +72,7 @@ if ($fail -eq 0) {
 } else {
     Write-Host ""
     Write-Host "scenario_simulation PARTIAL - $pass/$($scenarios.Count) PASS, $fail FAIL" -ForegroundColor Yellow
-    Write-Host "  (Phase 5 Slice 1 entry: 5/10 expected. Files for S6~S10 created in Slice 2~4.)" -ForegroundColor Yellow
-    Write-Host "  (Final 10/10 PASS target at Slice 5 — P-X2 third auto-gate)" -ForegroundColor Yellow
-    # Slice 1 entry 의도된 PARTIAL: exit 0 유지 (자동 게이트는 phase-complete 시에만 strict)
-    # Phase 5 종료 시점 strict 모드는 별도 -Strict 플래그 도입 권장 (Phase 5 Slice 5)
+    Write-Host "  (Phase 7 final target: 15/15 PASS — P-X2 다섯 번째 자동 게이트)" -ForegroundColor Yellow
+    # phase 진행 중 의도된 PARTIAL은 exit 0 유지 (자동 게이트는 phase-complete 시점에 별도 strict 모드 권장)
     exit 0
 }
