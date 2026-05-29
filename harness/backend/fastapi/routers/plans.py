@@ -265,6 +265,10 @@ async def plans_generate(plan_id: str, req: GenerateRequest):
         )
 
     # 2. RAG (graceful) ──────────────────────────────────────────────
+    # Phase 1 baseline (preserved): pgvector psycopg retriever.
+    # Phase 7 Slice 4 (additive): agents/rag.py `run_rag` graceful marker 통합.
+    #   - Phase 1 `run_rag_retrieval` 결과 우선 (회귀 0 보장).
+    #   - Phase 7 marker는 validation.warnings에 추가 (ADR-025 §5 5종).
     if req.use_rag:
         try:
             rag_result = run_rag_retrieval(user_input)
@@ -279,6 +283,24 @@ async def plans_generate(plan_id: str, req: GenerateRequest):
         )
 
     rag_refs = list(rag_result.references)
+
+    # Phase 7 Slice 4: RAG Lite marker 수집 (Supabase RPC pattern, graceful).
+    # 실패해도 plan 생성 차단 X — warnings에 추가만 (ADR-025 §5).
+    phase7_rag_warnings: list[str] = []
+    if req.use_rag:
+        try:
+            from ..agents.rag import run_rag as run_rag_lite
+
+            rag_lite_result = await run_rag_lite(user_input)
+            phase7_rag_warnings = list(rag_lite_result.get("rag_warnings", []))
+        except Exception as exc:  # pragma: no cover — graceful 흡수
+            logger.warning(
+                "phase_7_rag_lite raised: %s (graceful)",
+                exc.__class__.__name__,
+            )
+            phase7_rag_warnings = [
+                f"rag_unavailable: {exc.__class__.__name__}"
+            ]
 
     # 3. 3-plan parallel (★ multi-model 인터페이스) ────────────────────
     try:
@@ -522,6 +544,11 @@ async def plans_generate(plan_id: str, req: GenerateRequest):
         critic_present=critic_evaluation is not None,
         has_revise_loop=has_revise_loop_engaged,  # Phase 4.5 Slice 2: revise loop 동작 여부
     )
+    # Phase 7 Slice 4: RAG Lite graceful marker (ADR-025 §5) 통합.
+    # 중복 방지 — Phase 4 baseline에 동일 marker 없을 때만 추가.
+    for marker in phase7_rag_warnings:
+        if marker not in warnings:
+            warnings.append(marker)
 
     models_list = settings.openai_models_for_3plan_list
     rag_check_status = "ok" if not rag_result.used_fallback else "warn"
