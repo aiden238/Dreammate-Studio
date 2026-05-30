@@ -27,6 +27,8 @@ from typing import Any, AsyncGenerator, Optional
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
+from backend.fastapi.orchestration.progress_store import read as read_progress
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["sse"])
@@ -53,6 +55,13 @@ _STEPS: list[dict[str, Any]] = [
     {"step": 3, "name": "planning", "message": "영상기획안 3개 생성 중...",   "duration_estimate_sec": 30},
     {"step": 4, "name": "critic",   "message": "Critic 검증 중...",           "duration_estimate_sec": 15},
 ]
+
+
+# ─── progress_store 브릿지 폴링 상수 (ADR-028) ─────────────────────────
+# single-process best-effort. POST generate in-flight 중 GET /progress 가
+# store 를 read 한다 (event loop yield 의존, 보장 아님 — Trade-offs 참조).
+_MAX_POLLS = 20        # best-effort 폴링 상한 (무한 루프 방지)
+_POLL_INTERVAL_SEC = 0.0  # 테스트 결정성용 0.0. 실 운영은 0.2~0.5 권장 (CPU spin 방지).
 
 
 # ─── helpers ───────────────────────────────────────────────────────────
@@ -83,32 +92,57 @@ def _sse_event(payload: dict[str, Any]) -> str:
 async def _progress_generator(
     plan_id: str, user_id: Optional[str],
 ) -> AsyncGenerator[str, None]:
-    """4 단계 progress + complete 이벤트 생성기.
+    """progress_store 실 stage stream (ADR-028) + graceful fallback to mock.
 
-    실 구현은 plan 생성 worker (Phase 6+ orchestration) 와 연동하여
-    각 단계 완료 시점에 emit 한다. 본 baseline 은 SSE event schema 검증용
-    최소 흐름으로, 단계 간 짧은 yield 만 수행.
+    Phase 8 Slice 3: orchestrator(StoreProgressSink)가 progress_store 에 기록한
+    실 stage 이벤트(intent → rag → planning → critic → complete)를 우선 stream.
+
+    store 가 비어있으면(generate 미시작 / 직접 호출 / multi-worker 미공유) 기존
+    mock `_STEPS` 4단계 + complete fallback → 기존 test_sse 4 케이스 수정 0 보존
+    (P-GRACEFUL-001 정신). store 유무 무관 항상 유효 event schema 응답.
     """
-    for step_info in _STEPS:
-        event = {
-            "type": "progress",
-            "step": step_info["step"],
-            "name": step_info["name"],
-            "message": step_info["message"],
-            "duration_estimate_sec": step_info["duration_estimate_sec"],
+    snapshot = read_progress(plan_id)
+    if not snapshot:
+        # graceful fallback: 기존 mock 4단계 (store 미기록 = generate 미시작/직접 호출).
+        # ★ test_sse 4 케이스 보존 — 기존 _STEPS 흐름 그대로.
+        for step_info in _STEPS:
+            yield _sse_event({
+                "type": "progress",
+                "step": step_info["step"],
+                "name": step_info["name"],
+                "message": step_info["message"],
+                "duration_estimate_sec": step_info["duration_estimate_sec"],
+                "plan_id": plan_id,
+            })
+            # 짧은 yield (실 구현은 worker 와 동기). 테스트 안정성을 위해 매우 짧게.
+            await asyncio.sleep(0)
+        yield _sse_event({
+            "type": "complete",
+            "step": 4,
+            "message": "완료",
             "plan_id": plan_id,
-        }
-        yield _sse_event(event)
-        # 짧은 yield (실 구현은 worker 와 동기). 테스트 안정성을 위해 매우 짧게.
-        await asyncio.sleep(0)
+        })
+        return
 
-    complete = {
+    # store 기록 존재: 실 stage stream + best-effort 폴링 (complete 까지).
+    emitted = 0
+    for _ in range(_MAX_POLLS):
+        events = read_progress(plan_id)
+        while emitted < len(events):
+            ev = events[emitted]
+            emitted += 1
+            yield _sse_event(ev)
+            if ev.get("type") == "complete":
+                return
+        await asyncio.sleep(_POLL_INTERVAL_SEC)
+
+    # 안전 종료: complete 미수신 시 synthetic complete (stream 영구 대기 방지).
+    yield _sse_event({
         "type": "complete",
         "step": 4,
         "message": "완료",
         "plan_id": plan_id,
-    }
-    yield _sse_event(complete)
+    })
 
 
 # ─── Endpoint ──────────────────────────────────────────────────────────

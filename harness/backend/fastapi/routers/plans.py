@@ -43,6 +43,7 @@ from ..agents.rewriter import run_rewriter
 from ..config import get_settings
 from ..db import PlansRepo, get_supabase, save_video_planning
 from ..orchestration import (
+    StoreProgressSink,
     error_envelope_response,
     generate_plan,
     not_found_response,
@@ -208,7 +209,12 @@ async def plans_generate(plan_id: str, req: GenerateRequest):
     plan_entry = _plan_store.get(plan_id)
     if not plan_entry:
         return not_found_response(plan_id)
-    return await generate_plan(plan_id, plan_entry, req)
+    # Phase 8 Slice 3 (ADR-028): StoreProgressSink 주입 → generate stage 진행을
+    # progress_store 에 기록 (sse.py 가 read). Slice 2 default(NullProgressSink) 대비
+    # 부수효과(store 기록)만 추가 — Envelope/응답 동일 (회귀 0).
+    return await generate_plan(
+        plan_id, plan_entry, req, progress=StoreProgressSink(plan_id),
+    )
 
 
 # ─── GET /plans/{plan_id} ─────────────────────────────────────────────
