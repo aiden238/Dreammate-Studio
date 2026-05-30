@@ -1,7 +1,7 @@
 # Skills INDEX
 
 > 위치: `.claude/skills/INDEX.md` (canonical, v1.2.0 통합)
-> 총 20개 Skill (절차 핵심 14 + 검토/감사 6)
+> 총 21개 Skill (절차 핵심 14 + 검토/감사 6 + Meta-Factory 1)
 > 단일 폴더 + `applies_to` 태그로 `.agents` / `.claude` 분리 효과 유지
 
 ---
@@ -51,6 +51,14 @@
 | 19 | phase-review | phase 검토, scope creep, 어디까지 왔지 | claude | 모든 phase 중반 |
 | 20 | rag-design | RAG 설계, custom RAG, chunking 전략 | claude | phase 7, 21+ |
 
+### Meta-Factory 1개 (L3 Meta-Harness Factory, proposal-only)
+
+| # | Skill | 트리거 키워드 | applies_to | Phase |
+|---|---|---|---|---|
+| 21 | harness-factory | 하네스 blueprint, meta_factory, harness scaffold, 도메인 하네스 생성 | claude | phase 10+ |
+
+> harness-factory (Phase M0 Slice 3, ADR-035 + CC-006) — `meta_factory/` (L3) 진입점. domain_brief → harness blueprint 초안 + agent·skill·contract·eval scaffold 제안 + 기존 하네스 충돌 분석. ★ **proposal-only** — 생성물은 `meta_factory/outputs/` 또는 `meta/proposals/` 에 먼저 두고, validation_workflow 6 검증 + 사용자 승인 전까지 active 아님. 기존 AGENTS/CLAUDE/PROJECT_STATE/contracts/Skill 직접 수정 금지 (contract-change 경유). 키워드 **scoped** — `하네스 개선`/`메타 개선`/`회고`(meta-retrospective) + bare `하네스 감사`/`구조 점검`/`전체 검토`(harness-audit) + `phase 생성` 단독(phase-start) 침범 0.
+
 ---
 
 ## 폐기된 Skill (v1.2.0)
@@ -86,7 +94,27 @@ phase-review          > meta-retrospective      # 진행 중 점검이 회고보
 harness-audit         > meta-retrospective      # 구조 감사 후 회고
 agent-io-check        > prompt-version-review   # IO 정합이 prompt 회귀보다 먼저
 ai-architecture-review > design-review          # AI 구조가 UX 검토보다 상위
+harness-audit         > harness-factory         # 기존 하네스 감사가 생성보다 상위
+contract-change       > harness-factory         # contract/Skill 실 변경은 항상 절차 통과
+eval-run              > harness-factory          # validation 의 실 평가는 eval-run 절차가 상위
 ```
+
+---
+
+## 키워드 충돌 검토 (harness-factory #21 등록, Phase M0 Slice 3)
+
+> harness-factory 의 description 키워드(`하네스 blueprint`, `meta_factory`, `harness scaffold`, `도메인 하네스 생성`, `agent/skill scaffold 설계`, `harness-factory`)가 기존 20 Skill 의 description 키워드와 충돌하는지 검토 (INDEX §사용 원칙 5 — "같은 키워드가 둘 이상 = 충돌"). harness-audit Skill §3(Skill description 키워드 충돌) 절차로 검토.
+
+| 검토 대상 Skill | 소유 키워드 | harness-factory 키워드 | 충돌 |
+|---|---|---|---|
+| **harness-audit** (#18) | "하네스 감사", "구조 점검", "전체 검토", "stub 점검", "Skill 충돌 검사" | "하네스 blueprint", "harness scaffold", "도메인 하네스 생성" | ✅ **0** — 감사·점검 ≠ 생성·blueprint·scaffold (의미 명확 구분, bare "하네스 감사/구조 점검/전체 검토" harness-factory 미소유) |
+| **meta-retrospective** (#9) | "회고", "메타 개선", "하네스 개선", "meta proposal", "프로세스 개선", "post-mortem" | "meta_factory", "도메인 하네스 생성" | ✅ **0** — 개선·회고(L2 in-place) ≠ 생성(L3). "하네스 개선"/"메타 개선" harness-factory 미소유 (factory 는 "meta_factory" 디렉토리명만) |
+| **phase-start** (#1) | "Phase 시작", "다음 phase", "phase initiation" | (phase 생성 단독 미소유) | ✅ **0** — harness-factory 는 phase scaffold 를 blueprint 일부로만 제안, "phase 생성" 단독 키워드 미소유 (phase-start 영역 보존) |
+| **contract-change** (#3) | "contract 변경", "schema 변경", "breaking change" | (contract scaffold 는 제안만) | ✅ **0** — harness-factory 는 contract scaffold 제안만, 실 변경은 contract-change 경유 (우선순위 표 편입) |
+| **eval-run** (#6) / **eval-design** (#17) | "eval 실행"/"평가" / "eval 설계"/"rubric 설계" | (validation 5 는 eval-run 위임) | ✅ **0** — harness-factory validation 5 는 eval-run §3~§6 위임 (우선순위 `eval-run > harness-factory`) |
+| 나머지 15 Skill | (각 소유 키워드) | — | ✅ **0** — 도메인 비중첩 |
+
+**검토 결과**: harness-factory 키워드는 **scoped** (생성·blueprint·scaffold 영역 한정). 기존 20 Skill description 키워드와 **충돌 0**. 동시 매칭 가능성이 있는 3 Skill(harness-audit / contract-change / eval-run)은 우선순위 표에 관계 추가(harness-audit > harness-factory, contract-change > harness-factory, eval-run > harness-factory) — INDEX §우선순위 충돌 해결 정합. (validation_workflow 검증 2 skill conflict check 형식 정합.)
 
 ---
 

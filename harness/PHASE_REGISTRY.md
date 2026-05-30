@@ -25,7 +25,8 @@
 | 8 | MOA Lite 본격 (orchestrator 추출 + SSE worker + prompt_registry 정식화) | **done** (2026-05-29) | 5 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M5 5/5 + **P-X1 36연속** + PlanCard 24연속 + component_map 34연속 + ADR-027 (MOA orchestrator behavior-preserving) + ADR-028 (SSE progress integration) + ADR-029 (prompt_registry semver) + ai-architecture-review ★ 첫 정식 + prompt-version-review ★ 첫 정식 + contract-change CC-003 (prompt_registry + agent_io_contract v1.2.0) + pytest 249/249 (+26 신규) + smoke 14/14 + scenario_sim v4 20/20 (P-X2 여섯 번째) + P-MOA-ORCHESTRATOR-001 신규 + P-BEHAVIOR-PRESERVING-001 신규 + plans.py 659→243 god-function 분해 + Critic v1.1.0 conservative adapter |
 | 9 | 결과 저장 + 피드백 (selected_plans + feedback_events 영속화 + normalize wiring + Brand Memory 준비 + 피드백 UI) | **done** (2026-05-31) | 6 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M4 4/4 + **P-X1 42연속** + PlanCard 30연속 + component_map 40연속 + ADR-030 (feedback/selection persistence) + ADR-031 (Brand Memory prep — P-AUX-2 설계 agent 미구현 Phase 10+) + ADR-032 (normalize_to_canonical wiring) + security-review 두 번째 정식 (피드백 PII) + contract-change CC-004 (db_schema.md 실 plans 정합) + pytest 249→293/293 (+44 신규, 기존 수정 0) + smoke 15/15 + scenario_sim v5 25/25 (P-X2 일곱 번째) + P-FEEDBACK-LOOP-001 신규 + P-CANONICAL-WIRING-001 신규 + 피드백 UI inline (PlanCard·component_map 0줄) + deprecated warnings 67→16 |
 | 9.5 | eval-run 정식화 + Critic deprecated 0–5 Full 제거 | **done** (2026-05-31) | 5 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M4 4/4 + **P-X1 47연속** + PlanCard 35연속 + component_map 45연속 + ADR-033 (eval-run harness mock-deterministic) + ADR-034 (Critic deprecated 0–5 Full 제거) + eval-design ★ 첫 정식 + eval-run ★ 첫 정식 + contract-change CC-005 (output_schema §9 + agent_io_contract §5 canonical-only + db_schema) + pytest 293→339/339 (+46) + smoke 16/16 + scenario_sim v6 30/30 (P-X2 여덟 번째) + eval gate PASS (revise mean_delta 0.092) + Critic warnings 16→0 + P-EVAL-HARNESS-001 신규 + P-DEPRECATED-REMOVAL-001 신규 + revise effect eval (Phase 4.5 D6 해소) + generate.py canonical wiring 보강 |
-| **next** | **🟡 pending_user_decision** (A Phase 10 통합 / B Phase 11+) | **next** | Phase 9.5 ✅ done — 다음 phase 사용자 결정 대기 |
+| **M0** | **Meta-Factory Prep (★ meta-phase — L3 Meta-Harness Factory skeleton)** | **done** (2026-05-31) | 3 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M3 3/3 + **★ 런타임 변경 0 (A9 — FastAPI/Next.js/Supabase 0줄)** + **P-X1 50연속** + PlanCard 35연속 + component_map 45연속 + ADR-035 (L3 Meta-Factory 도입) + CC-006 (INDEX harness-factory #21 Skill 등록) + harness-factory Skill ★ 신규 등록 (proposal-only, 키워드 scoped) + multi-llm-validation formal 여덟 번째 (★ 첫 meta-phase, V1~V6) + pytest 339 유지 + smoke_test_phase_M0 6/6 + scenario_sim v7 33/33 (P-X2 아홉 번째, SM1~SM3) + Skill 20→21 + P-META-FACTORY-001 신규 + meta_factory/ 7 루트 + templates 6 + blueprint 실측 + outputs (★ 제품 phase 번호 분리 detour) |
+| **next** | **🟡 pending_user_decision** (A Phase 10 통합 / B Phase 11+) | **next** | Phase 9.5 + Phase M0(meta-phase) ✅ done — 다음 제품 phase 사용자 결정 대기 (meta-phase detour 종료) |
 | 10 | MVP 통합 테스트 | planned | MVP 전체 end-to-end 검증 + Phase 1~9.5 누적 baseline 통합 회귀 + eval-run golden_set 회귀 baseline 활용 + P-AUX-2 brand_memory_extractor agent 실 구현 + 실 LLM eval mode + RAG eval_rubric golden_set 정식화 + 배포 테스트 게이트 준비 |
 | 11~20 | 서비스 안정화 | future | UX, eval, cost, fallback, 피드백 |
 | 21~30 | 확장 / 고도화 | future | Spring, Expo, Custom RAG, LangGraph |
@@ -271,6 +272,28 @@ Skill 첫 정식: eval-design (★ 첫 정식, Slice 1 — golden_set executable
 핵심 성과  : **P-X1 47연속 PASS + PlanCard 35연속 + component_map 45연속 + eval-design + eval-run Skill 첫 정식 (golden_set 11 케이스 mock-deterministic runner + 임계값, ADR-033) + revise effect eval (Phase 4.5 D6 해소 — mean_delta 0.092 / regressed 20%) + Critic deprecated 0–5 Full 제거 (ADR-034 + CC-005, eval 제거 전/후 동일 입증, warnings 16→0) + generate.py canonical wiring 보강 (Phase 1 endpoint normalize 누락 회귀 방지)**
 ★ deviation : generate.py canonical wiring 보강 (수용 — Phase 1 endpoint normalize 누락 발견·보강, 향후 신규 critic consumer normalize_to_canonical 경유 필수)
 다음 Phase : **🟡 pending_user_decision** (A Phase 10 통합 / B Phase 11+)
+```
+
+## Phase M0 done (archive) — ★ meta-phase
+
+`phases/archive/phase-M0-meta-factory/`
+
+```
+Status     : ✅ DONE (2026-05-31)
+유형       : ★ meta-phase (제품 phase 아님 — L3 Meta-Harness Factory skeleton + contract + validation, 4~7h)
+Goal       : 현재 구현 하네스(L2) 유지 + 상위에 harness/meta_factory/ (L3) skeleton + factory_contract(8 규칙 proposal-first) + domain_brief/harness_blueprint schema + architecture_patterns(6 + Dreammate 매핑) + workflow + templates 6 + 현재 하네스 blueprint 실측 + harness-factory Skill(proposal-only). ★ 자동 generator 아니라 skeleton·contract·validation 까지만 (payoff deferred).
+Result     : 3 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M3 3/3 + ★ 런타임 변경 0 (A9 — backend/fastapi 0 / apps/web 0 / db/migrations 0, git diff fff913e..HEAD 게이트) + smoke_test_phase_M0 6/6 + scenario_simulation v7 33/33 (P-X2 아홉 번째) + pytest 339 유지 + audit_naming 0 drift + audit_page_component 2 intended drift WARN (Phase 5 baseline 계승)
+산출물     : ~24 신규 + ~6 수정 (meta_factory 7 루트 + templates 6 + blueprint + outputs 2 + ADR-035 + validations 2 + harness-factory/SKILL.md + proposal + CC-006 + smoke_test_phase_M0 + retrospective + closing_notes / INDEX.md #21 + scenario_simulation v7 + patterns + skill_usage_log + state docs 4)
+Sub-agent  : 3 dispatches (Slice 1~3 모두), 충돌 0 — P-X1 3/3 PASS
+회고       : meta/retrospectives/phase-M0.md
+신규 패턴  : P-META-FACTORY-001 (L3 proposal-first 메타 레이어 신규 후보) + P-X1-EFFECT-001 update (50연속) + P-VALIDATION-FORMAL-001 update (여덟 번째 ★ 첫 meta-phase 입증)
+Mitigated  : P-AGENT-SCOPE-001 (50연속 누적 입증 — Phase 3:5 + ... + Phase 9.5:5 + Phase M0:3)
+Skill 첫 정식: harness-factory (★ 신규 등록 #21, proposal-only 키워드 scoped — 트리거 0 payoff deferred) + contract-change 일곱 번째 (CC-006 INDEX Skill 등록) + multi-llm-validation formal 여덟 번째 (V1~V6, ★ 첫 meta-phase) + harness-audit 키워드 충돌 검토 (충돌 0) + phase-complete v1.2.0 아홉 번째 자동 게이트
+1 ADR      : ADR-035 L3 Meta-Factory 도입 (L1/L2/L3 + proposal-first + payoff deferred + skeleton-only)
+1 CC       : CC-006 INDEX harness-factory #21 Skill 등록 (Skill 도 contract 처럼 취급)
+사용자 결정 : 3건 mapping (meta-phase 격리 제품 phase 번호 분리 / harness-factory proposal-only 키워드 scoping / proposal-first 생성물 outputs/meta proposals 격리)
+핵심 성과  : **P-X1 50연속 PASS + ★ FastAPI/Next.js/Supabase 런타임 변경 0줄 (A9) + L3 Meta-Harness Factory skeleton (meta_factory/ 7 루트 + templates 6 + blueprint 실측 + outputs) + factory_contract 8 규칙(proposal-first) + harness-factory Skill proposal-only (21번째, 키워드 scoped 충돌 0) + validation_workflow ↔ eval-run 연동 + ★ 첫 meta-phase 제품 흐름 무오염**
+다음 단계  : harness-factory dry-run / trigger validation 샘플 / with-without 비교 샘플 (Phase M1+) / Phase 10 연결 (meta_factory blueprint = 온보딩·감사 baseline) — meta-phase detour 종료, next_phase_status pending_user_decision
 ```
 
 ## 🟡 Next phase: pending_user_decision (2026-05-31)

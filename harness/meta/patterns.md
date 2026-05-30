@@ -100,14 +100,15 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **재평가 시점**: Phase 3 코드 phase 진행 중 (같은 .tsx 파일 sub-section 동시 수정 위험 ↑) — P-X1 적용 후 효과 측정
 - **연관 Skill / Contract**: phase-start §6.3, multi_slice_plan template, sub-agent prompt format
 
-### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 47연속 PASS 효과 측정 (update 2026-05-31 Phase 9.5)
+### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 50연속 PASS 효과 측정 (update 2026-05-31 Phase M0 — ★ 첫 meta-phase)
 
-- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 = **47 Slice 누적**, 0 deviation)
-- **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 13연속 update — Phase 6에서 17연속 update — Phase 5에서 22연속 update — Phase 5.5에서 26연속 update — Phase 7에서 31연속 update — Phase 8에서 36연속 update — Phase 9에서 42연속 update — Phase 9.5에서 **47연속 누적 update**
-- **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md + meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md + meta/retrospectives/phase-7.md + meta/retrospectives/phase-8.md + meta/retrospectives/phase-9.md + meta/retrospectives/phase-9.5.md §P-X1 47연속 효과 측정
-- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 → Phase 4 4/4 → Phase 4.5 4/4 → Phase 6 4/4 → Phase 5 5/5 → Phase 5.5 4/4 → Phase 7 5/5 → Phase 8 5/5 → Phase 9 6/6 → Phase 9.5 5/5 = **47연속 PASS**. Phase 9.5는 eval module 신규 + critic.py/schemas deprecated 제거 + frontend canonical 전환을 건드리는 delicate phase 임에도 0건 재발 — Slice별 폴더/파일 격리 + forbidden 명시 + ★ 제거 순서 강제(eval→검증→제거)로 baseline 침범 0. **frontend canonical 전환 slice(Slice 4)에서도 lib/types.ts + page.tsx inline으로 PlanCard·component_map 0줄 유지** (P-X1의 frontend 확장). **proposal → 적용 → 10 phase 누적 효과 측정 사이클 + large/보안/consolidation/RAG/orchestration-refactor/feedback-frontend/eval-deprecated-removal 모두 확장 입증**.
-- **증거 (Phase 3 + Phase 4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5)**:
-  - Slice 1~47 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5) 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
+- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 + Phase M0 3 = **50 Slice 누적**, 0 deviation)
+- **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 13연속 update — Phase 6에서 17연속 update — Phase 5에서 22연속 update — Phase 5.5에서 26연속 update — Phase 7에서 31연속 update — Phase 8에서 36연속 update — Phase 9에서 42연속 update — Phase 9.5에서 47연속 update — Phase M0에서 **50연속 누적 update (★ 첫 meta-phase)**
+- **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md + meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md + meta/retrospectives/phase-7.md + meta/retrospectives/phase-8.md + meta/retrospectives/phase-9.md + meta/retrospectives/phase-9.5.md + meta/retrospectives/phase-M0.md §P-X1 50연속 효과 측정
+- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 → Phase 4 4/4 → Phase 4.5 4/4 → Phase 6 4/4 → Phase 5 5/5 → Phase 5.5 4/4 → Phase 7 5/5 → Phase 8 5/5 → Phase 9 6/6 → Phase 9.5 5/5 → Phase M0 3/3 = **50연속 PASS**. ★ Phase M0는 **첫 meta-phase** (L3 Meta-Factory skeleton + harness-factory Skill 등록)임에도 0건 재발 — Slice별 폴더 격리(meta_factory / .claude/skills / scripts / meta) + forbidden 명시 + ★ **meta-phase 런타임 0줄 격리를 smoke Step 1 (git diff fff913e..HEAD backend/apps/migrations = 0) 게이트로 명시 강제** → 런타임/제품 phase 무오염. **frontend·런타임 무변경 meta-phase 에서도 PlanCard·component_map 0줄 유지**. **proposal → 적용 → 11 phase 누적 효과 측정 사이클 + large/보안/consolidation/RAG/orchestration-refactor/feedback-frontend/eval-deprecated-removal/meta-phase 모두 확장 입증**.
+- **증거 (Phase 3 + Phase 4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5 + Phase M0)**:
+  - Slice 1~50 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 + Phase M0 3) 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
+  - phases/archive/phase-M0-meta-factory/ → 0건 (★ 첫 meta-phase, 런타임 0줄 — smoke Step 1 git diff fff913e..HEAD backend/fastapi+apps/web+db/migrations = 0 게이트 PASS, meta_factory/.claude/skills/scripts/meta 격리, audit_page_component 2 drift는 Phase 5 baseline 계승 WARN)
   - `git diff f50bc74..HEAD -- harness/apps/web/component_map.md` → **0줄 (45연속, Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5 + Phase 9 6 + Phase 9.5 5)**
   - `git diff 76b4d2c..HEAD -- harness/apps/web/components/PlanCard.tsx` → **0줄 (35연속, Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 — 사용자 결정 6-a 계승, frontend canonical 전환에서도 wrapper로 0줄)**
   - phases/active/phase-3-pwa-impl/deviations.md → 0건 entry
@@ -120,12 +121,14 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - phases/active/phase-8-moa-lite/ → 0건 (large orchestration phase, behavior-preserving 의도된 2 version assertion 제외 baseline 수정 0, audit_page_component 2 drift는 Phase 5 baseline 계승 WARN)
   - phases/archive/phase-9-result-feedback/ → 0건 (large feedback phase, normalize wiring additive Optional baseline 수정 0, frontend slice에서도 PlanCard·component_map 0줄, audit_page_component 2 drift는 Phase 5 baseline 계승 WARN)
   - phases/archive/phase-9.5-eval-run/ → 0건 (eval mini-phase, deprecated 0–5 제거는 eval 안전망 + 의도된 test_critic deprecated-fallback delta만, frontend canonical 전환에서도 PlanCard·component_map 0줄, audit_page_component 2 drift는 Phase 5 baseline 계승 WARN)
+  - phases/archive/phase-M0-meta-factory/ → 0건 (★ 첫 meta-phase, L3 Meta-Factory skeleton + harness-factory Skill 등록, 런타임 0줄 smoke Step 1 게이트 PASS, audit_page_component 2 drift는 Phase 5 baseline 계승 WARN)
 - **권장 대응**:
   - Phase 10+ 모든 sub-agent prompt에 §SELF-VERIFICATION 의무 유지
   - phase-start v1.3.0 §6.3 의무 절차 보존
   - main session sub-agent 완료 후 `git diff --stat` 검증 의무 절차 보존
-- **재평가 시점**: Phase 10 (MVP 통합 + P-AUX-2 agent 실 구현) — agents/* 신규 추가 시
-- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 47연속), P-GPT-REVIEW-001 (Phase 4 + Phase 6 두 번째 적용 + Phase 5.5 세 번째 mini-phase 정신 계승), P-VALIDATION-FORMAL-001 (Phase 4.5 + Phase 6 + Phase 5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5 일곱 번째 입증), P-CRITIC-CANONICAL-001 (Phase 6 → Phase 8 conservative adapter → Phase 9 normalize wiring canonical live → Phase 9.5 deprecated 0–5 Full 제거로 단계적 축소 완료), P-CONTRACT-FIRST-001 (Phase 6 후보 + Phase 5 db_schema.md + Phase 7 rag_data_contract §18 + Phase 8 CC-003 + Phase 9 CC-004 + Phase 9.5 CC-005 누적 6회), P-RLS-001 (Phase 5 신규 + Phase 9 feedback/selection), P-SSE-001 (Phase 5 신규 + Phase 8 progress_store 실 stage), P-SECURITY-REVIEW-001 (Phase 5 신규 후보 + Phase 9 두 번째 정식 — 강화), P-LEGACY-CONSOLIDATION-001 (Phase 5.5 + Phase 7 누적 2회), P-RAG-5STAGE-001 (Phase 7 신규 후보 + Phase 9 candidate pending 적재 정합), P-RAG-GRACEFUL-001 (Phase 7 신규 후보), P-MOA-ORCHESTRATOR-001 (Phase 8 신규 후보 + Phase 9 orchestrator 확장), P-BEHAVIOR-PRESERVING-001 (Phase 8 신규 후보 + Phase 9 additive wiring + Phase 9.5 deprecated 제거 eval 동일 입증), P-FEEDBACK-LOOP-001 (Phase 9 신규 후보), P-CANONICAL-WIRING-001 (Phase 9 신규 후보 + Phase 9.5 deprecated 완전 제거로 wiring 단계 완료), **P-EVAL-HARNESS-001 (Phase 9.5 신규 후보)**, **P-DEPRECATED-REMOVAL-001 (Phase 9.5 신규 후보)**
+  - ★ meta-phase 진행 시 런타임 0줄 격리를 smoke Step 1 (git diff 게이트)로 명시 강제 (Phase M0 신규)
+- **재평가 시점**: Phase 10 (MVP 통합 + P-AUX-2 agent 실 구현) — agents/* 신규 추가 시 / Phase M1+ (자동 generator) — meta_factory/* 확장 시
+- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 50연속), P-GPT-REVIEW-001 (Phase 4 + Phase 6 두 번째 적용 + Phase 5.5 세 번째 mini-phase 정신 계승), P-VALIDATION-FORMAL-001 (Phase 4.5 + Phase 6 + Phase 5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5 + Phase M0 여덟 번째 입증), **P-META-FACTORY-001 (Phase M0 신규 — L3 proposal-first 메타 레이어)**, P-CRITIC-CANONICAL-001 (Phase 6 → Phase 8 conservative adapter → Phase 9 normalize wiring canonical live → Phase 9.5 deprecated 0–5 Full 제거로 단계적 축소 완료), P-CONTRACT-FIRST-001 (Phase 6 후보 + Phase 5 db_schema.md + Phase 7 rag_data_contract §18 + Phase 8 CC-003 + Phase 9 CC-004 + Phase 9.5 CC-005 누적 6회), P-RLS-001 (Phase 5 신규 + Phase 9 feedback/selection), P-SSE-001 (Phase 5 신규 + Phase 8 progress_store 실 stage), P-SECURITY-REVIEW-001 (Phase 5 신규 후보 + Phase 9 두 번째 정식 — 강화), P-LEGACY-CONSOLIDATION-001 (Phase 5.5 + Phase 7 누적 2회), P-RAG-5STAGE-001 (Phase 7 신규 후보 + Phase 9 candidate pending 적재 정합), P-RAG-GRACEFUL-001 (Phase 7 신규 후보), P-MOA-ORCHESTRATOR-001 (Phase 8 신규 후보 + Phase 9 orchestrator 확장), P-BEHAVIOR-PRESERVING-001 (Phase 8 신규 후보 + Phase 9 additive wiring + Phase 9.5 deprecated 제거 eval 동일 입증), P-FEEDBACK-LOOP-001 (Phase 9 신규 후보), P-CANONICAL-WIRING-001 (Phase 9 신규 후보 + Phase 9.5 deprecated 완전 제거로 wiring 단계 완료), **P-EVAL-HARNESS-001 (Phase 9.5 신규 후보)**, **P-DEPRECATED-REMOVAL-001 (Phase 9.5 신규 후보)**
 
 ### Pattern P-THIN-VERTICAL-001: Thin Vertical Slice 효과 (코드 phase entry 표준)
 
@@ -206,9 +209,9 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - meta/retrospectives/phase-4.5.md
   - meta/proposals/2026-05-28_phase-4-retrospective-proposals.md §P-X2 (채택 권장)
 
-### Pattern P-VALIDATION-FORMAL-001: multi-llm-validation formal self + 외부 분리 패턴 (Phase 4.5 첫 + Phase 6 두 번째 + Phase 5 세 번째 정식 확정 + Phase 5.5 self-strengthen V-form sub-pattern + Phase 7 네 번째 + Phase 8 다섯 번째 + Phase 9 여섯 번째 + Phase 9.5 일곱 번째 입증)
+### Pattern P-VALIDATION-FORMAL-001: multi-llm-validation formal self + 외부 분리 패턴 (Phase 4.5 첫 + Phase 6 두 번째 + Phase 5 세 번째 정식 확정 + Phase 5.5 self-strengthen V-form sub-pattern + Phase 7 네 번째 + Phase 8 다섯 번째 + Phase 9 여섯 번째 + Phase 9.5 일곱 번째 + Phase M0 여덟 번째 ★ 첫 meta-phase 입증)
 
-- **유형**: 반복 성공 (Phase 4.5 첫 V1~V4 + Phase 6 두 번째 V1~V5 + Phase 5 세 번째 V1~V6 + Phase 7 네 번째 V1~V7 + Phase 8 다섯 번째 V1~V7 + Phase 9 여섯 번째 V1~V7 + Phase 9.5 일곱 번째 V1~V7 = 7회 누적, 정식 패턴 확정 + Phase 5.5 self-strengthen V-form sub-pattern 보존)
+- **유형**: 반복 성공 (Phase 4.5 첫 V1~V4 + Phase 6 두 번째 V1~V5 + Phase 5 세 번째 V1~V6 + Phase 7 네 번째 V1~V7 + Phase 8 다섯 번째 V1~V7 + Phase 9 여섯 번째 V1~V7 + Phase 9.5 일곱 번째 V1~V7 + Phase M0 여덟 번째 V1~V6 = 8회 누적, 정식 패턴 확정 + Phase 5.5 self-strengthen V-form sub-pattern 보존)
 - **최초 식별**: 2026-05-28 (Phase 4.5 Slice 1 — 첫 formal 트리거)
 - **두 번째 입증**: 2026-05-29 (Phase 6 Slice 1 — 두 번째 formal 트리거)
 - **세 번째 입증 (정식 확정)**: 2026-05-29 (Phase 5 Slice 1 — 세 번째 formal 트리거, V6 large + 보안 phase 추가: Supabase 채택 / JWT / RLS / SSE / revise_history JSONB / canonical DB)
@@ -217,7 +220,8 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **다섯 번째 입증 (Phase 8 MOA orchestration)**: 2026-05-29 (Phase 8 Slice 1 — 다섯 번째 formal 트리거, V7 MOA orchestration 영역: orchestrator 추출 behavior-preserving / ProgressSink Null default 회귀 0 / SSE progress_store 브릿지 / Critic conservative adapter Phase 6 canonical 불변 / prompt_registry semver / prompt_id-version 단일 출처 정합 / SSE best-effort single-process)
 - **여섯 번째 입증 (Phase 9 selection/feedback)**: 2026-05-29 (Phase 9 Slice 1 — 여섯 번째 formal 트리거, V7 selection/feedback 영역: selection/feedback 실 plans 정합 / normalize_to_canonical wiring 회귀 0 / Brand Memory 준비 경계 (agent 미구현 Phase 10+) / 피드백 reason PII 마스킹 / repo graceful PlansRepo 패턴 / 피드백 UI wrapper PlanCard·component_map 0줄 / feedback→candidate pending 적재)
 - **일곱 번째 입증 (Phase 9.5 eval-run)**: 2026-05-31 (Phase 9.5 Slice 1 — 일곱 번째 formal 트리거, V7 eval-run 영역: eval mock-deterministic (CI 가능 비용 0) / golden_set markdown→구조화 파싱 (실 11 케이스 단일 출처) / revise effect metric (attempt별 canonical 0–1 delta) / deprecated 제거 경계 (run_critic 0–5 불변 P-007) / 제거 순서 (eval→검증→제거) / 임계값 게이트 (schema 100% / 점수 ±0.3 / 광고 / 차단 단어) / frontend types CriticEvaluation 정합)
-- **관련 회고**: meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md + meta/retrospectives/phase-7.md + meta/retrospectives/phase-8.md + meta/retrospectives/phase-9.md + meta/retrospectives/phase-9.5.md
+- **여덟 번째 입증 (Phase M0 Meta-Factory ★ 첫 meta-phase)**: 2026-05-31 (Phase M0 Slice 1 — 여덟 번째 formal 트리거, V1~V6 meta-phase 영역: V1 L3 도입 타당성 (기존 self_improvement_loop + harness-audit + meta-retrospective 문화 정합 — 단절적 신규 아님) / V2 런타임 변경 0 (A9 — FastAPI/Next.js/Supabase 0줄, git diff 게이트) / V3 proposal-first (생성물 outputs/meta proposals 격리, 자동 적용 X) / V4 meta-phase 격리 (phase-M0 제품 phase 번호 분리, 제품 흐름 무오염) / V5 harness-factory Skill 키워드 scoping (생성/blueprint/scaffold 한정, 충돌 0) / V6 blueprint 실측 (golden_set 11 + .claude/agents 부재 + ADR-001~034 + P-X1 47 + 20 Skill + MOA Supervisor))
+- **관련 회고**: meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md + meta/retrospectives/phase-7.md + meta/retrospectives/phase-8.md + meta/retrospectives/phase-9.md + meta/retrospectives/phase-9.5.md + meta/retrospectives/phase-M0.md
 - **요약**: 사용자 결정 "검증 모델은 너가 직접 (Claude Code, 혹은 codex가 지침 참고하면서 자가 검증), 외부 검증은 따로 작성되도록 할 것" → multi-llm-validation Skill formal 트리거를 다음 패턴으로 정의:
   1. **Self validation**: Claude Code가 지침(CLAUDE.md, contracts, eval, patterns)을 참조하여 자가 검증 → `meta/validations/{date}_{phase}_self.md`
   2. **External validation**: 외부 LLM(GPT/Gemini) 검증은 placeholder로 별도 파일 → `meta/validations/{date}_{phase}_external.md` (사용자가 외부에서 진행 후 채움)
@@ -229,7 +233,8 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - **V dimension 점진 확장**: Phase 4.5 V1~V4 (지침/contract/eval/패턴) → Phase 6 +V5 (frontend types ↔ backend 1:1 매핑) → Phase 5 +V6 (보안 + DB 영속 정합성) → Phase 7 +V7 (RAG architecture — chunk 512 + retrieval threshold + LLM Wiki vs RAG 분리 + hybrid 승인) → Phase 8 V7 재사용 (MOA orchestration — orchestrator 추출 behavior-preserving + ProgressSink + SSE 브릿지 + Critic conservative adapter + prompt semver) → Phase 9 V7 재사용 (selection/feedback — 실 plans 정합 + normalize wiring 회귀 0 + Brand Memory 준비 경계 + 피드백 PII + repo graceful + 피드백 UI wrapper + feedback→candidate 적재)
 - **다음 단계**:
   - Phase 10 통합 등 큰 phase 진입 시 동일 패턴 적용
-  - 정식 확정 (7회 누적, Phase 7 + Phase 8 + Phase 9 + Phase 9.5 입증) — 모든 큰 phase 의무 baseline
+  - 정식 확정 (8회 누적, Phase 7 + Phase 8 + Phase 9 + Phase 9.5 + Phase M0 입증) — 모든 큰 phase + meta-phase 의무 baseline
+  - ★ meta-phase 도 multi-llm-validation formal 의무 (Phase M0 — V dimension 을 meta-phase 영역으로 확장: L3 도입 타당성/런타임0/proposal-first/meta-phase 격리/Skill scoping/blueprint 실측)
   - external 채움 누적 시 self vs external 차이 분석 회고 별도 (Phase 11+)
 - **권장 대응**:
   - 모든 큰 phase 진입 전 self.md + external.md 2 파일 생성 의무
@@ -258,6 +263,9 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - meta/validations/2026-05-31_phase-9.5-pre-entry_self.md (V1~V7 PASS — 일곱 번째)
   - meta/validations/2026-05-31_phase-9.5-pre-entry_external.md (placeholder)
   - meta/retrospectives/phase-9.5.md (일곱 번째 트리거 — V7 eval mock-deterministic + deprecated 제거 경계 + 임계값 게이트)
+  - meta/validations/2026-05-31_phase-M0-pre-entry_self.md (V1~V6 PASS — 여덟 번째, ★ 첫 meta-phase)
+  - meta/validations/2026-05-31_phase-M0-pre-entry_external.md (placeholder)
+  - meta/retrospectives/phase-M0.md (여덟 번째 트리거 — V6 L3 Meta-Factory 도입 타당성 + 런타임0 + proposal-first + meta-phase 격리 + Skill scoping + blueprint 실측)
 
 ### Pattern P-LEGACY-CONSOLIDATION-001: 다중 layer 공존 시 옵션 A 패턴 (Phase 5.5 신규 후보 + Phase 7 두 번째 입증)
 
@@ -702,3 +710,38 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - meta/retrospectives/phase-9.md (§개선 제안 §2 — Critic deprecated 완전 제거)
   - docs/decisions/phase_9_5_critic_deprecated_removal.md (ADR-034)
 - **상태**: 신규 등록 후보 (Phase 9.5 첫 적용 — Critic deprecated 0–5 Full 제거, 다른 deprecated 제거 시점 효과 재측정 후 정식 패턴 채택 결정)
+
+### Pattern P-META-FACTORY-001: L3 proposal-first 메타 레이어 (런타임 0 + skeleton·contract·validation) (Phase M0 신규 후보)
+
+- **유형**: 반복 성공 (Phase M0 첫 적용, L3 Meta-Harness Factory skeleton 도입 — meta_factory/ 7 루트 + templates 6 + blueprint 실측 + outputs 격리 + factory_contract 8 규칙 proposal-first + harness-factory Skill proposal-only, ★ 런타임 변경 0)
+- **최초 식별**: 2026-05-31 (Phase M0, ★ 첫 meta-phase — L3 Meta-Factory 도입, ADR-035)
+- **관련 회고**: meta/retrospectives/phase-M0.md §잘된 것 1~5 + §배운 것 1~4 + §P-META-FACTORY-001
+- **요약**: 기존 메타 문화(self_improvement_loop L2 in-place 개선 + harness-audit + meta-retrospective)를 **하네스 생성·blueprint 영역(L3)으로 상위 정식화**하되, 런타임/제품 phase 를 0줄 건드리지 않는 proposal-first 메타 레이어 패턴:
+  1. **3계층 모델 명문화**: L1 Product Runtime(FastAPI/Next.js/Supabase) / L2 Implementation Harness(AGENTS/CLAUDE/contracts/phases/eval/skills) / L3 Meta-Harness Factory(meta_factory/ — 하네스 생성·역정리·검증·개선 제안). self_improvement_loop = L2 in-place / L3 = 하네스 생성·blueprint 책임 경계 분리.
+  2. **factory_contract 8 절대 규칙 (proposal-first 헌법)**: product runtime 직접 수정 금지(A9) + 기존 harness 직접 변경 금지 + 생성 결과 outputs/meta proposals 격리 + Skill INDEX 충돌 규칙 + contract-change 경유 + PROJECT_STATE 사용자 승인 + 생성 harness validation 통과 전 active 아님 + 데이터/RAG 기존 정책. self_improvement_loop §0/§7 "자동 수정 금지"의 L3 영역 확장.
+  3. **★ 런타임 0줄 격리를 smoke Step 1 (git diff 게이트)로 강제**: meta-phase 특유의 격리를 `git diff {entry^}..HEAD backend/fastapi+apps/web+db/migrations = 0` 자동 검증 → 메타-툴링 투자가 런타임/제품 흐름 무오염.
+  4. **skeleton·contract·validation 까지만 (payoff deferred)**: domain_brief(11 필드 입력) + harness_blueprint(출력) schema + generation_workflow 11단계 + validation_workflow 6 검증(★ eval-run §3~§6 cross-ref) + templates 6 scaffold + 6 architecture 패턴(Dreammate 매핑). 자동 generator / .claude/agents 생성 / 2nd 하네스 실제 생성은 deferred (Phase M1+). 즉시 가치 = 현재 하네스 blueprint 실측(온보딩/감사 문서) + 메타 문화 정식화.
+  5. **harness-factory Skill proposal-only (키워드 scoped 충돌 0)**: 키워드(하네스 blueprint/meta_factory/harness scaffold/도메인 하네스 생성)를 "생성/blueprint/scaffold" 영역으로 좁게 정의 → harness-audit("감사/점검") / meta-retrospective("개선/회고") / phase-start("phase 시작") 침범 0. 우선순위 표 편입(harness-audit/contract-change/eval-run 상위). generated harness 자동 active 금지.
+- **효과 측정 (Phase M0)**:
+  - ★ FastAPI/Next.js/Supabase 런타임 변경 0줄 (A9 — smoke Step 1 git diff 게이트 PASS) + pytest 339 유지 (회귀 0)
+  - meta_factory 구조 16 항목 (smoke Step 4 PASS) + harness-factory Skill #21 (smoke Step 5 PASS) + scenario_sim v7 33/33 (SM1~SM3, P-X2 아홉 번째)
+  - harness-factory 키워드 충돌 0 (harness-audit §3 검토 — 기존 20 Skill description 비중첩)
+  - P-X1 50연속 (★ 첫 meta-phase 0건 재발) + multi-llm-validation formal 여덟 번째 (V1~V6, 첫 meta-phase 적용)
+  - blueprint 실측(golden_set 11 / .claude/agents 부재 / ADR-001~034 / P-X1 47 / MOA Supervisor) → L3 부족점 5 도출
+- **다음 단계**:
+  - Phase M1+ 자동 generator 설계 (generation_workflow 11단계 실행 도구 — 2nd 하네스 착수 시점)
+  - Phase M1+ `.claude/agents/` 생성 (agent_template.md 기반 — blueprint 부족점 2)
+  - Phase M1+ trigger dry-run / with-without 비교 샘플 (validation_workflow 검증 1/4 실 샘플 — generated harness 첫 생성 시점)
+  - 두 번째 적용 (Phase M1+ 자동 generator / 2nd 하네스 착수) 효과 재측정 후 정식 패턴 채택 결정
+- **권장 대응**:
+  - 메타 레이어 도입 시 런타임 0줄 격리를 smoke git diff 게이트로 명시 강제 (meta-phase 격리 핵심)
+  - proposal-first 헌법(factory_contract)으로 자동 적용 차단 + self_improvement_loop 책임 경계 분리
+  - 신규 메타 Skill 키워드 scoped (기존 Skill 소유 키워드 비침범 + 우선순위 표 편입)
+  - skeleton·contract·validation 까지만 (payoff deferred — 즉시 가치 blueprint 로 YAGNI 완화) + ADR로 결정 근거 영구 기록 (Phase M0 ADR-035 패턴 복제)
+- **연관 Skill / Contract**: harness-factory Skill (Phase M0 신규 — proposal-only), contract-change Skill (CC-006 — Skill 도 contract 취급), harness-audit Skill (키워드 충돌 검토), multi-llm-validation Skill (formal 여덟 번째), eval-run Skill (validation_workflow 검증 5 위임), self_improvement_loop (L2 in-place — L3 가 상위 정식화), ADR-035 (L3 Meta-Factory 도입), P-X1-EFFECT-001 (50연속 — meta-phase 격리), P-VALIDATION-FORMAL-001 (여덟 번째 입증)
+- **관련 회고**:
+  - meta/retrospectives/phase-M0.md
+  - docs/decisions/phase_M0_meta_factory.md (ADR-035)
+  - meta_factory/README.md + factory_contract.md + generation_workflow.md + validation_workflow.md
+  - meta_factory/blueprints/dreammate_current_harness_blueprint.md (현재 하네스 실측 역정리 + L3 부족점 5)
+- **상태**: 신규 등록 후보 (Phase M0 첫 적용 — L3 Meta-Factory skeleton, Phase M1+ 자동 generator / 2nd 하네스 착수 시점 효과 재측정 후 정식 패턴 채택 결정)

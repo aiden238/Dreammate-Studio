@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 # scripts/scenario_simulation.ps1
 # Phase 4.5+ Changeability Simulation auto-gate (P-X2)
 # v2 (Phase 5 Slice 1): 5 -> 10 scenarios (DB / Auth / RLS / JWT / SSE 추가)
@@ -6,9 +6,10 @@
 # v4 (Phase 8 Slice 5): 15 -> 20 scenarios (MOA orchestrator + ProgressSink + progress_store 브릿지 + SSE 실 stage + prompt_registry semver 추가)
 # v5 (Phase 9 Slice 6): 20 -> 25 scenarios (selected_plans + feedback_events + normalize wiring + brand_memory prep + 피드백 UI 추가)
 # v6 (Phase 9.5 Slice 5): 25 -> 30 scenarios (eval runner + revise effect + Critic deprecated 제거 + eval report + generate.py canonical wiring 추가)
+# v7 (Phase M0 Slice 3, ★ meta-phase): 30 -> 33 scenarios (SM1 meta_factory 구조 + SM2 harness-factory Skill + SM3 현재 하네스 blueprint 추가 — L3 Meta-Factory skeleton, 런타임 0)
 # Called automatically by phase-complete Skill v1.2.0 §1.6 at Phase close.
 #
-# Phase 9.5 final 목표: 30/30 PASS (P-X2 여덟 번째 자동 게이트)
+# Phase M0 final 목표: 33/33 PASS (P-X2 아홉 번째 자동 게이트)
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference   = 'SilentlyContinue'
@@ -16,9 +17,9 @@ $ProgressPreference   = 'SilentlyContinue'
 $ROOT = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Set-Location $ROOT
 
-Write-Host "=== scenario_simulation v6 (P-X2 auto-gate, Phase 9.5) ===" -ForegroundColor Cyan
+Write-Host "=== scenario_simulation v7 (P-X2 auto-gate, Phase M0 meta-phase) ===" -ForegroundColor Cyan
 Write-Host "Root: $ROOT"
-Write-Host "Note: Phase 9.5 final target 30/30 PASS (P-X2 여덟 번째 자동 게이트)"
+Write-Host "Note: Phase M0 final target 33/33 PASS (P-X2 아홉 번째 자동 게이트, SM1~SM3 meta_factory 3개 추가)"
 Write-Host ""
 
 $scenarios = @(
@@ -62,7 +63,12 @@ $scenarios = @(
     @{ Id = "S27"; Name = "revise effect eval (revise loop 개선 효과 metric)"; Files = @("backend/fastapi/eval/revise_effect.py") },
     @{ Id = "S28"; Name = "Critic deprecated 0–5 Full 제거 (canonical-only)"; Files = @("backend/fastapi/agents/critic.py", "backend/fastapi/schemas/output.py") },
     @{ Id = "S29"; Name = "eval report (regression_results 출력 + eval_run.ps1)"; Files = @("backend/fastapi/eval/report.py", "scripts/eval_run.ps1") },
-    @{ Id = "S30"; Name = "generate.py canonical wiring (critic verdict normalize)"; Files = @("backend/fastapi/routers/generate.py", "backend/fastapi/agents/critic.py") }
+    @{ Id = "S30"; Name = "generate.py canonical wiring (critic verdict normalize)"; Files = @("backend/fastapi/routers/generate.py", "backend/fastapi/agents/critic.py") },
+
+    # Phase M0 신규 (3, ★ meta-phase — L3 Meta-Factory skeleton, 런타임 0)
+    @{ Id = "SM1"; Name = "meta_factory 구조 (README + factory_contract — L1/L2/L3 + 8 규칙)"; Files = @("meta_factory/README.md", "meta_factory/factory_contract.md") },
+    @{ Id = "SM2"; Name = "harness-factory Skill (proposal-only, 키워드 scoped) + INDEX #21"; Files = @(".claude/skills/harness-factory/SKILL.md", ".claude/skills/INDEX.md") },
+    @{ Id = "SM3"; Name = "현재 하네스 blueprint 실측 역정리 (10 섹션 + 부족점 5)"; Files = @("meta_factory/blueprints/dreammate_current_harness_blueprint.md") }
 )
 
 $pass = 0
@@ -96,7 +102,7 @@ if ($fail -eq 0) {
 } else {
     Write-Host ""
     Write-Host "scenario_simulation PARTIAL - $pass/$($scenarios.Count) PASS, $fail FAIL" -ForegroundColor Yellow
-    Write-Host "  (Phase 9.5 final target: 30/30 PASS — P-X2 여덟 번째 자동 게이트)" -ForegroundColor Yellow
+    Write-Host "  (Phase M0 final target: 33/33 PASS — P-X2 아홉 번째 자동 게이트)" -ForegroundColor Yellow
     # phase 진행 중 의도된 PARTIAL은 exit 0 유지 (자동 게이트는 phase-complete 시점에 별도 strict 모드 권장)
     exit 0
 }

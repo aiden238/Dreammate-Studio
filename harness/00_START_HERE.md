@@ -46,10 +46,11 @@
 
 ## 현재 active Phase
 
-**🟡 pending_user_decision** — Phase 9.5 ✅ done (2026-05-31)
+**🟡 pending_user_decision** — Phase M0 ✅ done (2026-05-31, ★ meta-phase) + Phase 9.5 ✅ done (2026-05-31)
 
-Phase 9.5 ✅ done (2026-05-31). 다음 phase는 사용자 결정 대기 (옵션 A Phase 10 통합 / B Phase 11+).
+Phase M0 (Meta-Factory Prep, ★ meta-phase) ✅ done (2026-05-31) — L3 Meta-Harness Factory skeleton + harness-factory Skill proposal-only. ★ 런타임 변경 0 (A9). meta-phase detour 종료 — 다음 제품 phase는 사용자 결정 대기 (옵션 A Phase 10 통합 / B Phase 11+).
 
+- Phase M0 archive: `phases/archive/phase-M0-meta-factory/` (참조 가능 — ★ meta-phase, closing_notes + 회고 + L3 Meta-Factory skeleton + harness-factory Skill proposal-only + 사용자 §9 보고 + 다음 단계 1~4)
 - Phase 9.5 archive: `phases/archive/phase-9.5-eval-run/` (참조 가능 — closing_notes + 회고 + eval-run 정식화 baseline + generate.py deviation + 다음 옵션 A/B)
 - Phase 9 archive: `phases/archive/phase-9-result-feedback/` (참조 가능 — closing_notes + 회고 + 결과저장/피드백 baseline + 다음 옵션 A/B/C)
 - Phase 8 archive: `phases/archive/phase-8-moa-lite/` (참조 가능 — closing_notes + 회고 + MOA orchestrator baseline + 다음 옵션 A/B/C/D)
@@ -74,6 +75,19 @@ Phase 9.5 ✅ done (2026-05-31). 다음 phase는 사용자 결정 대기 (옵션
   - 4계층 full linkage (plan_options/video_projects — selected_plans 실 plans 정합 → idealized schema 연결, 누적 2회)
   - 사용자 데이터 자동 promotion (rag-update Skill 두 번째 — feedback→candidate pending 적재 완료)
   - SSE full async worker (누적 2회) / prompt A/B 실행 인프라 / Supabase SQL function 정의 / cost-review Skill
+
+**Phase M0 핵심 성과 (★ meta-phase, 런타임 변경 0)**:
+- **P-X1 §SELF-VERIFICATION 50연속 PASS** (Phase 3 5 + ... + Phase 9.5 5 + Phase M0 3 — ★ 첫 meta-phase 0건 재발)
+- **★ FastAPI/Next.js/Supabase 런타임 변경 0줄 (A9)** — backend/fastapi 0 / apps/web 0 (PlanCard·component_map 0줄) / db/migrations 0 (git diff 게이트 PASS, smoke Step 1)
+- **L3 Meta-Harness Factory skeleton** — meta_factory/ 7 루트(README L1/L2/L3 + factory_contract 8 규칙 proposal-first + domain_brief/harness_blueprint schema + architecture_patterns 6 + Dreammate 매핑 + generation_workflow 11단계 + validation_workflow 6 검증) + templates 6 scaffold + 현재 하네스 blueprint 실측 역정리 + outputs 격리
+- **harness-factory Skill proposal-only (21번째, 키워드 scoped 충돌 0)** — domain_brief → blueprint 초안 + scaffold 제안 + 충돌 분석. harness-audit/meta-retrospective/phase-start 와 충돌 0 (우선순위 표 편입). generated harness 자동 active 금지
+- **validation_workflow ↔ eval-run 연동** — 검증 5는 eval-run Skill §3~§6 cross-ref (별도 평가 체계 신설 X)
+- **multi-llm-validation formal 여덟 번째** (V1~V6 PASS — ★ 첫 meta-phase) + **contract-change CC-006** (INDEX harness-factory #21 등록 — Skill 도 contract 처럼 취급)
+- ADR-035 (L3 Meta-Factory 도입) + pytest 339 유지 + smoke_test_phase_M0 6/6 + scenario_sim v7 33/33 (P-X2 아홉 번째) + Skill 20→21
+- 신규 패턴: P-META-FACTORY-001 + P-X1-EFFECT-001 update (50연속) + P-VALIDATION-FORMAL-001 update (여덟 번째)
+- ★ meta-phase 격리 성공 — 제품 phase 흐름 무오염 (phase-M0 번호 분리, next_phase_status 보존)
+- 다음 단계: harness-factory dry-run / trigger validation 샘플 / with-without 비교 샘플 (Phase M1+) / Phase 10 연결 (meta_factory blueprint = 온보딩·감사 baseline)
+- meta-phase 실측 ~4~7h
 
 **Phase 9.5 핵심 성과**:
 - **P-X1 §SELF-VERIFICATION 47연속 PASS** (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5)

@@ -8,23 +8,25 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 
 ## 현재 Active Phase
 
-**🟢 Phase M0 active (2026-05-31 entry)** — ★ **meta-phase** (제품 phase 아님). L3 Meta-Harness Factory skeleton + contract + validation (3 Slice, 4~7h, 모두 sub-agent dispatch). ★ 런타임 변경 0 (A9 — FastAPI/Next.js/Supabase 0줄). Slice 1 (Pre-Entry + meta_factory 핵심 contract) 완료.
+**🟡 pending_user_decision** — Phase M0 ✅ done (2026-05-31, ★ meta-phase). Phase 9.5 ✅ done (2026-05-31). 다음 phase 사용자 결정 대기 (옵션 A Phase 10 MVP 통합 / B Phase 11+). Phase M0 meta-phase detour 종료 — 제품 로드맵 보존.
 
-**Phase M0. Meta-Factory Prep 🟢 active (2026-05-31 entry, meta-phase)** — 현재 구현 하네스(L2)를 유지하면서 상위에 `harness/meta_factory/` (L3 Meta-Harness Factory) skeleton + contract + validation 기준을 추가한다. proposal-first 메타 레이어 — ① 현재 하네스 blueprint 역정리 ② 새 도메인 하네스 생성 입력/출력 구조 ③ Agent/Skill/Contract/Eval/Phase 생성 전 검증 기준. **자동 generator 구현이 아니라 skeleton·contract·validation 정의까지만** (payoff deferred, NG11).
+**Phase M0. Meta-Factory Prep ✅ done (2026-05-31, ★ meta-phase)** — 현재 구현 하네스(L2)를 유지하면서 상위에 `harness/meta_factory/` (L3 Meta-Harness Factory) skeleton + contract + validation 기준을 추가. proposal-first 메타 레이어 — ① 현재 하네스 blueprint 역정리 ② 새 도메인 하네스 생성 입력/출력 구조 ③ Agent/Skill/Contract/Eval/Phase 생성 전 검증 기준. **자동 generator 구현이 아니라 skeleton·contract·validation 정의까지만** (payoff deferred, NG11). 3 Slice 모두 sub-agent dispatch 완료. ★ FastAPI/Next.js/Supabase 런타임 변경 0줄 (A9).
 
 - 한 줄 정의: L1 Product Runtime / L2 Implementation Harness / L3 Meta-Harness Factory 3계층 모델을 명문화하고, meta_factory/ skeleton + factory_contract(8 규칙, proposal-first) + domain_brief/harness_blueprint schema + architecture_patterns(6 + Dreammate 매핑) + workflow + templates + 현재 하네스 blueprint + harness-factory Skill(proposal-only)을 도입한다. ★ 런타임 변경 0 (A9).
-- **3 Slice 모두 sub-agent dispatch (런타임 변경 0)**:
-  - Slice 1 [Pre-Entry — validations(V1~V6 PASS) + ADR-035 + meta_factory 핵심 5 문서 (README/factory_contract/domain_brief_schema/harness_blueprint_schema/architecture_patterns)] ✅ (entry commit)
-  - Slice 2 [generation_workflow + validation_workflow + templates(6) + 현재 하네스 blueprint 실측 역정리 + outputs .gitkeep] (예정)
-  - Slice 3 [harness-factory Skill (proposal-only, 키워드 scoped) + INDEX #21 등록 + CC-006 + smoke + close] (예정)
+- **3 Slice 모두 sub-agent dispatch 완료 (런타임 변경 0)**:
+  - Slice 1 [Pre-Entry — validations(V1~V6 PASS) + ADR-035 + meta_factory 핵심 5 문서 (README/factory_contract/domain_brief_schema/harness_blueprint_schema/architecture_patterns)] ✅ (28f9634)
+  - Slice 2 [generation_workflow + validation_workflow + templates(6) + 현재 하네스 blueprint 실측 역정리 + outputs .gitkeep] ✅ (780a615)
+  - Slice 3 [harness-factory Skill (proposal-only, 키워드 scoped, #21) + INDEX 등록 + CC-006 + proposal + smoke_test_phase_M0 6/6 + scenario_sim v7 33/33 + 회고 + archive + state docs] ✅ (final)
 - **사용자 결정 3건 반영 (2026-05-31)**:
   - **meta-phase (Phase M0, 3 Slice)** — PHASE_REGISTRY 제품 phase(10/11)와 번호 분리, archive/회고/P-X1 규율 유지.
   - **harness-factory Skill 추가** (proposal-only, 키워드 scoping) — Slice 3.
   - **proposal-first** — 생성물은 meta_factory/outputs/ 또는 meta/proposals/에 먼저 (자동 적용 X).
-- ADR-035 (L3 Meta-Factory 도입 — L1/L2/L3 모델 + proposal-first + payoff deferred + skeleton-only).
+- ADR-035 (L3 Meta-Factory 도입 — L1/L2/L3 모델 + proposal-first + payoff deferred + skeleton-only) + CC-006 (INDEX harness-factory #21 Skill 등록 — Skill 도 contract 처럼 취급).
 - multi-llm-validation **formal 여덟 번째** (V1~V6 PASS — L3 도입 타당성/런타임0/proposal-first/meta-phase/Skill scoping/blueprint 실측) + ★ 첫 meta-phase 적용.
-- ★ A9 런타임 변경: backend/fastapi 0 / apps/web 0 (PlanCard·component_map 0줄) / db/migrations 0.
-- baseline: pytest 339 + P-X1 47 + PlanCard 35 + component_map 45 + Skill 20 (Phase 9.5 종료 baseline 유지 — 런타임 무관, 불변). P-X1 목표 누적 50 (Phase 9.5:47 + M0:3).
+- ★ A9 런타임 변경: backend/fastapi 0 / apps/web 0 (PlanCard·component_map 0줄) / db/migrations 0 (git diff fff913e..HEAD 게이트 PASS, smoke Step 1).
+- **핵심 성과**: P-X1 50연속 + L3 Meta-Factory skeleton (meta_factory/ 7 루트 + templates 6 + blueprint 실측 + outputs) + harness-factory Skill proposal-only (21번째, 키워드 scoped 충돌 0) + pytest 339 유지 + smoke 6/6 + scenario_sim v7 33/33 (P-X2 아홉 번째) + Skill 20→21.
+- 신규 패턴: P-META-FACTORY-001 (L3 proposal-first 메타 레이어) + P-X1-EFFECT-001 update (50연속) + P-VALIDATION-FORMAL-001 update (여덟 번째).
+- baseline: pytest 339 + P-X1 50 + PlanCard 35 + component_map 45 + Skill 21 (런타임 무관 — meta-phase). meta-phase 실측 ~4~7h.
 
 **Phase 9.5. eval-run 정식화 + Critic deprecated 0–5 Full 제거 ✅ done (2026-05-31)** — golden_set 회귀 runner(mock-deterministic, CI 가능) + revise effect eval 구현 → eval-design/eval-run Skill 첫 정식 → eval 로 canonical-only 품질 검증 후 Critic deprecated 0–5 fallback + CriticEvaluation Optional deprecated 필드 Full 제거 (Critic 평가 체계 canonical 0–1 단일 표준화). 5 Slice 모두 sub-agent dispatch 완료 (P-X1 47연속 + pytest 339 + eval gate PASS + Critic warnings 0).
 
@@ -168,7 +170,7 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 - Phase 1 legacy rag/{retriever, fallback}.py + Phase 7 rag/retrieval.py 공존 (P-LEGACY-CONSOLIDATION-001 누적 2회 — Phase 11+ Custom RAG 시점 자연 통합)
 - 실측 시간 ~13~14h (추정 12~16h 내)
 
-**🟢 Now: Phase M0 active (2026-05-31 entry, ★ meta-phase)** — L3 Meta-Harness Factory skeleton + contract + validation (3 Slice, 4~7h, 모두 sub-agent dispatch). ★ 런타임 변경 0 (A9). Slice 1 (Pre-Entry + meta_factory 핵심 contract — validations V1~V6 PASS + ADR-035 + README/factory_contract/2 schema/architecture_patterns) 완료. Phase 9.5 ✅ done (2026-05-31, eval-run 정식화 + Critic deprecated 0–5 제거, 5 Slice). 제품 phase 옵션(Phase 10 MVP 통합 / Phase 11+)은 보존 — M0 는 meta-phase 병렬 detour.
+**🟡 Now: pending_user_decision** — Phase M0 ✅ done (2026-05-31, ★ meta-phase). L3 Meta-Harness Factory skeleton + contract + validation 완료 (3 Slice 모두 sub-agent, ★ 런타임 변경 0 A9). meta_factory/ 7 루트 + templates 6 + blueprint 실측 + outputs + harness-factory Skill proposal-only (#21) + ADR-035 + CC-006. P-X1 50연속 + Skill 20→21 + scenario_sim v7 33/33. Phase 9.5 ✅ done (2026-05-31). 제품 phase 옵션(A Phase 10 MVP 통합 / B Phase 11+)은 보존 — M0 meta-phase detour 종료, 제품 로드맵 복귀.
 
 ## 이전 결정 (옵션 B 변형: Phase 6 선행)
 
@@ -181,12 +183,61 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 ## migration_progress
 
 ```yaml
-current_sprint: "phase-M0-slice-1"
-current_sprint_step: phase_m0_slice_1_entry_done
+current_sprint: "phase-M0-slice-3"
+current_sprint_step: phase_m0_slice_3_close_done
 total_steps_in_sprint: 3
-last_completed_action: "Phase M0 (Meta-Factory Prep, ★ meta-phase) Slice 1 entry — validations(self V1~V6 PASS + external placeholder) + ADR-035 (L3 Meta-Factory 도입) + meta_factory 핵심 5 문서 (README L1/L2/L3 + proposal-first / factory_contract 8 규칙 / domain_brief_schema / harness_blueprint_schema / architecture_patterns 6 + Dreammate 매핑) + skill_usage_log (phase-start 13 + multi-llm-validation formal 여덟 번째 + qa-check) + PROJECT_STATE meta-phase 등록 + entry commit. ★ A9 런타임 변경 0 (backend/fastapi 0 / apps/web 0 PlanCard·component_map / db/migrations 0). multi-llm-validation formal 여덟 번째 (V1~V6 PASS — L3 도입 타당성/런타임0/proposal-first/meta-phase/Skill scoping/blueprint 실측). baseline 불변: pytest 339 + P-X1 47 + PlanCard 35 + component_map 45 + Skill 20 (런타임 무관)"
-next_action: "Phase M0 Slice 2 — generation_workflow(11단계) + validation_workflow(6 검증) + templates(6 scaffold) + 현재 하네스 blueprint 실측 역정리 (golden_set 11 + .claude/agents 부재 + ADR-001~034 + MOA Supervisor) + outputs .gitkeep"
+last_completed_action: "Phase M0 (Meta-Factory Prep, ★ meta-phase) Slice 3 close — harness-factory Skill 신규 (.claude/skills/harness-factory/SKILL.md, proposal-only, 키워드 scoped, #21) + INDEX.md 등록 (20→21 + Meta-Factory 섹션 + 우선순위 3 관계 + 키워드 충돌 검토 0) + CC-006 (INDEX Skill 등록, Skill 도 contract 처럼 취급) + proposal + harness-audit §3 키워드 충돌 검토 (충돌 0) + smoke_test_phase_M0.ps1 (6/6 PASS — A9 런타임 0 + pytest 339 + audit_naming + meta_factory 구조 + Skill #21 + frontend 0) + scenario_simulation v7 (33/33, P-X2 아홉 번째, SM1~SM3) + retrospectives/phase-M0.md + patterns (P-X1 50연속 + P-META-FACTORY-001 신규 + P-VALIDATION-FORMAL-001 여덟 번째) + skill_usage_log (20→21) + closing_notes + archive 이동 + state docs. ★ A9 런타임 변경 0 (git diff fff913e..HEAD backend/fastapi 0 / apps/web 0 PlanCard·component_map / db/migrations 0). P-X1 50연속. baseline: pytest 339 + P-X1 50 + PlanCard 35 + component_map 45 + Skill 21 (런타임 무관)"
+next_action: "다음 phase 사용자 결정 대기 (meta-phase detour 종료) — A Phase 10 MVP 통합 / B Phase 11+. Phase M0 후속: harness-factory dry-run / trigger validation 샘플 / with-without 비교 샘플 (Phase M1+) / Phase 10 연결 (meta_factory blueprint = 온보딩·감사 baseline)"
 blocker: null
+phase_m0_status: completed
+phase_m0_type: meta-phase
+phase_m0_entry_date: 2026-05-31
+phase_m0_completion_date: 2026-05-31
+phase_m0_archive_location: phases/archive/phase-M0-meta-factory/
+phase_m0_total_slices: 3  # 모두 sub-agent
+phase_m0_completed_slices: 3  # Slice 1~3 모두 PASS
+phase_m0_estimated_hours_total: 4-7
+phase_m0_actual_hours: ~4-7  # 3 sub-agent dispatch
+phase_m0_acceptance_passed: 10/10  # A1~A10
+phase_m0_meta_acceptance_passed: 3/3  # M1~M3
+phase_m0_runtime_change: 0  # ★ A9 — FastAPI/Next.js/Supabase 0줄 (git diff fff913e..HEAD backend/apps/migrations = 0)
+phase_m0_pytest_result: 339/339  # Phase 9.5 baseline 유지 (런타임 무관)
+phase_m0_smoke_test: 6/6 PASS  # smoke_test_phase_M0.ps1 신규 (경량 meta-phase)
+phase_m0_scenario_simulation_v7: 33/33 PASS (auto-gate, 아홉 번째)  # P-X2 아홉 번째 자동 게이트 (SM1~SM3 추가)
+phase_m0_audit_naming_final: 0 drift
+phase_m0_audit_page_component_final: 2 intended drift WARN  # Phase 5 baseline 계승 (meta-phase frontend 0줄 +0)
+phase_m0_p_x1_self_verification: 3/3 PASS  # Slice 1~3 모두
+phase_m0_p_x1_cumulative_streak: 50  # Phase 3 5 + ... + Phase 9.5 5 + Phase M0 3 ★
+phase_m0_component_map_zero_lines_streak: 45  # meta-phase frontend 0줄 (유지)
+phase_m0_plan_card_zero_lines_streak: 35  # meta-phase frontend 0줄 (유지)
+phase_m0_skill_count: 21  # 20 → 21 (harness-factory proposal-only)
+phase_m0_deviation_count: 0
+phase_m0_user_decisions_applied:
+  meta_phase_isolation: yes  # phase-M0 제품 phase 번호 분리, 제품 로드맵 보존
+  harness_factory_proposal_only: yes  # 키워드 scoped, generated harness 자동 active X
+  proposal_first: yes  # 생성물 outputs/meta proposals 먼저
+  all_slices_sub_agent: yes  # 3 Slice 모두 sub-agent dispatch
+phase_m0_adr_created:
+  - ADR-035  # L3 Meta-Factory 도입 (phase_M0_meta_factory.md)
+phase_m0_contracts_changed:
+  - .claude/skills/INDEX.md  # CC-006 — harness-factory #21 Skill 등록 (Skill 도 contract 처럼 취급)
+phase_m0_skills_first_trigger:
+  - harness_factory  # ★ 신규 등록 (#21, proposal-only, 트리거 0 — payoff deferred)
+  - multi_llm_validation_formal_eighth  # 여덟 번째 (★ 첫 meta-phase, V1~V6)
+  - contract_change_seventh  # CC-006 (INDEX Skill 등록)
+  - phase_complete_v1_2_0_ninth  # P-X2 자동 게이트 아홉 번째 (scenario_sim v7 33/33)
+phase_m0_new_patterns:
+  - P-META-FACTORY-001  # L3 proposal-first 메타 레이어 (신규 후보)
+  - P-X1-EFFECT-001 (update 50연속)  # ★ 첫 meta-phase 에서도 런타임 0줄 격리
+  - P-VALIDATION-FORMAL-001 (update 여덟 번째)  # ★ 첫 meta-phase 적용
+phase_m0_mitigated_patterns:
+  - P-AGENT-SCOPE-001  # 50연속 누적 입증 (Phase 3:5 + ... + Phase 9.5:5 + Phase M0:3)
+phase_m0_retrospective_proposals: in_retrospective  # 본 회고 §개선 제안 §1~3 (Phase M1+)
+phase_m0_deferred_to_next:
+  - auto_generator  # Phase M1+ (generation_workflow 실행 도구 — 2nd 하네스 착수 시점)
+  - claude_agents_dir_generation  # Phase M1+ (agent_template.md 기반)
+  - trigger_dry_run_with_without_sample  # Phase M1+ / generated harness 첫 생성 시점
+  - harness_factory_dry_run  # Phase M1+ / 2nd 하네스 착수 시점
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
 phase_1_status: completed
