@@ -11,10 +11,10 @@
 
 | 항목 | 내용 |
 |---|---|
-| **Phase** | 🟡 pending_user_decision (Phase 8 ✅ done 2026-05-29) — 옵션 A Phase 9 저장-피드백 / B Phase 9.5+ eval-run / C Phase 10 통합 / D Phase 11+ |
-| **이전 Phase** | Phase 8 — MOA Lite 본격 (orchestrator 추출 + SSE worker + prompt_registry 정식화) ✅ done (2026-05-29, large phase, 5 Slices + A1~A10 + M1~M5 + P-X1 36연속 + PlanCard 24연속 + component_map 34연속 + ADR-027 MOA orchestrator + ADR-028 SSE progress integration + ADR-029 prompt_registry semver + ai-architecture-review ★ 첫 정식 + prompt-version-review ★ 첫 정식 + contract-change CC-003 + pytest 249/249 (+26 신규) + smoke 14/14 + scenario_sim v4 20/20 (P-X2 여섯 번째) + P-MOA-ORCHESTRATOR-001/P-BEHAVIOR-PRESERVING-001 신규 + plans.py 659→243 god-function 분해 + Critic v1.1.0 conservative adapter + behavior-preserving + 실측 ~12~14h) |
-| **하네스 규모** | ~82,600줄 (Phase 8 +13 신규 / +10 수정 ~+700 backend orchestration layer + ~+600 tests + ~+250 docs ADR-027/028/029 + ~+150 contracts prompt_registry semver + agent_io_contract v1.2.0 + ~+200 meta retrospectives + validations + patterns + skill_usage_log + closing_notes) |
-| **Skill 구조** | `.claude/skills/` 단일 (20개, v1.3.0 + phase-complete v1.2.0 — 36연속 P-X1 입증 + multi-llm-validation formal 다섯 번째 입증 + ai-architecture-review + prompt-version-review 첫 정식 + P-MOA-ORCHESTRATOR-001/P-BEHAVIOR-PRESERVING-001 신규) |
+| **Phase** | 🟡 pending_user_decision (Phase 9 ✅ done 2026-05-31) — 옵션 A Phase 9.5 eval-run / B Phase 10 통합 / C Phase 11+ |
+| **이전 Phase** | Phase 9 — 결과 저장 + 피드백 (selected_plans + feedback_events 영속화 + normalize wiring + Brand Memory 준비 + 피드백 UI) ✅ done (2026-05-31, large phase, 6 Slices + A1~A10 + M1~M4 + P-X1 42연속 + PlanCard 30연속 + component_map 40연속 + ADR-030 feedback/selection persistence + ADR-031 Brand Memory prep (P-AUX-2 설계 agent 미구현 Phase 10+) + ADR-032 normalize_to_canonical wiring + security-review 두 번째 정식 + contract-change CC-004 + pytest 249→293/293 (+44 신규, 기존 수정 0) + smoke 15/15 + scenario_sim v5 25/25 (P-X2 일곱 번째) + P-FEEDBACK-LOOP-001/P-CANONICAL-WIRING-001 신규 + 피드백 UI inline (PlanCard·component_map 0줄) + deprecated warnings 67→16 + 실측 ~10~13h) |
+| **하네스 규모** | ~84,300줄 (Phase 9 +16 신규 / +10 수정 ~+600 backend db repo/migration + ~+500 tests + ~+200 frontend 피드백 UI inline + ~+250 docs ADR-030/031/032 + ~+80 contracts db_schema.md + ~+200 meta retrospectives + security_reviews + validations + patterns + skill_usage_log + closing_notes) |
+| **Skill 구조** | `.claude/skills/` 단일 (20개, v1.3.0 + phase-complete v1.2.0 — 42연속 P-X1 입증 + multi-llm-validation formal 여섯 번째 입증 + security-review 두 번째 정식 + contract-change CC-004 + P-FEEDBACK-LOOP-001/P-CANONICAL-WIRING-001 신규) |
 | **Repository** | https://github.com/aiden238/Dreammate-Studio (Private) |
 
 ---
@@ -83,8 +83,9 @@ Dreammate_Studio/
 | 5.5 | Legacy DB Consolidation + Validation 강화 + Phase 7 Prep | ✅ done | 2026-05-29 |
 | 7 | RAG Lite (candidate_knowledge 5단계 MVP 전부) | ✅ done | 2026-05-29 |
 | 8 | MOA Lite 본격 (orchestrator 추출 + SSE worker + prompt_registry 정식화) | ✅ done | 2026-05-29 |
-| **next** | **🟡 pending_user_decision** (A Phase 9 저장-피드백 / B Phase 9.5+ eval-run / C Phase 10 통합 / D Phase 11+) | **next** | — |
-| 9~10 | 저장-피드백 + 통합 테스트 | planned | — |
+| 9 | 결과 저장 + 피드백 (selected_plans + feedback_events 영속화 + normalize wiring + Brand Memory 준비 + 피드백 UI) | ✅ done | 2026-05-31 |
+| **next** | **🟡 pending_user_decision** (A Phase 9.5 eval-run / B Phase 10 통합 / C Phase 11+) | **next** | — |
+| 10 | MVP 통합 테스트 | planned | — |
 | 11~30 | 안정화 / 확장 / 고도화 | future | — |
 
 Sprint S0~S5 (Phase 0) 모두 완료 — 6개 commit, 11/11 acceptance 통과.
@@ -98,6 +99,7 @@ Phase 5 — 5 commit, 10/10 acceptance + 4/4 메타 검증 + audit_naming 0 drif
 Phase 5.5 — 4 commit, 8/8 acceptance (A1~A8) + 2/2 메타 검증 (M1~M2) + audit_naming 0 drift + audit_page_component 2 intended drift WARN (Phase 5 baseline 유지) + smoke 12/12 (재실행) + scenario_simulation v2 10/10 (**P-X2 자동 게이트 네 번째**) + pytest 172/172 (+2 legacy deprecation 검증) + **P-X1 26연속 PASS** + **PlanCard.tsx 18연속 0줄** + **component_map.md 28연속 0줄** + **ADR-023 Legacy DB 옵션 A + ADR-024 Phase 7 RAG scope evolution + external × 3 self-strengthen V-form + Brand Memory Phase 9+ confirm + legacy backward-compat 100% + P-LEGACY-CONSOLIDATION-001 신규 후보 + consolidation mini-phase 실측 ~4-5h**.
 Phase 7 — 5 commit, 10/10 acceptance (A1~A10) + 4/4 메타 검증 (M1~M4) + audit_naming 0 drift + audit_page_component 2 intended drift WARN (Phase 5 baseline 계승) + smoke 13/13 (12 PASS + 1 WARN intended) + scenario_simulation v3 15/15 (**P-X2 자동 게이트 다섯 번째**, S11~S15 RAG 5개 추가) + pytest 172 → 223/223 (+51 신규 promotion/quality_filter/eval_rubric/chunking/embedding/retrieval/integration) + **P-X1 31연속 PASS** + **PlanCard.tsx 19연속 0줄** + **component_map.md 29연속 0줄** + **ADR-025 RAG architecture + ADR-026 5단계 promotion logic + rag-design ★ 첫 정식 + rag-update ★ 첫 정식 + contract-change 본격 세 번째 (rag_data_contract.md §18) + multi-llm-validation formal 네 번째 (V1~V7) + agent-io-check 세 번째 회귀 + graceful 5종 marker 표준화 + Phase 1 legacy ↔ Phase 7 신규 공존 누적 2회 (P-LEGACY-CONSOLIDATION-001 정식 채택 임박) + P-RAG-5STAGE-001/P-RAG-GRACEFUL-001 신규 + 5단계 파이프라인 전부 MVP + pgvector retrieval + LLM Wiki 보조 + 실측 ~13~14h**.
 Phase 8 — 5 commit, 10/10 acceptance (A1~A10) + 5/5 메타 검증 (M1~M5) + audit_naming 0 drift + audit_page_component 2 intended drift WARN (Phase 5 baseline 계승) + smoke 14/14 (13 PASS + 1 WARN intended) + scenario_simulation v4 20/20 (**P-X2 자동 게이트 여섯 번째**, S16~S20 MOA 5개 추가) + pytest 223 → 249/249 (+26 신규 moa_orchestrator/sse_integration/prompt_registry_consistency) + **P-X1 36연속 PASS** + **PlanCard.tsx 24연속 0줄** + **component_map.md 34연속 0줄** + **ADR-027 MOA orchestrator behavior-preserving + ADR-028 SSE progress integration + ADR-029 prompt_registry semver + ai-architecture-review ★ 첫 정식 + prompt-version-review ★ 첫 정식 + contract-change 본격 네 번째 (CC-003 prompt_registry semver + agent_io_contract v1.2.0) + multi-llm-validation formal 다섯 번째 (V1~V7) + agent-io-check 네 번째 회귀 + MOA Orchestrator 추출 (plans.py 659→243 god-function 분해) + behavior-preserving (Envelope byte-identical, 기존 test 수정 0 의도된 2 version assertion 제외) + SSE 실 stage 통합 (progress_store 브릿지) + Critic v1.1.0 conservative adapter (Phase 6 canonical 불변) + prompt_registry semver 정식화 (NG8 누적 3회 해소) + P-MOA-ORCHESTRATOR-001/P-BEHAVIOR-PRESERVING-001 신규 + 실측 ~12~14h**.
+Phase 9 — 6 commit, 10/10 acceptance (A1~A10) + 4/4 메타 검증 (M1~M4) + audit_naming 0 drift + audit_page_component 2 intended drift WARN (Phase 5 baseline 계승) + smoke 15/15 (14 PASS + 1 WARN intended) + scenario_simulation v5 25/25 (**P-X2 자동 게이트 일곱 번째**, S21~S25 feedback/selection 5개 추가) + pytest 249 → 293/293 (+44 신규 selection_feedback/plans_feedback_api/critic_canonical_wiring/brand_memory_prep, 기존 수정 0) + **P-X1 42연속 PASS** + **PlanCard.tsx 30연속 0줄** + **component_map.md 40연속 0줄** + **ADR-030 feedback/selection persistence + ADR-031 Brand Memory prep (P-AUX-2 설계 agent 미구현 Phase 10+) + ADR-032 normalize_to_canonical wiring + security-review 두 번째 정식 (피드백 reason PII) + contract-change 본격 다섯 번째 (CC-004 db_schema.md selected_plans/feedback_events 실 plans 정합) + multi-llm-validation formal 여섯 번째 (V1~V7) + agent-io-check 다섯 번째 회귀 + 결과저장(selected_plans) + 피드백(feedback_events) 영속화 graceful + PII 마스킹 + normalize_to_canonical wiring (critic_evaluation canonical 0–1 live, deprecated 0–5 병행 회귀 0, warnings 67→16) + Brand Memory 준비 (feedback→candidate pending 적재, agent Phase 10+) + 피드백 UI inline (PlanCard·component_map 0줄, wrapper) + P-FEEDBACK-LOOP-001/P-CANONICAL-WIRING-001 신규 + 실측 ~10~13h**.
 
 ---
 
@@ -136,22 +138,21 @@ Phase 8 — 5 commit, 10/10 acceptance (A1~A10) + 5/5 메타 검증 (M1~M5) + au
 
 ```
 1. harness/00_START_HERE.md  ← 첫 진입 시 여기부터
-2. harness/PROJECT_STATE.md  ← 현재 작업 위치 확인 (pending_user_decision, Phase 8 done)
-3. harness/phases/archive/phase-8-moa-lite/closing_notes.md  ← Phase 8 종료 메모 + 다음 옵션 A/B/C/D + 운영 권장
-4. harness/phases/archive/phase-7-rag-lite/closing_notes.md  ← Phase 7 종료 메모 (참조)
-5. harness/phases/archive/phase-5.5-legacy-db-consolidation/closing_notes.md  ← Phase 5.5 종료 메모 (참조)
-6. harness/phases/archive/phase-5-db-auth/closing_notes.md  ← Phase 5 종료 메모 (참조)
+2. harness/PROJECT_STATE.md  ← 현재 작업 위치 확인 (pending_user_decision, Phase 9 done)
+3. harness/phases/archive/phase-9-result-feedback/closing_notes.md  ← Phase 9 종료 메모 + 다음 옵션 A/B/C + 운영 권장
+4. harness/phases/archive/phase-8-moa-lite/closing_notes.md  ← Phase 8 종료 메모 (참조)
+5. harness/phases/archive/phase-7-rag-lite/closing_notes.md  ← Phase 7 종료 메모 (참조)
+6. harness/phases/archive/phase-5-db-auth/closing_notes.md  ← Phase 5 DB/Auth/RLS/SSE baseline (참조)
 7. harness/phases/archive/phase-6-output-schema-stabilization/  ← Phase 6 contract 안정화 baseline (참조)
 8. harness/phases/archive/phase-4.5-critic-revise-loop/  ← Phase 4.5 backend (revise loop + Rewriter) baseline (참조)
-9. harness/phases/archive/phase-4-fastapi-extension/  ← Phase 4 backend + frontend baseline (참조)
-10. harness/apps/web/design_handoff.md  ← Phase 2 핵심 산출물 (변경 가이드)
-11. harness/meta/retrospectives/phase-8.md  ← Phase 8 회고 + 개선 제안 §1~6
-12. harness/meta/retrospectives/phase-7.md  ← Phase 7 회고 (참조)
-13. harness/meta/patterns.md  ← P-X1-EFFECT-001 36연속, P-MOA-ORCHESTRATOR-001/P-BEHAVIOR-PRESERVING-001 신규, P-VALIDATION-FORMAL-001 다섯 번째 입증
-14. harness/docs/decisions/phase_8_moa_orchestrator.md  ← ADR-027 (MOA orchestrator behavior-preserving, ai-architecture-review Skill 첫 정식)
-15. harness/docs/decisions/phase_8_sse_progress_integration.md  ← ADR-028 (SSE progress_store 브릿지)
-16. harness/docs/decisions/phase_8_prompt_registry_semver.md  ← ADR-029 (prompt_registry semver, prompt-version-review Skill 첫 정식)
-17. harness/docs/contracts/agent_io_contract.md v1.2.0 §5/§8  ← Phase 8 Slice 4 (Critic v1.1.0 adapter + orchestrator 중개)
+9. harness/apps/web/design_handoff.md  ← Phase 2 핵심 산출물 (변경 가이드)
+10. harness/meta/retrospectives/phase-9.md  ← Phase 9 회고 + 개선 제안 §1~5
+11. harness/meta/retrospectives/phase-8.md  ← Phase 8 회고 (참조)
+12. harness/meta/patterns.md  ← P-X1-EFFECT-001 42연속, P-FEEDBACK-LOOP-001/P-CANONICAL-WIRING-001 신규, P-VALIDATION-FORMAL-001 여섯 번째 입증
+13. harness/docs/decisions/phase_9_feedback_selection.md  ← ADR-030 (feedback/selection persistence, security-review 두 번째 정식)
+14. harness/docs/decisions/phase_9_brand_memory_prep.md  ← ADR-031 (Brand Memory prep — P-AUX-2 설계, agent 미구현 Phase 10+)
+15. harness/docs/decisions/phase_9_critic_canonical_wiring.md  ← ADR-032 (normalize_to_canonical wiring, canonical 0–1 live + deprecated 0–5 병행)
+16. harness/docs/contracts/db_schema.md §4.3/§5.2  ← Phase 9 Slice 2 (CC-004 — selected_plans/feedback_events 실 plans 정합)
 ```
 
 ---

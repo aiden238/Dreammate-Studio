@@ -4,9 +4,10 @@
 # v2 (Phase 5 Slice 1): 5 -> 10 scenarios (DB / Auth / RLS / JWT / SSE 추가)
 # v3 (Phase 7 Slice 5): 10 -> 15 scenarios (RAG 5단계 + chunking + retrieval + quality_filter + LLM Wiki 추가)
 # v4 (Phase 8 Slice 5): 15 -> 20 scenarios (MOA orchestrator + ProgressSink + progress_store 브릿지 + SSE 실 stage + prompt_registry semver 추가)
+# v5 (Phase 9 Slice 6): 20 -> 25 scenarios (selected_plans + feedback_events + normalize wiring + brand_memory prep + 피드백 UI 추가)
 # Called automatically by phase-complete Skill v1.2.0 §1.6 at Phase close.
 #
-# Phase 8 final 목표: 20/20 PASS (P-X2 여섯 번째 자동 게이트)
+# Phase 9 final 목표: 25/25 PASS (P-X2 일곱 번째 자동 게이트)
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference   = 'SilentlyContinue'
@@ -14,9 +15,9 @@ $ProgressPreference   = 'SilentlyContinue'
 $ROOT = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Set-Location $ROOT
 
-Write-Host "=== scenario_simulation v4 (P-X2 auto-gate, Phase 8) ===" -ForegroundColor Cyan
+Write-Host "=== scenario_simulation v5 (P-X2 auto-gate, Phase 9) ===" -ForegroundColor Cyan
 Write-Host "Root: $ROOT"
-Write-Host "Note: Phase 8 final target 20/20 PASS (P-X2 여섯 번째 자동 게이트)"
+Write-Host "Note: Phase 9 final target 25/25 PASS (P-X2 일곱 번째 자동 게이트)"
 Write-Host ""
 
 $scenarios = @(
@@ -46,7 +47,14 @@ $scenarios = @(
     @{ Id = "S17"; Name = "ProgressSink 인터페이스 (orchestration/progress_sink.py)"; Files = @("backend/fastapi/orchestration/progress_sink.py") },
     @{ Id = "S18"; Name = "progress_store 브릿지 (orchestration/progress_store.py)"; Files = @("backend/fastapi/orchestration/progress_store.py") },
     @{ Id = "S19"; Name = "SSE 실 stage read (routers/sse.py + progress_store)"; Files = @("backend/fastapi/routers/sse.py", "backend/fastapi/orchestration/progress_store.py") },
-    @{ Id = "S20"; Name = "prompt_registry semver (prompt_registry.md + critic.py v1.1.0)"; Files = @("ai_system/prompts/prompt_registry.md", "backend/fastapi/agents/critic.py") }
+    @{ Id = "S20"; Name = "prompt_registry semver (prompt_registry.md + critic.py v1.1.0)"; Files = @("ai_system/prompts/prompt_registry.md", "backend/fastapi/agents/critic.py") },
+
+    # Phase 9 신규 (5, 결과 저장 + 피드백 + normalize wiring + Brand Memory 준비 + 피드백 UI)
+    @{ Id = "S21"; Name = "selected_plans 결과 저장 (0005 migration + selection_repo graceful)"; Files = @("backend/fastapi/db/migrations/0005_feedback_selection.sql", "backend/fastapi/db/repositories/selection_repo.py") },
+    @{ Id = "S22"; Name = "feedback_events 피드백 저장 (feedback_repo graceful + PII 마스킹)"; Files = @("backend/fastapi/db/repositories/feedback_repo.py", "backend/fastapi/routers/plans.py") },
+    @{ Id = "S23"; Name = "normalize_to_canonical wiring (moa_orchestrator critic step + critic.py)"; Files = @("backend/fastapi/orchestration/moa_orchestrator.py", "backend/fastapi/agents/critic.py") },
+    @{ Id = "S24"; Name = "Brand Memory 준비 (feedback->candidate 적재 + brand_memory_repo)"; Files = @("backend/fastapi/rag/feedback_to_candidate.py", "backend/fastapi/db/repositories/brand_memory_repo.py") },
+    @{ Id = "S25"; Name = "피드백 UI inline (plan page.tsx wrapper + lib/api.ts)"; Files = @("apps/web/app/plan/[plan_id]/page.tsx", "apps/web/lib/api.ts") }
 )
 
 $pass = 0
@@ -80,7 +88,7 @@ if ($fail -eq 0) {
 } else {
     Write-Host ""
     Write-Host "scenario_simulation PARTIAL - $pass/$($scenarios.Count) PASS, $fail FAIL" -ForegroundColor Yellow
-    Write-Host "  (Phase 8 final target: 20/20 PASS — P-X2 여섯 번째 자동 게이트)" -ForegroundColor Yellow
+    Write-Host "  (Phase 9 final target: 25/25 PASS — P-X2 일곱 번째 자동 게이트)" -ForegroundColor Yellow
     # phase 진행 중 의도된 PARTIAL은 exit 0 유지 (자동 게이트는 phase-complete 시점에 별도 strict 모드 권장)
     exit 0
 }

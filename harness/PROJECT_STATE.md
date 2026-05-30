@@ -2,28 +2,37 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 완료**.
-Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /auth/* + /sse/* 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계 (실 stage 연동)** + **RAG Lite (candidate_knowledge 5단계 MVP 전부 + pgvector retrieval + LLM Wiki 보조)** + **MOA Orchestrator 추출 (orchestration/moa_orchestrator + ProgressSink + progress_store 브릿지) + prompt_registry semver 정식화 + Critic v1.1.0 conservative adapter** 모두 동작.
-**Phase 8 ✅ done (2026-05-29)** — MOA Lite 본격 (orchestrator 추출 behavior-preserving + SSE worker 통합 + prompt_registry 정식화, ADR-027/028/029, large phase 5 Slice 실측 ~12~14h).
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9 완료**.
+Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /auth/* + /sse/* + /plans/{id}/select + /plans/{id}/feedback 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions, **normalize wiring live**) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계 (실 stage 연동)** + **RAG Lite (candidate_knowledge 5단계 MVP 전부 + pgvector retrieval + LLM Wiki 보조)** + **MOA Orchestrator 추출 (orchestration/moa_orchestrator + ProgressSink + progress_store 브릿지) + prompt_registry semver 정식화 + Critic v1.1.0 conservative adapter** + **결과 저장(selected_plans) + 피드백(feedback_events) 영속화 graceful + PII 마스킹 + 피드백 UI inline + Brand Memory 준비(feedback→candidate pending 적재)** 모두 동작.
+**Phase 9 ✅ done (2026-05-31)** — 결과 저장 + 피드백 (selected_plans/feedback_events 영속화 graceful + normalize_to_canonical wiring + Brand Memory 준비 + 피드백 UI wrapper, ADR-030/031/032, CC-004, large phase 6 Slice 실측 ~10~13h).
 
 ## 현재 Active Phase
 
-**🟢 Phase 9. 결과 저장 + 피드백 — active (2026-05-29 entry)** — plan 선택/수정/반려/피드백 영속화(실 plans 테이블 정합) + normalize_to_canonical wiring(critic step canonical, deprecated 0–5 병행 회귀 0) + Brand Memory 준비(P-AUX-2 설계, agent 미구현 Phase 10+) + 피드백 UI wrapper(PlanCard·component_map 무수정). 6 Slice 모두 sub-agent dispatch. 추정 10~14h.
+**🟡 pending_user_decision** — Phase 9 ✅ done (2026-05-31). 다음 phase는 사용자 결정 대기 (옵션 A Phase 9.5 eval-run / B Phase 10 통합 / C Phase 11+).
 
-- 한 줄 정의: 사용자 plan 선택/수정/반려/피드백을 영속화(Phase 5 PlansRepo graceful 패턴)하고, Critic canonical(0–1)을 live pipeline에 연결하며, Brand Memory 자동 추출 인프라(schema + ADR + 적재 경로)를 준비하고, 선택/반려 피드백 UI를 page.tsx inline wrapper로 추가하여 MVP 피드백 루프를 완성한다.
-- **6 Slice (모두 sub-agent dispatch)**:
-  - Slice 1 [Pre-Entry — validations + security-review(두 번째 정식, 피드백 PII) + ADR-030/031/032] 🟢 active
-  - Slice 2 [Schema 0005 + Repo (selection/feedback/brand_memory) graceful + contract-change db_schema.md] — 대기
-  - Slice 3 [API endpoints (select/feedback) + orchestrator + normalize_to_canonical wiring] — 대기
-  - Slice 4 [Brand Memory 준비 — feedback→candidate 적재 경로 + ADR-031 finalize] — 대기
-  - Slice 5 [Frontend 피드백 UI (page.tsx inline wrapper) — PlanCard·component_map 무수정] — 대기
-  - Slice 6 [Close] — 대기
+**Phase 9. 결과 저장 + 피드백 ✅ done (2026-05-31)** — plan 선택/피드백 영속화(실 plans 테이블 정합) + normalize_to_canonical wiring(critic step canonical 0–1 live, deprecated 0–5 병행 회귀 0) + Brand Memory 준비(P-AUX-2 설계, agent 미구현 Phase 10+) + 피드백 UI wrapper(PlanCard·component_map 무수정). 6 Slice 모두 sub-agent dispatch 완료.
+
+- 한 줄 정의: 사용자 plan 선택/수정/반려/피드백을 영속화(Phase 5 PlansRepo graceful 패턴)하고, Critic canonical(0–1)을 live pipeline에 연결하며, Brand Memory 자동 추출 인프라(schema + ADR + 적재 경로)를 준비하고, 선택/반려 피드백 UI를 page.tsx inline wrapper로 추가하여 MVP 피드백 루프를 완성.
+- **6 Slice 모두 sub-agent dispatch 완료**:
+  - Slice 1 [Pre-Entry — validations + security-review(두 번째 정식, 피드백 PII) + ADR-030/031/032] ✅ (de92e37)
+  - Slice 2 [Schema 0005 + Repo (selection/feedback/brand_memory) graceful + contract-change CC-004 + PII 마스킹] ✅ (56cd3f0)
+  - Slice 3 [API endpoints (select/feedback) + normalize_to_canonical wiring, pytest 261→284] ✅ (d6e3fa0)
+  - Slice 4 [Brand Memory 준비 — feedback→candidate 적재 경로 + ADR-031 finalize, pytest 284→293] ✅ (bc94e1b)
+  - Slice 5 [Frontend 피드백 UI (page.tsx inline wrapper) — PlanCard·component_map 0줄, tsc 0 + build 11 routes] ✅ (4d38062)
+  - Slice 6 [Close] ✅ (final)
 - **사용자 결정 3건 반영 (2026-05-29)**:
   - Brand Memory: **준비만** (ADR + schema + 피드백 적재) — P-AUX-2 agent 미구현, 자동 추출 Phase 10+ (사용자 결정 5 누적 confirm)
   - Frontend: 피드백 UI 포함 (wrapper) — 선택/반려 page.tsx inline, PlanCard·component_map 무수정
   - normalize_to_canonical: Phase 9 연결 — critic step canonical 0–1 live, deprecated 0–5 병행 회귀 0 (Phase 8 개선 §1)
-- ADR-030 (feedback/selection persistence — 실 plans 정합, graceful PlansRepo 패턴) + ADR-031 (Brand Memory 준비 — P-AUX-2 설계, agent 미구현 Phase 10+) + ADR-032 (normalize_to_canonical wiring — critic step canonical, deprecated 병행).
-- baseline: pytest 249 + smoke 14 + scenario_sim v4 20 + P-X1 36 + PlanCard 24 + component_map 34.
+- ADR-030 (feedback/selection persistence — 실 plans 정합, graceful PlansRepo 패턴) + ADR-031 (Brand Memory 준비 — P-AUX-2 설계, agent 미구현 Phase 10+) + ADR-032 (normalize_to_canonical wiring — critic step canonical, deprecated 병행) + CC-004 (db_schema.md feedback/selection 실 plans 정합).
+- **핵심 성과**: P-X1 42연속 + PlanCard 30연속 + component_map 40연속 + pytest 249→293 (+44, 기존 수정 0) + smoke 15/15 + scenario_sim v5 25/25 (P-X2 일곱 번째) + security-review 두 번째 정식 + deprecated warnings 67→16.
+- 신규 패턴: P-FEEDBACK-LOOP-001 + P-CANONICAL-WIRING-001 + P-X1-EFFECT-001 update (42연속) + P-VALIDATION-FORMAL-001 update (여섯 번째).
+- baseline: pytest 293 + smoke 15 + scenario_sim v5 25 + P-X1 42 + PlanCard 30 + component_map 40.
+
+**다음 phase 옵션 (사용자 결정 대기)**:
+- **A. Phase 9.5 — eval-run Skill 정식화** (4~6h): golden_set 회귀 + revise effect eval (Phase 4.5 D6 누적 7회 해소) + Critic deprecated 0–5 fallback 완전 제거 (Phase 9 canonical live 활성 → 다음 단계) + 간이 RAG eval_rubric → 정식 + eval-design/eval-run 첫 정식 baseline
+- **B. Phase 10 — MVP 통합 테스트** (6~8h): MVP end-to-end 검증 (Discovery + Quick → 3-plan → Critic revise (canonical) → save → select → feedback → SSE progress) + Phase 1~9 누적 baseline 통합 회귀 + P-AUX-2 brand_memory_extractor agent 실 구현 + 배포 테스트 게이트 준비
+- **C. 다른 우선순위** (Phase 11+): 4계층 full linkage (plan_options/video_projects, 누적 2회) / 사용자 데이터 자동 promotion (rag-update 두 번째) / SSE full async worker / prompt A/B 실행 인프라 / Supabase SQL function 정의 / cost-review Skill
 
 **Phase 8. MOA Lite 본격 ✅ done (2026-05-29)** — orchestrator 추출 (behavior-preserving) + SSE Progress worker 통합 + prompt_registry semver 정식화. 5 Slice 모두 sub-agent dispatch 완료.
 
@@ -126,7 +135,7 @@ Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /a
 - Phase 1 legacy rag/{retriever, fallback}.py + Phase 7 rag/retrieval.py 공존 (P-LEGACY-CONSOLIDATION-001 누적 2회 — Phase 11+ Custom RAG 시점 자연 통합)
 - 실측 시간 ~13~14h (추정 12~16h 내)
 
-**🟢 Now: Phase 9 active (2026-05-29 entry)** — 결과 저장 + 피드백 (6 Slice, 10~14h). 다음 후보: Phase 9.5+ eval-run / Phase 10 통합 테스트 / Phase 11+.
+**🟡 Now: pending_user_decision (Phase 9 ✅ done 2026-05-31)** — 결과 저장 + 피드백 (6 Slice 완료, 실측 ~10~13h). 다음 후보: A Phase 9.5 eval-run / B Phase 10 통합 테스트 / C Phase 11+.
 
 ## 이전 결정 (옵션 B 변형: Phase 6 선행)
 
@@ -139,11 +148,11 @@ Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /a
 ## migration_progress
 
 ```yaml
-current_sprint: "phase-9-slice-1"
-current_sprint_step: phase_9_slice_1_entry
+current_sprint: "phase-9-complete"
+current_sprint_step: phase_9_slice_6_close_done
 total_steps_in_sprint: 6
-last_completed_action: "Phase 9 entry — 8 entry files + assumptions §6 4-check PASS (audit_naming 0 drift) + multi-llm-validation formal 여섯 번째 (V1~V7 PASS) + security-review 두 번째 정식 (피드백 reason PII T1~T6) + ADR-030 (feedback/selection 실 plans 정합) + ADR-031 (Brand Memory 준비 P-AUX-2 설계, agent 미구현 Phase 10+) + ADR-032 (normalize_to_canonical wiring, deprecated 0–5 병행) + skill_usage_log + PROJECT_STATE phase_9_* + active 전환"
-next_action: "Slice 2 sub-agent dispatch — Schema 0005 (selected_plans + feedback_events + brand_memory_entries + RLS) + Repo 3종 graceful (PlansRepo 패턴) + contract-change (db_schema.md 실 plans 정합)"
+last_completed_action: "Phase 9 (결과 저장 + 피드백) 종료 — Slice 6 close: smoke_test_phase_9.ps1 신규 (15 체크, 14 PASS + 1 WARN intended) + scenario_simulation v5 25/25 (P-X2 일곱 번째) + audit_naming 0 drift + audit_page_component 2 intended WARN + agent-io-check drift 0 + design-review(피드백 UI) PASS + retrospectives/phase-9.md + patterns.md (P-FEEDBACK-LOOP-001 + P-CANONICAL-WIRING-001 신규 + P-X1 42연속 + P-VALIDATION-FORMAL-001 여섯 번째) + skill_usage_log (security-review 3 + contract-change CC-004) + closing_notes + archive 이동 + state docs 갱신. A1~A10 10/10 + M1~M4 4/4 PASS. pytest 293/293 + smoke 15/15 + scenario_sim v5 25/25 + P-X1 42연속 + PlanCard 30연속 + component_map 40연속"
+next_action: "다음 phase 사용자 결정 대기 (A Phase 9.5 eval-run — Critic deprecated 0–5 완전 제거 + revise effect eval + eval-design/eval-run 첫 정식 / B Phase 10 통합 테스트 — end-to-end + P-AUX-2 brand_memory_extractor agent 실 구현 / C Phase 11+ — 4계층 full linkage + 자동 promotion)"
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
@@ -571,20 +580,65 @@ phase_8_deferred_to_next:
   - critic_deprecated_0_5_fallback_full_removal  # Phase 9+ eval-run (개선 제안 §4, 누적 2회 Phase 6 + Phase 8)
   - brand_memory_auto_extract_adr  # Phase 9+ MVP 본격 운영 후 (개선 제안 §5, 누적 3회)
   - revise_effect_eval  # Phase 9+ eval-run (개선 제안 §6, Phase 4.5 D6 누적 6회)
-phase_9_status: in_progress
+phase_9_status: completed
 phase_9_entry_date: 2026-05-29
+phase_9_completion_date: 2026-05-31
+phase_9_archive_location: phases/archive/phase-9-result-feedback/
 phase_9_total_slices: 6
-phase_9_completed_slices: 0
+phase_9_completed_slices: 6  # Slice 1~6 모두 PASS
 phase_9_estimated_hours_total: 10-14
+phase_9_actual_hours: ~10-13  # large feedback phase 다중 sub-agent
 phase_9_assumptions_check: PASS
+phase_9_acceptance_passed: 10/10  # A1~A10
+phase_9_meta_acceptance_passed: 4/4  # M1~M4
+phase_9_pytest_result: 293/293  # Phase 8 249 baseline + Phase 9 신규 44 (selection_feedback + plans_feedback_api + critic_canonical_wiring + brand_memory_prep), 기존 수정 0
+phase_9_smoke_test: 15/15 (14 PASS + 1 WARN intended)  # smoke_test_phase_9.ps1 신규
+phase_9_scenario_simulation_v5: 25/25 PASS (auto-gate, 일곱 번째)  # P-X2 일곱 번째 자동 게이트, S21~S25 feedback/selection 5 추가
+phase_9_schema_stress_test: 5/5 PASS (Phase 6 v2 유지)
+phase_9_audit_naming_final: 0 drift  # Slice 6
+phase_9_audit_page_component_final: 2 intended drift WARN  # Phase 5 baseline 계승 (AuthGuard + /login), 피드백 UI page.tsx inline 신규 route/component 미생성 → +0
+phase_9_audit_page_component_intended_drift:
+  - AuthGuard  # Phase 5 Slice 3 신규 (baseline 계승)
+  - /login  # Phase 5 Slice 3 신규 (baseline 계승)
+phase_9_deprecated_critic_warnings: 67->16  # normalize wiring canonical 우선 경로 정착
+phase_9_p_x1_self_verification: 6/6 PASS  # Slice 1~6 모두
+phase_9_p_x1_cumulative_streak: 42  # Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 ★
+phase_9_component_map_zero_lines_streak: 40  # Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5 + Phase 9 6 ★
+phase_9_plan_card_zero_lines_streak: 30  # Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5 + Phase 9 6 (frontend slice 있어도 wrapper) ★
+phase_9_deviation_count: 0
 phase_9_user_decisions_applied:
-  brand_memory_prep_only: yes        # P-AUX-2 agent 미구현, Phase 10+
-  feedback_ui_wrapper: yes           # PlanCard·component_map 무수정
-  normalize_canonical_wiring: yes    # critic step, deprecated 병행
-  all_slices_sub_agent: yes
-phase_9_adrs: [ADR-030, ADR-031, ADR-032]
-total_commits: 77  # 76 + Phase 9 Slice 1 entry
-last_updated: 2026-05-29
+  brand_memory_prep_only: yes        # P-AUX-2 agent 미구현, Phase 10+ (ADR-031, NG1)
+  feedback_ui_wrapper: yes           # PlanCard·component_map 무수정 (page.tsx inline)
+  normalize_canonical_wiring: yes    # critic step canonical 0–1 live, deprecated 0–5 병행 회귀 0 (ADR-032)
+  all_slices_sub_agent: yes          # 6 Slice 모두 sub-agent dispatch
+phase_9_skills_first_trigger:
+  - security_review_second_formal  # 두 번째 정식 (Slice 1 — 피드백 reason PII T1~T6, P-SECURITY-REVIEW-001 강화)
+  - contract_change_fifth_formal  # 다섯 번째 본격 (Slice 2 CC-004 — db_schema.md selected_plans/feedback_events 실 plans 정합)
+  - multi_llm_validation_formal_sixth  # 여섯 번째 트리거 (Slice 1 V1~V7)
+  - phase_complete_v1_2_0_seventh  # P-X2 자동 게이트 일곱 번째 트리거 (Slice 6)
+  - agent_io_check_fifth  # 다섯 번째 회귀 검증 (Slice 3 normalize wiring + Slice 6)
+phase_9_contracts_changed:
+  - db_schema.md  # §4.3 selected_plans (실 plans 정합 plan_id + selected_option_index 0–2 + selection_reason) + §5.2 feedback_events 보강 + brand_memory prep cross-ref
+phase_9_contract_changes:
+  - CC-004  # db_schema.md feedback/selection 실 plans 정합 (Slice 2)
+phase_9_adrs: [ADR-030, ADR-031, ADR-032]  # feedback/selection persistence + Brand Memory prep + normalize_to_canonical wiring
+phase_9_new_patterns:
+  - P-FEEDBACK-LOOP-001  # 피드백 영속 graceful + PII 마스킹 (신규 후보)
+  - P-CANONICAL-WIRING-001  # Phase N helper → live pipeline wiring (additive 회귀 0) 신규 후보
+  - P-X1-EFFECT-001 (update 42연속)  # feedback-frontend phase 확장 입증 (frontend slice에서도 wrapper로 0줄)
+  - P-VALIDATION-FORMAL-001 (update 여섯 번째)  # 여섯 번째 입증 — V7 selection/feedback + normalize wiring + Brand Memory 준비
+phase_9_mitigated_patterns:
+  - P-AGENT-SCOPE-001  # 42연속 누적 입증 (db migration + repo + router + orchestrator + frontend 전 영역, 0건 재발)
+phase_9_retrospective_proposals: in_retrospective  # 본 회고 §개선 제안 §1~5
+phase_9_deferred_to_next:
+  - p_aux_2_brand_memory_extractor_agent  # Phase 10+ (개선 제안 §1 — schema + 적재 경로 준비 완료, agent 실 구현)
+  - critic_deprecated_0_5_fallback_full_removal  # Phase 9.5 eval-run (개선 제안 §2, Phase 6 + Phase 8 + Phase 9 누적 3회)
+  - four_layer_full_linkage_plan_options  # Phase 11+ (개선 제안 §3, 누적 2회 Phase 5 + Phase 9 — selected_plans 실 plans 정합 → idealized schema 연결)
+  - eval_run_formalization  # Phase 9.5 (개선 제안 §4 — Critic canonical live 활성으로 baseline 준비 완료)
+  - user_data_auto_promotion  # Phase 10+/11+ (개선 제안 §5 — feedback→candidate pending 적재 완료, rag-update 두 번째)
+next_phase_status: pending_user_decision  # A Phase 9.5 eval-run / B Phase 10 통합 / C Phase 11+
+total_commits: 83  # 77 + Phase 9 Slice 1~6 (6 commit: de92e37 + 56cd3f0 + d6e3fa0 + bc94e1b + 4d38062 + Slice 6 final)
+last_updated: 2026-05-31
 ```
 
 ## 확정 방향
