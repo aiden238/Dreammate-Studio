@@ -88,9 +88,9 @@ _SAMPLE_PLAN: dict[str, Any] = {
 # ─── 메타 ─────────────────────────────────────────────────────────────
 
 def test_critic_prompt_meta() -> None:
-    """P-007 / v1.0.0 매핑 확인 (output_schema.md §9)."""
+    """P-007 / v1.1.0 매핑 확인 (Phase 8 ADR-029 adapter, output_schema.md §9)."""
     assert PROMPT_ID == "P-007"
-    assert PROMPT_VERSION == "v1.0.0"
+    assert PROMPT_VERSION == "v1.1.0"
 
 
 # ─── 정상 plan → approve verdict ──────────────────────────────────────

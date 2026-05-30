@@ -264,6 +264,60 @@ def run_critic(
     return result
 
 
+# ─── Phase 8 Slice 4: conservative adapter (ADR-029) ─────────────────
+
+def _is_num(x: Any) -> bool:
+    """float 변환 가능 여부 (bool 제외 — bool 은 점수가 아님)."""
+    if isinstance(x, bool):
+        return False
+    try:
+        float(x)
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
+def normalize_to_canonical(verdict: dict[str, Any]) -> dict[str, Any]:
+    """P-007 conservative adapter (Slice 4 ADR-029): 0–5 scores → 0–1 canonical.
+
+    LLM-facing P-007 prompt 는 0–5 정수 8 dims 유지. 본 helper 는 code-side 정규화:
+      dimensions[dim] = scores[dim] / 5.0  (0–1 clamp)
+      overall_score   = overall_score_avg / 5.0  (또는 scores 평균/5.0)
+    기존 0–5 deprecated 필드(scores / overall_score_avg)는 병행 유지 → 회귀 0
+    (run_critic 파이프라인 출력 의미 불변 — 본 helper 는 additive 코드 유틸이며
+    run_critic 반환에 강제 주입하지 않는다).
+
+    Phase 6 CriticEvaluation canonical(overall_score + dimensions, ADR-018) 와 정합.
+    이미 canonical(overall_score 또는 dimensions)이 있으면 그 값을 우선 보존한다.
+
+    Args:
+        verdict: run_critic 산출 dict (또는 0–5 형식 verdict dict).
+
+    Returns:
+        입력 사본 + canonical 필드(dimensions / overall_score) 추가. scores 가 없거나
+        비어 있으면 입력을 그대로 반환 (비파괴 사본).
+    """
+    out = dict(verdict)  # 비파괴 (사본)
+    scores = verdict.get("scores")
+    if isinstance(scores, dict) and scores:
+        dims: dict[str, float] = {}
+        for k, v in scores.items():
+            if not _is_num(v):
+                continue
+            dims[k] = max(0.0, min(1.0, float(v) / 5.0))
+        if dims:
+            # 기존 canonical dimensions 가 있으면 보존, 없으면 정규화 결과 주입.
+            out.setdefault("dimensions", dims)
+            if out.get("overall_score") is None:
+                avg5 = verdict.get("overall_score_avg")
+                if avg5 is None or not _is_num(avg5):
+                    vals = [float(x) for x in scores.values() if _is_num(x)]
+                    avg5 = sum(vals) / len(vals) if vals else None
+                if avg5 is not None and _is_num(avg5):
+                    out["overall_score"] = max(0.0, min(1.0, float(avg5) / 5.0))
+    return out
+
+
 # ─── Phase 4.5 Slice 3: Best-plan selection (Z-X3) ────────────────────
 # ─── Phase 6 Slice 2: canonical 우선순위 + DeprecationWarning (ADR-018) ─
 
@@ -363,4 +417,7 @@ def select_best_plan_index(verdicts: list[dict[str, Any]]) -> int | None:
 # ─── 메타 ────────────────────────────────────────────────────────────
 
 PROMPT_ID = "P-007"
-PROMPT_VERSION = "v1.0.0"
+# Phase 8 ADR-029: v1.0.0 → v1.1.0 — code-side 0–5↔0–1 conservative adapter
+# (normalize_to_canonical) 추가. LLM-facing prompt(0–5) 불변, run_critic 출력 의미 불변
+# (helper additive, 미강제 주입 → 회귀 0). semver minor (output schema 미변경).
+PROMPT_VERSION = "v1.1.0"

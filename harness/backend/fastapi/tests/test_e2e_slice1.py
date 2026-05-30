@@ -158,7 +158,7 @@ def test_generate_includes_critic_evaluation(mock_pipeline_ok) -> None:
 
 
 def test_generate_critic_validation_check_present(mock_pipeline_ok) -> None:
-    """validation.checks에 critic_evaluation 항목이 P-007@v1.0.0 detail로 노출."""
+    """validation.checks에 critic_evaluation 항목이 P-007@v1.1.0 detail로 노출 (Phase 8 ADR-029)."""
     response = client.post(
         "/api/v1/generate",
         json={"input": "유튜브 첫 영상"},
@@ -169,7 +169,7 @@ def test_generate_critic_validation_check_present(mock_pipeline_ok) -> None:
     critic_check = next((c for c in checks if c["name"] == "critic_evaluation"), None)
     assert critic_check is not None
     assert critic_check["status"] == "ok"
-    assert critic_check["detail"] == "P-007@v1.0.0"
+    assert critic_check["detail"] == "P-007@v1.1.0"
 
 
 def test_generate_critic_flagged_returns_revise_verdict(

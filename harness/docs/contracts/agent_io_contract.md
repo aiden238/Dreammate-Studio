@@ -252,6 +252,16 @@ prompt_registry P-ID: P-006
 
 ## 5. Critic Agent
 
+> **Phase 8 ADR-029 (2026-05-29)**: P-007 semver v1.0.0 → **v1.1.0**.
+> - code-side **0–5 ↔ 0–1 conservative adapter** 추가 (`agents/critic.py::normalize_to_canonical`).
+>   LLM-facing P-007 prompt 는 **0–5 정수 8 dims 불변**. code 가 `dimensions = scores/5.0` +
+>   `overall_score = overall_score_avg/5.0` 으로 정규화하여 Phase 6 canonical(0–1)과 정합.
+> - 기존 0–5 deprecated 필드(`scores` / `overall_score_avg`)는 병행 유지 → `CriticEvaluation`
+>   Optional 호환, 회귀 0. `normalize_to_canonical` 은 additive helper 이며 `run_critic` 반환에
+>   강제 주입하지 않는다 (출력 의미 불변).
+> - **Phase 6 canonical schema(`CriticEvaluation` overall_score 0–1 + dimensions, ADR-018)은 불변** (NG5).
+> - semver minor (output schema 미변경). 결정 근거: `docs/decisions/phase_8_prompt_registry_semver.md`.
+
 ### 5.1 책임
 
 - 생성된 plan 1개에 대해 8차원 0~5점 평가 (P-007)
@@ -278,7 +288,13 @@ prompt_registry P-ID: P-006
 
 ### 5.3 Output 스키마
 
-`output_schema.md` §9 P-007 body.
+`output_schema.md` §9 P-007 body (Phase 6 canonical, ADR-018 — 불변).
+
+- **canonical** (Phase 6): `overall_score` float [0~1] + `dimensions` dict[str, float] [0~1].
+- **deprecated 병행** (Phase 1~4.5): `scores` 8 dim × 0–5 정수 + `overall_score_avg` 0–5.
+- **adapter** (Phase 8 ADR-029): `normalize_to_canonical(verdict)` 가 0–5 → 0–1 정규화하여 canonical 산출.
+  LLM 은 0–5 산출, code 가 정규화. `run_critic` 본문 출력 의미는 불변 (helper 미강제 주입 → 회귀 0).
+  canonical 우선순위 소비는 `select_best_plan_index` (overall_score → dimensions → overall_score_avg → scores).
 
 ### 5.4 실행 정책
 
@@ -311,6 +327,7 @@ cost per session: 3 plan × ~$0.005 = ~$0.015 (gpt-4o)
 RAG: 사용 안 함
 Brand Memory: avoid_phrases, preferred_tone만 (brand_consistency 검사용)
 prompt_registry P-ID: P-007
+prompt_version: v1.1.0 (Phase 8 ADR-029 — 0–5↔0–1 adapter)
 ```
 
 ### 5.7 병렬 호출 정책
@@ -491,6 +508,12 @@ cost per call:   ~$0.001
 ---
 
 ## 8. 오케스트레이션 흐름
+
+> **Phase 8 ADR-027 (2026-05-29)**: agent 간 직접 호출 금지(§1.2), backend service layer 가 항상 중개.
+> 실 구현은 `backend/fastapi/orchestration/moa_orchestrator.py::generate_plan()` — Intent → RAG →
+> 3-plan(Planning) → Critic(+revise) → save → Envelope 흐름을 단일 진입점에서 중개한다
+> (`moa_policy.md` §2 "오케스트레이터가 항상 중개" 정합). 진행 상황은 `ProgressSink`(ADR-028)로
+> stage 단위 emit (NullProgressSink default → 회귀 0). 기존 god-function 동작은 byte-identical 보존.
 
 ### 8.1 Discovery Mode
 
@@ -793,4 +816,11 @@ v1.1.0 (2026-05-29, Phase 6 Slice 2):
     - §6.7 Graceful failure 정책 명시 (_rewriter_warning 마커, 회로 차단 max 2)
     - 기존 dict 반환 호환 유지 (회귀 0, routers/plans.py 변경 없음)
     - semver minor bump: breaking change 없음.
+v1.2.0 (2026-05-29, Phase 8 Slice 4):
+  - §5 Critic (P-007) v1.0.0 → v1.1.0 — ADR-029
+    - code-side 0–5 ↔ 0–1 conservative adapter (normalize_to_canonical) 명시
+    - LLM-facing prompt(0–5) 불변 + Phase 6 canonical(0–1, ADR-018) 정합 + deprecated 병행 (회귀 0)
+    - run_critic 출력 의미 불변 (helper additive, 미강제 주입). semver minor.
+  - §8 orchestrator 중개 명시 (ADR-027 — moa_orchestrator.generate_plan, ProgressSink ADR-028, moa_policy §2 정합)
+  - Phase 6 canonical schema(output_schema.md §9) 불변 (NG5).
 ```

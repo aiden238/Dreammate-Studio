@@ -37,6 +37,10 @@
 - **P-007 prompt 0–5 유지**: LLM-facing prompt 텍스트(0–5 정수 8 dims)는 그대로 (LLM 평가 일관성 — 0–5가 LLM에게 직관적). prompt 텍스트 변경 0.
 - **코드 0–1 정규화 adapter 추가** (Slice 4): `run_critic`에 0–5 → 0–1 정규화 adapter 명시 추가.
 
+> **Slice 4 구현 정정**: 아래 코드 예시는 `run_critic` 본문 주입 형태이나, 실제 구현은
+> 더 보수적인 **순수 helper `normalize_to_canonical`** (run_critic 미강제 주입 → 회귀 0)로
+> 채택했다. 상세는 본 문서 하단 **§Amendment (Slice 4, 2026-05-29)** 참조.
+
 ```python
 # Slice 4 — run_critic 내 정규화 adapter (기존 0–5 deprecated 필드 병행 유지)
 dimensions = {k: norm_scores[k] / 5.0 for k in DIMENSIONS}   # 0–1 canonical
@@ -144,6 +148,29 @@ Phase 6 canonical : 불변 (ADR-018 — NG5 사용자 결정)
 - **agent-io-check Skill** (Slice 4) — agent_io_contract ↔ 구현 drift 0 (registry ↔ agent 상수 ↔ contract 3중 정합).
 - **기존 `test_critic` 수정 0 PASS** ★ (canonical 추가 + deprecated 병행 → 회귀 0).
 - **`git diff --cached --stat | grep -E "PlanCard|component_map|output_schema"` = 0 lines** ★ (Phase 6 canonical 불변 + backend-only).
+
+## Amendment (Slice 4, 2026-05-29)
+
+Slice 1 분석 시 ADR Decision §1 의 코드 예시는 `run_critic` 본문에서 canonical 필드를
+직접 산출(주입)하는 형태로 기술했다. **Slice 4 구현에서는 더 보수적인 형태를 채택**한다
+(사용자 결정 "Conservative adapter" + Slice 1 Gap 정정 정합):
+
+- **adapter 는 code-side 순수 helper** — `agents/critic.py::normalize_to_canonical(verdict) -> dict`.
+  0–5 → 0–1 정규화(`dimensions = scores/5.0`, `overall_score = overall_score_avg/5.0`)를
+  **비파괴 사본**으로 산출한다. 이미 canonical(overall_score)이 있으면 보존한다.
+- **`run_critic` 파이프라인 출력 의미 불변** — helper 는 additive 이며 `run_critic` 반환에
+  **강제 주입하지 않는다**. 따라서 기존 0–5 deprecated 형식 산출이 그대로 유지되어
+  **baseline test 회귀 0** (canonical 소비는 기존대로 `select_best_plan_index` 우선순위에서).
+  → Decision §1 의 "run_critic 내 정규화 adapter" 예시보다 **회귀 면에서 더 안전**한 선택이며,
+    canonical 정합(Phase 6 ADR-018)은 normalize_to_canonical helper + select_best_plan_index 로 충족.
+- **version bump 의 test 영향은 정확히 2개 baseline assertion** (의도된 delta):
+  - `tests/test_critic.py` — `PROMPT_VERSION == "v1.1.0"` (+ 주석)
+  - `tests/test_e2e_slice1.py` — `critic_check["detail"] == "P-007@v1.1.0"` (+ 주석)
+  detail 문자열은 `critic.PROMPT_VERSION` 에서 파생되므로 상수 bump 만으로 전파된다.
+  이는 Phase 6 Rewriter 선례(P-008 v1.0.0 → v1.1.0 시 test_rewriter version assert 갱신)와 동일한
+  "의도된 version bump 의 최소 반영"이며, Slice 2 behavior-preserving "test 수정 0"과 구분된다.
+- **Phase 6 canonical schema 불변** — `CriticEvaluation`(overall_score 0–1 + dimensions) +
+  `output_schema.md` §9 변경 0 (NG5). schemas/output.py 0줄.
 
 ## References
 

@@ -1,9 +1,11 @@
 # prompt_registry.md — 영상기획 AI 에이전트 프롬프트 레지스트리
 
 > 위치: `ai_system/prompts/prompt_registry.md`
-> 상태: Phase 1 진입용 시작 프롬프트 8개 + 보조 2개
+> 상태: Phase 8 — semver 정식화 (P-001~P-008 + P-AUX-1/2 + P-EVAL-1, 단일 출처 SoT)
 > 모델 가정: gpt-4o-mini 또는 동급 (구조화 출력 지원)
 > 출력 형식: 모든 프롬프트는 JSON으로 응답하며, `output_schema.md`와 일치한다.
+> Semver: 각 prompt 의 `#### Semver / 활성 정책` 블록 참조. 변경 시 prompt-version-review Skill.
+> 활성 버전: P-007 v1.1.0 (ADR-029) · P-008 v1.1.0 (ADR-019) · 그 외 v1.0.0.
 
 ---
 
@@ -92,6 +94,14 @@ JSON 형식으로만 응답해.
 }
 ```
 
+#### Semver / 활성 정책
+
+```
+v1.0.0 (2026-05-26): 최초 도입 (active). Discovery Wizard Step 2.
+변경 시: prompt-version-review Skill (semver §2) + golden_set 회귀 (P-001~P-004 최소 5케이스 — Phase 9+).
+단일 출처: 본 registry 가 SoT. 구현 측 상수와 정합 (Phase 8 Slice 4 test_prompt_registry_consistency).
+```
+
 ---
 
 ## 3. P-002 · domain_cards
@@ -121,6 +131,13 @@ Domain은 Brand보다 한 단계 좁은 주제 카테고리이다.
 
 이 브랜드 안에서 다룰 수 있는 주제 영역(Domain) 5개를 만들어줘.
 JSON 형식으로만 응답해.
+```
+
+#### Semver / 활성 정책
+
+```
+v1.0.0 (2026-05-26): 최초 도입 (active). Discovery Wizard Step 3.
+변경 시: prompt-version-review (golden_set 최소 5케이스 — Phase 9+). 단일 출처: 본 registry SoT.
 ```
 
 ---
@@ -159,6 +176,13 @@ Series는 1회성 영상이 아니라 5–20편 이상 누적 가능한 반복 �
 
 이 주제 영역에서 반복 가능한 시리즈 구조 5개를 만들어줘.
 JSON 형식으로만 응답해.
+```
+
+#### Semver / 활성 정책
+
+```
+v1.0.0 (2026-05-26): 최초 도입 (active). Discovery Wizard Step 4.
+변경 시: prompt-version-review (golden_set 최소 5케이스 — Phase 9+). 단일 출처: 본 registry SoT.
 ```
 
 ---
@@ -200,6 +224,13 @@ tone_card 필드:
 
 이 컨텍스트에 맞는 타겟 후보 5개와 톤 후보 5개를 만들어줘.
 JSON 형식으로만 응답해.
+```
+
+#### Semver / 활성 정책
+
+```
+v1.0.0 (2026-05-26): 최초 도입 (active). Discovery Wizard Step 5–6 (단일 호출, target 5 + tone 5).
+변경 시: prompt-version-review (golden_set 최소 5케이스 — Phase 9+). 단일 출처: 본 registry SoT.
 ```
 
 ---
@@ -261,6 +292,15 @@ Quick Mode에서는 위 선택 정보 대신 사용자 자유 프롬프트와 �
 이 정보로 한 줄 기획 방향을 만들고, 부족한 정보가 있으면 최대 2개까지 missing_info에 담아줘.
 ```
 
+#### Semver / 활성 정책
+
+```
+v1.0.0 (2026-05-26): 최초 도입 (active). Direction Summary.
+변경 시: prompt-version-review (golden_set 최소 5케이스 — Phase 9+). 단일 출처: 본 registry SoT.
+variant 정책: P-005q (Quick Mode 변형) 는 부모 P-005 version 을 상속한다 (별도 version 미부여 — ADR-029 §2).
+            system prompt + output schema 동일, user prompt 만 다름.
+```
+
 ---
 
 ## 7. P-006 · plan_candidates (Planner Agent)
@@ -316,14 +356,24 @@ Brand Memory:
 3개의 서로 다른 영상기획안을 만들어줘. JSON으로만.
 ```
 
+#### Semver / 활성 정책
+
+```
+v1.0.0 (2026-05-26): 최초 도입 (active). MOA Planner — 3 plan_candidates.
+변경 시: prompt-version-review (golden_set 최소 8케이스 × 3 plans — Phase 9+). 단일 출처: 본 registry SoT.
+variant 정책: Phase 4 Slice 2 의 3-plan parallel 확장(run_planning_parallel_3,
+            approach_label hint 주입)은 동일 P-006 version 을 상속한다 — 별도 version 미부여
+            (output schema 동일, 호출 횟수만 1 → 3). 구현 상수 PARALLEL_3_PROMPT_(ID|VERSION) 도 P-006/v1.0.0.
+```
+
 ---
 
 ## 8. P-007 · critic (Critic Agent)
 
 **Stage**: 품질 평가 (생성된 기획안 1개에 대해)
-**Version**: v1.0.0
+**Version**: v1.1.0 (이전: v1.0.0 — Phase 8 ADR-029)
 **Input variables**: `target_plan`, `one_line_direction`, `selected_context`, `brand_memory`
-**Output schema**:
+**Output schema** (LLM-facing — 0–5 정수 8 dims 유지):
 
 ```
 {
@@ -398,12 +448,50 @@ blocking_issues에는 즉시 수정 필요한 항목만 (최대 3개).
 위 기획안을 8개 차원에서 평가해줘. JSON으로만.
 ```
 
+#### Semver / 활성 정책
+
+```
+v1.0.0 (2026-05-26): 최초 도입. 8 dim × 0–5 정수 scores + overall_score_avg (0–5 평균).
+v1.1.0 (2026-05-29, Phase 8 ADR-029): code-side 0–5 ↔ 0–1 canonical adapter
+        (normalize_to_canonical) 추가. LLM-facing prompt(0–5)는 불변.
+        Phase 6 CriticEvaluation(0–1, ADR-018) 정합. semver minor — output schema 미변경
+        (deprecated 0–5 필드 병행 유지 → backward-compat 100%, 회귀 0).
+변경 시: prompt-version-review (golden_set 최소 10케이스 — Phase 9+, NG7).
+단일 출처: 본 registry SoT. 구현 상수 critic.PROMPT_(ID|VERSION) = P-007 / v1.1.0 정합
+          (Phase 8 Slice 4 test_prompt_registry_consistency).
+```
+
+#### 0–5 ↔ 0–1 conservative adapter (ADR-029)
+
+P-007 은 **두 표현**을 정합한다 (사용자 결정 — Conservative adapter, Phase 6 canonical 불변):
+
+| 레이어 | 표현 | 비고 |
+|---|---|---|
+| **LLM-facing prompt** | `scores` = 8 dim × **0–5 정수** + `overall_verdict` | 변경 0 (LLM 에게 0–5 가 직관적). |
+| **code-side canonical** (Phase 6 ADR-018) | `dimensions` = dict[str, float] **0–1** + `overall_score` **0–1** | `normalize_to_canonical` 가 산출. |
+
+정규화 규칙 (code-side):
+
+```
+dimensions[dim] = scores[dim] / 5.0    (0–1 clamp)
+overall_score   = overall_score_avg / 5.0   (avg 부재 시 scores 평균 / 5.0)
+```
+
+- 기존 0–5 deprecated 필드(`scores`, `overall_score_avg`)는 **병행 유지** → `CriticEvaluation`
+  Optional 호환 + 기존 test_critic 동작 불변 (회귀 0).
+- `normalize_to_canonical` 은 **additive 코드 유틸**이며 `run_critic` 반환에 강제 주입하지 않는다
+  (run_critic 출력 의미 불변 — 회귀 0). canonical 우선순위 소비는 `select_best_plan_index`
+  (overall_score → dimensions → overall_score_avg → scores, deprecated 시 DeprecationWarning).
+- output schema(`CriticEvaluation` canonical, output_schema.md §9)는 **불변** (NG5 — Phase 6 ADR-018).
+
+→ 자세한 결정 근거: `docs/decisions/phase_8_prompt_registry_semver.md` (ADR-029).
+
 ---
 
 ## 9. P-008 · rewriter (Rewriter Agent)
 
 **Stage**: 개선안 생성 (Critic이 revise 판정한 경우)
-**Version**: v1.0.0
+**Version**: v1.1.0 (이전: v1.0.0 — Phase 6 ADR-019)
 **Input variables**: `target_plan`, `critic_result`, `selected_context`, `brand_memory`
 **Output schema**: `{ improved_plan: { ...P-006의 plan 형식 }, changes_made: [string], remaining_concerns: [string] }`
 
@@ -439,6 +527,18 @@ Critic 평가:
 - 피해야 할 표현: {brand_memory.avoid_phrases}
 
 이 기획안을 개선해줘. JSON으로만.
+```
+
+#### Semver / 활성 정책
+
+```
+v1.0.0 (2026-05-26): 최초 도입.
+v1.1.0 (2026-05-29, Phase 6 ADR-019): Pydantic 모델(RewriterInput / RewriterOutput) 정식 등록
+        (typing 검증 + frontend type mirror) + graceful failure 정책 명시
+        (LLM 실패 / non-dict 응답 → 원본 plan + _rewriter_warning 마커).
+        기존 dict 반환 패턴 호환 유지 (breaking change 없음, routers/plans.py 회귀 0). semver minor.
+변경 시: prompt-version-review (golden_set 최소 8케이스 — Phase 9+). 단일 출처: 본 registry SoT.
+구현 상수: rewriter.PROMPT_(ID|VERSION) = P-008 / v1.1.0 정합 (agent_io_contract §6).
 ```
 
 ---
@@ -481,6 +581,15 @@ reframe_offer:
 {current_video_context}
 
 영상기획 관련 입력인지 판정해줘. JSON으로만.
+```
+
+#### Semver / 활성 정책
+
+```
+v1.0.0 (2026-05-26): 최초 도입 (active). Quick Mode intent filter.
+변경 시: prompt-version-review (golden_set 최소 3케이스 — Phase 9+, P-AUX-* 보조). 단일 출처: 본 registry SoT.
+참고: 현 Phase 1 intent 구현은 인텐트 분류 단일 책임으로 P-001 임시 매핑 운영
+     (intent.py PROMPT_ID = "P-001"). P-AUX-1 정식 정합은 Phase 2+ Discovery/Quick UX 도입 시.
 ```
 
 ---
@@ -530,6 +639,14 @@ Brand Memory에 추가할 만한 후보 항목을 추출한다.
 {current_brand_memory}
 
 Brand Memory에 추가할 후보를 추출해줘. JSON으로만.
+```
+
+#### Semver / 활성 정책
+
+```
+v1.0.0 (2026-05-26): 최초 등록 (registry 명세). 세션 종료 후 백그라운드 추출 (agent_io §7).
+활성 상태: 실 구현은 Phase 9+ (NG2 — Phase 8 미구현, registry 명세만 보존).
+변경 시: prompt-version-review (golden_set 최소 3케이스 — Phase 9+). 단일 출처: 본 registry SoT.
 ```
 
 ---
@@ -693,12 +810,26 @@ A/B 테스트 시:
 - 최소 100세션 누적 후 평균 품질 비교
 ```
 
+### Semver 정식화 (Phase 8 Slice 4 — ADR-029)
+
+```
+- 모든 prompt(P-001~P-008 + P-AUX-1/2 + P-EVAL-1)에 #### Semver / 활성 정책 블록 명시.
+- 단일 출처(SoT): 본 registry 가 (id, version) 진실 출처. agent 파일 모듈 상수
+  (PROMPT_ID / PROMPT_VERSION, planning 은 PARALLEL_3_PROMPT_(ID|VERSION)) 는 미러.
+  → backend/fastapi/tests/test_prompt_registry_consistency.py 가 drift 0 게이트.
+- 변경 절차: prompt-version-review Skill (semver §2 + golden_set 회귀 §4) → contract-change.
+- golden_set 회귀 자동화 + A/B 50:50 활성화는 Phase 9+/11+ (NG3/NG7) — 본 Phase 는 정합 test 만.
+- variant(P-005q Quick / P-006 parallel-3)는 부모 version 상속 (별도 version 미부여).
+```
+
 ---
 
 ## 14. Open Questions
 
 1. P-006의 RAG 참고 자료는 최대 몇 chunk까지 주입할지 (현재 3개 권장).
-2. Critic 8차원 가중치 — 동일 가중 vs 핵심 4개 가중.
+2. Critic 8차원 가중치 — 동일 가중 vs 핵심 4개 가중. (Phase 8 ADR-029: 현재는 동일 가중
+   단순 평균. canonical overall_score 는 dimensions 평균/5.0 — Phase 9+ eval 에서 weighted
+   score 도입 검토. CriticEvaluation.overall_score docstring 도 weighted 확장 여지 명시.)
 3. Rewriter가 자동 실행될지 (revise 판정 시), 아니면 사용자 명시 요청 시만.
 4. Brand Memory 자동 추출(P-AUX-2)을 매번 돌릴지, 사용자 승인 시만 돌릴지.
 5. 모델 변경 시 prompt 호환성 — gpt-4o-mini ↔ Claude Haiku ↔ Gemini Flash 차이 대응.

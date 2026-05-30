@@ -44,4 +44,23 @@
 - entry 가정 "run_critic 이미 canonical 산출" → 실측: `run_critic`은 **0–5 deprecated 형식만** 산출, canonical은 `CriticEvaluation`이 Optional로 수용. canonical 우선순위는 `select_best_plan_index`에서만 작동.
 - 영향: conservative adapter **필요성 정당화 강화** — Slice 4에서 `run_critic`에 0–5→0–1 정규화 adapter **추가** (dimensions = scores/5.0, overall_score = overall_score_avg/5.0) + 기존 0–5 deprecated 필드 병행 유지 → 회귀 0. ADR-029 반영.
 
-### 다음: Slice 2 sub-agent (MOA Orchestrator 추출 behavior-preserving + ProgressSink)
+### Slice 4 — prompt_registry 정식화 + Critic v1.1.0 conservative adapter ✅ 완료 (2026-05-29, sub-agent)
+
+- **critic.py**: `PROMPT_VERSION` v1.0.0 → v1.1.0 + `normalize_to_canonical(verdict)` 순수 helper 신규
+  (0–5 → 0–1: dimensions=scores/5.0, overall_score=avg/5.0, deprecated 0–5 병행 + 기존 canonical 우선 보존).
+  helper 는 additive 이며 `run_critic` 반환에 강제 주입 X → 출력 의미 불변, 회귀 0. `_is_num` 보조 helper 포함.
+- **prompt-version-review** (Slice 1 분석 → Slice 4 적용): P-007 minor bump (output schema 불변, 내부 표현 개선).
+- **contract-change** (제안서 + 로그):
+  - `prompt_registry.md`: P-001~P-008 + P-AUX-1/2 + P-EVAL-1 각 `#### Semver / 활성 정책` 명시 +
+    P-007 §0–5↔0–1 adapter + P-008 v1.1.0 표기 정정(코드는 이미 v1.1.0) + §13 Semver 정식화 + §14 #2.
+  - `agent_io_contract.md`: §5 Critic v1.1.0 adapter + §5.3 canonical/deprecated/adapter 레이어 + §8 orchestrator 중개(ADR-027) + §20 v1.2.0.
+  - `moa_policy.md`: §2 moa_orchestrator.py cross-ref.
+  - 제안서 `meta/proposals/2026-05-29_phase-8-slice-4-prompt-registry-semver.md` + 로그 `docs/contract_changes/2026-05-29_...` (CC-003).
+- **ADR-029 §Amendment**: adapter = code-side normalize_to_canonical helper (run_critic 미강제 → 회귀 0).
+  version bump 영향 = 정확히 2 baseline assertion (test_critic:93 + test_e2e_slice1:172, Phase 6 Rewriter 선례).
+- **tests**: `test_prompt_registry_consistency.py` 신규 (상수↔registry 매핑 dict 정합 + normalize_to_canonical 0–5→0–1 +
+  registry 문서화 검증, 11 케이스). test_critic / test_e2e_slice1 정확히 2 version-string assertion(+주석) 갱신.
+- **agent-io-check**: agent_io_contract §5 ↔ critic.py (v1.1.0 + adapter) drift 0.
+- **회귀**: pytest 238 → 244. schemas/output.py 0줄 (NG5). PlanCard·component_map 0줄.
+
+### 다음: Slice 5 sub-agent (Close — smoke_test_phase_8 + scenario v4 + retrospective + patterns + archive)

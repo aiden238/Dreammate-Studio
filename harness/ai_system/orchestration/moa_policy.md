@@ -34,6 +34,12 @@ Rewriter    → revise 판정 시 개선 (0~3회 호출/세션, 사용자 트리
 
 agent 간 직접 호출 금지. 오케스트레이터(backend service layer)가 항상 중개한다 (agent_io §1).
 
+> **실 구현 (Phase 8 ADR-027)**: `backend/fastapi/orchestration/moa_orchestrator.py::generate_plan()`
+> 이 4 agent 중개를 담당한다 (Intent → RAG → 3-plan(Planning) → Critic(+revise loop) → save → Envelope).
+> 기존 routers/plans.py 의 god-function 을 behavior-preserving 추출 (Envelope byte-identical, pytest 회귀 0).
+> 진행 상황은 `orchestration/progress_sink.py::ProgressSink` 로 stage 단위 emit (NullProgressSink default,
+> StoreProgressSink → SSE 브릿지 ADR-028). agent_io_contract §8 정합.
+
 ---
 
 ## 3. 데이터 전달 (envelope 유지)
