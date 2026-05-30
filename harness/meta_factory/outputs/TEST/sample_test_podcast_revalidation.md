@@ -92,6 +92,7 @@ M1 팟캐스트 산출물에 S1·S2 machinery 의 새 슬롯을 **추가 적용*
 - before: eval-run §3~§6 절차/임계값/케이스 매핑 전부 적용 가능 / 실 LLM 호출·실측 점수 미수행 → 단순 **PENDING**(정상이라 주석으로 설명).
 - after: **G8** 로 `pending-by-design` enum 이 추가되어, "절차 적용 가능 / 실측만 미수행 = dry-run 범위상 정상"이 단순 미완(pending)과 **구별되어 명시 표현**됨. blueprint §9 `eval_run_integration: pending-by-design` 슬롯. + **G4 applies_when** 으로 조건부 차원 채점 규칙이 명문화되어 eval 절차 적용성이 더 견고.
 - before→after: PENDING → **PENDING-BY-DESIGN** — "정상 미측정"이 enum 으로 1급 표현. 실 점수는 여전히 미측정(정상, eval-run 위임).
+- ★ **표본 실행 완료 (additive)**: 검증5 eval-run 표본 1회 실행 (`outputs/TEST/podcast_eval_run_sample.md`, mock-deterministic, PE-001 솔로/PE-002 게스트/PE-003 패널 3 케이스) → schema 100% / 차단·광고 0 / G4 applies_when 정상 작동(솔로·패널 조건부 차원 제외, 게스트 10차원). **pending-by-design 의 실측 차원 mock-deterministic baseline 수립**. 실 LLM 채점은 팟캐스트 실 구현 후 가능(현 단계 미해당) — mock 차원 measured / 실 LLM 차원 구현 후.
 
 ### 검증 6 — generated harness acceptance : PASS → **PASS** (G7 보강)
 - before: 5 체크리스트(최소구조/forbidden 매핑/8 files/eval gate/rollback) 전부 충족 = PASS.
