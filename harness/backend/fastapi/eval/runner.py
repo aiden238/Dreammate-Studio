@@ -33,6 +33,7 @@ from ..schemas.output import (
     ValidationCheck,
 )
 from .golden_set_loader import load_golden_set
+from .revise_effect import aggregate_revise_effects, measure_revise_effect
 
 logger = logging.getLogger(__name__)
 
@@ -274,12 +275,88 @@ def _avg(values: list[float]) -> float:
     return round(sum(values) / len(values), 4) if values else 0.0
 
 
+# ── revise effect mock fixture (deterministic) ───────────────────────
+# ADR-033 §2.3 — revise loop 개선 효과 (Phase 4.5 D6 해소). 실 LLM 미호출.
+# 각 시나리오 = (revise_history[ReviseAttempt dict], attempt 순서별 canonical score 0–1).
+# canonical-only (overall_score 0–1) — deprecated 0–5 미사용 (ADR-034 정합).
+#   improved : revise 후 점수 상승 (정상 동작)
+#   regressed: revise 후 점수 하락 (Phase 4.5 우려 — "revise 가 기획을 평범하게")
+#   no_change: revise 미발생 또는 점수 정체
+#   max      : max_revise 도달 (소폭 상승)
+_REVISE_EFFECT_FIXTURES: list[tuple[list[dict[str, Any]], list[float]]] = [
+    # improved — 초기 revise verdict → revise → 재평가 상승.
+    (
+        [
+            {"attempt": 0, "action": "revise", "revised": True},
+            {"attempt": 1, "action": "approve", "revised": False},
+        ],
+        [0.62, 0.81],
+    ),
+    # improved — 2회 revise 점진 상승.
+    (
+        [
+            {"attempt": 0, "action": "revise", "revised": True},
+            {"attempt": 1, "action": "revise", "revised": True},
+            {"attempt": 2, "action": "approve", "revised": False},
+        ],
+        [0.55, 0.68, 0.79],
+    ),
+    # no_change — 초기 approve (revise 미발생).
+    (
+        [
+            {"attempt": 0, "action": "approve", "revised": False},
+        ],
+        [0.84],
+    ),
+    # regressed — revise 후 점수 하락 (Phase 4.5 우려 검증 지표).
+    (
+        [
+            {"attempt": 0, "action": "revise", "revised": True},
+            {"attempt": 1, "action": "approve", "revised": False},
+        ],
+        [0.74, 0.69],
+    ),
+    # max_reached — max_revise 도달, 소폭 상승.
+    (
+        [
+            {"attempt": 0, "action": "revise", "revised": True},
+            {"attempt": 1, "action": "revise", "revised": True},
+            {"attempt": 2, "action": "revise", "revised": False, "max_reached": True},
+        ],
+        [0.58, 0.63, 0.66],
+    ),
+]
+
+
+def run_revise_effect_eval(
+    *,
+    fixtures: list[tuple[list[dict[str, Any]], list[float]]] | None = None,
+) -> dict[str, Any]:
+    """revise loop 개선 효과 eval — mock fixture 기반 (ADR-033 §2.3, Phase 4.5 D6 해소).
+
+    각 fixture(revise_history + attempt 순서별 canonical score) → measure_revise_effect →
+    aggregate_revise_effects 로 집계. 실 LLM 미호출 (deterministic).
+
+    Args:
+        fixtures: (revise_history, scores_by_attempt) 튜플 list 주입 (None → 기본 fixture 5종).
+
+    Returns:
+        {effects: [measure_revise_effect...], aggregate: {mean_delta, improved_rate,
+         regressed_rate, no_change_rate, n}}.
+    """
+    src = fixtures if fixtures is not None else _REVISE_EFFECT_FIXTURES
+    effects = [measure_revise_effect(history, scores) for history, scores in src]
+    aggregate = aggregate_revise_effects(effects)
+    return {"effects": effects, "aggregate": aggregate}
+
+
 def run_golden_set_eval(
     *,
     mode: str = "mock",
     cases: list[dict[str, Any]] | None = None,
     baseline_score: float | None = None,
     golden_set_path: str | None = None,
+    include_revise_effect: bool = False,
 ) -> dict[str, Any]:
     """11 케이스 → mock pipeline → 채점 → 요약 + 임계값 게이트.
 
@@ -288,9 +365,12 @@ def run_golden_set_eval(
         cases: 케이스 list 주입 (None → load_golden_set).
         baseline_score: 직전 baseline 평균 canonical 점수 (점수 하락 게이트용, None → 게이트 skip).
         golden_set_path: golden_set.md 경로 (None → 기본).
+        include_revise_effect: True → revise effect eval(ADR-033 §2.3) 집계를 result/summary 에 포함.
 
     Returns:
         {mode, cases: [score_case...], summary: {...}, gate: {passed, violations}}.
+        include_revise_effect=True 시 result["revise_effect"](effects + aggregate) 추가 +
+        summary["revise_effect"](mean_delta / improved_rate / regressed_rate) 추가.
     """
     if mode == "real":  # pragma: no cover — 본 phase 미사용 (NG2, 문서)
         raise NotImplementedError(
@@ -331,14 +411,21 @@ def run_golden_set_eval(
         "baseline_score": baseline_score,
     }
 
-    gate = check_thresholds(summary)
-
-    return {
+    result: dict[str, Any] = {
         "mode": mode,
         "cases": scored,
         "summary": summary,
-        "gate": gate,
+        "gate": None,  # placeholder — revise effect 반영 후 채운다.
     }
+
+    # revise effect 통합 (ADR-033 §2.3, Phase 4.5 D6) — opt-in.
+    if include_revise_effect:
+        revise = run_revise_effect_eval()
+        result["revise_effect"] = revise
+        summary["revise_effect"] = revise["aggregate"]
+
+    result["gate"] = check_thresholds(summary)
+    return result
 
 
 def check_thresholds(summary: dict[str, Any]) -> dict[str, Any]:

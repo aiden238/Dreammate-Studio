@@ -91,6 +91,36 @@ def render_report(result: dict[str, Any], *, trigger: str) -> str:
             lines.append(f"- {v}")
         lines.append("")
 
+    # ── revise effect (ADR-033 §2.3, Phase 4.5 D6) ──
+    revise_effect = result.get("revise_effect")
+    if revise_effect:
+        agg = revise_effect.get("aggregate", {})
+        lines.append("## revise effect")
+        lines.append("")
+        lines.append(
+            "revise loop 개선 효과 (mock-based, canonical overall_score 0–1 delta). "
+            "regressed_rate = revise 후 점수 하락 비율 (Phase 4.5 우려 검증 지표)."
+        )
+        lines.append("")
+        lines.append("| 지표 | 값 |")
+        lines.append("|---|---|")
+        lines.append(f"| 평균 delta (mean_delta) | {agg.get('mean_delta')} |")
+        lines.append(f"| 개선율 (improved_rate) | {_pct(agg.get('improved_rate'))} |")
+        lines.append(f"| 악화율 (regressed_rate) | {_pct(agg.get('regressed_rate'))} |")
+        lines.append(f"| 무변화율 (no_change_rate) | {_pct(agg.get('no_change_rate'))} |")
+        lines.append(f"| plan 수 (n) | {agg.get('n')} |")
+        lines.append("")
+        effects = revise_effect.get("effects", [])
+        if effects:
+            lines.append("| # | initial | final | delta | direction | revised |")
+            lines.append("|---|---|---|---|---|---|")
+            for i, e in enumerate(effects):
+                lines.append(
+                    f"| {i} | {e.get('initial_score')} | {e.get('final_score')} | "
+                    f"{e.get('delta')} | {e.get('direction')} | {e.get('revised_count')} |"
+                )
+            lines.append("")
+
     # ── 결정 ──
     lines.append("## 결정")
     lines.append("")

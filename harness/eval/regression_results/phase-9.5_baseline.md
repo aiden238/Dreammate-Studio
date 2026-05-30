@@ -39,6 +39,26 @@
 - 차단 단어 검출 > 0%: PASS
 - P0 통과율 < 100%: PASS
 
+## revise effect
+
+revise loop 개선 효과 (mock-based, canonical overall_score 0–1 delta). regressed_rate = revise 후 점수 하락 비율 (Phase 4.5 우려 검증 지표).
+
+| 지표 | 값 |
+|---|---|
+| 평균 delta (mean_delta) | 0.092 |
+| 개선율 (improved_rate) | 60.0% |
+| 악화율 (regressed_rate) | 20.0% |
+| 무변화율 (no_change_rate) | 20.0% |
+| plan 수 (n) | 5 |
+
+| # | initial | final | delta | direction | revised |
+|---|---|---|---|---|---|
+| 0 | 0.62 | 0.81 | 0.19 | improved | 1 |
+| 1 | 0.55 | 0.79 | 0.24 | improved | 2 |
+| 2 | 0.84 | 0.84 | 0.0 | no_change | 0 |
+| 3 | 0.74 | 0.69 | -0.05 | regressed | 1 |
+| 4 | 0.58 | 0.66 | 0.08 | improved | 2 |
+
 ## 결정
 
 pass

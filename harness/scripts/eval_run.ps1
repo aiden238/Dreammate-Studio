@@ -32,7 +32,7 @@ $py = @"
 import json
 from backend.fastapi.eval import run_golden_set_eval, write_report
 
-result = run_golden_set_eval(mode='mock')
+result = run_golden_set_eval(mode='mock', include_revise_effect=True)
 path = write_report(result, trigger='$Trigger')
 summary = result['summary']
 gate = result['gate']
@@ -40,6 +40,10 @@ print('REPORT::' + path)
 print('SCHEMA_RATE::' + str(summary['schema_rate']))
 print('PASS_RATE::' + str(summary['pass_rate']))
 print('GATE_PASSED::' + str(gate['passed']))
+re = summary.get('revise_effect') or {}
+print('REVISE_MEAN_DELTA::' + str(re.get('mean_delta')))
+print('REVISE_IMPROVED_RATE::' + str(re.get('improved_rate')))
+print('REVISE_REGRESSED_RATE::' + str(re.get('regressed_rate')))
 for v in gate['violations']:
     print('VIOLATION::' + v)
 "@
