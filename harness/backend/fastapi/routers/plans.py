@@ -55,7 +55,12 @@ from ..orchestration import (
     not_found_response,
     now_iso,
 )
-from ..rag import RetrievalResult, run_rag_retrieval
+from ..rag import (
+    RetrievalResult,
+    build_candidate_from_feedback,
+    enqueue_feedback_candidate,
+    run_rag_retrieval,
+)
 from ..schemas.output import (
     Body,
     CriticEvaluation,
@@ -112,6 +117,12 @@ _feedback_repo: FeedbackRepo = FeedbackRepo(
     supabase_client=get_supabase(),
     in_memory_store={},
 )
+
+# Phase 9 Slice 4 (ADR-031): feedback → candidate_knowledge 적재 경로 (Brand Memory 준비).
+#   - feedback 저장 후 candidate_knowledge(status='pending') 로 graceful 적재 (데이터 누적 인프라).
+#   - ★ pending 까지만 — 자동 승격 X (NG12). P-AUX-2 agent 미구현 (NG1).
+#   - Supabase 사용 가능 시 candidate_knowledge INSERT, 아니면 본 in-memory list fallback.
+_candidate_store: list[dict[str, Any]] = []
 
 
 # ─── helper re-export (backward-compat 별칭) ──────────────────────────
@@ -342,6 +353,27 @@ async def plans_feedback(plan_id: str, req: FeedbackRequest, request: Request):
         reason=req.reason,  # repo 가 PII 마스킹
         auth_user_id=_auth_user_id(request),
     )
+
+    # Phase 9 Slice 4 (ADR-031): feedback → candidate_knowledge(pending) 적재 (Brand Memory 준비).
+    #   - graceful: 적재 실패해도 feedback 응답 차단 X (try/except).
+    #   - ★ pending 까지만 — 자동 승격 X (NG12). reason 은 repo 가 이미 마스킹한 값(row) 사용 (T5 이중 방어).
+    try:
+        candidate = build_candidate_from_feedback(
+            plan_id,
+            req.event_type,
+            reason=row.get("reason"),
+            option_index=req.option_index,
+        )
+        await enqueue_feedback_candidate(
+            candidate,
+            supabase_client=_feedback_repo.client,
+            in_memory_store=_candidate_store,
+        )
+    except Exception as exc:  # pragma: no cover — graceful (적재 실패 시 응답 차단 0)
+        logger.warning(
+            "feedback_candidate_enqueue_failed: %s (feedback 저장은 성공)",
+            exc.__class__.__name__,
+        )
 
     now = now_iso()
     logger.info(
