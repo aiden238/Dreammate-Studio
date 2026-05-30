@@ -8,7 +8,24 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 
 ## 현재 Active Phase
 
-**🟡 pending_user_decision** — Phase 9 ✅ done (2026-05-31). 다음 phase는 사용자 결정 대기 (옵션 A Phase 9.5 eval-run / B Phase 10 통합 / C Phase 11+).
+**🟢 Phase 9.5 active (2026-05-31 entry)** — eval-run 정식화 + Critic deprecated 0–5 Full 제거 (5 Slice, 6~10h, 모두 sub-agent dispatch). Slice 1 (Pre-Entry) 완료.
+
+**Phase 9.5. eval-run 정식화 + Critic deprecated 0–5 Full 제거 🟢 active (2026-05-31 entry)** — golden_set 회귀 runner(mock-deterministic, CI 가능) + revise effect eval 구현 → eval-design/eval-run Skill 첫 정식 → eval 로 canonical-only 품질 검증 후 Critic deprecated 0–5 fallback + CriticEvaluation Optional deprecated 필드 Full 제거 (Critic 평가 체계 canonical 0–1 단일 표준화).
+
+- 한 줄 정의: golden_set 11 케이스 회귀 runner(mock-deterministic primary + 실 LLM mode flag)와 revise effect eval 을 구현하여 eval-design/eval-run Skill 을 첫 정식 트리거하고, eval 로 canonical-only 품질을 검증한 뒤 Critic deprecated 0–5 fallback + CriticEvaluation Optional deprecated 필드를 Full 제거한다 (run_critic 0–5 출력 불변 — P-007 prompt contract).
+- **5 Slice 모두 sub-agent dispatch (★ 순서: eval runner(2~3) → eval 검증 → deprecated 제거(4))**:
+  - Slice 1 [Pre-Entry — validations(V1~V7 PASS) + eval-design Skill ★ 첫 정식 + ADR-033/034] ✅ (entry commit)
+  - Slice 2 [eval-run golden_set runner — loader + mock 회귀 + 채점 + 임계값 + report + eval-run ★ 첫 정식] (예정)
+  - Slice 3 [revise effect eval + eval-run 실행 (canonical-only 품질 baseline)] (예정)
+  - Slice 4 [Critic deprecated 0–5 Full 제거 — eval 검증 후 + contract-change CC-005] (예정)
+  - Slice 5 [Close] (예정)
+- **사용자 결정 2건 반영 (2026-05-31)**:
+  - **Critic deprecated 0–5: Full 제거** — select_best_plan_index fallback + DeprecationWarning + CriticEvaluation Optional deprecated 필드. ★ run_critic 0–5 출력 불변 (P-007 prompt contract, NG3). eval 검증 후 제거 (순서).
+  - **eval-run: Mock-deterministic primary** + 실 LLM mode 문서. RAG eval_rubric Phase 10+ 이관 (NG1).
+- ADR-033 (eval-run harness — mock-deterministic primary + 실 LLM mode + §eval-design 결과 + 임계값 게이트 + regression_results) + ADR-034 (Critic deprecated 0–5 Full 제거 — fallback + CriticEvaluation Optional 필드, run_critic 0–5 불변, eval 검증 순서).
+- **eval-design Skill ★ 첫 정식 트리거** (Slice 1, ADR-033 §eval-design) + multi-llm-validation **formal 일곱 번째** (V1~V7 PASS).
+- baseline: pytest 293 + smoke 15 + scenario_sim v5 25 + P-X1 42 + PlanCard 30 + component_map 40 (Phase 9 종료 baseline 유지).
+- ★ golden_set 케이스 수 정정: 현 golden_set.md v1.0.0 §2 는 GS-001~GS-011 (11 케이스)만 정의 (entry plan 일부 "47" 기재 → 정정, 케이스 확대 NG10 Phase 10+).
 
 **Phase 9. 결과 저장 + 피드백 ✅ done (2026-05-31)** — plan 선택/피드백 영속화(실 plans 테이블 정합) + normalize_to_canonical wiring(critic step canonical 0–1 live, deprecated 0–5 병행 회귀 0) + Brand Memory 준비(P-AUX-2 설계, agent 미구현 Phase 10+) + 피드백 UI wrapper(PlanCard·component_map 무수정). 6 Slice 모두 sub-agent dispatch 완료.
 
@@ -135,7 +152,7 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 - Phase 1 legacy rag/{retriever, fallback}.py + Phase 7 rag/retrieval.py 공존 (P-LEGACY-CONSOLIDATION-001 누적 2회 — Phase 11+ Custom RAG 시점 자연 통합)
 - 실측 시간 ~13~14h (추정 12~16h 내)
 
-**🟡 Now: pending_user_decision (Phase 9 ✅ done 2026-05-31)** — 결과 저장 + 피드백 (6 Slice 완료, 실측 ~10~13h). 다음 후보: A Phase 9.5 eval-run / B Phase 10 통합 테스트 / C Phase 11+.
+**🟢 Now: Phase 9.5 active (2026-05-31 entry)** — eval-run 정식화 + Critic deprecated 0–5 Full 제거 (5 Slice, 6~10h, 모두 sub-agent dispatch). Slice 1 (Pre-Entry — validations + eval-design ★ 첫 정식 + ADR-033/034) 완료. Phase 9 ✅ done (2026-05-31, 결과 저장 + 피드백, 6 Slice, 실측 ~10~13h).
 
 ## 이전 결정 (옵션 B 변형: Phase 6 선행)
 
@@ -148,11 +165,11 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 ## migration_progress
 
 ```yaml
-current_sprint: "phase-9-complete"
-current_sprint_step: phase_9_slice_6_close_done
-total_steps_in_sprint: 6
-last_completed_action: "Phase 9 (결과 저장 + 피드백) 종료 — Slice 6 close: smoke_test_phase_9.ps1 신규 (15 체크, 14 PASS + 1 WARN intended) + scenario_simulation v5 25/25 (P-X2 일곱 번째) + audit_naming 0 drift + audit_page_component 2 intended WARN + agent-io-check drift 0 + design-review(피드백 UI) PASS + retrospectives/phase-9.md + patterns.md (P-FEEDBACK-LOOP-001 + P-CANONICAL-WIRING-001 신규 + P-X1 42연속 + P-VALIDATION-FORMAL-001 여섯 번째) + skill_usage_log (security-review 3 + contract-change CC-004) + closing_notes + archive 이동 + state docs 갱신. A1~A10 10/10 + M1~M4 4/4 PASS. pytest 293/293 + smoke 15/15 + scenario_sim v5 25/25 + P-X1 42연속 + PlanCard 30연속 + component_map 40연속"
-next_action: "다음 phase 사용자 결정 대기 (A Phase 9.5 eval-run — Critic deprecated 0–5 완전 제거 + revise effect eval + eval-design/eval-run 첫 정식 / B Phase 10 통합 테스트 — end-to-end + P-AUX-2 brand_memory_extractor agent 실 구현 / C Phase 11+ — 4계층 full linkage + 자동 promotion)"
+current_sprint: "phase-9.5-slice-1"
+current_sprint_step: phase_9_5_slice_1_entry_done
+total_steps_in_sprint: 5
+last_completed_action: "Phase 9.5 (eval-run 정식화 + Critic deprecated 0–5 Full 제거) Slice 1 entry — 8 entry files (goals/scope/non_goals/assumptions/multi_slice_plan/notes + validations self/external) + assumptions §6 4-check PASS (audit_naming 0 drift) + multi-llm-validation formal 일곱 번째 (V1~V7 PASS) + eval-design Skill ★ 첫 정식 (golden_set executable format + 채점 차원 schema/structural + revise effect metric + 임계값 게이트 → ADR-033 §eval-design) + ADR-033 (eval-run harness mock-deterministic primary + 실 LLM mode + regression_results + 임계값) + ADR-034 (Critic deprecated 0–5 Full 제거 — fallback + CriticEvaluation Optional 필드, run_critic 0–5 불변 P-007 NG3, eval 검증 순서) + skill_usage_log (eval-design 0→1 + multi-llm 7 + phase-start 12 + qa-check 37) + PROJECT_STATE phase_9_5_* + active 전환. baseline 유지: pytest 293 + smoke 15 + scenario_sim v5 25 + P-X1 42 + PlanCard 30 + component_map 40"
+next_action: "Phase 9.5 Slice 2 sub-agent dispatch — eval/ module (golden_set_loader + runner mock-deterministic + report) + scripts/eval_run.ps1 + tests/test_eval_runner + eval-run Skill ★ 첫 정식 실행 (mock-deterministic golden_set 11 케이스 회귀 + 임계값 게이트)"
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
@@ -636,8 +653,24 @@ phase_9_deferred_to_next:
   - four_layer_full_linkage_plan_options  # Phase 11+ (개선 제안 §3, 누적 2회 Phase 5 + Phase 9 — selected_plans 실 plans 정합 → idealized schema 연결)
   - eval_run_formalization  # Phase 9.5 (개선 제안 §4 — Critic canonical live 활성으로 baseline 준비 완료)
   - user_data_auto_promotion  # Phase 10+/11+ (개선 제안 §5 — feedback→candidate pending 적재 완료, rag-update 두 번째)
-next_phase_status: pending_user_decision  # A Phase 9.5 eval-run / B Phase 10 통합 / C Phase 11+
-total_commits: 83  # 77 + Phase 9 Slice 1~6 (6 commit: de92e37 + 56cd3f0 + d6e3fa0 + bc94e1b + 4d38062 + Slice 6 final)
+phase_9_5_status: in_progress
+phase_9_5_entry_date: 2026-05-31
+phase_9_5_total_slices: 5
+phase_9_5_completed_slices: 0  # Slice 1 entry done (Pre-Entry — eval module 구현은 Slice 2~)
+phase_9_5_estimated_hours_total: 6-10
+phase_9_5_assumptions_check: PASS  # 4-check 통과 (C1~C10, U1~U5, audit_naming 0 drift)
+phase_9_5_user_decisions_applied:
+  critic_deprecated_full_removal: yes   # fallback + schema, run_critic 0–5 불변 (P-007 NG3), eval 검증 후 제거
+  eval_mock_deterministic_primary: yes  # 실 LLM mode 문서 (CI 가능, 비용 0)
+  rag_eval_rubric_phase_10_plus: yes    # NG1
+  all_slices_sub_agent: yes             # 5 Slice 모두 sub-agent dispatch
+phase_9_5_adrs: [ADR-033, ADR-034]  # eval-run harness (mock-deterministic) + Critic deprecated 0–5 Full 제거
+phase_9_5_skills_first_trigger:
+  - eval_design_first_formal  # ★ 첫 정식 (Slice 1, ADR-033 §eval-design)
+  - multi_llm_validation_formal_seventh  # 일곱 번째 트리거 (Slice 1 V1~V7)
+phase_9_5_golden_set_case_count: 11  # GS-001~GS-011 (entry plan "47" 정정 — 케이스 확대 NG10 Phase 10+)
+phase_9_5_slice_1_entry_commit: pending  # entry commit 직후 채움
+total_commits: 84  # 83 + Phase 9.5 Slice 1 entry (1 commit)
 last_updated: 2026-05-31
 ```
 
