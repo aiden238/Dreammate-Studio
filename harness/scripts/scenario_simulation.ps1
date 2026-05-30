@@ -5,9 +5,10 @@
 # v3 (Phase 7 Slice 5): 10 -> 15 scenarios (RAG 5단계 + chunking + retrieval + quality_filter + LLM Wiki 추가)
 # v4 (Phase 8 Slice 5): 15 -> 20 scenarios (MOA orchestrator + ProgressSink + progress_store 브릿지 + SSE 실 stage + prompt_registry semver 추가)
 # v5 (Phase 9 Slice 6): 20 -> 25 scenarios (selected_plans + feedback_events + normalize wiring + brand_memory prep + 피드백 UI 추가)
+# v6 (Phase 9.5 Slice 5): 25 -> 30 scenarios (eval runner + revise effect + Critic deprecated 제거 + eval report + generate.py canonical wiring 추가)
 # Called automatically by phase-complete Skill v1.2.0 §1.6 at Phase close.
 #
-# Phase 9 final 목표: 25/25 PASS (P-X2 일곱 번째 자동 게이트)
+# Phase 9.5 final 목표: 30/30 PASS (P-X2 여덟 번째 자동 게이트)
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference   = 'SilentlyContinue'
@@ -15,9 +16,9 @@ $ProgressPreference   = 'SilentlyContinue'
 $ROOT = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Set-Location $ROOT
 
-Write-Host "=== scenario_simulation v5 (P-X2 auto-gate, Phase 9) ===" -ForegroundColor Cyan
+Write-Host "=== scenario_simulation v6 (P-X2 auto-gate, Phase 9.5) ===" -ForegroundColor Cyan
 Write-Host "Root: $ROOT"
-Write-Host "Note: Phase 9 final target 25/25 PASS (P-X2 일곱 번째 자동 게이트)"
+Write-Host "Note: Phase 9.5 final target 30/30 PASS (P-X2 여덟 번째 자동 게이트)"
 Write-Host ""
 
 $scenarios = @(
@@ -54,7 +55,14 @@ $scenarios = @(
     @{ Id = "S22"; Name = "feedback_events 피드백 저장 (feedback_repo graceful + PII 마스킹)"; Files = @("backend/fastapi/db/repositories/feedback_repo.py", "backend/fastapi/routers/plans.py") },
     @{ Id = "S23"; Name = "normalize_to_canonical wiring (moa_orchestrator critic step + critic.py)"; Files = @("backend/fastapi/orchestration/moa_orchestrator.py", "backend/fastapi/agents/critic.py") },
     @{ Id = "S24"; Name = "Brand Memory 준비 (feedback->candidate 적재 + brand_memory_repo)"; Files = @("backend/fastapi/rag/feedback_to_candidate.py", "backend/fastapi/db/repositories/brand_memory_repo.py") },
-    @{ Id = "S25"; Name = "피드백 UI inline (plan page.tsx wrapper + lib/api.ts)"; Files = @("apps/web/app/plan/[plan_id]/page.tsx", "apps/web/lib/api.ts") }
+    @{ Id = "S25"; Name = "피드백 UI inline (plan page.tsx wrapper + lib/api.ts)"; Files = @("apps/web/app/plan/[plan_id]/page.tsx", "apps/web/lib/api.ts") },
+
+    # Phase 9.5 신규 (5, eval-run 정식화 + Critic deprecated 0–5 Full 제거)
+    @{ Id = "S26"; Name = "eval runner (golden_set loader + mock-deterministic 회귀)"; Files = @("backend/fastapi/eval/runner.py", "backend/fastapi/eval/golden_set_loader.py") },
+    @{ Id = "S27"; Name = "revise effect eval (revise loop 개선 효과 metric)"; Files = @("backend/fastapi/eval/revise_effect.py") },
+    @{ Id = "S28"; Name = "Critic deprecated 0–5 Full 제거 (canonical-only)"; Files = @("backend/fastapi/agents/critic.py", "backend/fastapi/schemas/output.py") },
+    @{ Id = "S29"; Name = "eval report (regression_results 출력 + eval_run.ps1)"; Files = @("backend/fastapi/eval/report.py", "scripts/eval_run.ps1") },
+    @{ Id = "S30"; Name = "generate.py canonical wiring (critic verdict normalize)"; Files = @("backend/fastapi/routers/generate.py", "backend/fastapi/agents/critic.py") }
 )
 
 $pass = 0
@@ -88,7 +96,7 @@ if ($fail -eq 0) {
 } else {
     Write-Host ""
     Write-Host "scenario_simulation PARTIAL - $pass/$($scenarios.Count) PASS, $fail FAIL" -ForegroundColor Yellow
-    Write-Host "  (Phase 9 final target: 25/25 PASS — P-X2 일곱 번째 자동 게이트)" -ForegroundColor Yellow
+    Write-Host "  (Phase 9.5 final target: 30/30 PASS — P-X2 여덟 번째 자동 게이트)" -ForegroundColor Yellow
     # phase 진행 중 의도된 PARTIAL은 exit 0 유지 (자동 게이트는 phase-complete 시점에 별도 strict 모드 권장)
     exit 0
 }

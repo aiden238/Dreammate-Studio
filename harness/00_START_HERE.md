@@ -46,10 +46,11 @@
 
 ## 현재 active Phase
 
-**🟡 pending_user_decision** — Phase 9 ✅ done (2026-05-31)
+**🟡 pending_user_decision** — Phase 9.5 ✅ done (2026-05-31)
 
-Phase 9 ✅ done (2026-05-31). 다음 phase는 사용자 결정 대기 (옵션 A Phase 9.5 eval-run / B Phase 10 통합 / C Phase 11+).
+Phase 9.5 ✅ done (2026-05-31). 다음 phase는 사용자 결정 대기 (옵션 A Phase 10 통합 / B Phase 11+).
 
+- Phase 9.5 archive: `phases/archive/phase-9.5-eval-run/` (참조 가능 — closing_notes + 회고 + eval-run 정식화 baseline + generate.py deviation + 다음 옵션 A/B)
 - Phase 9 archive: `phases/archive/phase-9-result-feedback/` (참조 가능 — closing_notes + 회고 + 결과저장/피드백 baseline + 다음 옵션 A/B/C)
 - Phase 8 archive: `phases/archive/phase-8-moa-lite/` (참조 가능 — closing_notes + 회고 + MOA orchestrator baseline + 다음 옵션 A/B/C/D)
 - Phase 7 archive: `phases/archive/phase-7-rag-lite/` (참조 가능 — closing_notes + 회고 + RAG Lite baseline + 다음 옵션 A/B/C/D)
@@ -65,34 +66,29 @@ Phase 9 ✅ done (2026-05-31). 다음 phase는 사용자 결정 대기 (옵션 A
 
 **다음 phase 옵션 (사용자 결정 대기)**:
 
-- **A. Phase 9.5 — eval-run Skill 정식화** (4~6h)
-  - golden_set 회귀 + revise effect eval (Phase 4.5 D6 누적 7회 deferred 해소)
-  - Critic deprecated 0–5 fallback 완전 제거 (Phase 9 canonical live 활성 → 다음 단계, Phase 6 ADR-018 + Phase 8 + Phase 9 누적 3회)
-  - 간이 RAG eval_rubric → 정식 (Phase 7 개선 제안 §6)
-  - eval-design + eval-run Skill 첫 정식 트리거 baseline (Phase 9 canonical live 활성으로 eval baseline 준비 완료)
-- **B. Phase 10 — MVP 통합 테스트** (6~8h)
-  - MVP 전체 end-to-end 검증 (Discovery + Quick → 3-plan → Critic revise (canonical) → save → select → feedback → SSE progress)
-  - Phase 1~9 누적 baseline 통합 회귀
-  - P-AUX-2 brand_memory_extractor agent 실 구현 (Phase 9 schema + 적재 경로 준비 완료) + 배포 테스트 게이트 A~G 준비
-- **C. 다른 우선순위** (Phase 11+)
+- **A. Phase 10 — MVP 통합 테스트** (6~8h)
+  - MVP 전체 end-to-end 검증 (Discovery + Quick → 3-plan → Critic revise (canonical-only) → save → select → feedback → SSE progress)
+  - Phase 1~9.5 누적 baseline 통합 회귀 + eval-run golden_set 회귀 baseline 활용
+  - P-AUX-2 brand_memory_extractor agent 실 구현 (Phase 9 schema + 적재 경로 준비 완료) + 실 LLM eval mode 운영 활성 + RAG eval_rubric golden_set 정식화 + 배포 테스트 게이트 A~G 준비
+- **B. 다른 우선순위** (Phase 11+)
   - 4계층 full linkage (plan_options/video_projects — selected_plans 실 plans 정합 → idealized schema 연결, 누적 2회)
   - 사용자 데이터 자동 promotion (rag-update Skill 두 번째 — feedback→candidate pending 적재 완료)
   - SSE full async worker (누적 2회) / prompt A/B 실행 인프라 / Supabase SQL function 정의 / cost-review Skill
 
-**Phase 9 핵심 성과**:
-- **P-X1 §SELF-VERIFICATION 42연속 PASS** (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6)
-- **PlanCard.tsx 30연속 0줄** (Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5 + Phase 9 6 — frontend slice 있어도 wrapper)
-- **component_map.md 40연속 0줄** (Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5 + Phase 9 6)
-- **결과 저장(selected_plans) + 피드백(feedback_events) 영속화 graceful (ADR-030)** — PlansRepo graceful 패턴 + reason 저장 전 PII 마스킹 + RLS user 격리 (실 plans 정합)
-- **normalize_to_canonical wiring (ADR-032)** — critic_evaluation canonical 0–1 live + deprecated 0–5 병행 회귀 0 (additive 비파괴 사본, 기존 pytest 249 수정 0, warnings 67→16)
-- **Brand Memory 준비 (ADR-031)** — schema + BrandMemoryRepo + feedback→candidate(pending) 적재 경로 + P-AUX-2 설계 명세 (agent 미구현 Phase 10+)
-- **피드백 UI inline (Slice 5)** — 선택 버튼 + 반려 이유 textarea page.tsx inline (PlanCard·component_map 0줄, wrapper)
-- **security-review Skill 두 번째 정식** (Slice 1 — 피드백 reason PII T1~T6, P-SECURITY-REVIEW-001 강화)
-- **contract-change Skill 본격 다섯 번째 (CC-004)** (db_schema.md selected_plans/feedback_events 실 plans 정합)
-- **multi-llm-validation formal 여섯 번째** (V1~V7 PASS — selection/feedback + normalize wiring + Brand Memory 준비)
-- **agent-io-check Skill 다섯 번째 회귀** (normalize wiring 후 agent_io_contract §5 ↔ critic.py drift 0)
-- 3 ADR 신규 (ADR-030 feedback/selection + ADR-031 Brand Memory prep + ADR-032 normalize_to_canonical wiring)
-- pytest 249 → **293/293** (+44 신규, 기존 수정 0) + smoke 15/15 + scenario_sim v5 25/25 (P-X2 일곱 번째)
-- 신규 패턴: P-FEEDBACK-LOOP-001 + P-CANONICAL-WIRING-001 + P-X1-EFFECT-001 update (42연속) + P-VALIDATION-FORMAL-001 update (여섯 번째)
-- 사용자 결정 3건 mapping 완료 (Brand Memory 준비만 agent Phase 10+ / 피드백 UI wrapper / normalize wiring deprecated 병행)
-- large phase 실측 ~10~13h (추정 10~14h 내)
+**Phase 9.5 핵심 성과**:
+- **P-X1 §SELF-VERIFICATION 47연속 PASS** (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5)
+- **PlanCard.tsx 35연속 0줄** (… + Phase 9 6 + Phase 9.5 5 — frontend canonical 전환에서도 wrapper)
+- **component_map.md 45연속 0줄** (… + Phase 9 6 + Phase 9.5 5)
+- **eval-design + eval-run Skill 둘 다 첫 정식 트리거 (ADR-033)** — golden_set 11 케이스 mock-deterministic 회귀 runner (CI 가능 비용 0) + schema 100%/structural 채점 + 임계값 게이트 (schema 100% / 점수 ±0.3 / 광고 / 차단 단어) + regression_results
+- **revise effect eval (Phase 4.5 D6 해소)** — revise attempt별 canonical overall_score 0–1 delta (mean_delta 0.092 / improved 60% / regressed 20%)
+- **Critic deprecated 0–5 Full 제거 (ADR-034 + CC-005)** — select_best_plan_index fallback + CriticEvaluation Optional 0–5 필드 제거 → canonical(0–1) 단일 표준 (eval 제거 전/후 동일 입증, run_critic 0–5 불변 P-007 NG3, warnings 16→0)
+- **generate.py canonical wiring 보강** — Phase 1 endpoint normalize 누락 회귀 방지 (향후 신규 critic consumer normalize_to_canonical 경유 필수)
+- **frontend canonical 전환** — lib/types.ts CriticEvaluation canonical + page.tsx canonical 렌더 (PlanCard·component_map 0줄)
+- **contract-change Skill 본격 여섯 번째 (CC-005)** (output_schema §9 + agent_io_contract §5 canonical-only + db_schema)
+- **multi-llm-validation formal 일곱 번째** (V1~V7 PASS — eval mock-deterministic + deprecated 제거 경계 + 임계값 게이트)
+- **agent-io-check Skill 여섯 번째 회귀** (deprecated 제거 후 agent_io_contract §5 canonical-only ↔ critic.py drift 0)
+- 2 ADR 신규 (ADR-033 eval-run harness + ADR-034 Critic deprecated 0–5 Full 제거)
+- pytest 293 → **339/339** (+46 신규) + smoke 16/16 + scenario_sim v6 30/30 (P-X2 여덟 번째) + eval gate PASS
+- 신규 패턴: P-EVAL-HARNESS-001 + P-DEPRECATED-REMOVAL-001 + P-X1-EFFECT-001 update (47연속) + P-VALIDATION-FORMAL-001 update (일곱 번째)
+- 사용자 결정 2건 mapping 완료 (Critic deprecated Full 제거 eval 검증 후 / eval mock-deterministic primary + RAG eval_rubric Phase 10+)
+- eval mini-phase 실측 ~7~10h (추정 6~10h 내)

@@ -24,8 +24,9 @@
 | 7 | RAG Lite (candidate_knowledge 5단계 MVP 전부) | **done** (2026-05-29) | 5 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M4 4/4 + **P-X1 31연속** + PlanCard 19연속 + component_map 29연속 + ADR-025 (RAG architecture) + ADR-026 (5단계 promotion logic) + rag-design ★ 첫 정식 + rag-update ★ 첫 정식 + contract-change rag_data_contract §18 + pytest 223/223 (+51 신규) + smoke 13/13 + scenario_sim v3 15/15 (P-X2 다섯 번째) + P-RAG-5STAGE-001 신규 + P-RAG-GRACEFUL-001 신규 + P-LEGACY-CONSOLIDATION-001 누적 2회 (정식 채택 임박) + graceful 5종 marker |
 | 8 | MOA Lite 본격 (orchestrator 추출 + SSE worker + prompt_registry 정식화) | **done** (2026-05-29) | 5 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M5 5/5 + **P-X1 36연속** + PlanCard 24연속 + component_map 34연속 + ADR-027 (MOA orchestrator behavior-preserving) + ADR-028 (SSE progress integration) + ADR-029 (prompt_registry semver) + ai-architecture-review ★ 첫 정식 + prompt-version-review ★ 첫 정식 + contract-change CC-003 (prompt_registry + agent_io_contract v1.2.0) + pytest 249/249 (+26 신규) + smoke 14/14 + scenario_sim v4 20/20 (P-X2 여섯 번째) + P-MOA-ORCHESTRATOR-001 신규 + P-BEHAVIOR-PRESERVING-001 신규 + plans.py 659→243 god-function 분해 + Critic v1.1.0 conservative adapter |
 | 9 | 결과 저장 + 피드백 (selected_plans + feedback_events 영속화 + normalize wiring + Brand Memory 준비 + 피드백 UI) | **done** (2026-05-31) | 6 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M4 4/4 + **P-X1 42연속** + PlanCard 30연속 + component_map 40연속 + ADR-030 (feedback/selection persistence) + ADR-031 (Brand Memory prep — P-AUX-2 설계 agent 미구현 Phase 10+) + ADR-032 (normalize_to_canonical wiring) + security-review 두 번째 정식 (피드백 PII) + contract-change CC-004 (db_schema.md 실 plans 정합) + pytest 249→293/293 (+44 신규, 기존 수정 0) + smoke 15/15 + scenario_sim v5 25/25 (P-X2 일곱 번째) + P-FEEDBACK-LOOP-001 신규 + P-CANONICAL-WIRING-001 신규 + 피드백 UI inline (PlanCard·component_map 0줄) + deprecated warnings 67→16 |
-| **next** | **🟡 pending_user_decision** (A Phase 9.5 eval-run / B Phase 10 통합 / C Phase 11+) | **next** | Phase 9 ✅ done — 다음 phase 사용자 결정 대기 |
-| 10 | MVP 통합 테스트 | planned | MVP 전체 end-to-end 검증 + Phase 1~9 누적 baseline 통합 회귀 + P-AUX-2 brand_memory_extractor agent 실 구현 + 배포 테스트 게이트 준비 |
+| 9.5 | eval-run 정식화 + Critic deprecated 0–5 Full 제거 | **done** (2026-05-31) | 5 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M4 4/4 + **P-X1 47연속** + PlanCard 35연속 + component_map 45연속 + ADR-033 (eval-run harness mock-deterministic) + ADR-034 (Critic deprecated 0–5 Full 제거) + eval-design ★ 첫 정식 + eval-run ★ 첫 정식 + contract-change CC-005 (output_schema §9 + agent_io_contract §5 canonical-only + db_schema) + pytest 293→339/339 (+46) + smoke 16/16 + scenario_sim v6 30/30 (P-X2 여덟 번째) + eval gate PASS (revise mean_delta 0.092) + Critic warnings 16→0 + P-EVAL-HARNESS-001 신규 + P-DEPRECATED-REMOVAL-001 신규 + revise effect eval (Phase 4.5 D6 해소) + generate.py canonical wiring 보강 |
+| **next** | **🟡 pending_user_decision** (A Phase 10 통합 / B Phase 11+) | **next** | Phase 9.5 ✅ done — 다음 phase 사용자 결정 대기 |
+| 10 | MVP 통합 테스트 | planned | MVP 전체 end-to-end 검증 + Phase 1~9.5 누적 baseline 통합 회귀 + eval-run golden_set 회귀 baseline 활용 + P-AUX-2 brand_memory_extractor agent 실 구현 + 실 LLM eval mode + RAG eval_rubric golden_set 정식화 + 배포 테스트 게이트 준비 |
 | 11~20 | 서비스 안정화 | future | UX, eval, cost, fallback, 피드백 |
 | 21~30 | 확장 / 고도화 | future | Spring, Expo, Custom RAG, LangGraph |
 
@@ -247,42 +248,58 @@ Skill 첫 정식: security-review (두 번째 정식, Slice 1 — 피드백 reas
 3 ADR      : ADR-030 feedback/selection persistence + ADR-031 Brand Memory prep (P-AUX-2 설계) + ADR-032 normalize_to_canonical wiring
 사용자 결정 : 3건 mapping (Brand Memory 준비만 agent Phase 10+ / 피드백 UI wrapper PlanCard·component_map 무수정 / normalize wiring critic step canonical deprecated 병행)
 핵심 성과  : **P-X1 42연속 PASS + PlanCard 30연속 + component_map 40연속 + 결과저장(selected_plans) + 피드백(feedback_events) 영속화 graceful + PII 마스킹 + normalize_to_canonical wiring (canonical 0–1 live, deprecated 0–5 병행 회귀 0, warnings 67→16) + Brand Memory 준비 (feedback→candidate pending 적재, agent Phase 10+) + 피드백 UI inline (PlanCard·component_map 0줄) + security-review 두 번째 정식 + contract-change CC-004**
-다음 Phase : **🟡 pending_user_decision** (A Phase 9.5 eval-run / B Phase 10 통합 / C Phase 11+)
+다음 Phase : Phase 9.5 eval-run 정식화 (✅ done 2026-05-31)
+```
+
+## Phase 9.5 done (archive)
+
+`phases/archive/phase-9.5-eval-run/`
+
+```
+Status     : ✅ DONE (2026-05-31)
+유형       : eval mini-phase (6~10h — eval-run 정식화 + Critic deprecated 0–5 Full 제거)
+Goal       : golden_set 회귀 runner(mock-deterministic, CI 가능) + revise effect eval(Phase 4.5 D6 해소) → eval-design/eval-run Skill 첫 정식 + eval로 canonical-only 품질 검증 후 Critic deprecated 0–5 Full 제거(canonical 단일 표준)
+Result     : 5 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M4 4/4 + smoke 16/16 (15 PASS + 1 WARN intended) + scenario_simulation v6 30/30 (P-X2 여덟 번째) + eval gate PASS (schema 1.0 / pass 1.0 / revise mean_delta 0.092 / improved 0.6 / regressed 0.2) + schema_stress 5/5 (Phase 6 유지) + pytest 293 → 339/339 (+46 신규) + audit_naming 0 drift × 1 + audit_page_component 2 intended drift WARN (Phase 5 baseline 계승) + Critic deprecated warnings 16→0
+산출물     : ~12 신규 + ~8 수정 (backend/fastapi/eval module 5: __init__/golden_set_loader/runner/revise_effect/report + scripts/eval_run.ps1 + tests test_eval_runner+test_revise_effect / agents/critic.py deprecated 제거 + schemas/output.py CriticEvaluation 제거 + routers/generate.py canonical wiring + apps/web/lib/types.ts canonical 전환 + tests/test_critic 의도 delta + docs ADR-033/034 + output_schema/agent_io_contract/db_schema CC-005 + scripts smoke_test_phase_9_5 + scenario_simulation v6 / meta retrospectives + validations + patterns + skill_usage_log + closing_notes + eval/regression_results × 3)
+Sub-agent  : 5 dispatches (Slice 1~5 모두), 충돌 0 — P-X1 5/5 PASS
+회고       : meta/retrospectives/phase-9.5.md
+신규 패턴  : P-EVAL-HARNESS-001 (golden_set mock-deterministic 회귀 + 임계값 게이트 신규 후보) + P-DEPRECATED-REMOVAL-001 (eval 안전망으로 deprecated 제거 신규 후보) + P-X1-EFFECT-001 update (47연속) + P-VALIDATION-FORMAL-001 update (일곱 번째 입증)
+Mitigated  : P-AGENT-SCOPE-001 (47연속 누적 입증 — Phase 3:5 + Phase 4:4 + Phase 4.5:4 + Phase 6:4 + Phase 5:5 + Phase 5.5:4 + Phase 7:5 + Phase 8:5 + Phase 9:6 + Phase 9.5:5)
+Skill 첫 정식: eval-design (★ 첫 정식, Slice 1 — golden_set executable format + 채점 차원 + 임계값 게이트) + eval-run (★ 첫 정식, Slice 2~3 — mock-deterministic 회귀 + revise effect) + contract-change 여섯 번째 본격 (Slice 4 CC-005 — output_schema §9 + agent_io_contract §5 canonical-only) + multi-llm-validation formal 일곱 번째 (V1~V7 PASS) + phase-complete v1.2.0 여덟 번째 자동 게이트 + agent-io-check 여섯 번째 회귀
+2 ADR      : ADR-033 eval-run harness (mock-deterministic primary + 실 LLM mode flag + 임계값 + §eval-design) + ADR-034 Critic deprecated 0–5 Full 제거 (fallback + CriticEvaluation Optional, run_critic 0–5 불변 P-007 NG3)
+사용자 결정 : 2건 mapping (Critic deprecated Full 제거 eval 검증 후 / eval mock-deterministic primary + RAG eval_rubric Phase 10+ 이관)
+핵심 성과  : **P-X1 47연속 PASS + PlanCard 35연속 + component_map 45연속 + eval-design + eval-run Skill 첫 정식 (golden_set 11 케이스 mock-deterministic runner + 임계값, ADR-033) + revise effect eval (Phase 4.5 D6 해소 — mean_delta 0.092 / regressed 20%) + Critic deprecated 0–5 Full 제거 (ADR-034 + CC-005, eval 제거 전/후 동일 입증, warnings 16→0) + generate.py canonical wiring 보강 (Phase 1 endpoint normalize 누락 회귀 방지)**
+★ deviation : generate.py canonical wiring 보강 (수용 — Phase 1 endpoint normalize 누락 발견·보강, 향후 신규 critic consumer normalize_to_canonical 경유 필수)
+다음 Phase : **🟡 pending_user_decision** (A Phase 10 통합 / B Phase 11+)
 ```
 
 ## 🟡 Next phase: pending_user_decision (2026-05-31)
 
 ```
-Phase 9 종료. 다음 phase는 사용자 결정 대기.
+Phase 9.5 종료. 다음 phase는 사용자 결정 대기.
 
 다음 phase 옵션:
 
-A. Phase 9.5 — eval-run Skill 정식화 (4~6h)
-  - golden_set 회귀 + revise effect eval (Phase 4.5 D6 누적 7회 deferred 해소)
-  - Critic deprecated 0–5 fallback 완전 제거 (Phase 9 canonical live 활성 → 다음 단계, Phase 6 ADR-018 + Phase 8 + Phase 9 누적 3회)
-  - 간이 RAG eval_rubric → golden_set 기반 정식 (Phase 7 개선 제안 §6)
-  - eval-design + eval-run Skill 첫 정식 트리거 baseline (Phase 9 canonical live 활성으로 eval baseline 준비 완료)
-
-B. Phase 10 — MVP 통합 테스트 (6~8h)
-  - MVP 전체 end-to-end 검증 (Discovery + Quick → 3-plan → Critic revise (canonical) → save → select → feedback → SSE progress)
-  - Phase 1~9 누적 baseline 통합 회귀
+A. Phase 10 — MVP 통합 테스트 (6~8h)
+  - MVP 전체 end-to-end 검증 (Discovery + Quick → 3-plan → Critic revise (canonical-only) → save → select → feedback → SSE progress)
+  - Phase 1~9.5 누적 baseline 통합 회귀 + eval-run golden_set 회귀 baseline 활용
   - P-AUX-2 brand_memory_extractor agent 실 구현 (Phase 9 schema + 적재 경로 준비 완료 → 데이터 누적 후 활성)
+  - 실 LLM eval mode 운영 활성 (Phase 9.5 개선 제안 §1) + RAG eval_rubric golden_set 정식화 (개선 제안 §2) + golden_set 11 → 확대 (개선 제안 §3)
   - 배포 테스트 게이트 A~G 준비
 
-C. 다른 우선순위 (Phase 11+)
+B. 다른 우선순위 (Phase 11+)
   - 4계층 full linkage (plan_options/video_projects — selected_plans 실 plans 정합 → idealized schema 연결, 누적 2회 Phase 5 + Phase 9)
   - 사용자 데이터 자동 promotion (rag-update Skill 두 번째 — feedback→candidate pending 적재 완료)
   - SSE full async worker (누적 2회 Phase 5 + Phase 8) / prompt A/B 실행 인프라 (multi-provider 대비)
   - Supabase SQL function `match_approved_knowledge` 정의 (운영 단계 필수) / cost-review Skill 정식화
 
 진입 전 권장 검토:
-  - meta/retrospectives/phase-9.md (P-FEEDBACK-LOOP-001 + P-CANONICAL-WIRING-001 신규 후보 + 개선 제안 §1~5)
-  - meta/patterns.md (P-X1-EFFECT-001 42연속, P-VALIDATION-FORMAL-001 여섯 번째, P-FEEDBACK-LOOP-001 + P-CANONICAL-WIRING-001 신규)
-  - phases/archive/phase-9-result-feedback/closing_notes.md (Phase 9 baseline + 다음 옵션 A/B/C + 운영 권장)
-  - docs/decisions/phase_9_feedback_selection.md (ADR-030)
-  - docs/decisions/phase_9_brand_memory_prep.md (ADR-031 — P-AUX-2 설계, agent Phase 10+)
-  - docs/decisions/phase_9_critic_canonical_wiring.md (ADR-032)
-  - docs/contracts/db_schema.md §4.3/§5.2 (Phase 9 Slice 2 — CC-004)
+  - meta/retrospectives/phase-9.5.md (P-EVAL-HARNESS-001 + P-DEPRECATED-REMOVAL-001 신규 후보 + 개선 제안 §1~3)
+  - meta/patterns.md (P-X1-EFFECT-001 47연속, P-VALIDATION-FORMAL-001 일곱 번째, P-EVAL-HARNESS-001 + P-DEPRECATED-REMOVAL-001 신규)
+  - phases/archive/phase-9.5-eval-run/closing_notes.md (Phase 9.5 baseline + generate.py deviation + 다음 옵션 A/B + 운영 권장)
+  - docs/decisions/phase_9_5_eval_run_harness.md (ADR-033)
+  - docs/decisions/phase_9_5_critic_deprecated_removal.md (ADR-034)
+  - docs/contracts/output_schema.md §9 + agent_io_contract.md §5 (Phase 9.5 Slice 4 — CC-005 canonical-only)
 ```
 
 ## Phase 2~3 Hybrid UX 분기 (planned, 중간 상세화)

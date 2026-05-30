@@ -100,16 +100,16 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **재평가 시점**: Phase 3 코드 phase 진행 중 (같은 .tsx 파일 sub-section 동시 수정 위험 ↑) — P-X1 적용 후 효과 측정
 - **연관 Skill / Contract**: phase-start §6.3, multi_slice_plan template, sub-agent prompt format
 
-### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 42연속 PASS 효과 측정 (update 2026-05-31 Phase 9)
+### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 47연속 PASS 효과 측정 (update 2026-05-31 Phase 9.5)
 
-- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 = **42 Slice 누적**, 0 deviation)
-- **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 13연속 update — Phase 6에서 17연속 update — Phase 5에서 22연속 update — Phase 5.5에서 26연속 update — Phase 7에서 31연속 update — Phase 8에서 36연속 update — Phase 9에서 **42연속 누적 update**
-- **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md + meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md + meta/retrospectives/phase-7.md + meta/retrospectives/phase-8.md + meta/retrospectives/phase-9.md §P-X1 42연속 효과 측정
-- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 → Phase 4 4/4 → Phase 4.5 4/4 → Phase 6 4/4 → Phase 5 5/5 → Phase 5.5 4/4 → Phase 7 5/5 → Phase 8 5/5 → Phase 9 6/6 = **42연속 PASS**. Phase 9는 db migration + repo + router + orchestrator + **frontend** 전 영역을 건드리는 large phase 임에도 0건 재발 — Slice별 폴더/파일 격리 + forbidden 명시로 baseline 침범 0. **frontend slice(Slice 5)에서도 page.tsx inline + lib/api wrapper로 PlanCard·component_map 0줄 유지** (P-X1의 frontend 확장). **proposal → 적용 → 9 phase 누적 효과 측정 사이클 + large/보안/consolidation/RAG/orchestration-refactor/feedback-frontend 모두 확장 입증**.
-- **증거 (Phase 3 + Phase 4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9)**:
-  - Slice 1~42 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6) 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
-  - `git diff f50bc74..HEAD -- harness/apps/web/component_map.md` → **0줄 (40연속, Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5 + Phase 9 6)**
-  - `git diff 76b4d2c..HEAD -- harness/apps/web/components/PlanCard.tsx` → **0줄 (30연속, Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5 + Phase 9 6 — 사용자 결정 6-a 계승, frontend slice에서도 wrapper로 0줄)**
+- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 = **47 Slice 누적**, 0 deviation)
+- **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 13연속 update — Phase 6에서 17연속 update — Phase 5에서 22연속 update — Phase 5.5에서 26연속 update — Phase 7에서 31연속 update — Phase 8에서 36연속 update — Phase 9에서 42연속 update — Phase 9.5에서 **47연속 누적 update**
+- **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md + meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md + meta/retrospectives/phase-7.md + meta/retrospectives/phase-8.md + meta/retrospectives/phase-9.md + meta/retrospectives/phase-9.5.md §P-X1 47연속 효과 측정
+- **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 → Phase 4 4/4 → Phase 4.5 4/4 → Phase 6 4/4 → Phase 5 5/5 → Phase 5.5 4/4 → Phase 7 5/5 → Phase 8 5/5 → Phase 9 6/6 → Phase 9.5 5/5 = **47연속 PASS**. Phase 9.5는 eval module 신규 + critic.py/schemas deprecated 제거 + frontend canonical 전환을 건드리는 delicate phase 임에도 0건 재발 — Slice별 폴더/파일 격리 + forbidden 명시 + ★ 제거 순서 강제(eval→검증→제거)로 baseline 침범 0. **frontend canonical 전환 slice(Slice 4)에서도 lib/types.ts + page.tsx inline으로 PlanCard·component_map 0줄 유지** (P-X1의 frontend 확장). **proposal → 적용 → 10 phase 누적 효과 측정 사이클 + large/보안/consolidation/RAG/orchestration-refactor/feedback-frontend/eval-deprecated-removal 모두 확장 입증**.
+- **증거 (Phase 3 + Phase 4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5)**:
+  - Slice 1~47 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5) 모든 sub-agent commit message에 "§SELF-VERIFICATION PASS / 0 out-of-scope edits" 명시
+  - `git diff f50bc74..HEAD -- harness/apps/web/component_map.md` → **0줄 (45연속, Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5 + Phase 9 6 + Phase 9.5 5)**
+  - `git diff 76b4d2c..HEAD -- harness/apps/web/components/PlanCard.tsx` → **0줄 (35연속, Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 — 사용자 결정 6-a 계승, frontend canonical 전환에서도 wrapper로 0줄)**
   - phases/active/phase-3-pwa-impl/deviations.md → 0건 entry
   - phases/active/phase-4-fastapi-extension/deviations.md → 1건 entry (D-1 audit drift, intended → Slice 4 해소)
   - phases/active/phase-4.5-critic-revise-loop/deviations.md → 0건 entry
@@ -119,12 +119,13 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - phases/active/phase-7-rag-lite/ → 0건 (large RAG phase, audit_page_component 2 drift는 Phase 5 baseline 계승 WARN)
   - phases/active/phase-8-moa-lite/ → 0건 (large orchestration phase, behavior-preserving 의도된 2 version assertion 제외 baseline 수정 0, audit_page_component 2 drift는 Phase 5 baseline 계승 WARN)
   - phases/archive/phase-9-result-feedback/ → 0건 (large feedback phase, normalize wiring additive Optional baseline 수정 0, frontend slice에서도 PlanCard·component_map 0줄, audit_page_component 2 drift는 Phase 5 baseline 계승 WARN)
+  - phases/archive/phase-9.5-eval-run/ → 0건 (eval mini-phase, deprecated 0–5 제거는 eval 안전망 + 의도된 test_critic deprecated-fallback delta만, frontend canonical 전환에서도 PlanCard·component_map 0줄, audit_page_component 2 drift는 Phase 5 baseline 계승 WARN)
 - **권장 대응**:
-  - Phase 9.5+ 모든 sub-agent prompt에 §SELF-VERIFICATION 의무 유지
+  - Phase 10+ 모든 sub-agent prompt에 §SELF-VERIFICATION 의무 유지
   - phase-start v1.3.0 §6.3 의무 절차 보존
   - main session sub-agent 완료 후 `git diff --stat` 검증 의무 절차 보존
-- **재평가 시점**: Phase 9.5 (eval-run 정식화) / Phase 10 (MVP 통합 + P-AUX-2 agent 실 구현) — agents/* 신규 추가 시
-- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 42연속), P-GPT-REVIEW-001 (Phase 4 + Phase 6 두 번째 적용 + Phase 5.5 세 번째 mini-phase 정신 계승), P-VALIDATION-FORMAL-001 (Phase 4.5 + Phase 6 + Phase 5 + Phase 7 + Phase 8 + Phase 9 여섯 번째 입증), P-CRITIC-CANONICAL-001 (Phase 6 → Phase 8 conservative adapter → Phase 9 normalize wiring canonical live), P-CONTRACT-FIRST-001 (Phase 6 후보 + Phase 5 db_schema.md + Phase 7 rag_data_contract §18 + Phase 8 CC-003 + Phase 9 CC-004 누적 5회), P-RLS-001 (Phase 5 신규 + Phase 9 feedback/selection), P-SSE-001 (Phase 5 신규 + Phase 8 progress_store 실 stage), P-SECURITY-REVIEW-001 (Phase 5 신규 후보 + Phase 9 두 번째 정식 — 강화), P-LEGACY-CONSOLIDATION-001 (Phase 5.5 + Phase 7 누적 2회), P-RAG-5STAGE-001 (Phase 7 신규 후보 + Phase 9 candidate pending 적재 정합), P-RAG-GRACEFUL-001 (Phase 7 신규 후보), P-MOA-ORCHESTRATOR-001 (Phase 8 신규 후보 + Phase 9 orchestrator 확장), P-BEHAVIOR-PRESERVING-001 (Phase 8 신규 후보 + Phase 9 additive wiring), **P-FEEDBACK-LOOP-001 (Phase 9 신규 후보)**, **P-CANONICAL-WIRING-001 (Phase 9 신규 후보)**
+- **재평가 시점**: Phase 10 (MVP 통합 + P-AUX-2 agent 실 구현) — agents/* 신규 추가 시
+- **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 47연속), P-GPT-REVIEW-001 (Phase 4 + Phase 6 두 번째 적용 + Phase 5.5 세 번째 mini-phase 정신 계승), P-VALIDATION-FORMAL-001 (Phase 4.5 + Phase 6 + Phase 5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5 일곱 번째 입증), P-CRITIC-CANONICAL-001 (Phase 6 → Phase 8 conservative adapter → Phase 9 normalize wiring canonical live → Phase 9.5 deprecated 0–5 Full 제거로 단계적 축소 완료), P-CONTRACT-FIRST-001 (Phase 6 후보 + Phase 5 db_schema.md + Phase 7 rag_data_contract §18 + Phase 8 CC-003 + Phase 9 CC-004 + Phase 9.5 CC-005 누적 6회), P-RLS-001 (Phase 5 신규 + Phase 9 feedback/selection), P-SSE-001 (Phase 5 신규 + Phase 8 progress_store 실 stage), P-SECURITY-REVIEW-001 (Phase 5 신규 후보 + Phase 9 두 번째 정식 — 강화), P-LEGACY-CONSOLIDATION-001 (Phase 5.5 + Phase 7 누적 2회), P-RAG-5STAGE-001 (Phase 7 신규 후보 + Phase 9 candidate pending 적재 정합), P-RAG-GRACEFUL-001 (Phase 7 신규 후보), P-MOA-ORCHESTRATOR-001 (Phase 8 신규 후보 + Phase 9 orchestrator 확장), P-BEHAVIOR-PRESERVING-001 (Phase 8 신규 후보 + Phase 9 additive wiring + Phase 9.5 deprecated 제거 eval 동일 입증), P-FEEDBACK-LOOP-001 (Phase 9 신규 후보), P-CANONICAL-WIRING-001 (Phase 9 신규 후보 + Phase 9.5 deprecated 완전 제거로 wiring 단계 완료), **P-EVAL-HARNESS-001 (Phase 9.5 신규 후보)**, **P-DEPRECATED-REMOVAL-001 (Phase 9.5 신규 후보)**
 
 ### Pattern P-THIN-VERTICAL-001: Thin Vertical Slice 효과 (코드 phase entry 표준)
 
@@ -205,9 +206,9 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - meta/retrospectives/phase-4.5.md
   - meta/proposals/2026-05-28_phase-4-retrospective-proposals.md §P-X2 (채택 권장)
 
-### Pattern P-VALIDATION-FORMAL-001: multi-llm-validation formal self + 외부 분리 패턴 (Phase 4.5 첫 + Phase 6 두 번째 + Phase 5 세 번째 정식 확정 + Phase 5.5 self-strengthen V-form sub-pattern + Phase 7 네 번째 + Phase 8 다섯 번째 + Phase 9 여섯 번째 입증)
+### Pattern P-VALIDATION-FORMAL-001: multi-llm-validation formal self + 외부 분리 패턴 (Phase 4.5 첫 + Phase 6 두 번째 + Phase 5 세 번째 정식 확정 + Phase 5.5 self-strengthen V-form sub-pattern + Phase 7 네 번째 + Phase 8 다섯 번째 + Phase 9 여섯 번째 + Phase 9.5 일곱 번째 입증)
 
-- **유형**: 반복 성공 (Phase 4.5 첫 V1~V4 + Phase 6 두 번째 V1~V5 + Phase 5 세 번째 V1~V6 + Phase 7 네 번째 V1~V7 + Phase 8 다섯 번째 V1~V7 + Phase 9 여섯 번째 V1~V7 = 6회 누적, 정식 패턴 확정 + Phase 5.5 self-strengthen V-form sub-pattern 보존)
+- **유형**: 반복 성공 (Phase 4.5 첫 V1~V4 + Phase 6 두 번째 V1~V5 + Phase 5 세 번째 V1~V6 + Phase 7 네 번째 V1~V7 + Phase 8 다섯 번째 V1~V7 + Phase 9 여섯 번째 V1~V7 + Phase 9.5 일곱 번째 V1~V7 = 7회 누적, 정식 패턴 확정 + Phase 5.5 self-strengthen V-form sub-pattern 보존)
 - **최초 식별**: 2026-05-28 (Phase 4.5 Slice 1 — 첫 formal 트리거)
 - **두 번째 입증**: 2026-05-29 (Phase 6 Slice 1 — 두 번째 formal 트리거)
 - **세 번째 입증 (정식 확정)**: 2026-05-29 (Phase 5 Slice 1 — 세 번째 formal 트리거, V6 large + 보안 phase 추가: Supabase 채택 / JWT / RLS / SSE / revise_history JSONB / canonical DB)
@@ -215,7 +216,8 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **네 번째 입증 (Phase 7 RAG)**: 2026-05-29 (Phase 7 Slice 1 — 네 번째 formal 트리거, V7 RAG 영역 추가: ADR-024 5단계 채택 / chunk 512 tokens / top-k=5 threshold=0.7 / OpenAI text-embedding-3-small / graceful 5종 marker / LLM Wiki vs RAG 분리 / hybrid 승인 정책)
 - **다섯 번째 입증 (Phase 8 MOA orchestration)**: 2026-05-29 (Phase 8 Slice 1 — 다섯 번째 formal 트리거, V7 MOA orchestration 영역: orchestrator 추출 behavior-preserving / ProgressSink Null default 회귀 0 / SSE progress_store 브릿지 / Critic conservative adapter Phase 6 canonical 불변 / prompt_registry semver / prompt_id-version 단일 출처 정합 / SSE best-effort single-process)
 - **여섯 번째 입증 (Phase 9 selection/feedback)**: 2026-05-29 (Phase 9 Slice 1 — 여섯 번째 formal 트리거, V7 selection/feedback 영역: selection/feedback 실 plans 정합 / normalize_to_canonical wiring 회귀 0 / Brand Memory 준비 경계 (agent 미구현 Phase 10+) / 피드백 reason PII 마스킹 / repo graceful PlansRepo 패턴 / 피드백 UI wrapper PlanCard·component_map 0줄 / feedback→candidate pending 적재)
-- **관련 회고**: meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md + meta/retrospectives/phase-7.md + meta/retrospectives/phase-8.md + meta/retrospectives/phase-9.md
+- **일곱 번째 입증 (Phase 9.5 eval-run)**: 2026-05-31 (Phase 9.5 Slice 1 — 일곱 번째 formal 트리거, V7 eval-run 영역: eval mock-deterministic (CI 가능 비용 0) / golden_set markdown→구조화 파싱 (실 11 케이스 단일 출처) / revise effect metric (attempt별 canonical 0–1 delta) / deprecated 제거 경계 (run_critic 0–5 불변 P-007) / 제거 순서 (eval→검증→제거) / 임계값 게이트 (schema 100% / 점수 ±0.3 / 광고 / 차단 단어) / frontend types CriticEvaluation 정합)
+- **관련 회고**: meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md + meta/retrospectives/phase-7.md + meta/retrospectives/phase-8.md + meta/retrospectives/phase-9.md + meta/retrospectives/phase-9.5.md
 - **요약**: 사용자 결정 "검증 모델은 너가 직접 (Claude Code, 혹은 codex가 지침 참고하면서 자가 검증), 외부 검증은 따로 작성되도록 할 것" → multi-llm-validation Skill formal 트리거를 다음 패턴으로 정의:
   1. **Self validation**: Claude Code가 지침(CLAUDE.md, contracts, eval, patterns)을 참조하여 자가 검증 → `meta/validations/{date}_{phase}_self.md`
   2. **External validation**: 외부 LLM(GPT/Gemini) 검증은 placeholder로 별도 파일 → `meta/validations/{date}_{phase}_external.md` (사용자가 외부에서 진행 후 채움)
@@ -226,8 +228,8 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - `meta/validations/` 폴더 누적 → 추후 audit / 회고 / pattern 추출 가능
   - **V dimension 점진 확장**: Phase 4.5 V1~V4 (지침/contract/eval/패턴) → Phase 6 +V5 (frontend types ↔ backend 1:1 매핑) → Phase 5 +V6 (보안 + DB 영속 정합성) → Phase 7 +V7 (RAG architecture — chunk 512 + retrieval threshold + LLM Wiki vs RAG 분리 + hybrid 승인) → Phase 8 V7 재사용 (MOA orchestration — orchestrator 추출 behavior-preserving + ProgressSink + SSE 브릿지 + Critic conservative adapter + prompt semver) → Phase 9 V7 재사용 (selection/feedback — 실 plans 정합 + normalize wiring 회귀 0 + Brand Memory 준비 경계 + 피드백 PII + repo graceful + 피드백 UI wrapper + feedback→candidate 적재)
 - **다음 단계**:
-  - Phase 9.5 eval-run / Phase 10 통합 등 큰 phase 진입 시 동일 패턴 적용
-  - 정식 확정 (6회 누적, Phase 7 + Phase 8 + Phase 9 입증) — 모든 큰 phase 의무 baseline
+  - Phase 10 통합 등 큰 phase 진입 시 동일 패턴 적용
+  - 정식 확정 (7회 누적, Phase 7 + Phase 8 + Phase 9 + Phase 9.5 입증) — 모든 큰 phase 의무 baseline
   - external 채움 누적 시 self vs external 차이 분석 회고 별도 (Phase 11+)
 - **권장 대응**:
   - 모든 큰 phase 진입 전 self.md + external.md 2 파일 생성 의무
@@ -253,6 +255,9 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - meta/validations/2026-05-29_phase-9-pre-entry_self.md (V1~V7 PASS — 여섯 번째)
   - meta/validations/2026-05-29_phase-9-pre-entry_external.md (placeholder)
   - meta/retrospectives/phase-9.md (여섯 번째 트리거 — V7 selection/feedback + normalize wiring + Brand Memory 준비)
+  - meta/validations/2026-05-31_phase-9.5-pre-entry_self.md (V1~V7 PASS — 일곱 번째)
+  - meta/validations/2026-05-31_phase-9.5-pre-entry_external.md (placeholder)
+  - meta/retrospectives/phase-9.5.md (일곱 번째 트리거 — V7 eval mock-deterministic + deprecated 제거 경계 + 임계값 게이트)
 
 ### Pattern P-LEGACY-CONSOLIDATION-001: 다중 layer 공존 시 옵션 A 패턴 (Phase 5.5 신규 후보 + Phase 7 두 번째 입증)
 
@@ -626,4 +631,74 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - meta/retrospectives/phase-9.md
   - meta/retrospectives/phase-8.md (§개선 제안 §1 — helper 미연결, Phase 9 해소)
   - docs/decisions/phase_9_critic_canonical_wiring.md (ADR-032)
-- **상태**: 신규 등록 후보 (Phase 9 첫 적용, Phase 9.5 deprecated 완전 제거 시점 효과 재측정 후 정식 패턴 채택 결정)
+- **상태**: 신규 등록 후보 (Phase 9 첫 적용, **Phase 9.5 deprecated 0–5 Full 제거로 wiring 단계 완료** — canonical 단일 표준화. 다른 helper → live wiring 케이스 효과 재측정 후 정식 패턴 채택 결정)
+
+### Pattern P-EVAL-HARNESS-001: golden_set mock-deterministic 회귀 + 임계값 게이트 (Phase 9.5 신규 후보)
+
+- **유형**: 반복 성공 (Phase 9.5 첫 적용, golden_set.md 11 케이스 단일 출처 → mock-deterministic 회귀 runner + schema 100%/structural 채점 + 임계값 게이트 + regression_results, CI 가능 비용 0)
+- **최초 식별**: 2026-05-31 (Phase 9.5 Slice 1~3 — eval-design + eval-run Skill 첫 정식, ADR-033)
+- **관련 회고**: meta/retrospectives/phase-9.5.md §잘된 것 1 + §배운 것 2 + §P-EVAL-HARNESS-001
+- **요약**: 품질 회귀 baseline (확정 결정 [20] semver 회귀)을 mock-deterministic 회귀 runner로 구축하는 패턴 — prompt/RAG/모델 변경 시 자동 품질 검증:
+  1. **markdown golden_set 단일 출처 파싱**: `eval/golden_set.md` (GS-001~GS-011, ★ 실 v1.0.0 §2는 11 케이스 — entry plan "47" 표기는 오기, NG10 확대 Phase 10+) → loader가 GS- prefix 필터로 [id, input, expected_properties] 구조화. 케이스 수는 실 출처 단일 진실 (계획 문서와 불일치 시 실 출처 우선)
+  2. **mock-deterministic pipeline (CI 가능, 비용 0)**: 각 케이스 → mock pipeline → 결정적 출력 → schema 준수 100% + structural 채점. 실 LLM 8차원 eval은 mode flag + 문서로 분리 (mock primary)
+  3. **임계값 게이트** (eval-run §6): schema 준수 100% / 점수 변화 ±0.3 / 광고 표현 >5% fail / 차단 단어 >0% fail → 위반 시 작업 차단 (gate=fail → exit 1)
+  4. **regression_results 출력**: `eval/regression_results/phase-N_{trigger}.md` §5 형식 (schema_rate / pass_rate / revise mean_delta 등) 누적 → 회귀 audit trail
+  5. **revise effect metric 통합**: revise attempt별 canonical overall_score 0–1 delta (mean_delta / improved_rate / regressed_rate) — Phase 4.5 D6 해소
+- **효과 측정 (Phase 9.5)**:
+  - test_eval_runner (loader + mock 회귀 + 임계값 게이트) + test_revise_effect (revise effect metric) 통합 45 PASS
+  - eval_run.ps1 gate=pass (schema_rate 1.0 / pass_rate 1.0 / revise mean_delta 0.092 / improved 0.6 / regressed 0.2)
+  - smoke_test_phase_9_5 Step 16 (eval-run) 통합 — 16/16 (15 PASS + 1 WARN intended)
+  - eval-design(설계) + eval-run(실행) 두 Skill 모두 첫 정식 트리거
+  - **deprecated 제거 안전망 역할** (P-DEPRECATED-REMOVAL-001 연계): canonical-only 품질 baseline을 제거 전/후 동일 입증
+- **다음 단계**:
+  - Phase 10+ 실 LLM eval mode 운영 활성 (mode flag → 실 호출, cost-review 연계)
+  - Phase 10+ RAG eval_rubric → golden_set 정식화 (동일 harness 흡수, NG1)
+  - Phase 10+ golden_set 11 → 확대 (eval-design Skill 두 번째 트리거 baseline, NG10)
+  - 두 번째 적용 (Phase 10+ 실 LLM mode / RAG eval) 효과 재측정 후 정식 패턴 채택 결정
+- **권장 대응**:
+  - 품질 회귀 baseline 구축 시 mock-deterministic primary (CI 가능 비용 0) + 실 LLM mode flag 분리
+  - golden_set markdown 단일 출처 파싱 (계획 문서 ≠ 실 출처 시 실 출처 우선)
+  - 임계값 게이트 (schema 100% / 점수 ±delta / 광고 / 차단 단어) 의무 + regression_results 누적
+  - ADR로 결정 근거 영구 기록 (Phase 9.5 ADR-033 패턴 복제)
+- **연관 Skill / Contract**: eval-design Skill (Phase 9.5 첫 정식), eval-run Skill (Phase 9.5 첫 정식), ADR-033 (eval-run harness mock-deterministic + 임계값 + §eval-design), P-DEPRECATED-REMOVAL-001 (Phase 9.5 신규 — deprecated 제거 안전망), eval/golden_set.md, eval/video_planning_eval.md
+- **관련 회고**:
+  - meta/retrospectives/phase-9.5.md
+  - meta/retrospectives/phase-4.5.md (§D6 revise effect 미측정 — Phase 9.5 해소)
+  - meta/retrospectives/phase-9.md (§개선 제안 §4 — eval-run 정식화)
+  - docs/decisions/phase_9_5_eval_run_harness.md (ADR-033)
+- **상태**: 신규 등록 후보 (Phase 9.5 첫 적용, Phase 10+ 실 LLM mode / RAG eval_rubric 정식화 시점 효과 재측정 후 정식 패턴 채택 결정)
+
+### Pattern P-DEPRECATED-REMOVAL-001: eval 안전망으로 deprecated 제거 (제거 전/후 eval 동일 입증) (Phase 9.5 신규 후보)
+
+- **유형**: 반복 성공 (Phase 9.5 첫 적용, Critic deprecated 0–5 Full 제거 — eval runner 먼저 구축 → 제거 전 canonical-only baseline → 제거 → 제거 후 eval 동일 입증, warnings 16→0)
+- **최초 식별**: 2026-05-31 (Phase 9.5 Slice 2~4 — eval → 검증 → 제거 순서, ADR-034 + CC-005)
+- **관련 회고**: meta/retrospectives/phase-9.5.md §잘된 것 3 + §배운 것 1 + §P-DEPRECATED-REMOVAL-001
+- **요약**: deprecated 코드(fallback / Optional 필드)를 제거할 때 eval을 안전망으로 사용하여 회귀 0을 보장하는 패턴 (P-CRITIC-CANONICAL-001 단계적 축소의 종착점):
+  1. **★ 제거 순서 강제 (eval → 검증 → 제거)**: (Slice 2~3) eval runner 먼저 구축 → (Slice 3) eval로 제거 전 canonical-only 품질 baseline 측정 → (Slice 4) deprecated 제거 → 제거 후 eval로 동일 입증. 순서가 핵심 — eval이 dead code 제거의 안전망
+  2. **canonical 단일 표준화**: select_best_plan_index deprecated fallback(overall_score_avg / scores / eight_dim_scores + DeprecationWarning) 제거 → canonical(overall_score → dimensions) 2 경로만 + CriticEvaluation Optional 0–5 필드 제거 (Pydantic extra='ignore'로 verdict의 0–5 키 무시 → 회귀 0)
+  3. **LLM-facing contract 불변 경계**: run_critic 0–5 출력 + normalize_to_canonical(0–5→0–1)은 P-007 prompt contract로 불변 (NG3) — 제거 대상은 dead code인 deprecated fallback/필드만, 생성 경로(run_critic + normalize)는 유지
+  4. **의도 delta 최소화 + 주석 명시**: 기존 test 중 deprecated-fallback pytest.warns 케이스만 의도 delta 갱신/제거 (canonical 케이스 + run_critic 0–5 케이스 보존). 의도 delta 지점에 ADR-034 주석 명시 (회귀 vs 의도 구분)
+  5. **contract-change 동반 (CC-005)**: output_schema §9 + agent_io_contract §5 + db_schema critic_evaluation deprecated 제거 정합 + frontend lib/types.ts canonical 전환 (page.tsx 동시 마이그레이션 — PlanCard·component_map 0줄)
+  6. **legacy consumer wiring 보강 (실측 발견)**: 점진 wiring(helper → 단일 지점)은 다른 consumer를 자동 커버하지 않음 — Phase 1 legacy /generate endpoint normalize 누락 발견 → generate.py canonical wiring 보강. 향후 신규 critic consumer normalize_to_canonical 경유 필수
+- **효과 측정 (Phase 9.5)**:
+  - eval 제거 전/후 동일 (canonical-only baseline 회귀 0) — eval_run.ps1 gate=pass 유지
+  - Critic deprecated warnings 16 → 0 (deprecated 0–5 fallback + CriticEvaluation Optional 필드 완전 제거)
+  - 기존 pytest 293 중 의도된 test_critic deprecated-fallback delta만 갱신 (나머지 보존) — 회귀 0, pytest 339
+  - schema_stress_test 5/5 유지 (CriticEvaluation deprecated 제거 정합) + agent-io-check drift 0
+  - Critic 평가 체계 canonical(0–1) 단일 표준화 (Phase 6 ADR-018 → Phase 8 conservative adapter → Phase 9 normalize wiring → Phase 9.5 deprecated Full 제거 종착)
+- **다음 단계**:
+  - 다른 deprecated 코드 제거 시점 (legacy rag/retriever 통합 Phase 11+ 등) 동일 패턴 적용
+  - 두 번째 적용 효과 재측정 후 정식 패턴 채택 결정
+- **권장 대응**:
+  - deprecated 제거 전 eval runner 먼저 구축 (제거 순서 eval→검증→제거 의무)
+  - eval로 제거 전/후 동일 입증 (회귀 0 증거)
+  - LLM-facing contract / 생성 경로 불변 경계 명시 (제거 대상은 dead code만)
+  - 의도 delta 최소화 + 주석 명시 + contract-change 동반 + legacy consumer wiring 점검
+  - ADR로 결정 근거 영구 기록 (Phase 9.5 ADR-034 패턴 복제)
+- **연관 Skill / Contract**: eval-run Skill (Phase 9.5 — 안전망), contract-change Skill (CC-005), agent-io-check Skill (canonical-only drift 0), P-EVAL-HARNESS-001 (Phase 9.5 신규 — eval baseline), P-CRITIC-CANONICAL-001 (Phase 6 canonical + deprecated 단계적 축소 종착), P-CANONICAL-WIRING-001 (Phase 9 wiring → Phase 9.5 제거 완료), P-BEHAVIOR-PRESERVING-001 (Phase 8 — 기존 test 수정 0 정신 계승), ADR-034 (Critic deprecated 0–5 Full 제거)
+- **관련 회고**:
+  - meta/retrospectives/phase-9.5.md
+  - meta/retrospectives/phase-6.md (§P-CRITIC-CANONICAL-001 — 단계적 제거 시점 명시)
+  - meta/retrospectives/phase-9.md (§개선 제안 §2 — Critic deprecated 완전 제거)
+  - docs/decisions/phase_9_5_critic_deprecated_removal.md (ADR-034)
+- **상태**: 신규 등록 후보 (Phase 9.5 첫 적용 — Critic deprecated 0–5 Full 제거, 다른 deprecated 제거 시점 효과 재측정 후 정식 패턴 채택 결정)
