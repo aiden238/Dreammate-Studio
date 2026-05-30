@@ -30,6 +30,17 @@ domain_brief 는 새 하네스를 만들 때 사람이 작성하는 **입력 명
 | `required_evals` | list[string] | ✅ | 필요한 평가 (예: golden_set / regression / human_review) |
 | `forbidden_scope` | list[string] | ✅ | 절대 금지 범위 (이 하네스가 하지 않는 것) |
 | `preferred_architecture_patterns` | list[enum] | ✅ | architecture_patterns.md 6 패턴 중 선택 |
+| `data_model` | object | ⬜ 선택 | 데이터 계층 구조 + 핵심 엔티티 + 각 엔티티의 PII 표시 (★ G6) |
+
+### 1.2 `data_model` 선택 필드 (★ G6, M1 근거)
+
+> 데이터 계층이 명확한 도메인에서 계층 구조를 **1급 필드**로 받는다. M1 팟캐스트 domain_brief 가 데이터 계층을 schema 밖 별도 섹션으로 우회 서술한 것을 schema 안으로 수용한다.
+
+- **내용**:
+  - `hierarchy`: 데이터 계층 구조 (예: `User → Brand → Show → Season → Episode`).
+  - `entities`: 핵심 엔티티 목록.
+  - `pii`: 각 엔티티의 PII 표시 (어떤 엔티티/필드가 개인정보를 담는가 — 제3자 PII 포함, §1.1 risk 상향 트리거와 연결).
+- **선택 필드 — 명시 안 하면 `primary_tasks`/`output_artifacts` 로 우회 가능** (데이터 계층이 단순하거나 암묵적인 도메인은 생략 허용 — backward-compat).
 
 ### 1.1 enum 정의
 
@@ -48,6 +59,14 @@ risk_level:
 preferred_architecture_patterns: (architecture_patterns.md)
   pipeline | fan_out_fan_in | expert_pool | producer_reviewer | supervisor | hierarchical_delegation
 ```
+
+#### risk_level 상향 트리거 — 제3자(비사용자) PII (★ G5, M1 근거)
+
+> 기존 risk 판정은 **사용자 PII** 중심이라 게스트 등 제3자 인물정보를 놓친다. 아래 트리거를 risk 판정 축에 **추가**한다.
+
+- **제3자(비사용자) PII 처리 트리거**: 이 하네스가 **사용자 본인이 아닌 제3자**(예: 인터뷰 게스트, 대상 인물, 언급 대상)의 인물정보(이름·소속·연락처·발언 등)를 처리하면 → risk 등급을 **상향 검토**(예: `medium → high` 재검토). 제3자 동의·노출 책임이 사용자 PII 보다 크기 때문.
+- **판정**: 사용자 PII 만 처리 → 기존 기준대로. **제3자 PII 가 추가**되면 한 등급 상향 후보로 본다 (`data_model.pii` 의 제3자 표시와 연결).
+- **근거 (M1)**: 팟캐스트 dry-run 이 게스트(제3자) 인물정보를 다루는데 risk 가 `medium` 으로 머물러 미해결 표기됨 → 제3자 PII 축을 명문화하면 동일 상황을 사전에 상향 판정할 수 있다.
 
 ---
 

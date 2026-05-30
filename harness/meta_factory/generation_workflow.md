@@ -66,6 +66,23 @@
 - **규칙**: `trigger_keywords` 는 **충돌 검토 대상** (factory_contract 규칙 4) — 기존/형제 Skill 키워드와 비중첩. `applies_to` 태그(agents / claude / both)로 라우터 분리. Skill 본문은 절차만 (데이터는 contract/eval/knowledge).
 - **게이트**: 단계 9 trigger validation + skill conflict check 로 키워드 충돌 확인 예정.
 
+#### 단계 4.1 — 신규 Skill vs 기존 재사용 결정트리 (★ G2, M1 검증4 근거)
+
+> 신규 Skill 후보를 제안하기 **전에** 아래 트리를 통과한다. 기본값은 **재사용** — 신규 생성은 무충돌 + 고유 가치 입증 시에만.
+
+```
+1. 의도 작업의 키워드 추출 (이 Skill 이 어떤 표현으로 트리거되어야 하는가)
+2. 기존 21 Skill 의 description 키워드와 충돌 검사 (INDEX §사용원칙 5 — "같은 description 키워드가 둘 이상 = 충돌")
+3. 분기:
+   - 충돌 발견 시  → 기존 Skill 재사용 강제 (신규 생성 금지). 라우터에서 기존 Skill 로 안내.
+   - 무충돌 AND 신규 고유 가치 입증 시  → 신규 Skill 제안 (단계 4 scaffold 진행).
+   - 무충돌 BUT 고유 가치 미입증 시  → 신규 생성 보류 (YAGNI 차단 — 미래 수요만으로 Skill 을 만들지 않는다).
+```
+
+- **YAGNI 차단 1줄**: "지금 필요 없는데 나중에 쓸지도 모른다"는 신규 Skill 생성 사유가 되지 못한다 — 충돌 위험만 늘리고 효용은 deferred.
+- **근거 (M1 검증4)**: M1 dry-run 의 `podcast-eval-run` 신규 Skill 은 기존 `eval-run` 과 키워드 4중첩("eval 실행"/"golden_set"/"regression"/"품질 평가") → 충돌 = **음의 효용**으로 입증되어 채택 거부됨. 즉 "재사용이 옳다"가 절차로 명문화된다 (충돌 검사 → 충돌 시 재사용 강제).
+- **게이트**: 본 결정트리에서 "재사용 강제" 로 분기된 Skill 은 단계 4 의 신규 scaffold 대상에서 제외하고, 단계 8 라우터가 기존 Skill 로 안내하도록 표시.
+
 ### 단계 5 — contract 후보 생성
 
 - **입력**: domain_brief.required_contracts + agents IO.
