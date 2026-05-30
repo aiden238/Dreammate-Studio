@@ -1,14 +1,17 @@
-"""Phase 9 Slice 3 — normalize_to_canonical wiring (ADR-032).
+"""Phase 9 Slice 3 — normalize_to_canonical wiring (ADR-032) + Phase 9.5 Slice 4 (ADR-034).
 
 orchestrator critic step 이 run_critic 결과를 normalize_to_canonical 로 감싸
 critic_evaluation 에 canonical(overall_score 0–1 + dimensions) 을 추가하는지 검증.
-deprecated 0–5(scores / overall_score_avg) 병행 유지 (NG3, 회귀 0).
 
-검증 항목 (ADR-032 §Verification):
-  1. test_wiring_adds_canonical    : critic_evaluation 에 overall_score 0–1 + dimensions 존재
-  2. test_wiring_keeps_deprecated  : scores 0–5 + overall_score_avg 0–5 병행 유지
-  3. test_canonical_in_range       : overall_score / dimensions 값 0.0~1.0 clamp
-  4. test_canonical_matches_scores : dimensions[dim] == scores[dim] / 5.0
+Phase 9.5 Slice 4 (ADR-034): CriticEvaluation 에서 deprecated 0–5 필드(scores /
+overall_score_avg) 제거 → extra='ignore' 로 verdict dict 의 0–5 키 무시. 따라서 응답
+critic_evaluation 모델에는 canonical 만 노출된다 (deprecated 0–5 키는 envelope 에서 사라짐).
+
+검증 항목:
+  1. test_wiring_adds_canonical          : critic_evaluation 에 overall_score 0–1 + dimensions 존재
+  2. test_wiring_drops_deprecated_0_5    : (ADR-034) scores / overall_score_avg 모델 속성 미존재
+  3. test_canonical_in_range             : overall_score / dimensions 값 0.0~1.0 clamp
+  4. test_canonical_matches_scores       : dimensions[dim] == scores[dim] / 5.0
 
 monkeypatch 대상은 routers.plans.* (orchestrator 가 router namespace 로 call-time 해석).
 RecordingSink 불필요 — generate_plan 직접 호출 + mock agents.
@@ -129,22 +132,23 @@ async def test_wiring_adds_canonical(patch_agents_0_5) -> None:
     assert len(critic.dimensions) == 8
 
 
-# ─── 2. deprecated 0–5 병행 유지 (NG3) ────────────────────────────────
+# ─── 2. deprecated 0–5 모델에서 제거 (ADR-034) ────────────────────────
 
 
 @pytest.mark.asyncio
-async def test_wiring_keeps_deprecated(patch_agents_0_5) -> None:
-    """canonical 추가에도 deprecated scores 0–5 + overall_score_avg 0–5 병행 유지 (회귀 0)."""
+async def test_wiring_drops_deprecated_0_5(patch_agents_0_5) -> None:
+    """Phase 9.5 ADR-034: run_critic 가 0–5(scores / overall_score_avg)를 반환하고
+    normalize_to_canonical 가 비파괴로 보존해도, CriticEvaluation(extra='ignore') 가
+    deprecated 0–5 키를 무시 → 응답 critic_evaluation 모델에는 canonical 만 노출."""
     result = await generate_plan("test-plan-id", _make_plan_entry(), GenerateRequest())
     assert isinstance(result, Envelope)
     critic = result.body.critic_evaluation
     assert critic is not None
-    # deprecated 병행 유지 (helper 비파괴)
-    assert critic.scores is not None
-    assert critic.overall_score_avg is not None
-    # scores 는 0–5 정수 (helper 가 원본 보존)
-    assert critic.scores.intent_fit == 4
-    assert critic.overall_score_avg == pytest.approx(4.0)
+    # deprecated 0–5 필드 제거 → 모델 속성 미존재 (envelope 에서 사라짐)
+    assert not hasattr(critic, "scores")
+    assert not hasattr(critic, "overall_score_avg")
+    # canonical 은 유지 (overall_score 0.8 = 4/5)
+    assert critic.overall_score == pytest.approx(0.8)
 
 
 # ─── 3. canonical 0.0~1.0 범위 ────────────────────────────────────────

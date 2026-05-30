@@ -390,7 +390,12 @@ function PlanResultPageContent() {
           className={`rounded-md px-3 py-2 ${VERDICT_CLASS[critic.overall_verdict]}`}
         >
           <p className="text-sm font-semibold">
-            품질 점수 {critic.overall_score_avg.toFixed(1)} / 5 ·{" "}
+            {/* Phase 9.5 Slice 4 (ADR-034): backend deprecated 0–5(overall_score_avg) 제거.
+                canonical overall_score(0–1) 를 % 로 표시 (PlanCard 무수정 — page.tsx inline wrapper).
+                canonical 미존재(graceful skip) 시 품질 점수 라벨 숨김, verdict 만 노출. */}
+            {typeof critic.overall_score === "number" && (
+              <>품질 점수 {Math.round(critic.overall_score * 100)}점 / 100 · </>
+            )}
             {VERDICT_LABEL[critic.overall_verdict]}
             {critic.revise_round > 0 && (
               <span className="ml-1 text-xs">

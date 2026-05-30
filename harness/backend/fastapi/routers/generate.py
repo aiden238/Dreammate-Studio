@@ -48,6 +48,7 @@ from fastapi.responses import JSONResponse
 from ..agents.critic import (
     PROMPT_ID as CRITIC_PROMPT_ID,
     PROMPT_VERSION as CRITIC_PROMPT_VERSION,
+    normalize_to_canonical,
     run_critic,
 )
 from ..agents.intent import (
@@ -295,8 +296,13 @@ def generate(req: GenerateRequest, response: Response) -> Union[Envelope, JSONRe
             retry_allowed=True,
         )
 
+    # Phase 9.5 Slice 4 (ADR-034): run_critic 0–5 출력을 normalize_to_canonical 로 감싸
+    #   canonical(overall_score 0–1 + dimensions) 생성 후 CriticEvaluation 으로 검증.
+    #   CriticEvaluation 은 deprecated 0–5 키(scores / overall_score_avg)를 extra='ignore'
+    #   로 무시 → canonical 만 노출 (orchestrator moa_orchestrator.py 와 동일 wiring, ADR-032).
+    critic_verdict = normalize_to_canonical(critic_result)
     try:
-        critic_evaluation = CriticEvaluation(**critic_result)
+        critic_evaluation = CriticEvaluation(**critic_verdict)
     except Exception as e:
         logger.exception("CriticEvaluation 모델 검증 실패")
         return _error_response(

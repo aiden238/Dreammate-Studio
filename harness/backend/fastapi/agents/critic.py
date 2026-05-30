@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import json
 import logging
-import warnings
 from typing import Any
 
 from openai import OpenAI, OpenAIError
@@ -319,7 +318,8 @@ def normalize_to_canonical(verdict: dict[str, Any]) -> dict[str, Any]:
 
 
 # ─── Phase 4.5 Slice 3: Best-plan selection (Z-X3) ────────────────────
-# ─── Phase 6 Slice 2: canonical 우선순위 + DeprecationWarning (ADR-018) ─
+# ─── Phase 6 Slice 2: canonical 우선순위 (ADR-018) ─────────────────────
+# ─── Phase 9.5 Slice 4: deprecated 0–5 fallback 제거 (ADR-034) ─────────
 
 def select_best_plan_index(verdicts: list[dict[str, Any]]) -> int | None:
     """Critic verdict list 에서 가장 좋은 plan 의 index 를 반환 (Z-X3 / ADR-018).
@@ -328,14 +328,15 @@ def select_best_plan_index(verdicts: list[dict[str, Any]]) -> int | None:
     frontend wrapper(`/plan/[plan_id]/page.tsx`) highlight 에 사용. PlanCard.tsx
     무수정 정책 유지 (사용자 결정 6-a 계승).
 
-    Phase 6 (ADR-018) canonical 우선순위:
+    Phase 6 (ADR-018) canonical 우선순위 — Phase 9.5 (ADR-034) deprecated 0–5 fallback 제거 완료:
       1. `overall_score` (float [0.0~1.0]) — canonical
       2. `dimensions` (dict[str, float]) 평균 — canonical fallback
-      3. `overall_score_avg` (float [0~5]) — deprecated + DeprecationWarning
-      4. `scores` / `eight_dim_scores` (dict[str, int|float]) 평균 — deprecated + DeprecationWarning
 
-      Deprecated key 발견 시 `warnings.warn(DeprecationWarning, ...)` 발행.
-      Phase 9+ eval-run Skill 정식화 후 deprecated fallback 완전 제거 (별도 contract-change 절차).
+      Phase 9 wiring (ADR-032) 으로 critic_evaluation 에 canonical 항상 populated →
+      deprecated 0–5 fallback(overall_score_avg / scores / eight_dim_scores) 은 dead code 였고,
+      Phase 9.5 Slice 4 (ADR-034) 에서 완전 제거되었다 (canonical 두 경로만 소비, 없으면 None).
+      LLM-facing 0–5(run_critic)는 normalize_to_canonical 가 0–1 로 변환하므로 본 함수에는
+      canonical 만 도달한다 (P-007 prompt contract 불변).
 
     Args:
         verdicts: plan별 verdict dict list.
@@ -369,36 +370,8 @@ def select_best_plan_index(verdicts: list[dict[str, Any]]) -> int | None:
                     return sum(vals) / len(vals)
             except (TypeError, ValueError):
                 pass
-        # Deprecated (Phase 1~4.5 호환): overall_score_avg (float, 0~5)
-        if v.get("overall_score_avg") is not None:
-            warnings.warn(
-                "Critic verdict 'overall_score_avg' is deprecated (Phase 6 ADR-018); "
-                "use canonical 'overall_score' (0.0~1.0). "
-                "Phase 9+ eval-run 안정화 후 제거 예정.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            try:
-                return float(v["overall_score_avg"])
-            except (TypeError, ValueError):
-                pass
-        # Deprecated: scores / eight_dim_scores dict 평균
-        for legacy_key in ("scores", "eight_dim_scores"):
-            legacy = v.get(legacy_key)
-            if isinstance(legacy, dict) and legacy:
-                warnings.warn(
-                    f"Critic verdict '{legacy_key}' is deprecated (Phase 6 ADR-018); "
-                    "use canonical 'dimensions: dict[str, float]'. "
-                    "Phase 9+ eval-run 안정화 후 제거 예정.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
-                try:
-                    vals = [float(x) for x in legacy.values() if x is not None]
-                    if vals:
-                        return sum(vals) / len(vals)
-                except (TypeError, ValueError):
-                    pass
+        # Phase 9.5 (ADR-034): deprecated 0–5 fallback(overall_score_avg / scores /
+        # eight_dim_scores) 제거됨. canonical(overall_score / dimensions) 없으면 None.
         return None
 
     best_idx: int | None = None

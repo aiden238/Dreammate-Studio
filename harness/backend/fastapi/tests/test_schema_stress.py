@@ -70,20 +70,19 @@ def test_critic_evaluation_canonical_minimal_instantiation() -> None:
     assert ce.overall_score == pytest.approx(0.78)
     assert ce.dimensions["hook_strength"] == pytest.approx(0.9)
     assert ce.overall_verdict == "approve"
-    # deprecated 필드는 default 값 (Optional / 빈 dict)
-    assert ce.overall_score_avg is None
-    assert ce.scores is None
+    # Phase 9.5 ADR-034: deprecated 0–5 필드(scores / overall_score_avg) 제거 → 모델 속성 미존재
+    assert not hasattr(ce, "overall_score_avg")
+    assert not hasattr(ce, "scores")
     assert ce.reasons == {}
 
 
-def test_critic_evaluation_deprecated_only_backward_compat() -> None:
-    """Phase 1~4.5 응답: canonical 미존재 + deprecated 필드만 → 그대로 통과 (backward-compat).
-
-    DeprecationWarning 은 backend 모델 자체에서 발행하지 않음 (호환성). Skip silent.
+def test_critic_evaluation_ignores_deprecated_0_5_keys() -> None:
+    """Phase 9.5 ADR-034: verdict dict 의 deprecated 0–5 키(scores / overall_score_avg)는
+    extra='ignore' 로 무시되고 canonical 만 추출 → CriticEvaluation(**verdict) 회귀 0.
     """
     ce = CriticEvaluation(
         target_plan_id="plan-deadbeef",
-        scores={
+        scores={  # deprecated 0–5 — 무시
             "intent_fit": 3,
             "target_clarity": 3,
             "hook_strength": 4,
@@ -93,31 +92,34 @@ def test_critic_evaluation_deprecated_only_backward_compat() -> None:
             "brand_consistency": 4,
             "differentiation": 3,
         },
-        overall_score_avg=3.375,
+        overall_score_avg=3.375,  # deprecated 0–5 — 무시
+        overall_score=0.675,  # canonical
+        dimensions={"hook_strength": 0.8},  # canonical
         overall_verdict="approve",
         blocking_issues=[],
         revise_round=0,
     )
-    # canonical 필드는 default (None / 빈 dict)
-    assert ce.overall_score is None
-    assert ce.dimensions == {}
-    # deprecated 필드는 입력값 유지
-    assert ce.overall_score_avg == pytest.approx(3.375)
-    assert ce.scores is not None
-    assert ce.scores.hook_strength == 4
+    # Phase 1 호환 메타 유지
+    assert ce.target_plan_id == "plan-deadbeef"
+    # canonical 유지
+    assert ce.overall_score == pytest.approx(0.675)
+    assert ce.dimensions["hook_strength"] == pytest.approx(0.8)
+    # deprecated 0–5 키 무시 (모델 속성 미존재)
+    assert not hasattr(ce, "overall_score_avg")
+    assert not hasattr(ce, "scores")
 
 
-def test_critic_evaluation_canonical_and_deprecated_coexist() -> None:
-    """Phase 6 응답: canonical + deprecated 동시 존재 — 둘 다 보존."""
+def test_critic_evaluation_canonical_only() -> None:
+    """Phase 9.5 ADR-034: canonical(overall_score + dimensions) 만으로 envelope 정합."""
     ce = CriticEvaluation(
         overall_score=0.7,
         dimensions={"hook_strength": 0.7, "target_clarity": 0.7},
-        overall_score_avg=3.5,  # 0~5 호환 필드
         overall_verdict="approve",
     )
     assert ce.overall_score == pytest.approx(0.7)
-    assert ce.overall_score_avg == pytest.approx(3.5)
     assert "hook_strength" in ce.dimensions
+    # deprecated 0–5 키는 제거됨
+    assert not hasattr(ce, "overall_score_avg")
 
 
 def test_critic_evaluation_overall_score_range_validation() -> None:
@@ -214,14 +216,16 @@ def test_stress_select_best_canonical_dimensions_fallback_no_warning() -> None:
         )
 
 
-def test_stress_select_best_deprecated_eight_dim_scores_warns() -> None:
-    """deprecated eight_dim_scores 사용 시 DeprecationWarning 발행 + 결과 정확."""
+def test_stress_select_best_deprecated_eight_dim_scores_ignored() -> None:
+    """Phase 9.5 ADR-034: deprecated eight_dim_scores fallback 제거 — canonical 부재로
+    간주되어 무시 (DeprecationWarning 미발행, None 반환)."""
     verdicts = [
-        {"eight_dim_scores": {"hook": 0.5, "story": 0.5}},  # avg 0.5
-        {"eight_dim_scores": {"hook": 0.9, "story": 0.9}},  # avg 0.9
+        {"eight_dim_scores": {"hook": 0.5, "story": 0.5}},
+        {"eight_dim_scores": {"hook": 0.9, "story": 0.9}},
     ]
-    with pytest.warns(DeprecationWarning, match="eight_dim_scores"):
-        assert select_best_plan_index(verdicts) == 1
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        assert select_best_plan_index(verdicts) is None
 
 
 def test_stress_select_best_canonical_overrides_all_deprecated() -> None:

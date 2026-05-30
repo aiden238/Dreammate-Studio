@@ -109,7 +109,10 @@ def test_phase_1_endpoint_still_1_plan(mock_pipeline_ok) -> None:
 # ─── 6. Critic evaluation 8 scores 노출 ───────────────────────────────
 
 def test_critic_evaluation_present(mock_plans_pipeline_ok) -> None:
-    """body.critic_evaluation 노출 + 8 차원 점수 + verdict 정상."""
+    """body.critic_evaluation 노출 + canonical 8 차원 + verdict 정상.
+
+    Phase 9.5 ADR-034: deprecated 0–5 scores 제거 → canonical dimensions(0–1) 검증.
+    """
     start = client.post(
         "/api/v1/plans/start", json={"user_input": "테스트"}
     ).json()
@@ -118,13 +121,15 @@ def test_critic_evaluation_present(mock_plans_pipeline_ok) -> None:
     body = r.json()["body"]
     assert body["critic_evaluation"] is not None
     critic = body["critic_evaluation"]
-    assert "scores" in critic
+    # Phase 9.5 ADR-034: deprecated 0–5 필드 제거 → canonical dimensions 노출
+    assert "scores" not in critic
+    assert "dimensions" in critic
     # 8 차원 모두 존재
     expected_dims = {
         "intent_fit", "target_clarity", "hook_strength", "message_clarity",
         "structure", "feasibility", "brand_consistency", "differentiation",
     }
-    assert set(critic["scores"].keys()) == expected_dims
+    assert set(critic["dimensions"].keys()) == expected_dims
     # verdict 노출 (Phase 4: revise loop 없음 → revise_round=0)
     assert critic["overall_verdict"] in {"approve", "revise", "reject"}
     assert critic["revise_round"] == 0

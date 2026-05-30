@@ -36,6 +36,16 @@ Phase 6 Slice 2 추가 (ADR-018 / ADR-019):
   - CriticEvaluation canonical 필드 추가 (overall_score: float [0~1], dimensions: dict[str, float])
     - 기존 Phase 1 필드 (target_plan_id / scores / overall_score_avg) 는 deprecated 표시,
       backward-compat 위해 Optional 로 유지 (Phase 9+ eval 후 제거 예정).
+
+Phase 9.5 Slice 4 변경 (ADR-034 — deprecated 0–5 Full 제거):
+  - CriticEvaluation 에서 deprecated 0–5 필드(scores / overall_score_avg) 제거.
+    canonical(overall_score 0–1 + dimensions) 만 유지. target_plan_id / reasons /
+    suggestions 는 Phase 1 호환 메타로 잔존 (0–5 점수와 무관).
+  - model_config extra='ignore' 명시 — orchestrator 가 normalize_to_canonical 산출
+    verdict dict(run_critic 0–5 키 scores / overall_score_avg 병행)를 CriticEvaluation(**verdict)
+    로 넘겨도 deprecated 0–5 키를 무시하고 canonical 만 추출 → 회귀 0.
+  - run_critic 의 0–5 출력(scores + overall_score_avg) 은 P-007 prompt contract 로 불변
+    (LLM-facing). CriticScores 모델도 run_critic 산출 typing 용으로 유지.
 """
 
 from datetime import datetime, timezone
@@ -161,10 +171,17 @@ class CriticEvaluation(BaseModel):
       - overall_score: float [0.0~1.0] (정규화된 종합 점수) — canonical
       - dimensions: dict[str, float] — 8-dim 점수 dict — canonical
 
-    Phase 1~4.5 호환 필드 (deprecated, Phase 9+ eval 후 제거 예정):
-      - target_plan_id / scores (CriticScores) / overall_score_avg / reasons / suggestions
-      - 모두 Optional 로 변경하여 backward-compat 보장 (회귀 0).
+    Phase 1 호환 메타 (0–5 점수와 무관 — 잔존):
+      - target_plan_id / reasons / suggestions
+
+    Phase 9.5 Slice 4 (ADR-034): deprecated 0–5 필드(scores / overall_score_avg) 제거 완료.
+      orchestrator 가 normalize_to_canonical 산출 verdict dict(0–5 키 병행)를 그대로
+      CriticEvaluation(**verdict) 로 넘겨도 model_config extra='ignore' 가 0–5 키를 무시하고
+      canonical 만 추출한다 (회귀 0). run_critic 의 0–5 출력은 LLM-facing P-007 contract 로 불변.
     """
+
+    model_config = {"extra": "ignore"}  # ADR-034: verdict dict 의 deprecated 0–5 키(scores /
+    # overall_score_avg) 를 무시 (Pydantic v2 default 이나 명시) → CriticEvaluation(**verdict) 회귀 0.
 
     # Phase 6 canonical (ADR-018) — 신규 필드
     overall_score: float | None = Field(
@@ -181,32 +198,17 @@ class CriticEvaluation(BaseModel):
         description=(
             "Phase 6 canonical (ADR-018): 8-dim 점수 dict[str, float] "
             "(예: {'hook_strength': 0.8, 'target_clarity': 0.7, ...}). "
-            "정규화 0.0~1.0 (Phase 1~4.5 의 0~5 정수 scores 와 별개 — 호환성 유지)."
+            "정규화 0.0~1.0 (Phase 9.5 ADR-034 으로 0~5 정수 scores 필드는 제거됨)."
         ),
     )
 
-    # Phase 1~4.5 호환 필드 (deprecated, Optional 로 강등)
+    # Phase 1 호환 메타 (0–5 점수와 무관 — 잔존)
     target_plan_id: str | None = Field(
         default=None,
-        description="Phase 1 호환 (output_schema.md §9.1). Phase 9+ 제거 예정.",
-    )
-    scores: CriticScores | None = Field(
-        default=None,
-        description=(
-            "Phase 1~4.5 호환: 8-dim 0~5 정수 (CriticScores). "
-            "Phase 6 canonical 은 dimensions: dict[str, float] (정규화 0~1). "
-            "Phase 9+ eval 후 제거 예정 — DeprecationWarning 발행."
-        ),
+        description="Phase 1 호환 (output_schema.md §9.1) — plan_id echo back.",
     )
     reasons: dict[str, str] = Field(default_factory=dict)
     suggestions: dict[str, str] = Field(default_factory=dict)
-    overall_score_avg: float | None = Field(
-        default=None,
-        description=(
-            "Phase 1~4.5 호환: 0~5 float 평균. Phase 6 canonical 은 overall_score (0~1). "
-            "Phase 9+ 제거 예정 — DeprecationWarning 발행."
-        ),
-    )
     overall_verdict: Literal["approve", "revise", "reject"]
     blocking_issues: list[str] = Field(default_factory=list, max_length=3)
     revise_round: int = Field(default=0, ge=0)

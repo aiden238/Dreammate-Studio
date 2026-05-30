@@ -171,7 +171,7 @@ create table plans (
     status                  text not null default 'draft', -- draft | generated | finalized
     wizard_state            jsonb default '{}'::jsonb,     -- Discovery 7-step / Quick 4-step 진행 상태
     plan_candidates         jsonb default '[]'::jsonb,     -- Phase 4 3-plan 결과
-    critic_evaluation       jsonb,                         -- Phase 6 canonical (overall_score + dimensions)
+    critic_evaluation       jsonb,                         -- Phase 6 canonical (overall_score + dimensions); Phase 9.5 ADR-034 canonical-only (deprecated 0–5 제거)
     revise_history          jsonb,                         -- Phase 4.5 ADR-016 + Phase 6 ReviseAttempt
     recommended_plan_index  integer,                       -- Phase 4.5 ADR-017 best-plan (0~2)
     created_at              timestamptz not null default now(),
@@ -184,11 +184,13 @@ create index idx_plans_video_project_id on plans(video_project_id);
 
 **JSONB schemas**:
 
-- `critic_evaluation` (Phase 6 ADR-018 canonical):
+- `critic_evaluation` (Phase 6 ADR-018 canonical + Phase 9.5 ADR-034 canonical-only):
   - `overall_score`: float [0.0~1.0]
   - `dimensions`: dict[str, float] (8-dim or subset)
   - `overall_verdict`: "approve" | "revise" | "reject"
-  - (deprecated 필드 `overall_score_avg`, `scores`, `eight_dim_scores` 는 DB 미저장 — Phase 9+ 제거)
+  - `target_plan_id` / `reasons` / `suggestions` / `revise_round` (Phase 1 호환 메타)
+  - deprecated 0–5 필드(`overall_score_avg`, `scores`, `eight_dim_scores`)는 **Phase 9.5 ADR-034 으로
+    제거 완료** (응답·DB write 모두 canonical-only). 기존 저장된 0–5 JSONB 는 읽기 호환(무시).
 - `revise_history` (Phase 4.5 ADR-016 + Phase 6 ReviseAttempt typing):
   - `list[list[dict]]` — plan별 attempt list of dicts (`attempt`, `action`, `revised`, `max_reached?`, `critic_warning?`, `rewriter_warning?`)
 - `wizard_state`:
@@ -300,6 +302,10 @@ create table storyboards (
 ```
 
 ### 4.5 quality_scores (Critic Agent 결과)
+
+> 본 테이블은 run_critic 의 **LLM-facing 0–5 산출**(P-007 prompt contract — Phase 9.5 ADR-034 불변)을
+> 보존한다. 응답 envelope 의 `plans.critic_evaluation` canonical(0–1, ADR-034 canonical-only)과 별개:
+> quality_scores 는 0–5 원본, critic_evaluation 은 normalize_to_canonical 변환 후 canonical-only.
 
 ```sql
 create table quality_scores (

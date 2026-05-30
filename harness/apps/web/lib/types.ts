@@ -12,11 +12,14 @@
  *
  * Phase 6 Slice 3 확장 (ADR-018 / ADR-019 frontend mirror):
  *   - CriticDimensions / CriticVerdictAction / canonical fields (overall_score / dimensions)
- *     추가. 기존 필드(overall_score_avg / scores / overall_verdict / revise_round /
- *     blocking_issues / target_plan_id) 는 page.tsx 회귀 0 위해 그대로 유지 (Optional 강등 X).
- *   - ReviseAttempt interface 추가 + Body.revise_history typing 강화
+ *     추가. ReviseAttempt interface 추가 + Body.revise_history typing 강화
  *     (union: ReviseAttempt[][] | Record<string, unknown>[][]).
- *   - 본 파일 외 모든 frontend 파일 0줄 변경 (PlanCard.tsx / component_map.md / page.tsx).
+ *
+ * Phase 9.5 Slice 4 (ADR-034 — deprecated 0–5 Full 제거):
+ *   - CriticEvaluation 에서 deprecated 0–5 필드(scores / overall_score_avg) 제거.
+ *     canonical(overall_score 0–1 + dimensions) 로 전환. target_plan_id 는 Optional 강등.
+ *   - page.tsx (`/plan`, `/plan/[plan_id]`) 가 canonical overall_score 를 % 로 렌더 —
+ *     PlanCard.tsx / component_map.md 0줄 변경 (page.tsx inline wrapper 만).
  */
 
 // ─── Meta ─────────────────────────────────────────────────────────────
@@ -75,9 +78,13 @@ export interface Plan {
 // ─── Critic Evaluation (Slice 3) ──────────────────────────────────────
 
 /**
- * 8차원 평가 점수. 각 차원 0.0 ~ 5.0.
+ * 8차원 평가 점수. 각 차원 0~5 정수.
  *
- * 참조: output_schema.md §8.2 (CriticEvaluation), eval/video_planning_eval.md
+ * Phase 9.5 Slice 4 (ADR-034): CriticEvaluation 에서 deprecated 0–5 `scores` 필드 제거.
+ * 본 타입은 run_critic LLM-facing 0–5 출력(P-007 prompt contract) 의 mirror 로만 유지 —
+ * envelope 응답 body 에는 더 이상 노출되지 않는다 (canonical dimensions 0–1 로 전환).
+ *
+ * 참조: output_schema.md §9 (CriticEvaluation), eval/video_planning_eval.md
  */
 export interface CriticScores {
   intent_fit: number;
@@ -109,38 +116,37 @@ export type CriticVerdictAction = CriticVerdict | "unknown";
  * 8 차원 키 (intent_fit / target_clarity / ...) 는 일반 string key 로 받아 미래
  * 차원 확장에 대비 (`CriticScores` 의 고정 8 키와 별개).
  *
- * 값 범위:
- *   - Phase 6 canonical: 0.0 ~ 1.0 (float)
- *   - Phase 1~4.5 호환 `scores` (CriticScores): 0~5 (int) — 별도 필드 유지.
+ * 값 범위: Phase 6 canonical 0.0 ~ 1.0 (float).
+ * Phase 9.5 Slice 4 (ADR-034): deprecated 0–5 `scores` 필드는 envelope 에서 제거됨 —
+ * `dimensions` 가 유일한 차원 점수 출처 (0–1).
  */
 export type CriticDimensions = Record<string, number>;
 
 export interface CriticEvaluation {
   /**
    * Phase 6 canonical (ADR-018): 종합 점수 (정규화 0.0 ~ 1.0).
-   * deprecated `overall_score_avg` (0~5) 와 공존. Phase 9+ eval-run 안정화 후
-   * `overall_score_avg` 제거 예정 (별도 contract-change 절차).
    *
-   * Optional — Phase 1~4.5 응답은 미포함 가능 (backward-compat).
+   * Phase 9.5 Slice 4 (ADR-034): deprecated `overall_score_avg` (0~5) 제거 완료.
+   * page.tsx 는 canonical `overall_score` 를 % 로 표시 (PlanCard 무수정).
+   *
+   * Optional — graceful skip (critic 호출 실패) 시 backend 가 미포함 가능.
    */
   overall_score?: number | null;
   /**
    * Phase 6 canonical (ADR-018): 8 차원 점수 dict (정규화 0.0 ~ 1.0).
    * 미래 차원 추가에 대비해 일반 `Record<string, number>` 로 정의.
    *
-   * Optional — Phase 1~4.5 응답은 미포함 가능.
+   * Optional — graceful skip 시 미포함 가능.
    */
   dimensions?: CriticDimensions;
 
-  // ── Phase 1~4.5 호환 필드 (page.tsx 회귀 0 위해 그대로 non-optional 유지) ──
-  // backend 는 Optional 로 강등됐지만 frontend 는 page.tsx 가 직접 호출 (.toFixed,
-  // .map 등) 하므로 non-optional 유지. Phase 9+ deprecated 필드 제거 시
-  // page.tsx 와 함께 동시 마이그레이션.
-  target_plan_id: string;
-  scores: CriticScores;
+  // ── Phase 1 호환 메타 (0–5 점수와 무관 — backend 가 그대로 노출) ──
+  // Phase 9.5 Slice 4 (ADR-034): deprecated 0–5 필드(scores / overall_score_avg) 는
+  // backend·frontend 양쪽에서 제거. canonical(overall_score / dimensions) 로 전환 완료.
+  // target_plan_id 는 backend 가 plan_id echo 로 노출하나 page.tsx 미렌더 → Optional.
+  target_plan_id?: string;
   reasons: Record<string, string>;
   suggestions: Record<string, string>;
-  overall_score_avg: number;
   overall_verdict: CriticVerdict;
   blocking_issues: string[];
   revise_round: number;

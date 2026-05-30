@@ -201,7 +201,11 @@ export default function PlanPage() {
         >
           <div className="flex items-baseline justify-between gap-2 flex-wrap">
             <p className="text-sm font-semibold">
-              품질 점수 {critic.overall_score_avg.toFixed(1)} / 5
+              {/* Phase 9.5 Slice 4 (ADR-034): backend deprecated 0–5(overall_score_avg) 제거.
+                  canonical overall_score(0–1) 를 % 로 표시 (PlanCard 무수정 — page.tsx inline). */}
+              {typeof critic.overall_score === "number"
+                ? `품질 점수 ${Math.round(critic.overall_score * 100)}점 / 100`
+                : "품질 평가"}
             </p>
             <span className="text-xs font-medium">
               {VERDICT_LABEL[critic.overall_verdict]}

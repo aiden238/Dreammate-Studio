@@ -261,6 +261,17 @@ prompt_registry P-ID: P-006
 >   강제 주입하지 않는다 (출력 의미 불변).
 > - **Phase 6 canonical schema(`CriticEvaluation` overall_score 0–1 + dimensions, ADR-018)은 불변** (NG5).
 > - semver minor (output schema 미변경). 결정 근거: `docs/decisions/phase_8_prompt_registry_semver.md`.
+>
+> **Phase 9.5 ADR-034 (2026-05-31, CC-005)**: Critic deprecated 0–5 Full 제거 → **canonical-only**.
+> - `CriticEvaluation` 에서 deprecated 0–5 필드(`scores` / `overall_score_avg`) 제거. `select_best_plan_index`
+>   deprecated fallback(overall_score_avg / scores / eight_dim_scores + `DeprecationWarning`) 제거 →
+>   canonical(overall_score → dimensions) 2 경로만.
+> - **run_critic 의 0–5 출력은 P-007 LLM-facing prompt contract 로 불변** (SYSTEM_PROMPT 0–5 8 dims +
+>   server-side _derive_verdict). `normalize_to_canonical`(0–5→0–1)은 canonical 생성 단일 경로 — 유지.
+> - orchestrator(`moa_orchestrator.py`) + Phase 1 endpoint(`routers/generate.py`) 모두 run_critic →
+>   normalize_to_canonical → `CriticEvaluation(**verdict)` wiring (ADR-032 동일 패턴). `model_config
+>   extra='ignore'` 로 verdict dict 의 잔존 0–5 키 무시 → 회귀 0. 결정 근거:
+>   `docs/decisions/phase_9_5_critic_deprecated_removal.md`.
 
 ### 5.1 책임
 
@@ -288,13 +299,16 @@ prompt_registry P-ID: P-006
 
 ### 5.3 Output 스키마
 
-`output_schema.md` §9 P-007 body (Phase 6 canonical, ADR-018 — 불변).
+`output_schema.md` §9 P-007 body (Phase 6 canonical, ADR-018 + Phase 9.5 canonical-only, ADR-034).
 
-- **canonical** (Phase 6): `overall_score` float [0~1] + `dimensions` dict[str, float] [0~1].
-- **deprecated 병행** (Phase 1~4.5): `scores` 8 dim × 0–5 정수 + `overall_score_avg` 0–5.
-- **adapter** (Phase 8 ADR-029): `normalize_to_canonical(verdict)` 가 0–5 → 0–1 정규화하여 canonical 산출.
-  LLM 은 0–5 산출, code 가 정규화. `run_critic` 본문 출력 의미는 불변 (helper 미강제 주입 → 회귀 0).
-  canonical 우선순위 소비는 `select_best_plan_index` (overall_score → dimensions → overall_score_avg → scores).
+- **canonical-only** (Phase 9.5 ADR-034): `overall_score` float [0~1] + `dimensions` dict[str, float] [0~1]
+  + Phase 1 호환 메타(`target_plan_id` / `reasons` / `suggestions` / `revise_round`). deprecated 0–5
+  필드(`scores` / `overall_score_avg`)는 제거됨.
+- **adapter** (Phase 8 ADR-029 + Phase 9.5 ADR-034): `normalize_to_canonical(verdict)` 가 run_critic 의
+  0–5 산출을 0–1 로 정규화하여 canonical 생성 (단일 경로). LLM-facing run_critic 의 0–5 출력은 P-007
+  prompt contract 로 불변. `CriticEvaluation(**verdict)` 은 `extra='ignore'` 로 verdict dict 의 잔존 0–5
+  키를 무시 → canonical 만 응답 노출 (회귀 0).
+- canonical 우선순위 소비는 `select_best_plan_index` (overall_score → dimensions, deprecated fallback 제거).
 
 ### 5.4 실행 정책
 
@@ -823,4 +837,11 @@ v1.2.0 (2026-05-29, Phase 8 Slice 4):
     - run_critic 출력 의미 불변 (helper additive, 미강제 주입). semver minor.
   - §8 orchestrator 중개 명시 (ADR-027 — moa_orchestrator.generate_plan, ProgressSink ADR-028, moa_policy §2 정합)
   - Phase 6 canonical schema(output_schema.md §9) 불변 (NG5).
+v1.3.0 (2026-05-31, Phase 9.5 Slice 4 — CC-005 / ADR-034):
+  - §5 Critic deprecated 0–5 Full 제거 → canonical-only.
+    - §5.3 Output 스키마: deprecated 0–5 필드(scores / overall_score_avg) 제거. canonical(overall_score
+      0–1 + dimensions) + Phase 1 호환 메타만. select_best_plan_index canonical 2 경로 (fallback 제거).
+    - run_critic 의 0–5 출력 + normalize_to_canonical(0–5→0–1)은 P-007 LLM-facing prompt contract 로 불변.
+    - CriticEvaluation extra='ignore' 로 verdict dict 잔존 0–5 키 무시 → 회귀 0 (output_schema.md §9 정합).
+  - semver minor bump: canonical-only 전환 (eval baseline 동일 — 회귀 0).
 ```

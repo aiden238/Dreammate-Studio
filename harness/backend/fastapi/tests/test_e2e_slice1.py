@@ -118,7 +118,10 @@ def test_generate_validation_warnings_phase1(mock_pipeline_ok) -> None:
 # ─── Critic 평가 (Slice 3) ────────────────────────────────────────────
 
 def test_generate_includes_critic_evaluation(mock_pipeline_ok) -> None:
-    """body.critic_evaluation 8 차원 + verdict 포함 (output_schema §9.1)."""
+    """body.critic_evaluation canonical 8 차원 + verdict 포함 (output_schema §9).
+
+    Phase 9.5 ADR-034: deprecated 0–5 scores 제거 → canonical dimensions(0–1) 로 검증.
+    """
     response = client.post(
         "/api/v1/generate",
         json={"input": "초보 요리 쇼츠 채널 첫 영상 기획해줘"},
@@ -129,8 +132,12 @@ def test_generate_includes_critic_evaluation(mock_pipeline_ok) -> None:
     critic = data["body"].get("critic_evaluation")
     assert critic is not None, "Slice 3: body.critic_evaluation 필드 채워져야 함"
 
-    # 8 차원 점수 모두 0~5 정수
-    scores = critic["scores"]
+    # Phase 9.5 ADR-034: deprecated 0–5 필드(scores / overall_score_avg)는 envelope 에서 제거
+    assert "scores" not in critic
+    assert "overall_score_avg" not in critic
+
+    # canonical 8 차원 점수 모두 0.0~1.0 (dimensions)
+    dimensions = critic["dimensions"]
     expected_dims = {
         "intent_fit",
         "target_clarity",
@@ -141,15 +148,17 @@ def test_generate_includes_critic_evaluation(mock_pipeline_ok) -> None:
         "brand_consistency",
         "differentiation",
     }
-    assert set(scores.keys()) == expected_dims
-    for k, v in scores.items():
-        assert isinstance(v, int)
-        assert 0 <= v <= 5, f"{k} 점수가 0~5 범위 밖: {v}"
+    assert set(dimensions.keys()) == expected_dims
+    for k, v in dimensions.items():
+        assert 0.0 <= v <= 1.0, f"{k} canonical 점수가 0~1 범위 밖: {v}"
+
+    # canonical overall_score 0~1
+    assert 0.0 <= critic["overall_score"] <= 1.0
 
     # verdict는 enum
     assert critic["overall_verdict"] in ("approve", "revise", "reject")
 
-    # plan_id echo back
+    # plan_id echo back (Phase 1 호환 메타 — 잔존)
     plan_id = data["body"]["plan_candidates"][0]["plan_id"]
     assert critic["target_plan_id"] == plan_id
 
@@ -190,9 +199,10 @@ def test_generate_critic_flagged_returns_revise_verdict(
     critic = data["body"]["critic_evaluation"]
     assert critic["overall_verdict"] == "revise"
     assert len(critic["blocking_issues"]) >= 1
-    # FC-001/002 시드 패턴 — hook_strength, target_clarity가 미달
-    assert critic["scores"]["hook_strength"] < 2
-    assert critic["scores"]["target_clarity"] < 2
+    # Phase 9.5 ADR-034: canonical dimensions(0–1) 로 검증 (deprecated 0–5 scores 제거).
+    # FC-001/002 시드 패턴 — hook_strength, target_clarity가 미달 (0–5 의 2점 = 0.4 미만).
+    assert critic["dimensions"]["hook_strength"] < 0.4
+    assert critic["dimensions"]["target_clarity"] < 0.4
 
 
 # ─── RAG references (Slice 4) ─────────────────────────────────────────

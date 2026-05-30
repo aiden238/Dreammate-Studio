@@ -417,10 +417,18 @@ Direction Summary. 한 줄 기획 방향.
 > **Phase 6 ADR-018 (2026-05-29)**: Critic verdict canonical 결정.
 > - canonical 필드: `overall_score: float [0.0~1.0]` + `dimensions: dict[str, float]`
 > - deprecated 필드: `overall_score_avg`, `scores`, `eight_dim_scores` (Phase 9+ eval 후 제거)
-> - `select_best_plan_index` fallback chain 축소 + `DeprecationWarning` 발행 (`agents/critic.py`)
 > - 결정 근거: `docs/decisions/phase_6_critic_canonical.md`
+>
+> **Phase 9.5 ADR-034 (2026-05-31, CC-005)**: deprecated 0–5 Full 제거 완료.
+> - `CriticEvaluation` 에서 deprecated 0–5 필드(`scores` / `overall_score_avg`) 제거 — canonical-only.
+> - `select_best_plan_index` deprecated fallback(overall_score_avg / scores / eight_dim_scores +
+>   `DeprecationWarning`) 제거 — canonical(overall_score → dimensions) 2 경로만.
+> - `model_config extra='ignore'`: orchestrator/generate 가 normalize_to_canonical 산출 verdict dict
+>   (run_critic 0–5 키 병행)를 `CriticEvaluation(**verdict)` 로 넘겨도 0–5 키 무시 → 회귀 0.
+> - **run_critic 의 0–5 출력은 P-007 LLM-facing prompt contract 로 불변** (normalize_to_canonical 가
+>   0–5→0–1 변환하는 canonical 생성 단일 경로). 결정 근거: `docs/decisions/phase_9_5_critic_deprecated_removal.md`.
 
-### 9.1 Body 스키마 (Phase 6 canonical)
+### 9.1 Body 스키마 (Phase 6 canonical — Phase 9.5 canonical-only)
 
 ```json
 {
@@ -438,24 +446,16 @@ Direction Summary. 한 줄 기획 방향.
   "overall_verdict": "approve | revise | reject",
   "blocking_issues": ["string"],
 
-  /* --- Phase 1~4.5 호환 필드 (deprecated, Phase 9+ 제거 예정) --- */
+  /* --- Phase 1 호환 메타 (0–5 점수와 무관 — 잔존) --- */
   "target_plan_id": "string (uuid)?",
-  "scores": {
-    "intent_fit": 0,
-    "target_clarity": 0,
-    "hook_strength": 0,
-    "message_clarity": 0,
-    "structure": 0,
-    "feasibility": 0,
-    "brand_consistency": 0,
-    "differentiation": 0
-  },
   "reasons": { /* 8-dim 문자열 dict */ },
   "suggestions": { /* 8-dim 문자열 dict */ },
-  "overall_score_avg": 0.0,
   "revise_round": 0
 }
 ```
+
+> Phase 9.5 ADR-034: deprecated 0–5 필드(`scores`, `overall_score_avg`)는 제거되었다.
+> 8-dim 점수는 canonical `dimensions`(0~1) 가 유일한 출처다.
 
 ### 9.1.1 canonical 필드 (Phase 6 ADR-018)
 
@@ -466,19 +466,21 @@ Direction Summary. 한 줄 기획 방향.
 | `overall_verdict` | Literal["approve", "revise", "reject"] | 필수 | 의사결정 카테고리 |
 | `blocking_issues` | list[str] | Optional | 최대 3개 |
 
-### 9.1.2 Deprecated 필드 (Phase 9+ eval 후 제거)
+### 9.1.2 Deprecated 0–5 필드 — Phase 9.5 ADR-034 제거 완료
 
-| 필드 | 사유 | 대체 |
+| 필드 | 상태 | 대체 |
 |---|---|---|
-| `overall_score_avg` | 0~5 float (비정규화) | `overall_score` (0~1) |
-| `scores` | 0~5 정수 dict | `dimensions` (0~1 float) |
-| `eight_dim_scores` | 별칭 | `dimensions` |
-| `target_plan_id` | echo back 만 (라우터가 별도 관리) | (제거 예정) |
-| `reasons`, `suggestions`, `revise_round` | (당분간 유지, Phase 9+ 결정) | — |
+| `overall_score_avg` | **제거** (Phase 9.5 ADR-034) | `overall_score` (0~1) |
+| `scores` | **제거** (Phase 9.5 ADR-034) | `dimensions` (0~1 float) |
+| `eight_dim_scores` | **제거** (Phase 9.5 ADR-034) | `dimensions` |
+| `target_plan_id` | 잔존 (Phase 1 호환 메타 — plan_id echo, Optional) | — |
+| `reasons`, `suggestions`, `revise_round` | 잔존 | — |
 
-Deprecated 필드 사용 시 `agents/critic.py::select_best_plan_index` 에서 `DeprecationWarning` 발행.
+`CriticEvaluation` 은 `model_config extra='ignore'` 로 verdict dict 의 잔존 0–5 키를 무시한다 (회귀 0).
+`select_best_plan_index` 는 canonical(overall_score → dimensions) 만 소비하며 더 이상 `DeprecationWarning`
+을 발행하지 않는다. run_critic 의 0–5 출력은 P-007 LLM-facing prompt contract 로 불변.
 
-### 9.1.3 dimensions 표준 키 8개 (Phase 1~4.5 호환)
+### 9.1.3 dimensions 표준 키 8개
 
 ```
 intent_fit / target_clarity / hook_strength / message_clarity /
@@ -491,16 +493,18 @@ Phase 9+ eval-run 정식화 시 별도 contract-change 절차로 키 확장 가�
 
 ```
 - canonical: overall_score 0.0~1.0, dimensions 값 0.0~1.0
-- deprecated 호환: 8개 차원의 scores 점수 0~5 정수
-- reasons, suggestions의 키는 scores 의 키와 1:1 매칭 (8개 — 호환 모드)
-- overall_score_avg 는 8개 scores 점수의 산술 평균 (deprecated)
-- overall_verdict:
-    approve:  overall_score ≥ 0.7 (canonical)  OR  avg ≥ 3.5 AND 모든 점수 ≥ 2 (호환)
-    revise:   0.5 ≤ overall_score < 0.7  OR  2.5 ≤ avg < 3.5 OR 1~2개 점수가 < 2
-    reject:   overall_score < 0.5  OR  avg < 2.5 OR 3개 이상 점수가 < 2 OR 광고적 표현 위반
+- reasons, suggestions의 키는 dimensions 의 키와 1:1 매칭 (8개)
+- overall_verdict (canonical 기준 — run_critic 내부 0–5 산출은 P-007 LLM-facing, normalize_to_canonical 가 0–1 변환):
+    approve:  overall_score ≥ 0.7
+    revise:   0.5 ≤ overall_score < 0.7
+    reject:   overall_score < 0.5  OR  광고적 표현 위반
 - blocking_issues 최대 3개
 - revise_round는 server-side에서 주입 (LLM은 항상 0 반환)
 ```
+
+> run_critic 내부 verdict 산출 규칙(0–5 평균/미달 카운트 → approve/revise/reject)은 P-007 prompt contract
+> (`agents/critic.py::_derive_verdict`) 로 불변. normalize_to_canonical 이 0–5→0–1 로 변환하여 canonical
+> overall_score 를 생성한다.
 
 ### 9.3 revise 무한 루프 차단
 
@@ -508,18 +512,18 @@ Phase 9+ eval-run 정식화 시 별도 contract-change 절차로 키 확장 가�
 
 → DB 매핑: `quality_scores` 테이블에 그대로 매핑. `target_kind='plan_option'`, `target_id=target_plan_id`.
 
-### 9.4 select_best_plan_index 우선순위 (Phase 6 ADR-018)
+### 9.4 select_best_plan_index 우선순위 (Phase 6 ADR-018 + Phase 9.5 ADR-034)
 
-`agents/critic.py::select_best_plan_index(verdicts) -> int | None` 의 score 추출 우선순위:
+`agents/critic.py::select_best_plan_index(verdicts) -> int | None` 의 score 추출 우선순위
+(Phase 9.5 ADR-034 으로 deprecated 0–5 fallback 제거 — canonical 2 경로만):
 
 ```
 1. overall_score (canonical)
 2. dimensions 평균 (canonical fallback)
-3. overall_score_avg (deprecated + DeprecationWarning)
-4. scores 평균 (deprecated + DeprecationWarning)
-5. eight_dim_scores 평균 (deprecated + DeprecationWarning)
 ```
 
+canonical(overall_score / dimensions) 부재 시 `None` (deprecated 0–5 키 overall_score_avg / scores /
+eight_dim_scores 는 더 이상 fallback 으로 사용되지 않고 무시된다 — `DeprecationWarning` 미발행).
 Tie-breaking: 동점 시 plan_index 가 더 작은 쪽 (deterministic).
 모든 verdict 가 invalid 시 `None` 반환 (frontend wrapper highlight 생략).
 
@@ -566,9 +570,10 @@ Pydantic 모델: `backend/fastapi/schemas/output.py::ReviseAttempt` (extra="allo
 |---|---|---|---|
 | `recommended_plan_index` | int [0~plan_count-1] \| null | Optional | Critic best-plan idx. 모든 verdict invalid / critic skip 시 null. Tie 발생 시 더 작은 index. Frontend wrapper highlight 용 (PlanCard.tsx 무수정 정책 — 사용자 결정 6-a 계승) |
 
-### 9-A.3 Body.critic_evaluation (Phase 1 Slice 3 + Phase 6 canonical)
+### 9-A.3 Body.critic_evaluation (Phase 1 Slice 3 + Phase 6 canonical + Phase 9.5 canonical-only)
 
-Phase 1 Slice 3 에서 도입. Phase 6 (§9.1) canonical fields (`overall_score`, `dimensions`) 추가. 기존 deprecated 필드는 backward-compat 위해 Optional 유지.
+Phase 1 Slice 3 에서 도입. Phase 6 (§9.1) canonical fields (`overall_score`, `dimensions`) 추가.
+Phase 9.5 (ADR-034) 에서 deprecated 0–5 필드(`scores`, `overall_score_avg`) 제거 — canonical-only.
 
 ---
 
@@ -878,7 +883,7 @@ PATCH: 설명 수정, 검증 규칙 강화 (기존 통과 케이스 영향 없�
 변경 시 절차:
 1. eval/golden_set.md의 50개 시드 케이스를 새 스키마로 재실행
 2. validation.passed 비율 ≥ 95% 유지 확인
-3. Critic의 overall_score_avg 평균 변화 ≤ ±0.3 확인
+3. Critic의 canonical overall_score (0~1) 평균 변화 ≤ ±0.3 확인 (Phase 9.5 ADR-034 — deprecated overall_score_avg 제거)
 4. 실패 케이스가 있으면 prompt_registry.md와 함께 재조정
 ```
 
@@ -947,4 +952,15 @@ v1.1.0 (2026-05-29, Phase 6 Slice 2):
   - §9-A Body 정식 등록: revise_history (ReviseAttempt typing 강화) + recommended_plan_index
     + critic_evaluation canonical 추가
   - semver minor bump: 신규 필드 (overall_score / dimensions) 추가 + Optional 호환 유지.
+v1.2.0 (2026-05-31, Phase 9.5 Slice 4 — CC-005 / ADR-034):
+  - §9 Critic deprecated 0–5 Full 제거 (canonical-only):
+    - §9.1 Body 스키마에서 deprecated 필드(scores / overall_score_avg) 제거 — canonical(overall_score 0–1
+      + dimensions) + Phase 1 호환 메타(target_plan_id / reasons / suggestions / revise_round) 만.
+    - §9.1.2 deprecated 필드 표 → "Phase 9.5 ADR-034 제거 완료" 로 갱신 (scores / overall_score_avg /
+      eight_dim_scores 제거, model_config extra='ignore' 로 회귀 0).
+    - §9.4 select_best_plan_index 우선순위: deprecated fallback 3~5 단계 + DeprecationWarning 제거 →
+      canonical 2 경로 (overall_score → dimensions).
+    - §9.2 검증 규칙: canonical(0–1) 기준으로 정리. run_critic 0–5 산출 + normalize_to_canonical 변환은
+      P-007 LLM-facing prompt contract 로 불변 명시.
+  - semver minor bump: deprecated 필드 제거는 canonical-only 전환 (extra='ignore' + eval baseline 회귀 0).
 ```
