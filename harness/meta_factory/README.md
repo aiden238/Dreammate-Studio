@@ -30,7 +30,7 @@
 - 라우터: `AGENTS.md` (구현/QA 모델) / `CLAUDE.md` (기획/설계 모델)
 - 상태: `PROJECT_STATE.md` / `PHASE_REGISTRY.md`
 - 계약: `docs/contracts/**` (api / output_schema / agent_io / db_schema / llm_security ...)
-- 운영: `phases/**` (active/archive) / `eval/**` (golden_set / rubric) / `.claude/skills/**` (20 Skill)
+- 운영: `phases/**` (active/archive) / `eval/**` (golden_set / rubric) / `.claude/skills/**` (21 Skill — Phase M0에서 harness-factory #21 추가)
 - 메타: `meta/self_improvement_loop.md` (5단계 루프) / `meta/retrospectives` / `meta/validations`
 
 ### L3 — Meta-Harness Factory (이 디렉토리, 신규)
@@ -102,3 +102,20 @@ Skill 진입은 `harness-factory` (proposal-only, 키워드 scoped — Slice 3).
 - 생성 결과는 outputs/ 또는 meta/proposals/ 에 먼저.
 - Skill 추가/변경은 INDEX 충돌 규칙 + contract-change Skill 절차.
 - payoff deferred — skeleton·contract·validation 까지만 (자동 generator 아님).
+
+---
+
+## 6. 모델별 사용 지침 (Claude / Codex)
+
+`harness-factory` Skill 은 `applies_to: [claude]` (기획·설계 모델 전용). Codex 등 구현/QA 모델(`AGENTS.md` 라우터)은 이 Skill 을 자동 인지하지 못할 수 있으므로 다음을 따른다.
+
+### Claude (CLAUDE.md 라우터)
+- `harness-factory` Skill 키워드("harness blueprint", "meta_factory", "harness scaffold", "도메인 하네스 생성")로 자동 트리거 → generation_workflow + validation_workflow 진행.
+
+### Codex (AGENTS.md 라우터)
+- `harness-factory` Skill 미인지 → meta_factory 문서를 **직접 순서대로 읽고** 수행:
+  `README.md → factory_contract.md → generation_workflow.md → validation_workflow.md`
+- ★ **product runtime(L1) 변경 없이** outputs/ 에 문서 산출물만 생성 (proposal-first).
+- 기존 harness(L2 — AGENTS/CLAUDE/PROJECT_STATE/contracts/Skill) 직접 변경 금지. 생성물은 `outputs/generated_harnesses/` 또는 `meta/proposals/` 에 먼저.
+
+> 현 단계 결정: harness-factory 는 **claude 전용 유지**(안전한 선택). Codex 적극 활성(applies_to [agents, claude]) 은 dry-run 검증 후 별도 phase 에서 재검토.

@@ -2,7 +2,7 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9 완료**.
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5 + Phase M0(meta-phase) 완료**.
 Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /auth/* + /sse/* + /plans/{id}/select + /plans/{id}/feedback 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions, **normalize wiring live**) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계 (실 stage 연동)** + **RAG Lite (candidate_knowledge 5단계 MVP 전부 + pgvector retrieval + LLM Wiki 보조)** + **MOA Orchestrator 추출 (orchestration/moa_orchestrator + ProgressSink + progress_store 브릿지) + prompt_registry semver 정식화 + Critic v1.1.0 conservative adapter** + **결과 저장(selected_plans) + 피드백(feedback_events) 영속화 graceful + PII 마스킹 + 피드백 UI inline + Brand Memory 준비(feedback→candidate pending 적재)** 모두 동작.
 **Phase 9 ✅ done (2026-05-31)** — 결과 저장 + 피드백 (selected_plans/feedback_events 영속화 graceful + normalize_to_canonical wiring + Brand Memory 준비 + 피드백 UI wrapper, ADR-030/031/032, CC-004, large phase 6 Slice 실측 ~10~13h).
 
@@ -33,10 +33,10 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 - 한 줄 정의: golden_set 11 케이스 회귀 runner(mock-deterministic primary + 실 LLM mode flag)와 revise effect eval 을 구현하여 eval-design/eval-run Skill 을 첫 정식 트리거하고, eval 로 canonical-only 품질을 검증한 뒤 Critic deprecated 0–5 fallback + CriticEvaluation Optional deprecated 필드를 Full 제거한다 (run_critic 0–5 출력 불변 — P-007 prompt contract).
 - **5 Slice 모두 sub-agent dispatch (★ 순서: eval runner(2~3) → eval 검증 → deprecated 제거(4))**:
   - Slice 1 [Pre-Entry — validations(V1~V7 PASS) + eval-design Skill ★ 첫 정식 + ADR-033/034] ✅ (entry commit)
-  - Slice 2 [eval-run golden_set runner — loader + mock 회귀 + 채점 + 임계값 + report + eval-run ★ 첫 정식] (예정)
-  - Slice 3 [revise effect eval + eval-run 실행 (canonical-only 품질 baseline)] (예정)
-  - Slice 4 [Critic deprecated 0–5 Full 제거 — eval 검증 후 + contract-change CC-005] (예정)
-  - Slice 5 [Close] (예정)
+  - Slice 2 [eval-run golden_set runner — loader + mock 회귀 + 채점 + 임계값 + report + eval-run ★ 첫 정식] ✅ (bfac0c4)
+  - Slice 3 [revise effect eval + eval-run 실행 (canonical-only 품질 baseline)] ✅ (8a18276)
+  - Slice 4 [Critic deprecated 0–5 Full 제거 — eval 검증 후 + contract-change CC-005] ✅ (864e83e)
+  - Slice 5 [Close] ✅ (fff913e)
 - **사용자 결정 2건 반영 (2026-05-31)**:
   - **Critic deprecated 0–5: Full 제거** — select_best_plan_index fallback + DeprecationWarning + CriticEvaluation Optional deprecated 필드. ★ run_critic 0–5 출력 불변 (P-007 prompt contract, NG3). eval 검증 후 제거 (순서).
   - **eval-run: Mock-deterministic primary** + 실 LLM mode 문서. RAG eval_rubric Phase 10+ 이관 (NG1).

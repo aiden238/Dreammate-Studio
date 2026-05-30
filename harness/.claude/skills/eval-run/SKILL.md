@@ -7,7 +7,7 @@ description: |
   키워드: "eval 실행", "평가 돌려", "golden_set", "회귀 테스트", "regression",
   "품질 평가", "human review", "video_planning_eval".
 applies_to: [agents]
-phase: [phase-10, phase-11, ongoing]
+phase: [phase-9.5, phase-10, phase-11, ongoing]
 related_contracts:
   - eval/golden_set.md
   - eval/video_planning_eval.md
@@ -22,6 +22,8 @@ version: v1.0.0
 # eval-run
 
 평가는 통과/실패가 아니라 점수와 분포다. 어떤 평가를 언제 돌리고 결과를 어떻게 해석할지 절차로 고정한다.
+
+> 정식화 이력: **Phase 9.5에서 first formal baseline으로 정식화**(golden_set 11 케이스 mock-deterministic runner + revise effect + 임계값 게이트, ADR-033)되었고, Phase 10+ 부터 반복 운영한다.
 
 ## 트리거 조건
 
