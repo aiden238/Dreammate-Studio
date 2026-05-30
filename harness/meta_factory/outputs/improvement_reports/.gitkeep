@@ -1,0 +1,7 @@
+# improvement_reports/ — 기존 하네스 개선 제안 리포트 (★ proposal-first)
+#
+# meta_factory 가 기존 하네스(L2) 개선을 제안할 때 리포트를 여기에 둔다.
+# self_improvement_loop + harness-audit 관찰 → proposal (자동 반영 X).
+# 실 반영은 사용자 승인 + contract-change Skill 절차 경유 (factory_contract 규칙 2/3/5).
+#
+# 이 .gitkeep 은 빈 디렉토리를 git 에 보존하기 위한 placeholder 다.

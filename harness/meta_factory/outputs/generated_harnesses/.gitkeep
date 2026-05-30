@@ -1,0 +1,7 @@
+# generated_harnesses/ — 생성된 하네스 격리 (★ proposal-first)
+#
+# meta_factory 가 생성한 harness blueprint 초안은 여기에 먼저 둔다 (active 아님).
+# validation_workflow.md 6 검증 통과 + 사용자 승인 전까지 active 로 간주하지 않는다
+# (factory_contract 규칙 3/7). 기존 프로젝트(L2)에 직접 적용 금지.
+#
+# 이 .gitkeep 은 빈 디렉토리를 git 에 보존하기 위한 placeholder 다.
