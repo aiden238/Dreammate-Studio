@@ -12,7 +12,7 @@ generate는 202 (Accepted) skeleton. Slice 2에서 본격 3-plan generation 구�
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -84,3 +84,51 @@ class PlanResource(BaseModel):
         default=None,
         description="Slice 2 generate 완료 후 채워짐 (3-plan Envelope).",
     )
+
+
+# ─── Phase 9 Slice 3 — Select / Feedback (ADR-030) ────────────────────
+# 실 plans 테이블 정합: selected_option_index 0–2 (plan_candidates JSONB 배열 인덱스).
+# routers/plans.py 의 thin adapter 가 SelectionRepo / FeedbackRepo 로 위임.
+
+
+class SelectPlanRequest(BaseModel):
+    """POST /plans/{plan_id}/select body.
+
+    selected_option_index 는 plan_candidates(3-plan) 배열 인덱스 (0–2).
+    selection_reason 은 자유 입력 (옵션, max 2000).
+    """
+
+    selected_option_index: int = Field(..., ge=0, le=2)
+    selection_reason: str | None = Field(default=None, max_length=2000)
+
+
+class SelectPlanResponse(BaseModel):
+    plan_id: str
+    selected_option_index: int
+    selection_reason: str | None = None
+    selected_at: str
+
+
+class FeedbackRequest(BaseModel):
+    """POST /plans/{plan_id}/feedback body.
+
+    event_type 은 like / dislike / reject / regenerate enum.
+    option_index 는 특정 candidate 대상 (0–2). None = plan 전체.
+    reason 은 자유 입력 — FeedbackRepo 가 저장 전 PII 마스킹 (security-review T1).
+    """
+
+    event_type: Literal["like", "dislike", "reject", "regenerate"]
+    option_index: int | None = Field(default=None, ge=0, le=2)
+    reason: str | None = Field(default=None, max_length=2000)
+
+
+class FeedbackResponse(BaseModel):
+    plan_id: str
+    event_type: str
+    option_index: int | None = None
+    recorded_at: str
+
+
+class FeedbackListResponse(BaseModel):
+    plan_id: str
+    events: list[dict[str, Any]]

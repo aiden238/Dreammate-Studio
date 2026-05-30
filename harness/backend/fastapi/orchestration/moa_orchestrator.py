@@ -34,6 +34,7 @@ from fastapi.responses import JSONResponse
 from ..agents.critic import (
     PROMPT_ID as CRITIC_PROMPT_ID,
     PROMPT_VERSION as CRITIC_PROMPT_VERSION,
+    normalize_to_canonical,
 )
 from ..agents.intent import (
     PROMPT_ID as INTENT_PROMPT_ID,
@@ -249,11 +250,15 @@ async def generate_plan(
 
             for attempt in range(max_revise + 1):
                 # critic 호출 (sync 함수 — thread pool 에서 실행하여 다른 plan 과 병렬 가능).
+                # Phase 9 Slice 3 (ADR-032): run_critic 결과를 normalize_to_canonical 로 감싸
+                #   critic_evaluation 에 canonical(overall_score 0–1 + dimensions) 추가.
+                #   helper 는 비파괴 사본 — deprecated 0–5(scores / overall_score_avg) 병행 유지 (NG3, 회귀 0).
                 try:
                     loop = asyncio.get_event_loop()
-                    verdict = await loop.run_in_executor(
+                    raw_verdict = await loop.run_in_executor(
                         None, plans_router.run_critic, current_plan_dict,
                     )
+                    verdict = normalize_to_canonical(raw_verdict)
                 except Exception as exc:
                     logger.warning(
                         "Critic call failed plan_idx=%d attempt=%d: %s — graceful skip",
