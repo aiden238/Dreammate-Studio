@@ -372,3 +372,60 @@ export interface AuthSession {
   user_id: string;
   email: string;
 }
+
+// ─── Phase 9 Slice 5 — Select / Feedback types (ADR-030) ───────────────
+//
+// 참조:
+//   - harness/backend/fastapi/schemas/plans.py (SelectPlanRequest/Response,
+//     FeedbackRequest/Response — Phase 9 Slice 3)
+//   - harness/backend/fastapi/routers/plans.py
+//     (POST /plans/{id}/select, POST/GET /plans/{id}/feedback)
+//
+// 정책: 선택/반려 UI 는 page.tsx inline wrapper 로 추가 (PlanCard.tsx / component_map.md
+// 무수정 ★). 본 타입들은 backend Pydantic 스키마와 1:1 정합.
+
+/**
+ * POST /plans/{plan_id}/select body.
+ * selected_option_index 는 plan_candidates(3-plan) 배열 인덱스 (0–2).
+ * selection_reason 은 자유 입력 (옵션).
+ */
+export interface SelectPlanRequest {
+  selected_option_index: number;
+  selection_reason?: string | null;
+}
+
+/**
+ * POST /plans/{plan_id}/select 응답.
+ */
+export interface SelectPlanResponse {
+  plan_id: string;
+  selected_option_index: number;
+  selection_reason?: string | null;
+  selected_at: string;
+}
+
+/**
+ * 피드백 event 종류. backend Literal["like","dislike","reject","regenerate"] 정합.
+ */
+export type FeedbackEventType = "like" | "dislike" | "reject" | "regenerate";
+
+/**
+ * POST /plans/{plan_id}/feedback body.
+ * option_index 는 특정 candidate 대상 (0–2). null/미지정 = plan 전체.
+ * reason 은 자유 입력 — backend FeedbackRepo 가 저장 전 PII 마스킹.
+ */
+export interface FeedbackRequest {
+  event_type: FeedbackEventType;
+  option_index?: number | null;
+  reason?: string | null;
+}
+
+/**
+ * POST /plans/{plan_id}/feedback 응답.
+ */
+export interface FeedbackResponse {
+  plan_id: string;
+  event_type: string;
+  option_index?: number | null;
+  recorded_at: string;
+}

@@ -21,9 +21,13 @@ import type {
   Envelope,
   ErrorEnvelope,
   FastAPIDetailError,
+  FeedbackRequest,
+  FeedbackResponse,
   MultiPlanEnvelope,
   PlanResource,
   PlanStartResponse,
+  SelectPlanRequest,
+  SelectPlanResponse,
   WizardStepResponse,
 } from "./types";
 import { isEnvelope, isErrorEnvelope, isFastAPIDetailError } from "./types";
@@ -412,4 +416,67 @@ export async function getPlan(planId: string): Promise<PlanResource> {
     throw new Error(`getPlan failed: HTTP ${response.status}`);
   }
   return response.json() as Promise<PlanResource>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Phase 9 Slice 5 — Select / Feedback endpoint wrappers (ADR-030)
+// ═══════════════════════════════════════════════════════════════════════
+//
+// 참조: harness/backend/fastapi/routers/plans.py
+//         POST /api/v1/plans/{id}/select   (SelectPlanRequest → SelectPlanResponse)
+//         POST /api/v1/plans/{id}/feedback (FeedbackRequest   → FeedbackResponse)
+//       harness/backend/fastapi/schemas/plans.py (Pydantic 정합)
+//
+// 정책:
+//   - Phase 5 auth 패턴: credentials: "include" (httpOnly cookie 전송).
+//   - 단순 throw on !ok (page.tsx inline UI 가 try/catch 로 처리).
+//   - 선택/반려 UI 는 page.tsx inline wrapper — PlanCard.tsx / component_map.md 무수정 ★.
+
+/**
+ * POST /api/v1/plans/{plan_id}/select
+ * 3-plan 중 하나를 선택 저장 (selected_option_index 0–2).
+ */
+export async function selectPlan(
+  planId: string,
+  body: SelectPlanRequest,
+): Promise<SelectPlanResponse> {
+  const url = `${API_BASE_URL}/api/v1/plans/${encodeURIComponent(planId)}/select`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) {
+    throw new Error(`select_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<SelectPlanResponse>;
+}
+
+/**
+ * POST /api/v1/plans/{plan_id}/feedback
+ * like / dislike / reject / regenerate 피드백 저장.
+ * reason 자유 입력은 backend FeedbackRepo 가 저장 전 PII 마스킹.
+ */
+export async function sendFeedback(
+  planId: string,
+  body: FeedbackRequest,
+): Promise<FeedbackResponse> {
+  const url = `${API_BASE_URL}/api/v1/plans/${encodeURIComponent(planId)}/feedback`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) {
+    throw new Error(`feedback_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<FeedbackResponse>;
 }

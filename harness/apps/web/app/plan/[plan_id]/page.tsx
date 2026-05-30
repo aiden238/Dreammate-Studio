@@ -25,12 +25,18 @@ import AuthGuard from "@/components/AuthGuard"; // Phase 5 Slice 3 — 외부 wr
 import ErrorCard from "@/components/ErrorCard";
 import PlanCard from "@/components/PlanCard"; // ★ 무수정 import (사용자 결정 6-a)
 import ProgressStepper from "@/components/ProgressStepper";
-import { generateMultiPlan, getPlan } from "@/lib/api";
+import {
+  generateMultiPlan,
+  getPlan,
+  selectPlan,
+  sendFeedback,
+} from "@/lib/api";
 import { subscribeToPlanProgress, type ProgressEvent } from "@/lib/sse";
 import type {
   CriticEvaluation,
   CriticVerdict,
   ErrorEnvelope,
+  FeedbackEventType,
   MultiPlanEnvelope,
   Plan,
   RAGReference,
@@ -76,6 +82,25 @@ function PlanResultPageContent() {
   // Phase 5 Slice 4 — SSE Progress 상태 (D7). PlanCard 무수정 정신 계승:
   // 본 state 와 UI 는 PlanCard 외부 wrapper 에만 영향.
   const [progress, setProgress] = useState<ProgressEvent | null>(null);
+
+  // Phase 9 Slice 5 — 선택/반려 피드백 상태 (ADR-030). PlanCard 무수정 정신 계승:
+  // 본 state 와 UI 는 모두 PlanCard 외부 wrapper (page.tsx inline) 에만 영향.
+  //   - savedSelectedIndex: backend /select 저장 완료된 option_index (null = 미저장).
+  //   - selectBusy: /select 호출 중 (버튼 중복 클릭 방지).
+  //   - feedbackByIndex: option_index → 마지막으로 전송한 피드백 event_type (UI 표시용).
+  //   - rejectOpenIndex: 반려 이유 textarea 가 열린 카드 index (null = 모두 닫힘).
+  //   - rejectReason: 반려 이유 입력값 (열린 카드 전용 — 닫힐 때 초기화).
+  //   - actionError: 선택/피드백 호출 실패 시 사용자 표시 메시지.
+  const [savedSelectedIndex, setSavedSelectedIndex] = useState<number | null>(
+    null,
+  );
+  const [selectBusy, setSelectBusy] = useState(false);
+  const [feedbackByIndex, setFeedbackByIndex] = useState<
+    Record<number, FeedbackEventType>
+  >({});
+  const [rejectOpenIndex, setRejectOpenIndex] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // sessionStorage 에서 이전 선택 복원
   useEffect(() => {
@@ -167,6 +192,90 @@ function PlanResultPageContent() {
   const handleHome = useCallback(() => {
     router.push("/");
   }, [router]);
+
+  // Phase 9 Slice 5 — backend /select 저장 (ADR-030). PlanCard 외부 wrapper inline.
+  //   - optionIndex 는 plan_candidates 배열 인덱스 (0–2) = SelectPlanRequest.selected_option_index.
+  //   - 성공 시 savedSelectedIndex 갱신 (선택 저장 표시). 실패 시 actionError 표시 (graceful).
+  const handleConfirmSelect = useCallback(
+    async (optionIndex: number, reason?: string | null) => {
+      if (!planId) return;
+      setSelectBusy(true);
+      setActionError(null);
+      try {
+        const resp = await selectPlan(planId, {
+          selected_option_index: optionIndex,
+          selection_reason: reason ?? null,
+        });
+        setSavedSelectedIndex(resp.selected_option_index);
+      } catch {
+        setActionError(
+          "선택을 저장하지 못했어요. 잠시 후 다시 시도해주세요.",
+        );
+      } finally {
+        setSelectBusy(false);
+      }
+    },
+    [planId],
+  );
+
+  // Phase 9 Slice 5 — like / dislike 피드백 (ADR-030). PlanCard 외부 wrapper inline.
+  const handleFeedback = useCallback(
+    async (optionIndex: number, eventType: FeedbackEventType) => {
+      if (!planId) return;
+      setActionError(null);
+      // 낙관적 UI: 즉시 표시, 실패 시 롤백.
+      setFeedbackByIndex((prev) => ({ ...prev, [optionIndex]: eventType }));
+      try {
+        await sendFeedback(planId, {
+          event_type: eventType,
+          option_index: optionIndex,
+        });
+      } catch {
+        setFeedbackByIndex((prev) => {
+          const next = { ...prev };
+          delete next[optionIndex];
+          return next;
+        });
+        setActionError(
+          "피드백을 저장하지 못했어요. 잠시 후 다시 시도해주세요.",
+        );
+      }
+    },
+    [planId],
+  );
+
+  // Phase 9 Slice 5 — 반려 이유 제출 (event_type="reject"). PlanCard 외부 wrapper inline.
+  const handleSubmitReject = useCallback(
+    async (optionIndex: number) => {
+      if (!planId) return;
+      const reason = rejectReason.trim();
+      setActionError(null);
+      try {
+        await sendFeedback(planId, {
+          event_type: "reject",
+          option_index: optionIndex,
+          reason: reason.length > 0 ? reason : null,
+        });
+        setFeedbackByIndex((prev) => ({ ...prev, [optionIndex]: "reject" }));
+        setRejectOpenIndex(null);
+        setRejectReason("");
+      } catch {
+        setActionError(
+          "반려를 저장하지 못했어요. 잠시 후 다시 시도해주세요.",
+        );
+      }
+    },
+    [planId, rejectReason],
+  );
+
+  // 반려 이유 textarea 토글 (열기/닫기). 닫을 때 입력값 초기화.
+  const handleToggleReject = useCallback((optionIndex: number) => {
+    setRejectOpenIndex((prev) => {
+      const next = prev === optionIndex ? null : optionIndex;
+      if (next === null) setRejectReason("");
+      return next;
+    });
+  }, []);
 
   // ── Loading 상태 (Phase 1 ProgressStepper 재사용) ──────────────────
   if (loading) {
@@ -365,10 +474,126 @@ function PlanResultPageContent() {
                 )}
               </div>
               <PlanCard plan={plan} />
+
+              {/* Phase 9 Slice 5 — 선택/반려 피드백 UI (★ PlanCard 외부 wrapper inline, ADR-030).
+                  신규 component 안 만듦 → component_map.md 0줄. PlanCard.tsx 0줄.
+                  wrapper 의 radio onClick 버블링 차단 위해 각 액션 stopPropagation. */}
+              <div
+                className="mt-3 px-1 flex flex-col gap-2"
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={selectBusy}
+                    onClick={() => void handleConfirmSelect(i)}
+                    aria-label={`옵션 ${i + 1} 이 안 선택`}
+                    className={`inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
+                      savedSelectedIndex === i
+                        ? "bg-primary-600 text-white"
+                        : "bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700"
+                    } disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500`}
+                  >
+                    {savedSelectedIndex === i ? "선택 저장됨" : "이 안 선택"}
+                  </button>
+
+                  <button
+                    type="button"
+                    aria-pressed={feedbackByIndex[i] === "like"}
+                    aria-label={`옵션 ${i + 1} 좋아요`}
+                    onClick={() => void handleFeedback(i, "like")}
+                    className={`inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
+                      feedbackByIndex[i] === "like"
+                        ? "border-success-500 bg-success-50 text-success-700"
+                        : "border-neutral-300 text-neutral-700 hover:bg-neutral-100"
+                    } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500`}
+                  >
+                    <span aria-hidden>👍</span>
+                    <span className="ml-1">좋아요</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    aria-pressed={feedbackByIndex[i] === "dislike"}
+                    aria-label={`옵션 ${i + 1} 별로예요`}
+                    onClick={() => void handleFeedback(i, "dislike")}
+                    className={`inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
+                      feedbackByIndex[i] === "dislike"
+                        ? "border-warning-500 bg-warning-50 text-warning-700"
+                        : "border-neutral-300 text-neutral-700 hover:bg-neutral-100"
+                    } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500`}
+                  >
+                    <span aria-hidden>👎</span>
+                    <span className="ml-1">별로예요</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    aria-expanded={rejectOpenIndex === i}
+                    aria-label={`옵션 ${i + 1} 반려 이유 입력`}
+                    onClick={() => handleToggleReject(i)}
+                    className={`inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
+                      feedbackByIndex[i] === "reject"
+                        ? "border-error-500 bg-error-50 text-error-700"
+                        : "border-neutral-300 text-neutral-700 hover:bg-neutral-100"
+                    } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500`}
+                  >
+                    {feedbackByIndex[i] === "reject" ? "반려됨" : "반려"}
+                  </button>
+                </div>
+
+                {/* 반려 이유 입력 (inline textarea — 해당 카드에서만 노출) */}
+                {rejectOpenIndex === i && (
+                  <div className="flex flex-col gap-2 rounded-md border border-neutral-200 bg-neutral-50 p-3">
+                    <label
+                      htmlFor={`reject-reason-${i}`}
+                      className="text-xs font-semibold text-neutral-700"
+                    >
+                      반려 이유 (선택 입력)
+                    </label>
+                    <textarea
+                      id={`reject-reason-${i}`}
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      maxLength={2000}
+                      rows={3}
+                      placeholder="이 기획안이 맞지 않은 이유를 적어주세요 (선택)"
+                      className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleSubmitReject(i)}
+                        className="inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-md bg-error-500 text-white text-sm font-semibold hover:bg-error-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error-500"
+                      >
+                        반려 제출
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleReject(i)}
+                        className="inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-md border border-neutral-300 text-neutral-700 text-sm font-medium hover:bg-neutral-100"
+                      >
+                        취소
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}
       </section>
+
+      {/* Phase 9 Slice 5 — 선택/피드백 호출 실패 표시 (PlanCard 외부 wrapper) */}
+      {actionError && (
+        <p
+          role="alert"
+          className="rounded-md bg-error-50 border border-error-200 px-3 py-2 text-sm text-error-700"
+        >
+          {actionError}
+        </p>
+      )}
 
       {/* Warnings (개발자 정보) */}
       {warnings.length > 0 && (
@@ -389,23 +614,30 @@ function PlanResultPageContent() {
         <div className="mx-auto w-full max-w-2xl">
           <button
             type="button"
-            disabled={!selectedPlanId}
+            disabled={!selectedPlanId || selectBusy}
             onClick={() => {
-              const sel = plans.find((p) => p.plan_id === selectedPlanId);
-              // Phase 4 Slice 3: 단순 alert. Phase 5+ Feedback 흐름에서 본격화.
-              window.alert(
-                `선택: ${sel?.name ?? selectedPlanId}\n` +
-                  `(Phase 5+에서 저장 / 피드백 흐름 추가)`,
-              );
+              // Phase 9 Slice 5 (ADR-030): backend /select 저장 (PlanCard 외부 wrapper).
+              // 로컬 선택된 plan_id → plan_candidates 배열 인덱스(0–2) 매핑 후 저장.
+              const idx = plans.findIndex((p) => p.plan_id === selectedPlanId);
+              if (idx >= 0) {
+                void handleConfirmSelect(idx);
+              }
             }}
             aria-label="선택 확정"
             className={`w-full min-h-[44px] px-4 py-3 rounded-md text-sm font-semibold transition-colors ${
-              selectedPlanId
+              selectedPlanId && !selectBusy
                 ? "bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
                 : "bg-neutral-200 text-neutral-500 cursor-not-allowed"
             }`}
           >
-            {selectedPlanId ? "이 기획안으로 진행" : "카드를 선택하세요"}
+            {!selectedPlanId
+              ? "카드를 선택하세요"
+              : selectBusy
+                ? "저장 중…"
+                : savedSelectedIndex !== null &&
+                    plans[savedSelectedIndex]?.plan_id === selectedPlanId
+                  ? "선택 저장됨"
+                  : "이 기획안으로 진행"}
           </button>
         </div>
       </footer>
