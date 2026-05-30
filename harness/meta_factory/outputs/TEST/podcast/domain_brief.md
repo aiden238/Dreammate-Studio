@@ -77,6 +77,15 @@ preferred_architecture_patterns:  # architecture_patterns.md 6 패턴에서만 �
   - producer_reviewer             # Planner → Critic → Rewriter (revise max 2)
   - pipeline                      # Intent → (RAG) → Planning → Guest/Question → Shownotes → Critic → Save
   - expert_pool                   # ★ 후보 — 포맷별(인터뷰/솔로/패널) 전문 생성 라우팅 (Dreammate 엔 없던 패턴, GAP 관찰점)
+
+# ★ M2 G-fix 적용 (G6 — domain_brief_schema §1.2 data_model 선택 필드). M1 §2 별도 섹션 우회 → schema 안 1급 필드로 수용:
+data_model:                       # (선택 필드 — §2 prose 와 동일 내용을 schema 형식으로 표현)
+  hierarchy: "User → Brand → Show → Season → Episode"   # Dreammate User→Brand→Domain→Series→Video 대응
+  entities: [User, Brand, Show, Season, Episode, Guest, EpisodePlan, Feedback]
+  pii:                            # 각 엔티티 PII 표시 (제3자 PII 포함 — §1.1 risk 상향 트리거와 연결)
+    User: 사용자 PII (계정/입력/피드백)
+    Guest: ★ 제3자(비사용자) PII — 이름·소속·발언·섭외메모 (동의·노출 책임 ↑, risk 상향 트리거)
+    Feedback: 사용자 PII (좋아요/수정 요청)
 ```
 
 ---
@@ -138,4 +147,16 @@ User              사용자 계정
 
 ---
 
-이 domain_brief 는 meta_factory machinery(domain_brief_schema)를 참조하여 작성됨 (WITH arm).
+## §M2. M2 G-fix 적용 시연 (G5·G6 — additive, S3 re-validate)
+
+> ★ M1 원본(`risk_level: medium`, §2 데이터 계층 prose)은 그대로 보존하고, S1 이 domain_brief_schema 에 반영한 개선 슬롯을 추가 적용한 시연.
+
+- **G6 (data_model 1급 필드)**: M1 은 데이터 계층을 schema 11필드 **밖** §2 별도 prose 섹션으로 우회했다. M2 는 domain_brief_schema §1.2 의 `data_model` 선택 필드(hierarchy/entities/pii)로 동일 내용을 schema 안에 표현 — 위 YAML `data_model` 블록. (해소: expressible → addressed)
+- **G5 (제3자 PII risk 상향 트리거)**: M1 은 `risk_level: medium` 에 머물러 게스트(제3자) PII 위험을 미반영(미해결 표기)했다. M2 는 domain_brief_schema §1.1 의 **제3자 PII 상향 트리거**를 적용한다:
+  - `data_model.pii.Guest` 가 **제3자(비사용자) PII** 로 표시됨 → 상향 트리거 발동 조건 충족.
+  - **재판정**: 기존 `medium` 은 사용자 PII 만 가정한 등급. 게스트 제3자 PII(동의·노출 책임 ↑)가 추가되므로 **`medium → high` 상향 후보**로 명시 판정 가능 (M1 의 "high 재검토 여지" 수동 표기를 schema 트리거로 대체). high 상향 시 required_evals 에 security-review 강제(factory_contract 규칙 8) 경로 연결.
+  - ★ 본 dry-run 은 risk_level 원본값(medium)을 보존하되, **상향 판정이 이제 schema 축으로 표현·도출 가능**해졌음을 시연 (해소: 안전 risk 가 사전 판정 가능).
+
+---
+
+이 domain_brief 는 meta_factory machinery(domain_brief_schema)를 참조하여 작성됨 (WITH arm). [+ M2 S3: G5/G6 개선 슬롯 적용 시연 (additive)]

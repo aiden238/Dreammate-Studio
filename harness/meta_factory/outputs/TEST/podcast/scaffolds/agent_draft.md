@@ -31,6 +31,26 @@ execution_policy:
   timeout_ms: 30000                  # 시간 초과 → silent fail 금지 (에러 응답 + 부분 결과)
   max_retries: 2
   graceful_on_failure: true          # critic 실패 시 graceful skip → 기획안 생성 차단 X
+# conditional_execution 슬롯 없음 = 항상 실행 (critic 은 무조건 실행 — backward-compat 기본값)
+```
+
+### ★ M2 G-fix 적용 (G3 — agent_template conditional_execution). 조건부 agent 예시 (guest_brief)
+
+> M1 은 조건부 실행을 inputs 주석(`question_list?` 등)으로만 우회했다. M2 는 `conditional_execution.condition` 슬롯으로 1급 표현.
+
+```yaml
+# ── agent: guest_brief ── (조건부 — 게스트 모드 전용)
+name: guest_brief
+responsibility: "게스트 소개·섭외 각도·사전 질문 브리프 (인터뷰/게스트 포맷 전용)"
+inputs: [episode_plan, guest_seed]
+outputs: [guest_brief]
+forbidden_actions:
+  - 미제공 인물정보 날조 (PII 추측 금지 — llm_security)
+  - 다른 agent 직접 호출 (orchestrator 경유)
+conditional_execution:               # ★ M2 G-fix (G3) — M1 의 inputs 주석 우회 대체
+  condition: mode == guest           # 게스트 모드일 때만 실행. 솔로 모드는 orchestrator 가 이 agent 스킵
+                                     # (분기 소유 = orchestrator, supervisor 패턴 — agent 자율 트리거 X)
+# → contract 측 "조건부 산출"(contract_template §3)과 정합: guest_brief 출력은 contract cross-ref 에서도 mode==guest 조건부 산출로 표기.
 ```
 
 ---
@@ -47,3 +67,7 @@ execution_policy:
 ## Dreammate 대비 차이 (관찰)
 
 - Dreammate critic dimensions = 8(영상). 팟캐스트 critic = hook→opening_hook_strength, structure→conversation_flow, +question_quality/guest_fit(조건부). 조건부 차원 입력(question_list/shownotes 선택)은 agent_template 에 conditional 슬롯이 없어 inputs 주석으로 표기 (GAP G3/G4).
+
+### ✅ M2 G-fix 해소 (G3, S3 re-validate)
+- S2 가 `agent_template.md` 에 `conditional_execution.condition` 슬롯을 추가 → 위 guest_brief 예시처럼 조건부 agent 의 실행 조건을 **inputs 주석 우회 없이 1급 표현**. critic 같은 무조건 agent 는 슬롯 생략 = 항상 실행(backward-compat).
+- 해소 판정: **addressed** — 조건부 실행(execution)이 template 슬롯으로 표현됨. 조건부 **산출**(output)은 contract_template §3 "조건부 산출" 열로(contract_draft §M2), 조건부 **채점 차원**은 eval_template applies_when 으로(eval_draft §M2) 각각 분담 해소 → G3/G4 가 agent/contract/eval 3축에서 모두 1급 표현 가능.

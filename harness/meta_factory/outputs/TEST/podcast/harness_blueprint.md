@@ -90,6 +90,8 @@ agents:
       - 게스트 실제 섭외/연락 (이메일·DM 발송 — forbidden_scope)
       - 미제공 인물정보 날조 (PII 추측 금지 — llm_security)
       - 다른 agent 직접 호출
+    conditional_execution:                 # ★ M2 G-fix 적용 (G3 — agent_template conditional_execution 슬롯)
+      condition: mode == guest             # 게스트 모드일 때만 실행. 솔로/패널-무게스트 모드는 이 agent 스킵 (분기 소유 = orchestrator)
 
   - name: question
     responsibility: "인터뷰/토픽 질문 리스트 생성 (진부도 회피)"
@@ -98,6 +100,8 @@ agents:
     forbidden_actions:
       - 쇼노트 생성 (shownotes agent 담당)
       - 다른 agent 직접 호출
+    conditional_execution:                 # ★ M2 G-fix 적용 (G3)
+      condition: mode in (guest, interview)  # 인터뷰/게스트 모드일 때만 실행. 순수 솔로 모놀로그는 스킵
 
   - name: shownotes
     responsibility: "쇼노트 + 에피소드 제목 후보 생성"
@@ -106,6 +110,8 @@ agents:
     forbidden_actions:
       - RSS/플랫폼 자동 업로드 (forbidden_scope)
       - 다른 agent 직접 호출
+    conditional_execution:                 # ★ M2 G-fix 적용 (G3)
+      condition: output_artifacts contains shownotes  # 쇼노트 산출이 요청된 에피소드에서만 실행 (조건 생략 시 = 항상 실행, backward-compat)
 
   - name: critic
     responsibility: "기획안 평가 (canonical overall_score + dimensions: 후킹/대화흐름/질문품질 등)"
@@ -295,12 +301,29 @@ routing_docs:
 ```yaml
 validation:
   trigger_validation: pass           # S2 검증 1 — 재사용 Skill 100% 트리거 + false trigger 0(신규 0) + agent supervisor 정합 (정적 정합; 런타임 트리거 실측 미수행)
-  contract_consistency: pass         # S2 검증 3 — 4 cross-ref 축(prompt↔output/api↔front*/db↔migration/agent_io) drift 0 (*api 축은 phase 진행 시 deferral). 조건부 산출 축 부재는 GAP G3
-  with_without_skill_eval: pass      # S2 검증 4 — 누락률 WITH≪WITHOUT 정량 입증(§B 6지표) + 신규 0 권장 지지(podcast-eval-run 4중첩 = 음의 효용). 품질·일관성 2지표는 소표본 PENDING
+  contract_consistency: pass         # S2 검증 3 — 4 cross-ref 축(prompt↔output/api↔front*/db↔migration/agent_io) drift 0 (*api 축은 phase 진행 시 deferral). 조건부 산출 축은 M2 G3 로 해소(아래 §M2)
+  with_without_skill_eval: pass / pending-by-design (품질·일관성)   # ★ M2 G-fix (G8 — harness_blueprint_schema validation enum + sub-status). S2 검증 4 — 누락률=pass(WITH≪WITHOUT 정량 입증, §B 6지표). 품질·일관성 2지표는 dry-run 실측 미수행이 정상 → pending-by-design (단순 미완 pending 과 구별)
+
+# ★ M2 G-fix 추가 슬롯 (검증5 eval-run 연동, harness_blueprint_schema §3.1 Validation enum 확장 G8):
+#   eval_run_integration: pending-by-design   # 검증5 — 절차/임계값/케이스 매핑 전부 적용 가능 / 실 LLM 호출 실측만 미수행 = dry-run 정상
+#   (M1 에는 이 필드 표현 자체가 없어 단순 PENDING 으로만 기록됨 → G8 enum 확장으로 "정상 미측정"을 명시적 표현)
 ```
 
 > factory_contract 규칙 7: validation 3필드가 pass 라도 본 blueprint 는 **사용자 승인 전 active 아님**. outputs/TEST/ 에 격리. (S2 검증 결과: 6검증 PASS 5 / PENDING 1 — 상세 `outputs/TEST/sample_test_podcast_validation.md`. 검증 5 eval-run 연동 = PENDING(절차 적용 가능 / 실측 미수행 = 정상), 검증 6 acceptance = PASS.)
 
 ---
 
-이 blueprint 는 meta_factory machinery(generation_workflow 11단계 + harness_blueprint_schema + architecture_patterns + 6 templates)를 적용하여 작성됨 (WITH arm).
+## §M2. M2 G-fix 적용 시연 (additive — S3 re-validate)
+
+> ★ M1 원본은 그대로 보존하고, S1·S2 가 machinery 에 반영한 개선 슬롯을 본 blueprint 에 **추가로 적용**한 시연. 상세 before/after 는 `outputs/TEST/sample_test_podcast_revalidation.md`.
+
+| GAP | M1 표현 (before) | M2 적용 슬롯 (after) | 위치 |
+|---|---|---|---|
+| **G3** | guest_brief/question/shownotes 조건부 실행을 agent inputs 주석(`guest_brief?`)으로만 우회 | `conditional_execution.condition` 슬롯 1급 표현 (mode==guest 등) | §2 agents[] |
+| **G8** | validation 3필드 = pass/pending 단일값, 품질·일관성 PENDING 을 pass 안에 주석 | `pending-by-design` + 차원별 sub-status (누락률=pass / 품질=pending-by-design) + eval_run_integration 슬롯 | §9 validation |
+
+- **G3 조건부 산출 cross-ref**: contract_template §3 에 "조건부 산출(conditional output)" 열이 추가되어, 위 conditional_execution agent 의 출력(guest_brief/question_list/shownotes)이 contract cross-ref 에서도 `mode==guest 일 때만 산출` 로 표현 가능해졌다 (검증3 조건부축 부재 GAP 해소). contract_draft.md §M2 참조.
+
+---
+
+이 blueprint 는 meta_factory machinery(generation_workflow 11단계 + harness_blueprint_schema + architecture_patterns + 6 templates)를 적용하여 작성됨 (WITH arm). [+ M2 S3: G3/G8 개선 슬롯 적용 시연 (additive)]

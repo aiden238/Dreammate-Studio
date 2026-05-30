@@ -57,13 +57,16 @@
 
 ---
 
-## 3. Cross-reference                # ★ 정합 축
+## 3. Cross-reference                # ★ 정합 축 (★ M2 G-fix: "조건부 산출" 열 추가 — G3)
 
-| 이 contract 의 필드 | 정합 대상 | 정합 규칙 |
-|---|---|---|
-| EpisodePlan(JSONB) | db_schema episodes.plan_json | 1:1 매핑 |
-| Critic.overall_score | agent_io_contract critic 출력 | canonical 1개 (deprecated fallback 제거 정책 계승) |
-| format enum | db_schema episodes.format CHECK | enum 동일 |
+| 이 contract 의 필드 | 정합 대상 | 정합 규칙 | 조건부 산출(conditional output) |
+|---|---|---|---|
+| EpisodePlan(JSONB) | db_schema episodes.plan_json | 1:1 매핑 | — (항상 산출) |
+| Critic.overall_score | agent_io_contract critic 출력 | canonical 1개 (deprecated fallback 제거 정책 계승) | — (항상 산출) |
+| format enum | db_schema episodes.format CHECK | enum 동일 | — (항상 산출) |
+| GuestBrief | db_schema episodes.guest_brief_json | 1:1 매핑 | **mode == guest 일 때만 산출** (agent guest_brief.conditional_execution 과 정합) |
+| QuestionList | db_schema episodes.questions_json | 1:1 매핑 | **mode in (guest, interview) 일 때만 산출** |
+| Shownotes | db_schema episodes.shownotes_json | 1:1 매핑 | output_artifacts contains shownotes 일 때만 산출 |
 
 ---
 
@@ -86,3 +89,7 @@
 
 agent_io_contract 형식이 4 agent(MOA) 전제 → 7 agent + 조건부 실행(guest_brief/question/shownotes 는 게스트/모드 의존)을
 contract 형식이 직접 표현하지 못함. contract_template 의 cross-ref 표는 "조건부 산출" 축이 없음 → S2 contract_consistency 관찰점.
+
+### ✅ M2 G-fix 해소 (G3 — contract 측, S3 re-validate)
+- S2 가 `contract_template.md §3` cross-ref 표에 **"조건부 산출(conditional output)" 열**을 추가 → 위 §3 표에 GuestBrief/QuestionList/Shownotes 의 조건부 산출(mode==guest 등)을 1급 표현. agent 측 `conditional_execution.condition`(agent_draft §M2) 과 정합.
+- 해소 판정: **addressed** — 검증3(contract consistency)에서 M1 이 "drift 0 이지만 조건부 산출 축 부재 = 표현력 GAP" 로 별도 기록한 한계가, "조건부 산출" 열로 해소. 조건부 출력이 contract cross-ref 에서 직접 표현되어 prompt↔output↔db 정합과 함께 점검 가능.

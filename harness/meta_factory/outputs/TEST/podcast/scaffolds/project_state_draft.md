@@ -31,6 +31,7 @@ active 런타임 없음 — 설계 청사진만 존재.
 
 ## migration_progress
 \`\`\`yaml
+harness_status: dry-run-blueprint   # ★ M2 G-fix 적용 (G7 — project_state_template enum: active|dry-run-blueprint|proposal). 이 하네스의 1급 상태 = 생성·검증 dry-run 산출 (active 아님, outputs/ 격리). M1 의 custom 키 podcast_harness_status / confirmed_decisions "(제안)" 수동표기를 표준 enum 슬롯으로 대체. 생략 시 = active(backward-compat).
 current_sprint: "phase-M1-slice-S1"
 current_sprint_step: "generation dry-run (without baseline + with blueprint + 6 scaffold)"
 total_steps_in_sprint: 6
@@ -38,7 +39,7 @@ last_completed_action: "harness_blueprint + 6 scaffold 작성 (outputs/TEST/podc
 next_action: "S2 — validation_workflow 6검증 + with/without 6지표 비교 + 5 gap 재현"
 blocker: null
 phase_M1_status: active        # meta-phase (sample test)
-podcast_harness_status: dry-run-blueprint   # active 아님
+podcast_harness_status: dry-run-blueprint   # (M1 원본 custom 키 — 보존. 표준 슬롯은 위 harness_status)
 \`\`\`
 
 ## baseline
@@ -62,3 +63,7 @@ podcast_harness_status: dry-run-blueprint   # active 아님
 project_state_template 은 단일 active 하네스 전제. dry-run("active 아님, 제안 상태")을 표현하는 status 값
 (dry-run-blueprint / 제안 표기)이 template 에 명시적 슬롯 없음 → confirmed_decisions 에 "(제안)" 수동 표기로 우회.
 S2 관찰점(meta-phase 의 상태 표현).
+
+### ✅ M2 G-fix 해소 (G7, S3 re-validate)
+- S2 가 `project_state_template.md` migration_progress 에 `harness_status` enum(active / dry-run-blueprint / proposal) 슬롯을 추가 → 위 migration_progress 에 표준 `harness_status: dry-run-blueprint` 적용.
+- 해소 판정: **addressed** — 하네스 상태가 1급 enum 으로 표현됨. confirmed_decisions 의 "(제안)" 수동 표기와 custom 키(podcast_harness_status) 우회를 표준 슬롯이 대체. `dry-run-blueprint`/`proposal` 은 active 아님 → outputs/ 격리 + 승인 전 active 전환 금지(규칙 5·6) 와 정합. 생략 시 active(backward-compat).

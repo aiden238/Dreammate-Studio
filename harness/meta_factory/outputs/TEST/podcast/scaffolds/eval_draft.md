@@ -43,16 +43,21 @@ notes:
 ## B. 채점 차원 (eval_template §B — 도메인별, Dreammate 8 → 팟캐스트 10)
 
 ```
-intent_fit              # 동일
-target_clarity          # 동일
-opening_hook_strength   # 썸네일 후킹 → 오프닝 멘트/질문 후킹
-message_clarity         # 동일
-conversation_flow       # 영상 flow → 오디오 대화 흐름 자연스러움
-recording_feasibility   # 녹음 현실성 (길이/포맷)
-brand_consistency       # 동일
-differentiation         # 동일
-question_quality        # ★ 조건부(게스트 모드) — 질문 진부도/깊이
-guest_fit               # ★ 조건부(게스트 모드) — 게스트-주제 적합성
+intent_fit              # 동일                       (무조건 차원 — 항상 채점)
+target_clarity          # 동일                       (무조건 차원)
+opening_hook_strength   # 썸네일 후킹 → 오프닝 멘트/질문 후킹  (무조건 차원)
+message_clarity         # 동일                       (무조건 차원)
+conversation_flow       # 영상 flow → 오디오 대화 흐름 자연스러움 (무조건 차원)
+recording_feasibility   # 녹음 현실성 (길이/포맷)         (무조건 차원)
+brand_consistency       # 동일                       (무조건 차원)
+differentiation         # 동일                       (무조건 차원)
+
+# ★ M2 G-fix 적용 (G4 — eval_template §B applies_when). M1 은 조건부 차원을 notes(§GAP)로 우회 → applies_when 1급 표현:
+question_quality:                     # ★ 조건부 — 질문 진부도/깊이
+  applies_when: mode == guest         # 게스트 모드일 때만 채점. 미해당 시 이 케이스 평균 계산에서 제외(0점 끌어내리기 X)
+guest_fit:                            # ★ 조건부 — 게스트-주제 적합성
+  applies_when: mode == guest         # 게스트 모드일 때만 채점. 미해당(솔로/패널-무게스트) 시 평균에서 제외
+# → 무조건 8차원 + 조건부 2차원(applies_when). 솔로 모드 케이스 평균 = 8차원 기준, 게스트 모드 = 10차원 기준 (적용 차원 수로 평균).
 ```
 
 ---
@@ -84,3 +89,7 @@ guest_fit               # ★ 조건부(게스트 모드) — 게스트-주제 �
 
 채점 차원이 **조건부**(게스트 모드일 때만 question_quality/guest_fit) — eval_template §B 는 고정 N 차원 전제.
 조건부 차원의 "해당 없음 시 채점 제외" 규칙을 template 이 직접 지원하지 않음 → notes 로 우회. S2 eval-run 연동 관찰점.
+
+### ✅ M2 G-fix 해소 (G4, S3 re-validate)
+- S2 가 `eval_template.md §B` 에 `applies_when` 속성을 추가(조건부 차원 + 미해당 시 평균 제외 규칙) → 위 §B 채점 차원에서 question_quality/guest_fit 를 **notes 우회 없이 `applies_when: mode == guest` 로 1급 표현**.
+- 해소 판정: **addressed** — "해당 없음 시 채점 제외"가 template 규칙으로 명문화되어 적용 차원 수 기준 평균이 가능 (미해당 차원이 평균을 0점으로 끌어내리지 않음). M1 의 notes 우회가 schema 슬롯으로 대체됨.
