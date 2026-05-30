@@ -100,9 +100,10 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **재평가 시점**: Phase 3 코드 phase 진행 중 (같은 .tsx 파일 sub-section 동시 수정 위험 ↑) — P-X1 적용 후 효과 측정
 - **연관 Skill / Contract**: phase-start §6.3, multi_slice_plan template, sub-agent prompt format
 
-### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 50연속 PASS 효과 측정 (update 2026-05-31 Phase M0 — ★ 첫 meta-phase)
+### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 52연속 PASS 효과 측정 (update 2026-05-31 Phase M1 — Meta-Factory dry-run, outputs/TEST/ 격리 MG1 게이트)
 
-- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 + Phase M0 3 = **50 Slice 누적**, 0 deviation)
+- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 + Phase M0 3 + Phase M1 2 = **52 Slice 누적**, 0 deviation)
+- **Phase M1 update (2026-05-31)**: Meta-Factory 첫 dry-run(S1 generation dbe43c5 + S2 validation 83fc1ac) 2 Slice 모두 §SELF-VERIFICATION PASS. ★ 사용자 지침 "테스트 산출물 TEST 폴더 격리" + GPT 보완 ③ "outputs 외 변경 0" 을 **MG1 게이트(dry-run 변경이 meta_factory/outputs/TEST/ 외부 0줄)** 로 강제 → S1·S2 모두 git diff 결과 TEST/ 외 0줄. dry-run sub-agent 는 machinery/기존 하네스를 읽기만, 쓰기는 outputs/TEST/ 에만. phase 등록/회고/archive 는 main 세션 별도 commit 으로 분리(권한 분리, GPT 보완 ③). 52연속 누적.
 - **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 13연속 update — Phase 6에서 17연속 update — Phase 5에서 22연속 update — Phase 5.5에서 26연속 update — Phase 7에서 31연속 update — Phase 8에서 36연속 update — Phase 9에서 42연속 update — Phase 9.5에서 47연속 update — Phase M0에서 **50연속 누적 update (★ 첫 meta-phase)**
 - **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md + meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md + meta/retrospectives/phase-7.md + meta/retrospectives/phase-8.md + meta/retrospectives/phase-9.md + meta/retrospectives/phase-9.5.md + meta/retrospectives/phase-M0.md §P-X1 50연속 효과 측정
 - **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 → Phase 4 4/4 → Phase 4.5 4/4 → Phase 6 4/4 → Phase 5 5/5 → Phase 5.5 4/4 → Phase 7 5/5 → Phase 8 5/5 → Phase 9 6/6 → Phase 9.5 5/5 → Phase M0 3/3 = **50연속 PASS**. ★ Phase M0는 **첫 meta-phase** (L3 Meta-Factory skeleton + harness-factory Skill 등록)임에도 0건 재발 — Slice별 폴더 격리(meta_factory / .claude/skills / scripts / meta) + forbidden 명시 + ★ **meta-phase 런타임 0줄 격리를 smoke Step 1 (git diff fff913e..HEAD backend/apps/migrations = 0) 게이트로 명시 강제** → 런타임/제품 phase 무오염. **frontend·런타임 무변경 meta-phase 에서도 PlanCard·component_map 0줄 유지**. **proposal → 적용 → 11 phase 누적 효과 측정 사이클 + large/보안/consolidation/RAG/orchestration-refactor/feedback-frontend/eval-deprecated-removal/meta-phase 모두 확장 입증**.
@@ -129,6 +130,39 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - ★ meta-phase 진행 시 런타임 0줄 격리를 smoke Step 1 (git diff 게이트)로 명시 강제 (Phase M0 신규)
 - **재평가 시점**: Phase 10 (MVP 통합 + P-AUX-2 agent 실 구현) — agents/* 신규 추가 시 / Phase M1+ (자동 generator) — meta_factory/* 확장 시
 - **연관 Skill / Contract**: phase-start v1.3.0 §6.3, P-AGENT-SCOPE-001 (mitigated 50연속), P-GPT-REVIEW-001 (Phase 4 + Phase 6 두 번째 적용 + Phase 5.5 세 번째 mini-phase 정신 계승), P-VALIDATION-FORMAL-001 (Phase 4.5 + Phase 6 + Phase 5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5 + Phase M0 여덟 번째 입증), **P-META-FACTORY-001 (Phase M0 신규 — L3 proposal-first 메타 레이어)**, P-CRITIC-CANONICAL-001 (Phase 6 → Phase 8 conservative adapter → Phase 9 normalize wiring canonical live → Phase 9.5 deprecated 0–5 Full 제거로 단계적 축소 완료), P-CONTRACT-FIRST-001 (Phase 6 후보 + Phase 5 db_schema.md + Phase 7 rag_data_contract §18 + Phase 8 CC-003 + Phase 9 CC-004 + Phase 9.5 CC-005 누적 6회), P-RLS-001 (Phase 5 신규 + Phase 9 feedback/selection), P-SSE-001 (Phase 5 신규 + Phase 8 progress_store 실 stage), P-SECURITY-REVIEW-001 (Phase 5 신규 후보 + Phase 9 두 번째 정식 — 강화), P-LEGACY-CONSOLIDATION-001 (Phase 5.5 + Phase 7 누적 2회), P-RAG-5STAGE-001 (Phase 7 신규 후보 + Phase 9 candidate pending 적재 정합), P-RAG-GRACEFUL-001 (Phase 7 신규 후보), P-MOA-ORCHESTRATOR-001 (Phase 8 신규 후보 + Phase 9 orchestrator 확장), P-BEHAVIOR-PRESERVING-001 (Phase 8 신규 후보 + Phase 9 additive wiring + Phase 9.5 deprecated 제거 eval 동일 입증), P-FEEDBACK-LOOP-001 (Phase 9 신규 후보), P-CANONICAL-WIRING-001 (Phase 9 신규 후보 + Phase 9.5 deprecated 완전 제거로 wiring 단계 완료), **P-EVAL-HARNESS-001 (Phase 9.5 신규 후보)**, **P-DEPRECATED-REMOVAL-001 (Phase 9.5 신규 후보)**
+
+### Pattern P-META-FACTORY-002: Meta-Factory 첫 dry-run — machinery 실작동 입증 + GAP 백로그 도출 (Phase M1 신규 후보)
+
+- **유형**: 반복 성공 (Phase M1 첫 적용 — M0 machinery 1회 dry-run, 6검증 PASS 5/PENDING 1, GAP 8 도출)
+- **최초 식별**: 2026-05-31 (Phase M1 — Meta-Factory Sample Test, ★ meta-phase dry-run)
+- **관련 회고**: meta/retrospectives/phase-M1.md + docs/decisions/phase_M1_meta_factory_sample_test.md (ADR-036)
+- **요약**: M0가 만든 meta_factory machinery(generation_workflow 11단계 + validation_workflow 6검증)가 "문서만"인지 "실제로 도는지"를 인접 도메인(팟캐스트) 1회 dry-run으로 검증. 핵심 = "성공"이 아니라 **machinery 실작동 입증 + GAP 발견**.
+- **핵심 메커니즘**:
+  1. **TEST 폴더 격리** (`meta_factory/outputs/TEST/`) — dry-run 산출물을 실 산출 영역(generated_harnesses/improvement_reports)과 분리. MG1 게이트(TEST/ 외 0줄)로 강제.
+  2. **without 먼저 → with** — machinery 미참조 naive baseline을 먼저 작성(오염 최소화) 후 machinery로 with 산출. with/without 비교의 정직성 확보.
+  3. **with/without 6지표 수치화** (주관 서술 0) — 누락 필수파일/forbidden_scope/Skill 충돌/cross-ref 누락/eval gate/proposal-first 위반.
+  4. **4상태 판정** (PASS/FAIL/PENDING/GAP) — 첫 dry-run의 fail/pending을 정직하게 표현. 검증4 품질·일관성, 검증5 eval-run = 소표본/실측 미수행이라 PENDING(정상, fail 아님).
+  5. **dry-run ↔ doc-sync 분리** — sub-agent는 outputs/TEST/만, phase 등록·회고·archive는 main 세션 별도 commit(권한 분리, GPT 보완 ③).
+- **효과 측정 (Phase M1)**:
+  - 6검증 PASS 5 / PENDING 1 — machinery가 명확한 판정 기준 제공.
+  - **machinery 작동 결정 증거**: 검증2가 podcast-eval-run 신규 Skill의 eval-run 키워드 4중첩 검출 → 채택 사전 차단.
+  - with/without: WITH(누락 0/cross-ref 누락 0/gate 1) ≫ WITHOUT(누락 6/cross-ref 누락 4/gate 0).
+  - M0 blueprint 5 gaps 전부 재현(5/0/0) — 부족점 4·5는 절차 적용으로 부분 완화.
+  - **GAP 8개 백로그**(G1~G8, 핵심 G2 skill 재사용 결정트리 / G3 conditional_execution 슬롯 / G5 제3자 PII risk) = L3 다음 개선 입력.
+- **한계**: 소표본(1 도메인 1회) → 정량 우열 단정 불가, 방향성만 / 검증5 실측 부재 / with-without 오염 잔존(단일 sub-agent 양 팔 작성).
+- **다음 단계**:
+  - 8 GAP을 machinery 개선 proposal로 (contract-change 경유, proposal-only) — 별도 meta-phase(M2?) 후보.
+  - 검증5 실측 1회 (eval-run §3~§6 mock-deterministic) → 검증4 품질·일관성 PENDING 해소.
+  - 이질 도메인 dry-run으로 범용성 2차 검증 (payoff deferred 해제 재검토).
+- **권장 대응**:
+  - 후속 dry-run/2nd 하네스 생성 시 TEST 폴더 격리 + 4상태 + with/without 수치화 + dry-run/doc-sync 분리 패턴 유지.
+  - machinery 보완은 항상 proposal-first (생성/검증은 outputs/, 실 변경은 contract-change).
+- **연관 Skill / Contract**: harness-factory Skill (첫 실 트리거), validation_workflow.md (6검증), eval-run Skill (검증5 cross-ref), P-META-FACTORY-001 (Phase M0 L3 도입 — 본 패턴은 그 실행), P-X1-EFFECT-001 (52연속), factory_contract 규칙 7 (active 게이트)
+- **관련 회고**:
+  - meta/retrospectives/phase-M1.md
+  - docs/decisions/phase_M1_meta_factory_sample_test.md (ADR-036)
+  - meta_factory/outputs/TEST/sample_test_podcast_validation.md (6검증 + with/without + GAP 8)
+- **상태**: 신규 등록 후보 (Phase M1 첫 dry-run — 두 번째 dry-run/2nd 하네스 생성 시 효과 재측정 후 정식 채택)
 
 ### Pattern P-THIN-VERTICAL-001: Thin Vertical Slice 효과 (코드 phase entry 표준)
 

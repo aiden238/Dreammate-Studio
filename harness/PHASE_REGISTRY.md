@@ -26,7 +26,8 @@
 | 9 | 결과 저장 + 피드백 (selected_plans + feedback_events 영속화 + normalize wiring + Brand Memory 준비 + 피드백 UI) | **done** (2026-05-31) | 6 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M4 4/4 + **P-X1 42연속** + PlanCard 30연속 + component_map 40연속 + ADR-030 (feedback/selection persistence) + ADR-031 (Brand Memory prep — P-AUX-2 설계 agent 미구현 Phase 10+) + ADR-032 (normalize_to_canonical wiring) + security-review 두 번째 정식 (피드백 PII) + contract-change CC-004 (db_schema.md 실 plans 정합) + pytest 249→293/293 (+44 신규, 기존 수정 0) + smoke 15/15 + scenario_sim v5 25/25 (P-X2 일곱 번째) + P-FEEDBACK-LOOP-001 신규 + P-CANONICAL-WIRING-001 신규 + 피드백 UI inline (PlanCard·component_map 0줄) + deprecated warnings 67→16 |
 | 9.5 | eval-run 정식화 + Critic deprecated 0–5 Full 제거 | **done** (2026-05-31) | 5 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M4 4/4 + **P-X1 47연속** + PlanCard 35연속 + component_map 45연속 + ADR-033 (eval-run harness mock-deterministic) + ADR-034 (Critic deprecated 0–5 Full 제거) + eval-design ★ 첫 정식 + eval-run ★ 첫 정식 + contract-change CC-005 (output_schema §9 + agent_io_contract §5 canonical-only + db_schema) + pytest 293→339/339 (+46) + smoke 16/16 + scenario_sim v6 30/30 (P-X2 여덟 번째) + eval gate PASS (revise mean_delta 0.092) + Critic warnings 16→0 + P-EVAL-HARNESS-001 신규 + P-DEPRECATED-REMOVAL-001 신규 + revise effect eval (Phase 4.5 D6 해소) + generate.py canonical wiring 보강 |
 | **M0** | **Meta-Factory Prep (★ meta-phase — L3 Meta-Harness Factory skeleton)** | **done** (2026-05-31) | 3 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M3 3/3 + **★ 런타임 변경 0 (A9 — FastAPI/Next.js/Supabase 0줄)** + **P-X1 50연속** + PlanCard 35연속 + component_map 45연속 + ADR-035 (L3 Meta-Factory 도입) + CC-006 (INDEX harness-factory #21 Skill 등록) + harness-factory Skill ★ 신규 등록 (proposal-only, 키워드 scoped) + multi-llm-validation formal 여덟 번째 (★ 첫 meta-phase, V1~V6) + pytest 339 유지 + smoke_test_phase_M0 6/6 + scenario_sim v7 33/33 (P-X2 아홉 번째, SM1~SM3) + Skill 20→21 + P-META-FACTORY-001 신규 + meta_factory/ 7 루트 + templates 6 + blueprint 실측 + outputs (★ 제품 phase 번호 분리 detour) |
-| **next** | **🟡 pending_user_decision** (A Phase 10 통합 / B Phase 11+) | **next** | Phase 9.5 + Phase M0(meta-phase) ✅ done — 다음 제품 phase 사용자 결정 대기 (meta-phase detour 종료) |
+| **M1** | **Meta-Factory Sample Test (★ meta-phase dry-run — M0 machinery 팟캐스트 1회 검증)** | **done** (2026-05-31) | 2 Slice dry-run (sub-agent, outputs/TEST/ only) + doc-sync (main 별도 commit) + ★ 런타임 0 (A9) + dry-run outputs/TEST/ 외 0 (MG1) + **P-X1 52연속** + 6검증 PASS 5/PENDING 1 + with/without 6지표(누락 0v6/cross-ref 0v4/gate 1v0) + 5 gaps 전부 재현 + **GAP 8 백로그**(핵심 G2/G3/G5) + ADR-036 + harness-factory ★ 첫 실 트리거 (payoff deferred 첫 실증) + Skill 21 유지 + P-META-FACTORY-002 신규 + pytest 339 유지 (dry-run) |
+| **next** | **🟡 pending_user_decision** (A Phase 10 통합 / B Phase 11+) | **next** | Phase 9.5 + Phase M0 + Phase M1(meta-phase) ✅ done — 다음 제품 phase 사용자 결정 대기 (meta-phase detour 종료, next_phase_status 불변) |
 | 10 | MVP 통합 테스트 | planned | MVP 전체 end-to-end 검증 + Phase 1~9.5 누적 baseline 통합 회귀 + eval-run golden_set 회귀 baseline 활용 + P-AUX-2 brand_memory_extractor agent 실 구현 + 실 LLM eval mode + RAG eval_rubric golden_set 정식화 + 배포 테스트 게이트 준비 |
 | 11~20 | 서비스 안정화 | future | UX, eval, cost, fallback, 피드백 |
 | 21~30 | 확장 / 고도화 | future | Spring, Expo, Custom RAG, LangGraph |
@@ -296,10 +297,32 @@ Skill 첫 정식: harness-factory (★ 신규 등록 #21, proposal-only 키워�
 다음 단계  : harness-factory dry-run / trigger validation 샘플 / with-without 비교 샘플 (Phase M1+) / Phase 10 연결 (meta_factory blueprint = 온보딩·감사 baseline) — meta-phase detour 종료, next_phase_status pending_user_decision
 ```
 
+## Phase M1 done (archive) — ★ meta-phase dry-run
+
+`phases/archive/phase-M1-meta-factory-sample-test/`
+
+```
+Status     : ✅ DONE (2026-05-31)
+유형       : ★ meta-phase dry-run (제품 phase 아님 — M0 machinery 1회 실작동 검증, 2.5~4h)
+Goal       : M0 meta_factory machinery(generation_workflow 11단계 + validation_workflow 6검증)를 인접 도메인 「팟캐스트 에피소드 기획 AI」에 1회 dry-run 적용 — ① blueprint 생성 가능한가 ② validation 검증 가능한가. 목적 = 성공 아니라 GAP 발견.
+Result     : 2 Slice dry-run (sub-agent, outputs/TEST/ only) + doc-sync (main 별도 commit) + A1~A8 + MG1~MG3 PASS + ★ 런타임 0 (A9 — backend/apps/migrations 0) + ★ dry-run outputs/TEST/ 외 0줄 (MG1 — git diff 게이트 S1·S2 PASS) + pytest 339 유지 (dry-run) + 6검증 PASS 5/PENDING 1
+산출물     : dry-run ~11 (전부 meta_factory/outputs/TEST/ — README + podcast/{_without_baseline, domain_brief, harness_blueprint, scaffolds 6} + sample_test_podcast_validation) / doc-sync ~6 (retrospective phase-M1 + ADR-036 + patterns P-META-FACTORY-002 + skill_usage_log + PROJECT_STATE + PHASE_REGISTRY)
+Sub-agent  : 2 dispatches (S1 generation + S2 validation), 충돌 0 — P-X1 2/2 PASS (★ outputs/TEST/ 격리)
+회고       : meta/retrospectives/phase-M1.md
+신규 패턴  : P-META-FACTORY-002 (Meta-Factory 첫 dry-run — 실작동 입증 + GAP 백로그 신규 후보) + P-X1-EFFECT-001 update (52연속)
+Mitigated  : P-AGENT-SCOPE-001 (52연속 누적 입증 — Phase 3:5 + ... + Phase M0:3 + Phase M1:2)
+Skill 첫 정식: harness-factory ★ 첫 실 트리거 (M0 등록 proposal-only → M1 generation_workflow + validation_workflow 실행, payoff deferred 첫 실증) + meta-retrospective (phase-M1 회고)
+1 ADR      : ADR-036 (Meta-Factory 첫 dry-run 방법·결과 — 팟캐스트 도메인, 6검증 PASS 5/PENDING 1, GAP 8)
+GPT 보완 반영: ① with/without 6지표 수치화 / ② PASS·FAIL·PENDING·GAP 4상태 / ③ outputs 외 0 강제 + phase 기록 별도 doc-sync 분리 + meta-phase 분리
+핵심 결과  : 6검증 PASS 5/PENDING 1 + with/without WITH≫WITHOUT(누락 0v6/cross-ref 0v4/gate 1v0) + 5 gaps 전부 재현(5/0/0) + GAP 8(핵심 G2 skill 재사용 결정트리/G3 conditional 슬롯/G5 제3자 PII) + machinery 작동 증거(검증2 podcast-eval-run 4중첩 검출→채택 차단)
+핵심 성과  : **P-X1 52연속 + ★ 런타임 0(A9) + dry-run outputs/TEST/ 외 0(MG1) + machinery 실작동 입증 + GAP 8 백로그 + Skill 21 유지(신규 0) + PlanCard 35 / component_map 45 유지**
+다음 단계  : 8 GAP machinery 보완 proposal (G2/G3/G5 우선, contract-change 경유, proposal-only) / 검증5 실측 1회 (eval-run §3~§6) / Phase 10 연결 (meta_factory blueprint + TEST 산출물 = 온보딩·감사 참고) — meta-phase detour 종료, next_phase_status pending_user_decision 불변
+```
+
 ## 🟡 Next phase: pending_user_decision (2026-05-31)
 
 ```
-Phase 9.5 종료. 다음 phase는 사용자 결정 대기.
+Phase 9.5 + Phase M0 + Phase M1 (meta-phase detour) 종료. 다음 phase는 사용자 결정 대기.
 
 다음 phase 옵션:
 

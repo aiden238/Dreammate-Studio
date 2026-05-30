@@ -2,13 +2,30 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5 + Phase M0(meta-phase) 완료**.
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5 + Phase M0(meta-phase) + Phase M1(meta-phase dry-run) 완료**.
 Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /auth/* + /sse/* + /plans/{id}/select + /plans/{id}/feedback 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions, **normalize wiring live**) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계 (실 stage 연동)** + **RAG Lite (candidate_knowledge 5단계 MVP 전부 + pgvector retrieval + LLM Wiki 보조)** + **MOA Orchestrator 추출 (orchestration/moa_orchestrator + ProgressSink + progress_store 브릿지) + prompt_registry semver 정식화 + Critic v1.1.0 conservative adapter** + **결과 저장(selected_plans) + 피드백(feedback_events) 영속화 graceful + PII 마스킹 + 피드백 UI inline + Brand Memory 준비(feedback→candidate pending 적재)** 모두 동작.
 **Phase 9 ✅ done (2026-05-31)** — 결과 저장 + 피드백 (selected_plans/feedback_events 영속화 graceful + normalize_to_canonical wiring + Brand Memory 준비 + 피드백 UI wrapper, ADR-030/031/032, CC-004, large phase 6 Slice 실측 ~10~13h).
 
 ## 현재 Active Phase
 
-**🟡 pending_user_decision** — Phase M0 ✅ done (2026-05-31, ★ meta-phase). Phase 9.5 ✅ done (2026-05-31). 다음 phase 사용자 결정 대기 (옵션 A Phase 10 MVP 통합 / B Phase 11+). Phase M0 meta-phase detour 종료 — 제품 로드맵 보존.
+**🟡 pending_user_decision** — Phase M1 ✅ done (2026-05-31, ★ meta-phase dry-run). Phase M0 ✅ done (2026-05-31, ★ meta-phase). Phase 9.5 ✅ done (2026-05-31). 다음 phase 사용자 결정 대기 (옵션 A Phase 10 MVP 통합 / B Phase 11+). Phase M0+M1 meta-phase detour 종료 — 제품 로드맵 보존 (next_phase_status 불변).
+
+**Phase M1. Meta-Factory Sample Test ✅ done (2026-05-31, ★ meta-phase dry-run)** — Phase M0 가 만든 meta_factory machinery(generation_workflow 11단계 + validation_workflow 6검증)를 인접 도메인 **「팟캐스트 에피소드 기획 AI」** 에 **1회 dry-run** 적용하여 "실제로 도는가"를 검증. 목적은 "성공"이 아니라 **machinery 실작동 입증 + GAP 발견**. 산출물 전부 `meta_factory/outputs/TEST/` 격리 (★ 사용자 지침). 2 Slice dry-run(sub-agent) + doc-sync(main 세션 별도 commit). ★ FastAPI/Next.js/Supabase 런타임 변경 0줄 (A9) + dry-run 변경 outputs/TEST/ 외 0줄 (MG1).
+
+- 한 줄 정의: M0 machinery 를 팟캐스트 도메인에 1회 dry-run — generation_workflow 로 harness_blueprint 생성 + validation_workflow 6검증(PASS/FAIL/PENDING/GAP 4상태) + with/without 6지표 수치화 + GAP 백로그 도출. 모든 산출물 outputs/TEST/ 격리, generated harness 는 6검증 PASS 에도 active 아님 (factory_contract 규칙 7).
+- **2 Slice dry-run + doc-sync (★ GPT 보완 ③ 분리)**:
+  - 진입 [Phase M1 entry 8파일 + outputs/TEST/README — main 세션] ✅ (12a87c9)
+  - Slice S1 [generation — without baseline + domain_brief + harness_blueprint + 6 scaffold, sub-agent outputs/TEST/ only] ✅ (dbe43c5)
+  - Slice S2 [validation — 6검증 4상태 + with/without 6지표 + 5gaps 재현 + GAP 8, sub-agent outputs/TEST/ only] ✅ (83fc1ac)
+  - doc-sync [retrospective + ADR-036 + patterns + skill_usage_log + state docs + archive — ★ main 세션 별도 commit] ✅
+- **GPT M0 검토 보완 3건 반영**: ① with/without 6지표 수치화(주관 서술 0) / ② 판정 PASS·FAIL·PENDING·GAP 4상태(첫 dry-run fail/pending 정상) / ③ outputs 외 변경 0 강제 + phase 기록 별도 doc-sync 분리. + meta-phase 분리(제품 phase 무관).
+- **결과**: 6검증 **PASS 5 / PENDING 1**(검증5 eval-run = 실측 미수행 정상) + blueprint validation 3필드 pass/pass/pass + with/without WITH≫WITHOUT(누락 0v6 / cross-ref 누락 0v4 / eval gate 1v0) + 5 gaps **전부 재현**(5/0/0) + **GAP 8개**(핵심 G2 skill 재사용 결정트리 / G3 conditional_execution 슬롯 / G5 제3자 PII).
+- **machinery 작동 결정 증거**: 검증2(skill conflict)가 podcast-eval-run 신규 Skill 의 eval-run 키워드 4중첩 검출 → 채택 사전 차단.
+- ADR-036 (Meta-Factory 첫 dry-run 방법·결과) + harness-factory Skill **★ 첫 실 트리거** (M0 등록 → M1 실 트리거, payoff deferred 첫 실증).
+- **핵심 성과**: P-X1 52연속 + ★ 런타임 0(A9) + dry-run outputs/TEST/ 외 0(MG1) + machinery 실작동 입증 + GAP 8 백로그 + Skill 21 유지(신규 0) + PlanCard 35 / component_map 45 유지.
+- 신규 패턴: P-META-FACTORY-002 (Meta-Factory 첫 dry-run — 실작동 입증 + GAP 백로그) + P-X1-EFFECT-001 update (52연속).
+- baseline: pytest 339 유지 (런타임 무관 — dry-run) + P-X1 52 + Skill 21. meta-phase dry-run 실측 ~2.5~4h.
+- 다음: 8 GAP machinery 보완 proposal (G2/G3/G5 우선, contract-change 경유) / 검증5 실측 1회 (eval-run §3~§6) / Phase 10 연결 (meta_factory blueprint + TEST 산출물 = 온보딩·감사 참고).
 
 **Phase M0. Meta-Factory Prep ✅ done (2026-05-31, ★ meta-phase)** — 현재 구현 하네스(L2)를 유지하면서 상위에 `harness/meta_factory/` (L3 Meta-Harness Factory) skeleton + contract + validation 기준을 추가. proposal-first 메타 레이어 — ① 현재 하네스 blueprint 역정리 ② 새 도메인 하네스 생성 입력/출력 구조 ③ Agent/Skill/Contract/Eval/Phase 생성 전 검증 기준. **자동 generator 구현이 아니라 skeleton·contract·validation 정의까지만** (payoff deferred, NG11). 3 Slice 모두 sub-agent dispatch 완료. ★ FastAPI/Next.js/Supabase 런타임 변경 0줄 (A9).
 
