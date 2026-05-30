@@ -2,35 +2,37 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 완료**.
-Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /auth/* + /sse/* 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계** + **RAG Lite (candidate_knowledge 5단계 MVP 전부 + pgvector retrieval + LLM Wiki 보조)** 모두 동작.
-**Phase 7 ✅ done (2026-05-29)** — RAG Lite (candidate_knowledge 5단계 MVP 전부, ADR-025/026, large phase 5 Slice 실측 ~13~14h).
-**🟢 Phase 8 active (2026-05-29)** — MOA Lite 본격 (orchestrator 추출 + SSE worker 통합 + prompt_registry 정식화, 12~16h, 5 Slice 모두 sub-agent). Slice 1 entry 완료.
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 완료**.
+Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /auth/* + /sse/* 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계 (실 stage 연동)** + **RAG Lite (candidate_knowledge 5단계 MVP 전부 + pgvector retrieval + LLM Wiki 보조)** + **MOA Orchestrator 추출 (orchestration/moa_orchestrator + ProgressSink + progress_store 브릿지) + prompt_registry semver 정식화 + Critic v1.1.0 conservative adapter** 모두 동작.
+**Phase 8 ✅ done (2026-05-29)** — MOA Lite 본격 (orchestrator 추출 behavior-preserving + SSE worker 통합 + prompt_registry 정식화, ADR-027/028/029, large phase 5 Slice 실측 ~12~14h).
 
 ## 현재 Active Phase
 
-**🟢 Phase 8. MOA Lite 본격 — active (2026-05-29)** — orchestrator 추출 (behavior-preserving) + SSE Progress worker 통합 + prompt_registry semver 정식화. **Slice 1 entry 완료** (8 entry files + 4-check PASS + audit_naming 0 drift + ai-architecture-review/prompt-version-review 첫 정식 + ADR-027/028/029).
+**🟡 pending_user_decision** — Phase 8 ✅ done (2026-05-29). 다음 phase는 사용자 결정 대기 (옵션 A Phase 9 저장-피드백 / B Phase 9.5 eval-run / C Phase 10 통합 / D Phase 11+).
 
-- 한 줄 정의: `plans_generate()` 400줄 god-function의 MOA orchestration을 service layer orchestrator로 추출(behavior-preserving) + SSE Progress 실 stage 연동 + prompt_registry P-001~P-008 + AUX semver 정식화.
-- **5 Slice 모두 sub-agent dispatch**:
-  - Slice 1 [Pre-Entry — validations + ai-architecture-review + prompt-version-review(분석) + ADR-027/028/029] ✅ 완료
-  - Slice 2 [MOA Orchestrator 추출 (behavior-preserving) + ProgressSink] (다음)
-  - Slice 3 [SSE Progress worker 통합 — progress_store 브릿지]
-  - Slice 4 [prompt_registry 정식화 — contract-change + prompt-version-review 적용]
-  - Slice 5 [Close]
+**Phase 8. MOA Lite 본격 ✅ done (2026-05-29)** — orchestrator 추출 (behavior-preserving) + SSE Progress worker 통합 + prompt_registry semver 정식화. 5 Slice 모두 sub-agent dispatch 완료.
+
+- 한 줄 정의: `plans_generate()` god-function의 MOA orchestration을 service layer orchestrator로 추출(behavior-preserving) + SSE Progress 실 stage 연동 + prompt_registry P-001~P-008 + AUX semver 정식화.
+- **5 Slice 모두 sub-agent dispatch 완료**:
+  - Slice 1 [Pre-Entry — validations + ai-architecture-review + prompt-version-review(분석) + ADR-027/028/029] ✅ (8fbb645)
+  - Slice 2 [MOA Orchestrator 추출 (behavior-preserving) + ProgressSink] ✅ (c25367a)
+  - Slice 3 [SSE Progress worker 통합 — progress_store 브릿지] ✅ (f5c534a)
+  - Slice 4 [prompt_registry 정식화 — contract-change CC-003 + prompt-version-review 적용] ✅ (c7c7376)
+  - Slice 5 [Close] ✅ (final)
 - **사용자 결정 3건 반영 (2026-05-29)**:
   - Scope: 3개 모두 (A orchestrator + B SSE + C prompt_registry, 5 Slice, 12~16h)
   - Critic drift: **Conservative adapter** — Phase 6 canonical(0–1) 불변 (ADR-018 보존) + P-007 prompt(0–5) 유지 + 코드 0–1 정규화 adapter + P-007 v1.0.0→v1.1.0
   - SSE: in-memory progress_store 브릿지 (graceful, background task 미도입 — moa_policy §4 sync, async Phase 11+)
-- **★ behavior-preserving 정신**: orchestrator 추출 = Envelope byte-identical + 기존 pytest 223 수정 0 (회귀 0 = 동작 불변 증거)
-- **첫 정식 트리거 2개**: ai-architecture-review (MOA orchestration 설계 → ADR-027) + prompt-version-review (P-007 Critic semver → ADR-029)
-- ADR-027 (MOA orchestrator) + ADR-028 (SSE progress integration) + ADR-029 (prompt_registry semver) 신규.
-- PlanCard.tsx 0줄 + component_map.md 0줄 유지 (backend-only phase) ★.
+- **★ behavior-preserving 입증**: orchestrator 추출 = Envelope byte-identical + 기존 pytest 223 수정 0 (의도된 2 version assertion 제외 — 회귀 0 = 동작 불변 증거)
+- **첫 정식 트리거 2개 완료**: ai-architecture-review (MOA orchestration 설계 → ADR-027 + Slice 5 회고) + prompt-version-review (P-007 Critic semver → ADR-029, Slice 1 분석 + Slice 4 적용)
+- ADR-027 (MOA orchestrator) + ADR-028 (SSE progress integration) + ADR-029 (prompt_registry semver) + CC-003 (prompt_registry + agent_io_contract).
+- plans.py 659 → 243 LOC (god-function 분해) + PlanCard.tsx 0줄 + component_map.md 0줄 유지 (backend-only phase) ★.
 
-**Phase 7 ✅ done (2026-05-29)** 이하 옵션 (Phase 8 채택, 나머지는 후속 phase 이관):
-- **B. Phase 9 — 결과 저장 + 피드백** (6~10h): plan 선택/수정/반려 누적, Brand Memory 자동 추출 ADR 신규, per-user rate-limit + audit-log
-- **C. Phase 9.5+ — eval-run Skill 정식화** (4~6h): golden_set 회귀 + revise effect eval (Phase 4.5 D6 누적 5회 해소) + Critic deprecated 4 fallback 완전 제거 + 간이 RAG eval_rubric 정식
-- **D. 다른 우선순위** (Phase 11+): 사용자 데이터 자동 promotion (rag-update Skill 두 번째) / Supabase SQL function `match_approved_knowledge` 정의 (운영 단계 필수) / Phase 1 legacy rag 실 통합 / cost-review Skill
+**다음 phase 옵션 (사용자 결정 대기)**:
+- **A. Phase 9 — 결과 저장 + 피드백** (6~10h): plan 선택/수정/반려 누적, Brand Memory 자동 추출 ADR 신규, normalize_to_canonical wiring, per-user rate-limit + audit-log
+- **B. Phase 9.5+ — eval-run Skill 정식화** (4~6h): golden_set 회귀 + revise effect eval (Phase 4.5 D6 누적 6회 해소) + Critic deprecated 0–5 fallback 완전 제거 + 간이 RAG eval_rubric 정식
+- **C. Phase 10 — MVP 통합 테스트** (6~8h): MVP end-to-end 검증 + Phase 1~8 누적 baseline 통합 회귀 + 배포 테스트 게이트 준비
+- **D. 다른 우선순위** (Phase 11+): SSE full async worker / prompt A/B 실행 인프라 / 사용자 데이터 자동 promotion / Supabase SQL function 정의 / cost-review Skill
 
 **Phase 1. MVP 기본 플로우 ✅ done (2026-05-26)** — archive 이동 완료
 
@@ -109,7 +111,7 @@ Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /a
 - Phase 1 legacy rag/{retriever, fallback}.py + Phase 7 rag/retrieval.py 공존 (P-LEGACY-CONSOLIDATION-001 누적 2회 — Phase 11+ Custom RAG 시점 자연 통합)
 - 실측 시간 ~13~14h (추정 12~16h 내)
 
-**🟡 Next: pending_user_decision** — Phase 8 MOA / Phase 9 저장-피드백 / Phase 9.5+ eval / Phase 11+ (사용자 결정 대기)
+**🟡 Next: pending_user_decision** — Phase 9 저장-피드백 / Phase 9.5+ eval-run / Phase 10 통합 테스트 / Phase 11+ (사용자 결정 대기)
 
 ## 이전 결정 (옵션 B 변형: Phase 6 선행)
 
@@ -122,11 +124,12 @@ Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /a
 ## migration_progress
 
 ```yaml
-current_sprint: "phase-8-slice-1"
-current_sprint_step: phase_8_slice_1_entry_completed
+current_sprint: "phase-8-slice-5-completed"
+current_sprint_step: phase_8_completed
 total_steps_in_sprint: 5
-last_completed_action: "Phase 8 entry — 8 entry files + 4-check PASS + audit_naming 0 drift + ai-architecture-review/prompt-version-review 첫 정식 + ADR-027/028/029"
-next_action: "Slice 2 sub-agent (MOA Orchestrator 추출 behavior-preserving)"
+last_completed_action: "Phase 8 Slice 5 close — smoke 14/14 + scenario_sim v4 20/20 (P-X2 여섯 번째) + retrospective + patterns (P-MOA-ORCHESTRATOR-001 + P-BEHAVIOR-PRESERVING-001) + archive 이동 + state docs + agent-io-check 네 번째 회귀 (drift 0) + ai-architecture-review 회고 PASS + design-review frontend 변경 0"
+next_action: "다음 phase 사용자 결정 대기 (A Phase 9 저장-피드백 / B Phase 9.5 eval-run / C Phase 10 통합 / D Phase 11+)"
+next_phase_status: pending_user_decision
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
@@ -493,21 +496,68 @@ phase_7_deferred_to_next:
   - rag_update_skill_second_trigger  # Phase 11+ 사용자 데이터 자동 promotion (개선 제안 §4)
   - brand_memory_auto_extract_adr  # Phase 9+ MVP 본격 운영 후 (개선 제안 §5)
   - rag_eval_rubric_formal_via_golden_set  # Phase 9+ eval-run Skill 정식화 (개선 제안 §6)
-phase_8_status: in_progress
+phase_8_status: completed
 phase_8_entry_date: 2026-05-29
+phase_8_completion_date: 2026-05-29
+phase_8_archive_location: phases/archive/phase-8-moa-lite/
 phase_8_total_slices: 5
-phase_8_completed_slices: 0  # Slice 1 entry 완료 (구현 Slice 2~5 대기)
+phase_8_completed_slices: 5  # Slice 1~5 모두 PASS
 phase_8_estimated_hours_total: 12-16
+phase_8_actual_hours: ~12-14  # large orchestration phase 단일일 다중 sub-agent
 phase_8_assumptions_check: PASS  # 4-check 통과 (C1~C11, U1~U6, audit_naming 0 drift)
+phase_8_acceptance_passed: 10/10  # A1~A10
+phase_8_meta_acceptance_passed: 5/5  # M1~M5
+phase_8_pytest_result: 249/249  # Phase 7 223 baseline + Phase 8 신규 26 (test_moa_orchestrator + test_sse_integration + test_prompt_registry_consistency)
+phase_8_smoke_test: 14/14 (13 PASS + 1 WARN intended)  # smoke_test_phase_8.ps1 신규
+phase_8_scenario_simulation_v4: 20/20 PASS (auto-gate, 여섯 번째)  # P-X2 여섯 번째 자동 게이트, S16~S20 MOA 5 추가
+phase_8_schema_stress_test: 5/5 PASS (Phase 6 v2 유지)
+phase_8_audit_naming_final: 0 drift  # Slice 5
+phase_8_audit_page_component_final: 2 intended drift WARN  # Phase 5 baseline 계승 (AuthGuard + /login)
+phase_8_audit_page_component_intended_drift:
+  - AuthGuard  # Phase 5 Slice 3 신규 (baseline 계승)
+  - /login  # Phase 5 Slice 3 신규 (baseline 계승)
+phase_8_p_x1_self_verification: 5/5 PASS  # Slice 1~5 모두
+phase_8_p_x1_cumulative_streak: 36  # Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 ★
+phase_8_component_map_zero_lines_streak: 34  # Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5 ★
+phase_8_plan_card_zero_lines_streak: 24  # Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5 ★
+phase_8_deviation_count: 0
+phase_8_plans_py_loc: 659->243  # god-function 분해 (thin adapter)
 phase_8_user_decisions_applied:
   scope_all_3_pillars: yes  # A orchestrator + B SSE + C prompt_registry (5 Slice)
   critic_conservative_adapter: yes  # Phase 6 canonical 불변 (ADR-018 보존) + P-007 v1.1.0
   sse_progress_store_bridge: yes  # background task 미도입 (moa_policy §4 sync)
   all_slices_sub_agent: yes  # 5 Slice 모두 sub-agent dispatch
-  ai_architecture_review_first_trigger: yes  # Slice 1 ★ 첫 정식
+  ai_architecture_review_first_trigger: yes  # Slice 1 ★ 첫 정식 + Slice 5 회고
   prompt_version_review_first_trigger: yes  # Slice 1 분석 + Slice 4 적용 ★ 첫 정식
+phase_8_skills_first_trigger:
+  - ai_architecture_review_first_formal  # ★ 첫 정식 (Slice 1 ADR-027 + Slice 5 회고)
+  - prompt_version_review_first_formal  # ★ 첫 정식 (Slice 1 분석 + Slice 4 적용, ADR-029)
+  - contract_change_fourth_formal  # 네 번째 본격 (Slice 4 CC-003 — prompt_registry semver + agent_io_contract v1.2.0)
+  - multi_llm_validation_formal_fifth  # 다섯 번째 트리거 (Slice 1 V1~V7)
+  - phase_complete_v1_2_0_sixth  # P-X2 자동 게이트 여섯 번째 트리거 (Slice 5)
+  - agent_io_check_fourth  # 네 번째 회귀 검증 (Slice 5)
+phase_8_contracts_changed:
+  - prompt_registry.md  # P-001~P-008 + AUX semver 정식화 + P-007 §0–5↔0–1 adapter
+  - agent_io_contract.md  # v1.2.0 §5 Critic v1.1.0 adapter + §8 orchestrator 중개
+phase_8_contract_changes:
+  - CC-003  # prompt_registry semver + agent_io_contract v1.2.0 (Slice 4)
 phase_8_adrs: [ADR-027, ADR-028, ADR-029]  # MOA orchestrator + SSE progress integration + prompt_registry semver
-total_commits: 71  # 70 + Phase 8 Slice 1 entry (=71)
+phase_8_new_patterns:
+  - P-MOA-ORCHESTRATOR-001  # god-function → service layer 추출 (behavior-preserving) 신규 후보
+  - P-BEHAVIOR-PRESERVING-001  # 기존 test 수정 0 = 동작 불변 증거 신규 후보
+  - P-X1-EFFECT-001 (update 36연속)  # orchestration-refactor phase 확장 입증
+  - P-VALIDATION-FORMAL-001 (update 다섯 번째)  # 다섯 번째 입증 — V7 MOA orchestration
+phase_8_mitigated_patterns:
+  - P-AGENT-SCOPE-001  # 36연속 누적 입증 (agents/* 재구조화 위험 영역, orchestration/ 격리로 0건)
+phase_8_retrospective_proposals: in_retrospective  # 본 회고 §개선 제안 §1~6
+phase_8_deferred_to_next:
+  - normalize_to_canonical_wiring  # Phase 9+ (개선 제안 §1 — 결과 저장 시점)
+  - sse_full_async_worker  # Phase 11+ (개선 제안 §2, 누적 2회 Phase 5 + Phase 8)
+  - prompt_ab_execution_infra  # Phase 11+ (개선 제안 §3 — multi-provider 대비)
+  - critic_deprecated_0_5_fallback_full_removal  # Phase 9+ eval-run (개선 제안 §4, 누적 2회 Phase 6 + Phase 8)
+  - brand_memory_auto_extract_adr  # Phase 9+ MVP 본격 운영 후 (개선 제안 §5, 누적 3회)
+  - revise_effect_eval  # Phase 9+ eval-run (개선 제안 §6, Phase 4.5 D6 누적 6회)
+total_commits: 76  # 71 + Phase 8 Slice 2~5 (=76, Slice 1 entry 71 + Slice 2 c25367a + Slice 3 f5c534a + Slice 4 c7c7376 + Slice 5 final)
 last_updated: 2026-05-29
 ```
 

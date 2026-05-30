@@ -46,10 +46,11 @@
 
 ## 현재 active Phase
 
-**🟡 pending_user_decision** — Phase 7 ✅ done (2026-05-29)
+**🟡 pending_user_decision** — Phase 8 ✅ done (2026-05-29)
 
-Phase 7 ✅ done (2026-05-29). 다음 phase는 사용자 결정 대기 (옵션 A Phase 8 MOA / B Phase 9 저장-피드백 / C Phase 9.5+ eval / D Phase 11+).
+Phase 8 ✅ done (2026-05-29). 다음 phase는 사용자 결정 대기 (옵션 A Phase 9 저장-피드백 / B Phase 9.5+ eval-run / C Phase 10 통합 / D Phase 11+).
 
+- Phase 8 archive: `phases/archive/phase-8-moa-lite/` (참조 가능 — closing_notes + 회고 + MOA orchestrator baseline + 다음 옵션 A/B/C/D)
 - Phase 7 archive: `phases/archive/phase-7-rag-lite/` (참조 가능 — closing_notes + 회고 + RAG Lite baseline + 다음 옵션 A/B/C/D)
 - Phase 5.5 archive: `phases/archive/phase-5.5-legacy-db-consolidation/` (참조 가능 — Phase 7 진입 baseline)
 - Phase 5 archive: `phases/archive/phase-5-db-auth/` (참조 가능 — DB/Auth/RLS/SSE baseline)
@@ -63,39 +64,39 @@ Phase 7 ✅ done (2026-05-29). 다음 phase는 사용자 결정 대기 (옵션 A
 
 **다음 phase 옵션 (사용자 결정 대기)**:
 
-- **A. Phase 8 — MOA Lite 본격** (12~16h)
-  - Intent / Planner / Critic / Rewriter 완전 분리
-  - agents/* 모두 재구조화 (Phase 1 baseline + Phase 6 canonical + Phase 7 wrapper 공존 → 정리)
-  - SSE Progress worker 통합 (mock → 실 worker callback)
-  - prompt_registry P-007/P-008 정식화 (NG8 누적 3회 defer 해소)
-  - ai-architecture-review Skill ★ 첫 정식 baseline
-- **B. Phase 9 — 결과 저장 + 피드백** (6~10h)
+- **A. Phase 9 — 결과 저장 + 피드백** (6~10h)
   - 사용자 plan 선택 / 수정 / 반려 누적
-  - Phase 5 plans_repo + RLS + Phase 7 RAG 활용
-  - Brand Memory 자동 추출 ADR 신규 (Phase 7 개선 제안 §5)
-- **C. Phase 9.5+ — eval-run Skill 정식화** (4~6h)
-  - golden_set 회귀 + revise effect eval (Phase 4.5 D6 누적 5회 deferred 해소)
-  - Critic deprecated 4 fallback 완전 제거
+  - Phase 5 plans_repo + RLS + Phase 7 RAG + Phase 8 orchestrator 활용
+  - Brand Memory 자동 추출 ADR 신규 (Phase 8 개선 제안 §5, 누적 3회 confirm)
+  - normalize_to_canonical wiring 연결 (Phase 8 개선 제안 §1) + per-user rate-limit + audit-log
+- **B. Phase 9.5+ — eval-run Skill 정식화** (4~6h)
+  - golden_set 회귀 + revise effect eval (Phase 4.5 D6 누적 6회 deferred 해소)
+  - Critic deprecated 0–5 fallback 완전 제거 (Phase 8 개선 제안 §4, Phase 6 ADR-018 다음 단계)
   - 간이 RAG eval_rubric → 정식 (Phase 7 개선 제안 §6)
+  - eval-design + eval-run Skill 첫 정식 트리거 baseline
+- **C. Phase 10 — MVP 통합 테스트** (6~8h)
+  - MVP 전체 end-to-end 검증 (Discovery + Quick → 3-plan → Critic revise → save → SSE progress)
+  - Phase 1~8 누적 baseline 통합 회귀 + 배포 테스트 게이트 A~G 준비
 - **D. 다른 우선순위** (Phase 11+)
+  - SSE full async worker (Phase 8 개선 제안 §2, 누적 2회) / prompt A/B 실행 인프라 (Phase 8 개선 제안 §3)
   - 사용자 데이터 자동 promotion (rag-update Skill 두 번째)
-  - Supabase SQL function 정의 (운영 단계 필수)
-  - Phase 1 legacy rag 실 통합 / cost-review Skill
+  - Supabase SQL function 정의 (운영 단계 필수) / cost-review Skill
 
-**Phase 7 핵심 성과**:
-- **P-X1 §SELF-VERIFICATION 31연속 PASS** (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5)
-- **PlanCard.tsx 19연속 0줄** (Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1)
-- **component_map.md 29연속 0줄** (Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1)
-- **5단계 파이프라인 전부 MVP** (pending → filtered → evaluated → approved → promoted + hybrid 승인 + promotion_history JSONB)
-- **pgvector retrieval** (cosine + top-k=5 + threshold=0.7) + **OpenAI text-embedding-3-small** + **chunking 512 tokens + overlap 50** + **LLM Wiki 보조 (RAG > LLM Wiki 우선순위)**
-- **rag-design Skill ★ 첫 정식 트리거** (Slice 1, ADR-025)
-- **rag-update Skill ★ 첫 정식 트리거** (Slice 4, initial promotion procedure)
-- **contract-change Skill 본격 세 번째** (rag_data_contract.md §18)
-- **multi-llm-validation formal 네 번째** (V1~V7 PASS — RAG architecture)
-- **agent-io-check Skill 세 번째 회귀** (agents/rag.py 검증, 회귀 0)
-- 2 ADR 신규 (ADR-025 RAG architecture + ADR-026 5단계 promotion logic)
-- pytest 172 → **223/223** (+51 신규) + smoke 13/13 + scenario_sim v3 15/15 (P-X2 다섯 번째)
-- 신규 패턴: P-RAG-5STAGE-001 + P-RAG-GRACEFUL-001 (5종 marker 표준화) + P-X1-EFFECT-001 update (31연속) + P-VALIDATION-FORMAL-001 update (네 번째) + P-LEGACY-CONSOLIDATION-001 update (누적 2회 — 정식 채택 임박)
-- graceful 5종 marker (P-GRACEFUL-001 Phase 1 정신 5번째 입증)
-- 사용자 결정 3건 mapping 완료 (Phase 5.5에서 이미 명시 → 추가 결정 0건)
-- large phase 실측 ~13~14h (추정 12~16h 내)
+**Phase 8 핵심 성과**:
+- **P-X1 §SELF-VERIFICATION 36연속 PASS** (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5)
+- **PlanCard.tsx 24연속 0줄** (Phase 4 4 + Phase 4.5 5 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5)
+- **component_map.md 34연속 0줄** (Phase 2 6 + Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 3 + Phase 5 5 + Phase 5.5 1 + Phase 7 1 + Phase 8 5)
+- **MOA Orchestrator 추출 (ADR-027)** — plans.py 659→243 god-function 분해 (behavior-preserving, Envelope byte-identical)
+- **behavior-preserving** — 기존 pytest 223 수정 0 (의도된 2 version assertion 제외, 회귀 0 = 동작 불변 증거)
+- **ProgressSink + progress_store 브릿지 (ADR-028)** — SSE 실 stage 연동 (graceful fallback, background task 미도입)
+- **prompt_registry semver 정식화 (ADR-029, CC-003)** — P-001~P-008 + AUX semver + Critic v1.1.0 conservative adapter (Phase 6 canonical 불변, NG8 누적 3회 해소)
+- **ai-architecture-review Skill ★ 첫 정식 트리거** (Slice 1 ADR-027 + Slice 5 회고)
+- **prompt-version-review Skill ★ 첫 정식 트리거** (Slice 1 분석 + Slice 4 적용, ADR-029)
+- **contract-change Skill 본격 네 번째 (CC-003)** (prompt_registry + agent_io_contract v1.2.0)
+- **multi-llm-validation formal 다섯 번째** (V1~V7 PASS — MOA orchestration)
+- **agent-io-check Skill 네 번째 회귀** (agent_io_contract §5 ↔ critic.py drift 0)
+- 3 ADR 신규 (ADR-027 MOA orchestrator + ADR-028 SSE progress integration + ADR-029 prompt_registry semver)
+- pytest 223 → **249/249** (+26 신규) + smoke 14/14 + scenario_sim v4 20/20 (P-X2 여섯 번째)
+- 신규 패턴: P-MOA-ORCHESTRATOR-001 + P-BEHAVIOR-PRESERVING-001 + P-X1-EFFECT-001 update (36연속) + P-VALIDATION-FORMAL-001 update (다섯 번째)
+- 사용자 결정 3건 mapping 완료 (Scope 3개 모두 / Critic conservative adapter / SSE progress_store 브릿지)
+- large phase 실측 ~12~14h (추정 12~16h 내)
