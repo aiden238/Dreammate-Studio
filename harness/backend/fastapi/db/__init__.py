@@ -30,7 +30,15 @@ import warnings as _warnings
 from typing import Any
 
 from .client import SupabaseClientLike, get_supabase
-from .repositories import PlansRepo, insert_plan_candidate, insert_video_project
+from .repositories import (
+    BrandMemoryRepo,
+    FeedbackRepo,
+    PlansRepo,
+    SelectionRepo,
+    insert_plan_candidate,
+    insert_video_project,
+    mask_pii,
+)
 from .supabase_client import get_supabase_client
 from .types import PersistenceResult, SaveStatus
 
@@ -137,6 +145,11 @@ __all__ = [
     "get_supabase",
     "SupabaseClientLike",
     "PlansRepo",
+    # Phase 9 Slice 2 — 결과 저장 + 피드백 + Brand Memory 준비 (graceful, ADR-030/031)
+    "SelectionRepo",
+    "FeedbackRepo",
+    "mask_pii",
+    "BrandMemoryRepo",
     # Legacy backward-compat (Phase 1 Slice 5, DEPRECATED Phase 5.5 — ADR-023)
     "get_supabase_client",
     "save_video_planning",

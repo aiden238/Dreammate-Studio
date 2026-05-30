@@ -245,6 +245,10 @@ create index idx_plan_options_video on plan_options(video_id);
 
 ### 4.3 selected_plans
 
+#### Idealized (Phase 11+ — 4계층 full linkage, NG2)
+
+`plan_options.option_id` 참조 전제. plan_options 테이블(§4.2)이 존재하는 4계층 full linkage 에서만 적용 — Phase 11+.
+
 ```sql
 create table selected_plans (
     video_id          uuid primary key references video_projects(video_id),
@@ -252,6 +256,23 @@ create table selected_plans (
     selection_reason   text,                    -- 사용자가 입력한 선택 이유
     selected_at        timestamptz not null default now()
 );
+```
+
+#### Phase 9 실 구현 (`0005_feedback_selection.sql` — 실 plans 정합, ADR-030)
+
+실 영속화는 `plans` 테이블(§3.6, plan_candidates JSONB 3-plan 배열) 정합. plan_options 미생성이므로 `selected_option_index`(0–2, plan_candidates 배열 인덱스)로 선택 식별. 선택 plan 내용은 `plans.plan_candidates[selected_option_index]` 로 조회.
+
+```sql
+create table selected_plans (
+    id                    uuid primary key default gen_random_uuid(),
+    plan_id               uuid not null references plans(id) on delete cascade,
+    auth_user_id          uuid,                          -- nullable (anon 호환, Phase 5 패턴)
+    selected_option_index smallint not null,             -- 0~2 (plan_candidates 배열 index)
+    selection_reason      text,                          -- 사용자 선택 사유 (PII 저장 전 마스킹 — security-review T1)
+    created_at            timestamptz not null default now(),
+    check (selected_option_index between 0 and 2)
+);
+-- RLS: auth_user_id = auth.uid() (anon nullable 허용) — 0005, Phase 5 0003_rls_policy.sql 패턴 (T3).
 ```
 
 ### 4.4 scripts / storyboards
@@ -366,6 +387,8 @@ create index idx_discovery_step on discovery_choices(step_name);
 
 ### 5.2 feedback_events
 
+#### Idealized (Phase 11+ — 4계층 target_kind+target_id, NG2)
+
 ```sql
 create table feedback_events (
     feedback_id  uuid primary key default gen_random_uuid(),
@@ -379,6 +402,27 @@ create table feedback_events (
 
 create index idx_feedback_target on feedback_events(target_kind, target_id);
 create index idx_feedback_user on feedback_events(user_id);
+```
+
+#### Phase 9 실 구현 (`0005_feedback_selection.sql` — 실 plans 정합, ADR-030)
+
+target_kind/target_id 는 plan_id 정합으로 단순화 (Phase 9 = plan 단위 피드백). target_kind = `'plan_candidate'` (plan_id + option_index) 로 표현 — `option_index`(0–2)는 특정 candidate 대상, null = plan 전체. `reason` 은 자유 입력 → **저장 전 PII 마스킹**(이메일/전화/주민/카드 → `[masked]`, FeedbackRepo INSERT 직전 — security-review T1/T2).
+
+```sql
+create table feedback_events (
+    id            uuid primary key default gen_random_uuid(),
+    plan_id       uuid not null references plans(id) on delete cascade,
+    auth_user_id  uuid,                                  -- nullable (anon 호환, Phase 5 패턴)
+    option_index  smallint,                              -- 0~2 (특정 candidate 대상, null=plan 전체)
+    event_type    text not null,                         -- 'like'|'dislike'|'reject'|'regenerate'
+    reason        text,                                  -- PII 저장 전 마스킹 (security-review T1/T2)
+    created_at    timestamptz not null default now(),
+    check (event_type in ('like','dislike','reject','regenerate')),
+    check (option_index is null or option_index between 0 and 2)
+);
+create index idx_feedback_plan on feedback_events(plan_id);
+create index idx_feedback_user on feedback_events(auth_user_id);
+-- RLS: auth_user_id = auth.uid() (anon nullable 허용) — 0005 (T3).
 ```
 
 ### 5.3 intent_filter_logs
@@ -401,6 +445,8 @@ create index idx_intent_filter_user on intent_filter_logs(user_id);
 
 ## 6. Brand Memory
 
+#### Idealized 정의 (4계층 — source_video_id)
+
 ```sql
 create table brand_memory_entries (
     entry_id     uuid primary key default gen_random_uuid(),
@@ -417,6 +463,28 @@ create table brand_memory_entries (
 );
 
 create index idx_brand_memory on brand_memory_entries(brand_id);
+```
+
+#### Phase 9 준비 (`0005_feedback_selection.sql` — 실 정합, ADR-031)
+
+Phase 9 는 **준비만** (사용자 결정 5 / NG1): schema 등록 + `BrandMemoryRepo`(graceful, 수동/준비용 entry CRUD) 만. **자동 추출 agent(P-AUX-2 `brand_memory_extractor`)는 미구현 — Phase 10+** (MVP 운영 + 데이터 누적 후, ai_system/prompts/prompt_registry.md 가 명세 SoT). feedback/selection → candidate_knowledge 적재 경로(§7.2 source_kind)는 Phase 9 Slice 4 (pending 까지만 — 자동 승격 X, NG12).
+
+실 구현은 `brands(id)` (0001_init.sql PK) + `source_plan_id`(→ plans.id) 정합 (idealized `source_video_id` 대신).
+
+```sql
+create table brand_memory_entries (
+    entry_id        uuid primary key default gen_random_uuid(),
+    brand_id        uuid references brands(id) on delete cascade,
+    entry_type      text not null,             -- preferred_tone|avoid_phrase|preferred_phrase|success_pattern|rejection_pattern
+    content         text not null,
+    source_plan_id  uuid references plans(id) on delete set null,
+    confidence      real default 0.5,          -- 0–1 (자동 추출 신뢰도 — Phase 10+)
+    is_user_locked  boolean default false,
+    created_at      timestamptz not null default now(),
+    updated_at      timestamptz not null default now(),
+    check (entry_type in ('preferred_tone','avoid_phrase','preferred_phrase','success_pattern','rejection_pattern'))
+);
+-- RLS: brands(id) 를 통한 user 격리 (Phase 5 domains_via_brand 패턴) — 0005.
 ```
 
 ---
