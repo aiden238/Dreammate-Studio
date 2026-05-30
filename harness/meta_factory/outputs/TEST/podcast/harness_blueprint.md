@@ -21,7 +21,7 @@
 | 6 | eval 후보 생성 | ✅ §5 — 4 eval |
 | 7 | phase 구조 생성 | ✅ §6 — 5 phase (non_goals ← forbidden_scope 매핑) |
 | 8 | routing 문서 생성 | ✅ §7 — AGENTS / CLAUDE 대응 |
-| 9 | validation_workflow 실행 (6검증) | ⏸ **S2 가 수행** (validation 3필드 = pending) |
+| 9 | validation_workflow 실행 (6검증) | ✅ **S2 수행 완료** (validation 3필드 = pass; 6검증 PASS 5 / PENDING 1 — sample_test_podcast_validation.md) |
 | 10 | outputs 격리 저장 | ✅ outputs/TEST/podcast/ (proposal-first, dry-run 격리) |
 | 11 | 사용자 승인 후 적용 | ⏸ 미수행 (dry-run — active 전환 없음) |
 
@@ -294,12 +294,12 @@ routing_docs:
 
 ```yaml
 validation:
-  trigger_validation: pending        # Skill/agent 트리거 정합 — S2 validation_workflow 검증 1
-  contract_consistency: pending      # contract ↔ 설계 정합 (cross-ref 축) — S2 검증 3
-  with_without_skill_eval: pending   # Skill 효용 비교 (신규 0 권장의 검증) — S2 검증 4
+  trigger_validation: pass           # S2 검증 1 — 재사용 Skill 100% 트리거 + false trigger 0(신규 0) + agent supervisor 정합 (정적 정합; 런타임 트리거 실측 미수행)
+  contract_consistency: pass         # S2 검증 3 — 4 cross-ref 축(prompt↔output/api↔front*/db↔migration/agent_io) drift 0 (*api 축은 phase 진행 시 deferral). 조건부 산출 축 부재는 GAP G3
+  with_without_skill_eval: pass      # S2 검증 4 — 누락률 WITH≪WITHOUT 정량 입증(§B 6지표) + 신규 0 권장 지지(podcast-eval-run 4중첩 = 음의 효용). 품질·일관성 2지표는 소표본 PENDING
 ```
 
-> factory_contract 규칙 7: validation 3필드가 pending 인 본 blueprint 는 **active 아님**. outputs/TEST/ 에 격리. 6검증 통과 + 사용자 승인 전 적용 금지.
+> factory_contract 규칙 7: validation 3필드가 pass 라도 본 blueprint 는 **사용자 승인 전 active 아님**. outputs/TEST/ 에 격리. (S2 검증 결과: 6검증 PASS 5 / PENDING 1 — 상세 `outputs/TEST/sample_test_podcast_validation.md`. 검증 5 eval-run 연동 = PENDING(절차 적용 가능 / 실측 미수행 = 정상), 검증 6 acceptance = PASS.)
 
 ---
 
