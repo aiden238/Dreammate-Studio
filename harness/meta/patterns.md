@@ -100,10 +100,11 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **재평가 시점**: Phase 3 코드 phase 진행 중 (같은 .tsx 파일 sub-section 동시 수정 위험 ↑) — P-X1 적용 후 효과 측정
 - **연관 Skill / Contract**: phase-start §6.3, multi_slice_plan template, sub-agent prompt format
 
-### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 52연속 PASS 효과 측정 (update 2026-05-31 Phase M1 — Meta-Factory dry-run, outputs/TEST/ 격리 MG1 게이트)
+### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 55연속 PASS 효과 측정 (update 2026-05-31 Phase M2 — Meta-Factory GAP 반영 additive-only machinery 변경)
 
-- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 + Phase M0 3 + Phase M1 2 = **52 Slice 누적**, 0 deviation)
-- **Phase M1 update (2026-05-31)**: Meta-Factory 첫 dry-run(S1 generation dbe43c5 + S2 validation 83fc1ac) 2 Slice 모두 §SELF-VERIFICATION PASS. ★ 사용자 지침 "테스트 산출물 TEST 폴더 격리" + GPT 보완 ③ "outputs 외 변경 0" 을 **MG1 게이트(dry-run 변경이 meta_factory/outputs/TEST/ 외부 0줄)** 로 강제 → S1·S2 모두 git diff 결과 TEST/ 외 0줄. dry-run sub-agent 는 machinery/기존 하네스를 읽기만, 쓰기는 outputs/TEST/ 에만. phase 등록/회고/archive 는 main 세션 별도 commit 으로 분리(권한 분리, GPT 보완 ③). 52연속 누적.
+- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 + Phase M0 3 + Phase M1 2 + Phase M2 3 = **55 Slice 누적**, 0 deviation)
+- **Phase M2 update (2026-05-31)**: GAP 보완 3 Slice(S1 generation/input 131ee06 + S2 scaffold/schema 2058661 + S3 재검증 dd45cdc) 모두 §SELF-VERIFICATION PASS. ★ M1(dry-run, machinery 읽기만)과 반대로 M2 는 **machinery 를 실제 변경(additive)** — S1·S2 editable 은 지정 machinery 파일만, S3 editable 은 outputs/TEST/만. forbidden(product contract/Skill/runtime/blueprints) 0 변경 + ★ **additive-only 게이트(기존 필드·절차 삭제·재명명 0)** 로 backward-compat 강제. 55연속 누적.
+- **Phase M1 (2026-05-31)**: Meta-Factory 첫 dry-run(S1 dbe43c5 + S2 83fc1ac) 2 Slice §SELF-VERIFICATION PASS. ★ MG1 게이트(dry-run 변경이 outputs/TEST/ 외부 0줄)로 강제. dry-run sub-agent 는 machinery 읽기만, 쓰기는 outputs/TEST/ 에만. phase 등록/회고/archive 는 main 세션 별도 commit 분리.
 - **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 13연속 update — Phase 6에서 17연속 update — Phase 5에서 22연속 update — Phase 5.5에서 26연속 update — Phase 7에서 31연속 update — Phase 8에서 36연속 update — Phase 9에서 42연속 update — Phase 9.5에서 47연속 update — Phase M0에서 **50연속 누적 update (★ 첫 meta-phase)**
 - **관련 회고**: meta/retrospectives/phase-3.md + meta/retrospectives/phase-4.md + meta/retrospectives/phase-4.5.md + meta/retrospectives/phase-6.md + meta/retrospectives/phase-5.md + meta/retrospectives/phase-5.5.md + meta/retrospectives/phase-7.md + meta/retrospectives/phase-8.md + meta/retrospectives/phase-9.md + meta/retrospectives/phase-9.5.md + meta/retrospectives/phase-M0.md §P-X1 50연속 효과 측정
 - **요약**: Phase 2 회고 P-AGENT-SCOPE-001 대응안 P-X1을 Phase 3 pre-entry 적용 → Phase 3 5/5 → Phase 4 4/4 → Phase 4.5 4/4 → Phase 6 4/4 → Phase 5 5/5 → Phase 5.5 4/4 → Phase 7 5/5 → Phase 8 5/5 → Phase 9 6/6 → Phase 9.5 5/5 → Phase M0 3/3 = **50연속 PASS**. ★ Phase M0는 **첫 meta-phase** (L3 Meta-Factory skeleton + harness-factory Skill 등록)임에도 0건 재발 — Slice별 폴더 격리(meta_factory / .claude/skills / scripts / meta) + forbidden 명시 + ★ **meta-phase 런타임 0줄 격리를 smoke Step 1 (git diff fff913e..HEAD backend/apps/migrations = 0) 게이트로 명시 강제** → 런타임/제품 phase 무오염. **frontend·런타임 무변경 meta-phase 에서도 PlanCard·component_map 0줄 유지**. **proposal → 적용 → 11 phase 누적 효과 측정 사이클 + large/보안/consolidation/RAG/orchestration-refactor/feedback-frontend/eval-deprecated-removal/meta-phase 모두 확장 입증**.
@@ -157,12 +158,35 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **권장 대응**:
   - 후속 dry-run/2nd 하네스 생성 시 TEST 폴더 격리 + 4상태 + with/without 수치화 + dry-run/doc-sync 분리 패턴 유지.
   - machinery 보완은 항상 proposal-first (생성/검증은 outputs/, 실 변경은 contract-change).
-- **연관 Skill / Contract**: harness-factory Skill (첫 실 트리거), validation_workflow.md (6검증), eval-run Skill (검증5 cross-ref), P-META-FACTORY-001 (Phase M0 L3 도입 — 본 패턴은 그 실행), P-X1-EFFECT-001 (52연속), factory_contract 규칙 7 (active 게이트)
+- **Phase M2 update (2026-05-31) — self-improvement loop 완주**: M1 이 발견한 8 GAP 을 M2 에서 machinery 에 additive 반영(CC-007) + M1 TEST 재적용 재검증으로 **백로그 8→0**(addressed 7 + expressible 1) 입증. 즉 본 패턴의 "발견 → 반영 → 재검증" 사이클이 M0(도입)→M1(검증/GAP)→M2(반영/재검증)로 **한 바퀴 완주**. machinery 가 스스로를 개선하는 첫 메타 사이클.
+- **연관 Skill / Contract**: harness-factory Skill (M1 첫 + M2 S3 두 번째 실 트리거), validation_workflow.md (6검증), eval-run Skill (검증5 cross-ref), P-META-FACTORY-001 (Phase M0 L3 도입 — 본 패턴은 그 실행), P-X1-EFFECT-001 (55연속), P-ADDITIVE-COMPAT-001 (M2 additive 반영 backward-compat), factory_contract 규칙 7 (active 게이트)
 - **관련 회고**:
-  - meta/retrospectives/phase-M1.md
-  - docs/decisions/phase_M1_meta_factory_sample_test.md (ADR-036)
-  - meta_factory/outputs/TEST/sample_test_podcast_validation.md (6검증 + with/without + GAP 8)
-- **상태**: 신규 등록 후보 (Phase M1 첫 dry-run — 두 번째 dry-run/2nd 하네스 생성 시 효과 재측정 후 정식 채택)
+  - meta/retrospectives/phase-M1.md + meta/retrospectives/phase-M2.md
+  - docs/decisions/phase_M1_meta_factory_sample_test.md (ADR-036) + phase_M2_meta_factory_gap_remediation.md (ADR-037)
+  - meta_factory/outputs/TEST/sample_test_podcast_validation.md (M1 6검증 + GAP 8) + sample_test_podcast_revalidation.md (M2 재검증 before/after)
+- **상태**: 신규 등록 후보 → **첫 완주 입증** (M0→M1→M2 한 사이클). 두 번째 도메인/2nd 하네스 사이클 시 정식 채택.
+
+### Pattern P-ADDITIVE-COMPAT-001: additive-only 로 machinery/contract 개선 시 backward-compat 보장 (Phase M2 신규 후보)
+
+- **유형**: 반복 성공 (Phase M2 첫 적용 — 8 GAP machinery 반영, 파괴적 변경 0, 회귀 0)
+- **최초 식별**: 2026-05-31 (Phase M2 — Meta-Factory GAP Remediation)
+- **관련 회고**: meta/retrospectives/phase-M2.md + docs/contract_changes/2026-05-31_phase-M2-machinery-gap.md (CC-007)
+- **요약**: contract/machinery 를 개선할 때 **추가만**(새 섹션/필드/슬롯/enum 값/표 열) 하고 기존 필드·절차 삭제·재명명 0 → 기존 산출물(M1 blueprint)이 개선본 하에서도 valid. 미기재 시 기본값(conditional 생략=항상 실행 / applies_when 없음=무조건 / harness_status 생략=active / validation 기존 enum 보존)으로 동작.
+- **핵심 메커니즘**:
+  1. **additive 게이트**: sub-agent forbidden 에 "기존 절차/필드 삭제·재명명 금지" 명시 + 사후 `git diff --numstat` 삭제(-) 라인이 "줄 확장(표 헤더/enum 라인 수정, 내용 보존)"인지 육안 확인.
+  2. **기본값 명시**: 새 선택 슬롯/enum 값은 "생략 시 기존 동작" 1줄 — 구 산출물 무수정 valid.
+  3. **재검증 입증**: 구 산출물(M1 blueprint)에 개선 슬롯을 적용하여 before/after 로 깨짐 0 확인.
+- **효과 측정 (Phase M2)**:
+  - 8 변경 전부 additive → S1 +50/-0, S2 +46/-9(줄 확장, 의미 삭제 0), S3 재검증 backward-compat ✅.
+  - validation_workflow 6검증 절차 자체 변경 0 → 여전히 적용 가능, GAP-flag 만 해소.
+  - pytest 339 무관(machinery 문서) + 런타임 0 → 회귀 0.
+- **권장 대응**:
+  - machinery/contract 개선은 additive-only 우선 (파괴적 변경 필요 시 별도 deprecation 절차 — P-LEGACY-CONSOLIDATION-001 / P-DEPRECATED-REMOVAL-001 정신).
+  - 새 슬롯/필드/enum 에 "생략 시 기본값" 명시 의무.
+  - 구 산출물 재검증으로 backward-compat 입증.
+- **연관 Skill / Contract**: contract-change Skill (CC-007), P-CANONICAL-WIRING-001 (Phase 9 additive wiring 정신), P-LEGACY-CONSOLIDATION-001 (공존 + grace period — 파괴적 변경 회피), P-DEPRECATED-REMOVAL-001 (제거는 eval 안전망 후 — 반대 방향), P-CONTRACT-FIRST-001 (CC 누적 7회)
+- **관련 회고**: meta/retrospectives/phase-M2.md + docs/decisions/phase_M2_meta_factory_gap_remediation.md (ADR-037)
+- **상태**: 신규 등록 후보 (Phase M2 첫 — 다음 machinery/contract 개선 시 재측정 후 정식 채택)
 
 ### Pattern P-THIN-VERTICAL-001: Thin Vertical Slice 효과 (코드 phase entry 표준)
 

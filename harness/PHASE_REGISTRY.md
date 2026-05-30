@@ -27,7 +27,8 @@
 | 9.5 | eval-run 정식화 + Critic deprecated 0–5 Full 제거 | **done** (2026-05-31) | 5 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M4 4/4 + **P-X1 47연속** + PlanCard 35연속 + component_map 45연속 + ADR-033 (eval-run harness mock-deterministic) + ADR-034 (Critic deprecated 0–5 Full 제거) + eval-design ★ 첫 정식 + eval-run ★ 첫 정식 + contract-change CC-005 (output_schema §9 + agent_io_contract §5 canonical-only + db_schema) + pytest 293→339/339 (+46) + smoke 16/16 + scenario_sim v6 30/30 (P-X2 여덟 번째) + eval gate PASS (revise mean_delta 0.092) + Critic warnings 16→0 + P-EVAL-HARNESS-001 신규 + P-DEPRECATED-REMOVAL-001 신규 + revise effect eval (Phase 4.5 D6 해소) + generate.py canonical wiring 보강 |
 | **M0** | **Meta-Factory Prep (★ meta-phase — L3 Meta-Harness Factory skeleton)** | **done** (2026-05-31) | 3 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M3 3/3 + **★ 런타임 변경 0 (A9 — FastAPI/Next.js/Supabase 0줄)** + **P-X1 50연속** + PlanCard 35연속 + component_map 45연속 + ADR-035 (L3 Meta-Factory 도입) + CC-006 (INDEX harness-factory #21 Skill 등록) + harness-factory Skill ★ 신규 등록 (proposal-only, 키워드 scoped) + multi-llm-validation formal 여덟 번째 (★ 첫 meta-phase, V1~V6) + pytest 339 유지 + smoke_test_phase_M0 6/6 + scenario_sim v7 33/33 (P-X2 아홉 번째, SM1~SM3) + Skill 20→21 + P-META-FACTORY-001 신규 + meta_factory/ 7 루트 + templates 6 + blueprint 실측 + outputs (★ 제품 phase 번호 분리 detour) |
 | **M1** | **Meta-Factory Sample Test (★ meta-phase dry-run — M0 machinery 팟캐스트 1회 검증)** | **done** (2026-05-31) | 2 Slice dry-run (sub-agent, outputs/TEST/ only) + doc-sync (main 별도 commit) + ★ 런타임 0 (A9) + dry-run outputs/TEST/ 외 0 (MG1) + **P-X1 52연속** + 6검증 PASS 5/PENDING 1 + with/without 6지표(누락 0v6/cross-ref 0v4/gate 1v0) + 5 gaps 전부 재현 + **GAP 8 백로그**(핵심 G2/G3/G5) + ADR-036 + harness-factory ★ 첫 실 트리거 (payoff deferred 첫 실증) + Skill 21 유지 + P-META-FACTORY-002 신규 + pytest 339 유지 (dry-run) |
-| **next** | **🟡 pending_user_decision** (A Phase 10 통합 / B Phase 11+) | **next** | Phase 9.5 + Phase M0 + Phase M1(meta-phase) ✅ done — 다음 제품 phase 사용자 결정 대기 (meta-phase detour 종료, next_phase_status 불변) |
+| **M2** | **Meta-Factory GAP Remediation (★ meta-phase — M1 8 GAP machinery 반영 + 재검증)** | **done** (2026-05-31) | 3 Slice (S1 생성-입력/절차 + S2 scaffold/schema + S3 재검증) + doc-sync + ★ 런타임 0 (A9) + **additive-only** backward-compat + **P-X1 55연속** + 백로그 **8→0** (addressed 7 + expressible 1) + 6검증 재판정 PASS 5/PENDING-BY-DESIGN 1 + CC-007 (machinery 8 GAP) + ADR-037 + harness-factory 두 번째 실 트리거 + multi-llm formal 아홉 번째 + **self-improvement loop 완주** (M0→M1→M2) + P-ADDITIVE-COMPAT-001 신규 + Skill 21 유지 + pytest 339 유지 |
+| **next** | **🟡 pending_user_decision** (A Phase 10 통합 / B Phase 11+) | **next** | Phase 9.5 + Phase M0 + M1 + M2(meta-phase) ✅ done — 다음 제품 phase 사용자 결정 대기 (meta-phase detour 종료, Meta-Factory self-improvement loop 완주, next_phase_status 불변) |
 | 10 | MVP 통합 테스트 | planned | MVP 전체 end-to-end 검증 + Phase 1~9.5 누적 baseline 통합 회귀 + eval-run golden_set 회귀 baseline 활용 + P-AUX-2 brand_memory_extractor agent 실 구현 + 실 LLM eval mode + RAG eval_rubric golden_set 정식화 + 배포 테스트 게이트 준비 |
 | 11~20 | 서비스 안정화 | future | UX, eval, cost, fallback, 피드백 |
 | 21~30 | 확장 / 고도화 | future | Spring, Expo, Custom RAG, LangGraph |
@@ -319,10 +320,32 @@ GPT 보완 반영: ① with/without 6지표 수치화 / ② PASS·FAIL·PENDING�
 다음 단계  : 8 GAP machinery 보완 proposal (G2/G3/G5 우선, contract-change 경유, proposal-only) / 검증5 실측 1회 (eval-run §3~§6) / Phase 10 연결 (meta_factory blueprint + TEST 산출물 = 온보딩·감사 참고) — meta-phase detour 종료, next_phase_status pending_user_decision 불변
 ```
 
+## Phase M2 done (archive) — ★ meta-phase (machinery 개선)
+
+`phases/archive/phase-M2-meta-factory-gap-remediation/`
+
+```
+Status     : ✅ DONE (2026-05-31)
+유형       : ★ meta-phase (machinery 개선 — L3 contract 변경 CC-007. M1 과 달리 machinery 실제 변경, 3~5h)
+Goal       : M1 dry-run 발견 8 GAP(G1~G8)을 meta_factory machinery 에 additive 반영 + M1 TEST 재적용(re-validate)로 해소 입증
+Result     : 3 Slice (S1 생성-입력/절차 G1·G2·G5·G6 + S2 scaffold/schema G3·G4·G7·G8 + S3 재검증) + doc-sync + A1~A8 + MG1~MG3 PASS + ★ 런타임 0 (A9) + additive-only backward-compat + 백로그 8→0 + pytest 339 유지 (machinery 문서 import 무관)
+산출물     : machinery 7파일 additive (generation_workflow/architecture_patterns/domain_brief_schema/templates 4/harness_blueprint_schema) + 재검증 outputs/TEST/ (revalidation 리포트 + podcast 6 적용) + doc-sync (CC-007 + ADR-037 + retrospective + patterns + skill_usage_log + validation 2 + proposal + state 2)
+Sub-agent  : 3 dispatches (S1·S2·S3), 충돌 0 — P-X1 3/3 PASS (S1·S2 machinery editable / S3 outputs/TEST/)
+회고       : meta/retrospectives/phase-M2.md
+신규 패턴  : P-ADDITIVE-COMPAT-001 (additive 개선 backward-compat 신규 후보) + P-META-FACTORY-002 update (self-improvement loop 완주) + P-X1-EFFECT-001 update (55연속)
+Mitigated  : P-AGENT-SCOPE-001 (55연속 누적 — Phase 3:5 + ... + M0:3 + M1:2 + M2:3)
+Skill 첫 정식: contract-change 여덟 번째 본격 CC-007 (machinery 8 GAP additive — L3 contract, P-CONTRACT-FIRST-001 누적 8회) + harness-factory 두 번째 실 트리거 (S3 재검증) + multi-llm-validation formal 아홉 번째 (V1~V5) + meta-retrospective
+1 ADR / 1 CC: ADR-037 (8 GAP 반영 + 재검증) / CC-007 (machinery 8 GAP additive)
+사용자 결정 : 2건 mapping (GAP 범위 = 전체 8개 / 검증 = M1 TEST 재적용 re-validate)
+결과       : 백로그 8→0 (addressed 7 + expressible 1=G5 제3자 PII 등급은 승인 게이트) + 6검증 재판정 PASS 5/PENDING-BY-DESIGN 1 (검증3 조건부축 GAP 해소 / 검증5 G8 pending-by-design) + backward-compat ✅ (M1 blueprint 개선 machinery 하 valid)
+핵심 성과  : **P-X1 55연속 + ★ 런타임 0(A9) + additive-only backward-compat + 백로그 8→0 + Meta-Factory self-improvement loop 첫 완주 (M0 도입 → M1 dry-run 검증·GAP 발견 → M2 반영·재검증) + Skill 21 유지 + PlanCard 35 / component_map 45 유지**
+다음 단계  : 검증5 실 eval-run 표본 (pending-by-design 실측 해소, eval-run §3~§6) / 이질 도메인 dry-run (개선 machinery 범용성 2차 검증) / Phase 10 연결 — meta-phase detour(M0+M1+M2) 종료, next_phase_status pending_user_decision 불변
+```
+
 ## 🟡 Next phase: pending_user_decision (2026-05-31)
 
 ```
-Phase 9.5 + Phase M0 + Phase M1 (meta-phase detour) 종료. 다음 phase는 사용자 결정 대기.
+Phase 9.5 + Phase M0 + Phase M1 + Phase M2 (meta-phase detour — Meta-Factory self-improvement loop 완주) 종료. 다음 phase는 사용자 결정 대기.
 
 다음 phase 옵션:
 
