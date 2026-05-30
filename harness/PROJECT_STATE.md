@@ -8,7 +8,22 @@ Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /a
 
 ## 현재 Active Phase
 
-**🟡 pending_user_decision** — Phase 8 ✅ done (2026-05-29). 다음 phase는 사용자 결정 대기 (옵션 A Phase 9 저장-피드백 / B Phase 9.5 eval-run / C Phase 10 통합 / D Phase 11+).
+**🟢 Phase 9. 결과 저장 + 피드백 — active (2026-05-29 entry)** — plan 선택/수정/반려/피드백 영속화(실 plans 테이블 정합) + normalize_to_canonical wiring(critic step canonical, deprecated 0–5 병행 회귀 0) + Brand Memory 준비(P-AUX-2 설계, agent 미구현 Phase 10+) + 피드백 UI wrapper(PlanCard·component_map 무수정). 6 Slice 모두 sub-agent dispatch. 추정 10~14h.
+
+- 한 줄 정의: 사용자 plan 선택/수정/반려/피드백을 영속화(Phase 5 PlansRepo graceful 패턴)하고, Critic canonical(0–1)을 live pipeline에 연결하며, Brand Memory 자동 추출 인프라(schema + ADR + 적재 경로)를 준비하고, 선택/반려 피드백 UI를 page.tsx inline wrapper로 추가하여 MVP 피드백 루프를 완성한다.
+- **6 Slice (모두 sub-agent dispatch)**:
+  - Slice 1 [Pre-Entry — validations + security-review(두 번째 정식, 피드백 PII) + ADR-030/031/032] 🟢 active
+  - Slice 2 [Schema 0005 + Repo (selection/feedback/brand_memory) graceful + contract-change db_schema.md] — 대기
+  - Slice 3 [API endpoints (select/feedback) + orchestrator + normalize_to_canonical wiring] — 대기
+  - Slice 4 [Brand Memory 준비 — feedback→candidate 적재 경로 + ADR-031 finalize] — 대기
+  - Slice 5 [Frontend 피드백 UI (page.tsx inline wrapper) — PlanCard·component_map 무수정] — 대기
+  - Slice 6 [Close] — 대기
+- **사용자 결정 3건 반영 (2026-05-29)**:
+  - Brand Memory: **준비만** (ADR + schema + 피드백 적재) — P-AUX-2 agent 미구현, 자동 추출 Phase 10+ (사용자 결정 5 누적 confirm)
+  - Frontend: 피드백 UI 포함 (wrapper) — 선택/반려 page.tsx inline, PlanCard·component_map 무수정
+  - normalize_to_canonical: Phase 9 연결 — critic step canonical 0–1 live, deprecated 0–5 병행 회귀 0 (Phase 8 개선 §1)
+- ADR-030 (feedback/selection persistence — 실 plans 정합, graceful PlansRepo 패턴) + ADR-031 (Brand Memory 준비 — P-AUX-2 설계, agent 미구현 Phase 10+) + ADR-032 (normalize_to_canonical wiring — critic step canonical, deprecated 병행).
+- baseline: pytest 249 + smoke 14 + scenario_sim v4 20 + P-X1 36 + PlanCard 24 + component_map 34.
 
 **Phase 8. MOA Lite 본격 ✅ done (2026-05-29)** — orchestrator 추출 (behavior-preserving) + SSE Progress worker 통합 + prompt_registry semver 정식화. 5 Slice 모두 sub-agent dispatch 완료.
 
@@ -111,7 +126,7 @@ Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /a
 - Phase 1 legacy rag/{retriever, fallback}.py + Phase 7 rag/retrieval.py 공존 (P-LEGACY-CONSOLIDATION-001 누적 2회 — Phase 11+ Custom RAG 시점 자연 통합)
 - 실측 시간 ~13~14h (추정 12~16h 내)
 
-**🟡 Next: pending_user_decision** — Phase 9 저장-피드백 / Phase 9.5+ eval-run / Phase 10 통합 테스트 / Phase 11+ (사용자 결정 대기)
+**🟢 Now: Phase 9 active (2026-05-29 entry)** — 결과 저장 + 피드백 (6 Slice, 10~14h). 다음 후보: Phase 9.5+ eval-run / Phase 10 통합 테스트 / Phase 11+.
 
 ## 이전 결정 (옵션 B 변형: Phase 6 선행)
 
@@ -124,12 +139,11 @@ Next.js PWA **12 routes** (+/login) + FastAPI 14 endpoints (Phase 1~5 누적, /a
 ## migration_progress
 
 ```yaml
-current_sprint: "phase-8-slice-5-completed"
-current_sprint_step: phase_8_completed
-total_steps_in_sprint: 5
-last_completed_action: "Phase 8 Slice 5 close — smoke 14/14 + scenario_sim v4 20/20 (P-X2 여섯 번째) + retrospective + patterns (P-MOA-ORCHESTRATOR-001 + P-BEHAVIOR-PRESERVING-001) + archive 이동 + state docs + agent-io-check 네 번째 회귀 (drift 0) + ai-architecture-review 회고 PASS + design-review frontend 변경 0"
-next_action: "다음 phase 사용자 결정 대기 (A Phase 9 저장-피드백 / B Phase 9.5 eval-run / C Phase 10 통합 / D Phase 11+)"
-next_phase_status: pending_user_decision
+current_sprint: "phase-9-slice-1"
+current_sprint_step: phase_9_slice_1_entry
+total_steps_in_sprint: 6
+last_completed_action: "Phase 9 entry — 8 entry files + assumptions §6 4-check PASS (audit_naming 0 drift) + multi-llm-validation formal 여섯 번째 (V1~V7 PASS) + security-review 두 번째 정식 (피드백 reason PII T1~T6) + ADR-030 (feedback/selection 실 plans 정합) + ADR-031 (Brand Memory 준비 P-AUX-2 설계, agent 미구현 Phase 10+) + ADR-032 (normalize_to_canonical wiring, deprecated 0–5 병행) + skill_usage_log + PROJECT_STATE phase_9_* + active 전환"
+next_action: "Slice 2 sub-agent dispatch — Schema 0005 (selected_plans + feedback_events + brand_memory_entries + RLS) + Repo 3종 graceful (PlansRepo 패턴) + contract-change (db_schema.md 실 plans 정합)"
 blocker: null
 phase_0_status: completed
 phase_0_completion_date: 2026-05-26
@@ -557,7 +571,19 @@ phase_8_deferred_to_next:
   - critic_deprecated_0_5_fallback_full_removal  # Phase 9+ eval-run (개선 제안 §4, 누적 2회 Phase 6 + Phase 8)
   - brand_memory_auto_extract_adr  # Phase 9+ MVP 본격 운영 후 (개선 제안 §5, 누적 3회)
   - revise_effect_eval  # Phase 9+ eval-run (개선 제안 §6, Phase 4.5 D6 누적 6회)
-total_commits: 76  # 71 + Phase 8 Slice 2~5 (=76, Slice 1 entry 71 + Slice 2 c25367a + Slice 3 f5c534a + Slice 4 c7c7376 + Slice 5 final)
+phase_9_status: in_progress
+phase_9_entry_date: 2026-05-29
+phase_9_total_slices: 6
+phase_9_completed_slices: 0
+phase_9_estimated_hours_total: 10-14
+phase_9_assumptions_check: PASS
+phase_9_user_decisions_applied:
+  brand_memory_prep_only: yes        # P-AUX-2 agent 미구현, Phase 10+
+  feedback_ui_wrapper: yes           # PlanCard·component_map 무수정
+  normalize_canonical_wiring: yes    # critic step, deprecated 병행
+  all_slices_sub_agent: yes
+phase_9_adrs: [ADR-030, ADR-031, ADR-032]
+total_commits: 77  # 76 + Phase 9 Slice 1 entry
 last_updated: 2026-05-29
 ```
 
@@ -632,10 +658,10 @@ last_updated: 2026-05-29
 ## 다음 액션
 
 ```
-Phase 7 (RAG Lite — candidate_knowledge 5단계 MVP 전부) — ✅ done (2026-05-29).
-🟡 pending_user_decision — 다음 phase 사용자 결정 대기.
+Phase 7 (RAG Lite) ✅ + Phase 8 (MOA Lite 본격) ✅ done (2026-05-29).
+🟢 Phase 9 (결과 저장 + 피드백) active (2026-05-29 entry) — 6 Slice, 10~14h. Slice 1 (Pre-Entry) 진행.
 
-다음 phase 옵션:
+이전 phase 옵션 (참고 — Phase 8/9 진행으로 일부 해소):
 
 A. Phase 8 — MOA Lite 본격 (12~16h)
    - Intent / Planner / Critic / Rewriter 완전 분리
