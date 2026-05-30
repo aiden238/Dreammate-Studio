@@ -39,9 +39,17 @@ notes:
 ### B. 채점 차원
 
 ```
-{{dimension_1}}   # 예: intent_fit
-{{dimension_2}}   # 예: hook_strength
+{{dimension_1}}   # 예: intent_fit                     (무조건 차원 — 항상 채점)
+{{dimension_2}}   # 예: hook_strength                  (무조건 차원)
 ...               # 산출물 품질을 N 차원으로 자동/사람 채점
+
+# 조건부 차원 (선택) — applies_when 속성으로 모드/포맷 의존 차원을 1급 표현:
+{{conditional_dimension}}:
+  applies_when: {{condition_expr}}   # 예: mode == guest — 게스트 모드일 때만 채점되는 차원
+                                     #     (예: question_quality / guest_fit)
+# ★ applies_when 미해당 시: 해당 차원을 그 케이스의 평균 점수 계산에서 **제외**한다
+#   (N 고정이 아니라 적용 차원 수로 평균 — 미해당 차원을 0점/누락으로 끌어내리지 않음).
+#   applies_when 없으면 = 무조건 차원(항상 평균에 포함, backward-compat 기본값).
 ```
 
 ### C. 임계값 (eval-run §6 정합)
@@ -65,6 +73,7 @@ notes:
 2. **priority 등급** — P0(필수 100%) / P1(≥90%) / P2(≥80%). CI 게이트 차단 정책 정합.
 3. **schema 준수 100% 필수** (eval-run §4) — 자동 채점의 1차 게이트.
 4. **채점 차원은 산출물 도메인별** — Dreammate 는 8차원(intent_fit/target_clarity/hook_strength/message_clarity/structure/feasibility/brand_consistency/differentiation). 도메인에 맞게 정의.
+   - **조건부 차원은 `applies_when`** — 모드/포맷 의존 차원(예: 게스트 모드의 question_quality/guest_fit)은 `applies_when: 조건` 으로 표현한다. 조건 **미해당 시 그 차원을 평균 계산에서 제외**(차원 수를 적용 차원만으로 셈) — 미해당 차원을 notes 로 우회하지 않는다. `applies_when` 없으면 무조건 차원(항상 채점).
 5. **임계값은 eval-run §6 정합** — schema 준수율 / 평균 점수 / 비용 / latency / 차단 단어. validation_workflow 검증 5 가 이 임계값을 사용.
 6. **mock-deterministic primary** — CI 가능한 비용 0 회귀를 기본으로, 실 LLM mode 는 flag (eval-run 정신 계승).
 7. **golden_set 갱신은 contract-change 경유** (golden_set §7) — golden_set 은 contract 로 취급.

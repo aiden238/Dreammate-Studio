@@ -58,9 +58,9 @@ generation_workflow 단계 5(contract 후보 생성)에서 blueprint.contracts[]
 
 ## 3. Cross-reference                # ★ 정합 축
 
-| 이 contract 의 필드 | 정합 대상 | 정합 규칙 |
-|---|---|---|
-| {{field}} | {{output_schema §X / db_schema 테이블 / frontend type}} | 1:1 매핑 |
+| 이 contract 의 필드 | 정합 대상 | 정합 규칙 | 조건부 산출(conditional output) |
+|---|---|---|---|
+| {{field}} | {{output_schema §X / db_schema 테이블 / frontend type}} | 1:1 매핑 | {{— (항상 산출) / 예: mode == guest 일 때만 산출}} |
 
 ---
 
@@ -76,6 +76,7 @@ generation_workflow 단계 5(contract 후보 생성)에서 blueprint.contracts[]
    - prompt_registry ↔ output_schema (prompt 출력 ↔ 본문 스키마)
    - api_contract ↔ frontend·api client (API 응답 ↔ 프론트 타입)
    - db_schema ↔ migration (테이블/컬럼/JSONB ↔ migration)
+   - **조건부 산출(conditional output) 열** — 이 출력이 특정 조건(예: `mode == guest`)일 때만 산출되는지 cross-ref 가 1급으로 표현한다. 조건 없으면 `—`(항상 산출). agent 측 `conditional_execution.condition`(agent_template) 과 정합 — 조건부 agent 의 출력은 contract 에서도 조건부 산출로 표기.
 2. **"정의하지 않는 대상" 명시** — contract 경계를 분명히 해 중복/drift 방지 (P-DRIFT-001 정신).
 3. **canonical + deprecated 명시** — 다중 fallback 누적 시 canonical 1 + 우선 fallback 1 + deprecated N + 제거 시점 (P-CRITIC-CANONICAL-001 정신).
 4. **JSONB schema 는 키/타입/예시** — 자유 텍스트 필드는 검증 규칙(길이/enum)을 함께 명시.

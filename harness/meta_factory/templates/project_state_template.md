@@ -32,6 +32,10 @@ generation_workflow 단계 8(routing 문서 생성)과 함께, 생성 하네스�
 
 ## migration_progress
 \`\`\`yaml
+harness_status: {{active | dry-run-blueprint | proposal}}   # 이 하네스의 1급 상태 (생략 시 = active)
+                          #   active            : 실 운용 중인 하네스 (기본값)
+                          #   dry-run-blueprint : 생성·검증 dry-run 산출 blueprint (active 아님, outputs/ 격리)
+                          #   proposal          : 승인 대기 제안 상태 (confirmed_decisions "(제안)" 수동 표기 대체)
 current_sprint: "{{phase-X-slice-N}}"
 current_sprint_step: {{step 식별자}}
 total_steps_in_sprint: {{N}}
@@ -54,6 +58,7 @@ blocker: {{null | 차단 사유}}
 1. **migration_progress yaml 필수** — current_sprint / last_completed_action / next_action / blocker 를 항상 최신화 (라우터 진입 시 첫 참조 문서).
 2. **confirmed_decisions 누적** — 사용자 확정 결정을 번호로 누적 보관. domain_brief 의 선택(runtime_type / risk_level / forbidden_scope)을 포함.
 3. **active phase 1개 원칙** — PHASE_REGISTRY 와 정합. active phase 는 항상 1개만.
+   - **harness_status enum** — 하네스 자체의 상태를 1급으로 표기: `active`(실 운용) / `dry-run-blueprint`(생성·검증 dry-run 산출, active 아님) / `proposal`(승인 대기). dry-run/proposal 상태를 confirmed_decisions 에 "(제안)" 으로 수동 표기하던 우회를 status 슬롯으로 대체. 생략 시 = `active`(backward-compat 기본값). `dry-run-blueprint`/`proposal` 은 active 아님 → outputs/ 격리 + 사용자 승인 전 active 전환 금지(규칙 5·6 정합).
 4. **baseline 명시** — test 수 + 누적 지표(회귀 0 기준). phase 종료 시 갱신.
 5. ★ **사용자 승인 게이트** (factory_contract 규칙 6) — PROJECT_STATE 는 사용자 승인 없이 갱신하지 않는다. 생성 시에도 outputs/ 에 먼저 두고, active 반영은 승인 후 (proposal-first).
 6. **archive 경로** — 종료 phase 는 archive 로 이동(git mv) + closing_notes 경로 기록.

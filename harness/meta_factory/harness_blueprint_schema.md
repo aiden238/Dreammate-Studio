@@ -61,9 +61,13 @@ Phase:
   acceptance: list[string]    # 수락 기준
 
 Validation:
-  trigger_validation: pass | fail | pending      # Skill/agent 트리거 정합
-  contract_consistency: pass | fail | pending    # contract ↔ 구현 정합
-  with_without_skill_eval: pass | fail | pending # Skill 효용 비교
+  trigger_validation: pass | fail | pending | pending-by-design      # Skill/agent 트리거 정합
+  contract_consistency: pass | fail | pending | pending-by-design    # contract ↔ 구현 정합
+  with_without_skill_eval: pass | fail | pending | pending-by-design # Skill 효용 비교
+  # pending-by-design : "실측 미수행이 정상인 경우" — 예: 검증5 eval-run 이 dry-run(실 LLM 미호출)이라
+  #                     절차/임계값/케이스 매핑은 적용 가능하나 실 점수만 미측정. 단순 pending(미완)과 구별.
+  # 차원별 sub-status (선택) : 한 필드가 혼합 상태일 때 차원별로 분해 표기 가능
+  #   예: with_without_skill_eval: pass (누락률) / pending-by-design (품질·일관성, 소표본·실측 미수행)
 ```
 
 ---
@@ -147,6 +151,7 @@ validation:
 2. **skills[].trigger_keywords 는 충돌 검토 대상** — INDEX 의 기존 Skill 키워드와 비중첩 (factory_contract 규칙 4).
 3. **phases[].non_goals 필수** — scope creep 차단.
 4. **validation 3 필드는 생성 직후 pending** — validation_workflow(Slice 2) 통과 후 pass. pending blueprint 는 active 아님 (factory_contract 규칙 7).
+   - **pending-by-design 구별** — 실측이 dry-run 이라 미수행이 **정상**인 경우(예: 검증5 eval-run 이 실 LLM 미호출)는 단순 `pending`(미완) 과 구별해 `pending-by-design` 으로 기록한다. validation_workflow §4 판정 종합과 정합: `pending-by-design` 은 "미완 보완 대상"이 아니라 "dry-run 범위상 정상" 이며, 여전히 active 아님(규칙 7) 은 유지된다 — 기존 pass/fail/pending 판정 의미는 보존하고 정상 미측정만 추가 구별. 한 필드가 차원별로 혼합(누락률=pass / 품질=pending-by-design)이면 sub-status 로 분해 표기.
 5. blueprint 는 domain_brief 의 required_contracts / required_evals / forbidden_scope 를 contracts / evals / phases[].non_goals 로 매핑해야 한다.
 
 ---
