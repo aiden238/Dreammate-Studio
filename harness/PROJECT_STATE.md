@@ -26,7 +26,7 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 - **핵심 성과**: P-X1 55연속 + ★ 런타임 0(A9) + additive-only backward-compat + 백로그 8→0 + **Meta-Factory self-improvement loop 첫 완주 (M0 도입 → M1 검증·GAP → M2 반영·재검증)** + Skill 21 유지 + PlanCard 35 / component_map 45 유지.
 - 신규 패턴: P-ADDITIVE-COMPAT-001 (additive 개선 backward-compat) + P-META-FACTORY-002 update (loop 완주) + P-X1-EFFECT-001 update (55연속) + P-VALIDATION-FORMAL-001 (아홉 번째) + P-CONTRACT-FIRST-001 (CC-007 누적 8회).
 - baseline: pytest 339 유지 (machinery 문서 — import 무관) + P-X1 55 + Skill 21. meta-phase 실측 ~4h.
-- 다음: 검증5 실 eval-run 표본 (pending-by-design 해소) / 이질 도메인 dry-run (범용성 2차) / Phase 10 연결.
+- 다음: 검증5 실 eval-run 표본 ✅ **완료** (203ced2 — mock-deterministic 3케이스 pass, schema 100%, G4 applies_when 실작동 입증, 검증5 PENDING-BY-DESIGN → measured baseline, `outputs/TEST/podcast_eval_run_sample.md`. 단서: 실 LLM 채점은 팟캐스트 실 구현 후) / 이질 도메인 dry-run (범용성 2차) / Phase 10 연결.
 
 **Phase M1. Meta-Factory Sample Test ✅ done (2026-05-31, ★ meta-phase dry-run)** — Phase M0 가 만든 meta_factory machinery(generation_workflow 11단계 + validation_workflow 6검증)를 인접 도메인 **「팟캐스트 에피소드 기획 AI」** 에 **1회 dry-run** 적용하여 "실제로 도는가"를 검증. 목적은 "성공"이 아니라 **machinery 실작동 입증 + GAP 발견**. 산출물 전부 `meta_factory/outputs/TEST/` 격리 (★ 사용자 지침). 2 Slice dry-run(sub-agent) + doc-sync(main 세션 별도 commit). ★ FastAPI/Next.js/Supabase 런타임 변경 0줄 (A9) + dry-run 변경 outputs/TEST/ 외 0줄 (MG1).
 
