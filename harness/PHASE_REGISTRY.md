@@ -29,9 +29,8 @@
 | **M1** | **Meta-Factory Sample Test (★ meta-phase dry-run — M0 machinery 팟캐스트 1회 검증)** | **done** (2026-05-31) | 2 Slice dry-run (sub-agent, outputs/TEST/ only) + doc-sync (main 별도 commit) + ★ 런타임 0 (A9) + dry-run outputs/TEST/ 외 0 (MG1) + **P-X1 52연속** + 6검증 PASS 5/PENDING 1 + with/without 6지표(누락 0v6/cross-ref 0v4/gate 1v0) + 5 gaps 전부 재현 + **GAP 8 백로그**(핵심 G2/G3/G5) + ADR-036 + harness-factory ★ 첫 실 트리거 (payoff deferred 첫 실증) + Skill 21 유지 + P-META-FACTORY-002 신규 + pytest 339 유지 (dry-run) |
 | **M2** | **Meta-Factory GAP Remediation (★ meta-phase — M1 8 GAP machinery 반영 + 재검증)** | **done** (2026-05-31) | 3 Slice (S1 생성-입력/절차 + S2 scaffold/schema + S3 재검증) + doc-sync + ★ 런타임 0 (A9) + **additive-only** backward-compat + **P-X1 55연속** + 백로그 **8→0** (addressed 7 + expressible 1) + 6검증 재판정 PASS 5/PENDING-BY-DESIGN 1 + CC-007 (machinery 8 GAP) + ADR-037 + harness-factory 두 번째 실 트리거 + multi-llm formal 아홉 번째 + **self-improvement loop 완주** (M0→M1→M2) + P-ADDITIVE-COMPAT-001 신규 + Skill 21 유지 + pytest 339 유지 |
 | **M3** | **이질 도메인 dry-run (★ meta-phase — 범용성 2차 검증, 재무)** | **done** (2026-05-31) | 2 Slice dry-run (S1 생성 + S2 validation) + doc-sync + ★ machinery 0줄(개선본 읽기만) + 런타임 0(A9) + outputs/TEST/ 외 0(MG1) + **P-X1 57연속** + 범용 **강함**(미디어 편향 0) + M2 개선 유효 7/부분 1/부적합 0 + 6검증 PASS 4/PENDING-BY-DESIGN 2 + 새 GAP 3(전부 minor/nice-to-have, blocking 0 → 백로그) + harness-factory 세 번째 실 트리거 + ★ **분기 = Phase 10 직행** + Skill 21 유지 + pytest 339 유지 |
-| **10** | **MVP 통합 테스트** | **🟢 기획 진입 예정** | Phase M3 분기 = Phase 10 직행. meta-phase detour(M0~M3) 종료, 제품 로드맵 복귀 — MVP end-to-end 통합 + 누적 baseline 회귀 + (아래 §Phase 10 옵션 참조) |
-| 10 | MVP 통합 테스트 | planned | MVP 전체 end-to-end 검증 + Phase 1~9.5 누적 baseline 통합 회귀 + eval-run golden_set 회귀 baseline 활용 + P-AUX-2 brand_memory_extractor agent 실 구현 + 실 LLM eval mode + RAG eval_rubric golden_set 정식화 + 배포 테스트 게이트 준비 |
-| 11~20 | 서비스 안정화 | future | UX, eval, cost, fallback, 피드백 |
+| **10** | **MVP 통합 테스트 (scope C)** | **done** (2026-05-31) | 4 Slice + entry(multi-llm 10th) + ★ 제품 phase(런타임 有, behavior-preserving) + MVP end-to-end 통합 **PASS(결함 0)** + pytest 339→**381** + P-AUX-2 brand_memory_extractor 실구현(agent 5→6, CC-008) + 실 LLM eval mode capability(default mock) + RAG eval_rubric v1.0.0 + golden_set 11→15(CC-009) + 배포 Gate A 통과 + ADR-038 + P-X1 60연속 + PlanCard/component_map 0줄 유지 |
+| **11~20** | **서비스 안정화 / 배포** | next | 배포 Gate B~G (staging→알파→베타→운영) + 4계층 linkage / SSE async worker / prompt A/B / 자동 promotion / 실 LLM eval default / M3 새 GAP 3(G9/G10/G11) |
 | 21~30 | 확장 / 고도화 | future | Spring, Expo, Custom RAG, LangGraph |
 
 ## Phase 0 완료 (archive)
@@ -364,33 +363,44 @@ Skill      : harness-factory 세 번째 실 트리거 (이질 도메인 생성·
 다음 단계  : ★ Phase 10 (MVP 통합 테스트) 기획 — 제품 로드맵 복귀. 새 GAP 3 백로그(Phase 10 후/차기 meta-phase, blocking 0)
 ```
 
-## 🟢 Next phase: Phase 10 MVP 통합 테스트 기획 진입 (2026-05-31)
+## Phase 10 done (archive) — 제품 phase (MVP 통합)
+
+`phases/archive/phase-10-mvp-integration/`
 
 ```
-Phase 9.5 + Phase M0 + M1 + M2 + M3 (meta-phase detour — Meta-Factory self-improvement loop 완주 + 도메인 범용성 입증) 종료. 제품 로드맵 복귀 → Phase 10 기획.
+Status     : ✅ DONE (2026-05-31)
+유형       : 제품 phase (large, ~12~15h, scope C) — 런타임 변경 有, meta detour(M0~M3) 종료 후 제품 복귀
+Goal       : Phase 1~9.5 누적 MVP end-to-end 통합 검증 + P-AUX-2 agent 실구현 + 실 LLM eval mode capability(default mock) + RAG eval_rubric + golden_set 11→15 + 배포 게이트 A~G 준비
+Result     : 4 Slice + entry(multi-llm 10th) + A1~A10 + MG1~MG4 + ★ behavior-preserving(기존 0 수정) + MVP end-to-end 통합 PASS(결함 0) + pytest 339→381(+42) + smoke_test_phase_10 12/12 + scenario_sim v8 36/36 + eval-run mock gate PASS(golden_set 15) + 배포 Gate A 통과
+산출물     : 신규 ~10 (test_integration_mvp + smoke_test_phase_10 + brand_memory_extractor + eval/mode + rag_eval_rubric + deploy_test_gates + ADR-038 + regression_results/phase-10) + 수정 ~10 (scenario_sim v8 + eval/runner + golden_set + agent_io + plans.py additive + state docs)
+Sub-agent  : S1·S2·S3 dispatch (S4 close main), 충돌 0 — P-X1 3/3 PASS
+회고       : meta/retrospectives/phase-10.md
+신규 패턴  : P-INTEGRATION-MVP-001 + P-CAPABILITY-DEFAULT-OFF-001 + P-BEHAVIOR-PRESERVING-001 update(제품 통합) + P-X1-EFFECT-001(60) + P-CONTRACT-FIRST-001(CC 누적 10)
+Skill      : multi-llm-validation 10th + agent-io-check(P-AUX-2) + contract-change CC-008(agent_io)+CC-009(eval) + eval-design/eval-run(golden_set 확대+RAG rubric) + ai-architecture-review(P-AUX-2) + qa-check + design-review + phase-complete 10th
+1 ADR / 2 CC: ADR-038(MVP 통합 scope C) / CC-008(agent_io P-AUX-2) + CC-009(eval golden_set/RAG rubric)
+사용자 결정 : 2건 (범위 C 풀 / eval 실행 mock-deterministic 유지 → 실 LLM mode = capability·default off)
+핵심 성과  : **P-X1 60연속 + behavior-preserving + MVP end-to-end 통합 결함 0 + P-AUX-2 brand_memory_extractor(agent 5→6) + eval golden_set 11→15 + RAG eval_rubric + 배포 Gate A 통과 + PlanCard 35/component_map 45 유지**
+다음 단계  : 배포 Gate B~G (staging→알파→베타(실 LLM opt-in)→제한사용자→비용/성능→운영) / Phase 11+ (4계층 linkage / async worker / prompt A/B / 자동 promotion / 실 LLM eval default / M3 새 GAP 3) — 키·인프라 user-provided
+```
 
-다음 phase 옵션:
+## 🟢 Next phase: pending_user_decision (2026-05-31)
 
-A. Phase 10 — MVP 통합 테스트 (6~8h)
-  - MVP 전체 end-to-end 검증 (Discovery + Quick → 3-plan → Critic revise (canonical-only) → save → select → feedback → SSE progress)
-  - Phase 1~9.5 누적 baseline 통합 회귀 + eval-run golden_set 회귀 baseline 활용
-  - P-AUX-2 brand_memory_extractor agent 실 구현 (Phase 9 schema + 적재 경로 준비 완료 → 데이터 누적 후 활성)
-  - 실 LLM eval mode 운영 활성 (Phase 9.5 개선 제안 §1) + RAG eval_rubric golden_set 정식화 (개선 제안 §2) + golden_set 11 → 확대 (개선 제안 §3)
-  - 배포 테스트 게이트 A~G 준비
+```
+Phase 1~10 + Meta-Factory detour(M0~M3) 완료. MVP end-to-end 통합 + 배포 Gate A 통과. 다음 사용자 결정 대기.
 
-B. 다른 우선순위 (Phase 11+)
-  - 4계층 full linkage (plan_options/video_projects — selected_plans 실 plans 정합 → idealized schema 연결, 누적 2회 Phase 5 + Phase 9)
-  - 사용자 데이터 자동 promotion (rag-update Skill 두 번째 — feedback→candidate pending 적재 완료)
-  - SSE full async worker (누적 2회 Phase 5 + Phase 8) / prompt A/B 실행 인프라 (multi-provider 대비)
-  - Supabase SQL function `match_approved_knowledge` 정의 (운영 단계 필수) / cost-review Skill 정식화
+A. 배포 Gate B~G (운영 진행)
+  - B Staging 배포(env/secret 주입 — ★ user-provided) → C 내부 알파(manual smoke) → D Beta(실 LLM eval opt-in) → E 제한 사용자 → F 비용/성능(cost-review) → G Production Readiness(보안 audit + RLS 운영 + SQL function)
+  - 키·인프라 user-provided + 운영 단계
+
+B. Phase 11+ (기능 확장)
+  - 4계층 full linkage (plan_options/video_projects idealized schema, 누적 2회) / 사용자 데이터 자동 promotion (rag-update 두 번째) / SSE full async worker (누적 2회) / prompt A/B 인프라 / 실 LLM eval default 전환 / cost-review 정식화
+  - M3 새 GAP 3 (G9 forbidden_scope 분리 / G10 risk 분해 / G11 conditional 문서화 — blocking 0, meta_factory/outputs/improvement_reports 백로그)
 
 진입 전 권장 검토:
-  - meta/retrospectives/phase-9.5.md (P-EVAL-HARNESS-001 + P-DEPRECATED-REMOVAL-001 신규 후보 + 개선 제안 §1~3)
-  - meta/patterns.md (P-X1-EFFECT-001 47연속, P-VALIDATION-FORMAL-001 일곱 번째, P-EVAL-HARNESS-001 + P-DEPRECATED-REMOVAL-001 신규)
-  - phases/archive/phase-9.5-eval-run/closing_notes.md (Phase 9.5 baseline + generate.py deviation + 다음 옵션 A/B + 운영 권장)
-  - docs/decisions/phase_9_5_eval_run_harness.md (ADR-033)
-  - docs/decisions/phase_9_5_critic_deprecated_removal.md (ADR-034)
-  - docs/contracts/output_schema.md §9 + agent_io_contract.md §5 (Phase 9.5 Slice 4 — CC-005 canonical-only)
+  - phases/archive/phase-10-mvp-integration/closing_notes.md (Phase 1~10 총괄 + baseline)
+  - docs/deploy_test_gates.md (Gate A~G 통과 조건 + 현 준비 상태)
+  - docs/decisions/phase_10_mvp_integration.md (ADR-038) + CC-008/CC-009
+  - meta/retrospectives/phase-10.md (P-INTEGRATION-MVP-001 + P-CAPABILITY-DEFAULT-OFF-001)
 ```
 
 ## Phase 2~3 Hybrid UX 분기 (planned, 중간 상세화)

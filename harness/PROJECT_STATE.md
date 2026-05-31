@@ -2,13 +2,29 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5 + Phase M0(meta-phase) + Phase M1(meta-phase dry-run) + Phase M2(meta-phase machinery 개선) + Phase M3(meta-phase 이질 도메인 범용성 2차) 완료**.
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5 + Phase M0(meta-phase) + Phase M1(meta-phase dry-run) + Phase M2(meta-phase machinery 개선) + Phase M3(meta-phase 이질 도메인 범용성 2차) + Phase 10(MVP 통합 테스트) 완료**.
 Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /auth/* + /sse/* + /plans/{id}/select + /plans/{id}/feedback 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions, **normalize wiring live**) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계 (실 stage 연동)** + **RAG Lite (candidate_knowledge 5단계 MVP 전부 + pgvector retrieval + LLM Wiki 보조)** + **MOA Orchestrator 추출 (orchestration/moa_orchestrator + ProgressSink + progress_store 브릿지) + prompt_registry semver 정식화 + Critic v1.1.0 conservative adapter** + **결과 저장(selected_plans) + 피드백(feedback_events) 영속화 graceful + PII 마스킹 + 피드백 UI inline + Brand Memory 준비(feedback→candidate pending 적재)** 모두 동작.
 **Phase 9 ✅ done (2026-05-31)** — 결과 저장 + 피드백 (selected_plans/feedback_events 영속화 graceful + normalize_to_canonical wiring + Brand Memory 준비 + 피드백 UI wrapper, ADR-030/031/032, CC-004, large phase 6 Slice 실측 ~10~13h).
 
 ## 현재 Active Phase
 
-**🟢 Phase 10 (MVP 통합 테스트) 기획 진입 예정** — Phase M3 ✅ done (2026-05-31, ★ meta-phase 이질 도메인 범용성 2차 검증, 분기 = Phase 10 직행). Phase M2/M1/M0 ✅ done. Phase 9.5 ✅ done. **Meta-Factory detour(M0~M3) 종료 — self-improvement loop 완주 + 도메인 범용성(인접·이질) 입증. 제품 로드맵 복귀 → Phase 10 기획.** (M3 새 GAP 3은 백로그 — blocking 0.)
+**🟢 Phase 10 ✅ done (2026-05-31) — MVP 통합 완료, 배포 Gate A 통과** — Phase M0~M3(meta detour) + Phase 10(MVP 통합) 완료. 다음 = 배포 Gate B~G(staging→알파→베타→운영, 키·인프라 user-provided + 운영 phase) 또는 Phase 11+(4계층 linkage / async worker / prompt A/B / 자동 promotion / 실 LLM eval default / M3 GAP). 사용자 결정 대기.
+
+**Phase 10. MVP 통합 테스트 ✅ done (2026-05-31, 제품 phase scope C)** — Phase 1~9.5 누적 MVP 를 end-to-end 통합 검증(결함 0) + P-AUX-2 brand_memory_extractor agent 실구현 + 실 LLM eval mode capability(default mock) + RAG eval_rubric 정식화 + golden_set 11→15 + 배포 게이트 A~G 준비. ★ 제품 phase(런타임 有) — behavior-preserving(기존 0 수정) + 키 0 + PlanCard/component_map 0줄.
+
+- **4 Slice + entry**:
+  - entry [multi-llm-validation formal 10th V1~V6 + entry 8파일] ✅ (b4202ef)
+  - S1 [MVP end-to-end 통합 test(12) + smoke_test_phase_10(12/12) + scenario_sim v8(36/36)] ✅ (7fa5b00)
+  - S2 [P-AUX-2 brand_memory_extractor agent — heuristic·graceful·PII, additive hook + CC-008 agent_io v1.4.0] ✅ (436b224)
+  - S3 [eval — 실 LLM mode capability(default mock) + RAG eval_rubric v1.0.0 + golden_set 11→15 + CC-009] ✅ (56b541c)
+  - S4 [배포 게이트 A~G + ADR-038 + close] ✅
+- **결과**: MVP end-to-end 통합 **PASS(연결 결함 0)** + pytest **339→381**(+42: 통합 12 + P-AUX-2 14 + eval 16, 기존 339 green) + P-AUX-2 활성(agent 5→6) + eval 성숙(golden_set 15 + RAG rubric + 실 LLM capability) + 배포 **Gate A 통과**(B~G 준비/정의).
+- ADR-038(MVP 통합 scope C) + CC-008(agent_io P-AUX-2) + CC-009(eval golden_set/RAG rubric) + multi-llm-validation **10th**.
+- ★ eval mode 화해: "범위 C 실 LLM 활성"=capability 구축 / "mock 유지"=default 실행. 실 LLM run=Gate D opt-in(키). 실 호출 0, 키 커밋 0.
+- **핵심 성과**: P-X1 60연속 + behavior-preserving(기존 endpoint/agent 0 수정) + MVP 통합 검증 결함 0 + P-AUX-2 brand_memory_extractor + eval golden_set 11→15 + 배포 Gate A 통과 + PlanCard 35 / component_map 45 유지.
+- 신규 패턴: P-INTEGRATION-MVP-001 + P-CAPABILITY-DEFAULT-OFF-001 + P-BEHAVIOR-PRESERVING-001 update(제품 통합) + P-X1-EFFECT-001(60) + P-CONTRACT-FIRST-001(CC 누적 10회).
+- baseline: pytest 381 + P-X1 60 + agent 6 + golden_set 15 + Skill 21. 실측 ~12~15h.
+- 다음: 배포 Gate B~G / Phase 11+ (M3 새 GAP 3 백로그 포함).
 
 **Phase M3. 이질 도메인 dry-run (범용성 2차 검증) ✅ done (2026-05-31, ★ meta-phase)** — M2 개선 machinery(G1~G8)를 이질 도메인 **「개인 재무 플래닝 AI」**에 1회 dry-run 적용하여 도메인 범용성 2차 검증. M1(인접 팟캐스트)과 달리 이질(금융). 2 Slice dry-run + doc-sync. ★ machinery 0줄(개선본 읽기만) + 런타임 0(A9) + dry-run outputs/TEST/ 외 0(MG1).
 
