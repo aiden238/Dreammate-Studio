@@ -23,6 +23,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
+from ..agents.brand_memory_extractor import extract_brand_memory_candidates
 from ..agents.critic import (
     PROMPT_ID as CRITIC_PROMPT_ID,
     PROMPT_VERSION as CRITIC_PROMPT_VERSION,
@@ -372,6 +373,28 @@ async def plans_feedback(plan_id: str, req: FeedbackRequest, request: Request):
     except Exception as exc:  # pragma: no cover — graceful (적재 실패 시 응답 차단 0)
         logger.warning(
             "feedback_candidate_enqueue_failed: %s (feedback 저장은 성공)",
+            exc.__class__.__name__,
+        )
+
+    # Phase 10 S2 (P-AUX-2): feedback 저장 후 brand_memory_extractor best-effort 호출.
+    #   - ★ additive 부가 처리 — 동기 응답 경로 무영향 (proposed_entries 는 로깅만, 응답 schema 불변).
+    #   - persist=False (proposed-only): brand_memory_entries 자동 INSERT 0 — ADR-031 §7.5
+    #     자동 승격/INSERT 는 사용자 승인 경로 필요 (NG12). 본 hook 은 추출 활성화만 (heuristic, 비용 0).
+    #   - graceful: 추출 실패해도 feedback 응답 차단 0 (try/except). reason 은 repo 가 이미 마스킹 (T5).
+    try:
+        events = await _feedback_repo.list_for_plan(plan_id)
+        selection = await _selection_repo.get(plan_id)
+        extraction = extract_brand_memory_candidates(
+            events,
+            [selection] if selection else None,
+        )
+        logger.info(
+            "brand_memory_extract (feedback hook) plan_id=%s proposed=%d",
+            plan_id, len(extraction.get("proposed_entries", [])),
+        )
+    except Exception as exc:  # pragma: no cover — graceful (추출 실패 시 응답 차단 0)
+        logger.warning(
+            "brand_memory_extract_hook_failed: %s (feedback 저장은 성공)",
             exc.__class__.__name__,
         )
 

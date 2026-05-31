@@ -461,6 +461,65 @@ LLM 응답이 dict 가 아닌 경우 (JSON string / array / null):
 
 ## 7. Memory Extractor Agent
 
+> **Phase 10 Slice S2 (2026-05-31, CC-008)**: P-AUX-2 `brand_memory_extractor` **실 구현 활성화**
+> (Phase 9 ADR-031 적재 인프라 → 실제 추출 agent). §7.0 에 runtime IO 추가 등록 (additive — §7.1~§7.5
+> 기존 LLM-facing 명세 보존).
+> - **구현 방식**: **heuristic (규칙 기반, LLM 미사용)** — `agents/brand_memory_extractor.py`. ADR-031
+>   §P-AUX-2 confidence 규칙(1회성 ≤0.3 / 2회+ ≥0.7 / 명시 선호 ≥0.9 / 충돌 제외 / 최대 5개)이 결정적이라
+>   빈도 집계 + reason 유무로 구현 → LLM 호출 0 (비용 0, 결정적). prompt_registry P-AUX-2 v1.0.0 명세는
+>   LLM 활성화 시점 SoT 로 보존 (heuristic 은 그 규칙을 코드로 반영, 활성 prompt 미부여).
+> - **graceful**: 입력 부족/추출 실패 → 빈 `proposed_entries` (예외 0). BrandMemoryRepo 저장 실패해도 graceful.
+> - **PII 마스킹**: reason/source_evidence 는 `feedback_repo.mask_pii` 재사용(단일 출처, T5) → 이메일/전화/주민/카드 [masked].
+> - **wiring**: `routers/plans.py` feedback endpoint 저장 **후** best-effort hook (try/except, 응답 schema 불변,
+>   persist=False proposed-only — 자동 INSERT 0). 결정 근거: `docs/decisions/phase_9_brand_memory_prep.md` (ADR-031).
+
+### 7.0 Runtime IO (Phase 10 S2 — heuristic 활성화, CC-008)
+
+실 구현(`agents/brand_memory_extractor.py`)의 입출력. §7.2~§7.3 의 LLM-facing 명세(P-AUX-2 SoT)와 정합하며,
+heuristic 구현은 동일 entry_type 5종 + confidence 규칙을 코드로 반영한다.
+
+**Input** (standalone/orchestrator callable — 다른 agent 직접 호출 0):
+
+```
+extract_brand_memory_candidates(
+    feedback_events: list[dict] | None,      # feedback_events rows (event_type/option_index/reason)
+    selected_plans: list[dict] | None,       # selected_plans rows (selected_option_index/selection_reason)
+    *, current_brand_memory: list[dict] | None,  # brand_memory_entries rows (충돌 검사용)
+) -> dict
+run_brand_memory_extractor(..., *, brand_id, repo, persist, persist_min_confidence) -> dict
+    # persist=True + repo(BrandMemoryRepo) + brand_id 모두 있을 때만 confidence ≥ 0.9 후보 add_entry (graceful)
+```
+
+**Output**:
+
+```json
+{
+  "proposed_entries": [
+    {
+      "entry_type": "preferred_tone | avoid_phrase | preferred_phrase | success_pattern | rejection_pattern",
+      "content": "string (PII 마스킹됨)",
+      "confidence": 0.3 | 0.7 | 0.9,
+      "source_evidence": "string (마스킹된 사유 또는 빈도 요약)"
+    }
+  ],                                 // 최대 5개, confidence 내림차순 (deterministic)
+  "conflicts": [ { /* ...entry... */, "conflicts_with_existing": true } ],
+  "impl_kind": "heuristic",
+  "persisted": [ /* run_brand_memory_extractor persist=True 시만 */ ]
+}
+```
+
+**confidence 규칙** (ADR-031 §P-AUX-2): 1회성 결정 0.3 / 2회 이상 반복 0.7 / 명시 선호(reason 동반) 0.9.
+긍정 신호(like/select) → success_pattern (+사유 시 preferred_phrase). 부정 신호(dislike/reject/regenerate) →
+rejection_pattern (+사유 시 avoid_phrase). 기존 Brand Memory 충돌 항목은 `conflicts` 로 분리(제외 + 별도 표시).
+
+**forbidden_actions** (경계):
+- ❌ LLM 호출 0 (heuristic — 비용 0). ❌ 다른 agent(critic/intent/planning/rewriter) 직접 호출 0 (격리).
+- ❌ 자동 승격/자동 INSERT 0 (NG12) — `persist=False`(proposed-only) 기본. `persist=True` 도 confidence ≥ 0.9
+  명시 선호만 BrandMemoryRepo add_entry (agent_io §7.5 정합), 그 외는 제안만 (사용자 승인 UX 경로).
+- ❌ raw PII 노출 0 (reason/source_evidence 마스킹). ❌ 동기 응답 경로 차단 0 (best-effort, graceful).
+
+**graceful**: 빈/None 입력, non-dict 항목, 추출/저장 실패 → 예외 전파 0 (빈 결과 또는 부가 결과 누락만).
+
 ### 7.1 책임
 
 - 영상 세션 종료 시 Brand Memory 후보 자동 추출 (P-AUX-2)
@@ -844,4 +903,16 @@ v1.3.0 (2026-05-31, Phase 9.5 Slice 4 — CC-005 / ADR-034):
     - run_critic 의 0–5 출력 + normalize_to_canonical(0–5→0–1)은 P-007 LLM-facing prompt contract 로 불변.
     - CriticEvaluation extra='ignore' 로 verdict dict 잔존 0–5 키 무시 → 회귀 0 (output_schema.md §9 정합).
   - semver minor bump: canonical-only 전환 (eval baseline 동일 — 회귀 0).
+v1.4.0 (2026-05-31, Phase 10 Slice S2 — CC-008):
+  - §7 Memory Extractor (P-AUX-2) 실 구현 활성화 (Phase 9 ADR-031 적재 인프라 → 실제 추출 agent).
+    - §7.0 Runtime IO 추가 등록 (additive — §7.1~§7.5 기존 LLM-facing 명세 보존).
+    - 구현 방식: heuristic (규칙 기반, LLM 미사용) — agents/brand_memory_extractor.py. ADR-031 §P-AUX-2
+      confidence 규칙(1회성 0.3 / 2회+ 0.7 / 명시 선호 0.9 / 충돌 제외 / 최대 5개)을 코드로 반영, LLM 호출 0.
+    - 입력: feedback_events + selected_plans (+ current_brand_memory 충돌 검사). 출력: proposed_entries
+      (entry_type 5종 + confidence + source_evidence) + conflicts + impl_kind='heuristic'.
+    - graceful(입력 부족/실패 → 빈 결과, 예외 0) + PII 마스킹(feedback_repo.mask_pii 재사용, T5) +
+      agent 격리(다른 agent 직접 호출 0). wiring: routers/plans.py feedback endpoint best-effort hook
+      (응답 schema 불변, persist=False proposed-only — 자동 INSERT 0, NG12). prompt_registry P-AUX-2
+      v1.0.0 명세는 LLM 활성화 시점 SoT 로 보존 (heuristic 활성 prompt 미부여).
+  - semver minor bump: P-AUX-2 runtime 활성화 (기존 4 agent + endpoint behavior-preserving — 회귀 0).
 ```
