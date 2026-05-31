@@ -41,6 +41,29 @@ class Settings(BaseSettings):
         description="Critic 모델 (Slice 3 사용)",
     )
 
+    # ─── Phase 11 A안 Slice 1 — LLM Gateway (additive, graceful) ─────
+    # 기존 openai_* Field 보존. gateway/registry 가 참조 (제안서 §9 / §18.C).
+    # ★ behavior-preserving: 본 Field 추가는 gateway 신규 패키지 전용 — 기존 agents 미연결.
+    # ★ 실 키 불필요: graceful default="" (미설정 시 해당 provider 비활성 → gateway LLMError).
+    #   키는 .env(이미 .gitignore)에만. 코드/commit/채팅 평문 절대 금지.
+    google_api_key: str = Field(
+        default="",
+        description=(
+            "Google Gemini API key (Phase 11 A안 cross_validation). "
+            "graceful: 미설정 시 Gemini provider 비활성. "
+            "GEMINI_API_KEY 대신 GOOGLE_API_KEY 사용 (제안서 §18.C)."
+        ),
+    )
+    cross_validation_model: str = Field(
+        default="gemini-2.5-flash",
+        description=(
+            "Phase 11 A안 cross_validation Gemini model_id (registry 'gemini-cross'). "
+            "★ placeholder 기본값 — 사용자가 정확한 model ID 확정 필요 "
+            "(제안서 §18.0 / §18.A: 예 'gemini-3.1-pro' 등 provider dev 페이지 확인값). "
+            "환경변수 CROSS_VALIDATION_MODEL 로 override 가능 (agent 코드 0 변경)."
+        ),
+    )
+
     # ─── Phase 4 Slice 2: multi-model (사용자 결정 4-b) ─────────────────
     # 향후 모델 추가 가능 구조 — Phase 4는 OpenAI만 (default 동일 모델 × 3).
     # Anthropic / Google 등 multi-provider 확장은 Phase 21+에서 검토.

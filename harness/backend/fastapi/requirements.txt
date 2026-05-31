@@ -12,6 +12,10 @@ pydantic-settings==2.5.2
 # LLM
 openai==1.51.0
 
+# Phase 11 A안 Slice 1: Google Gemini (cross_validation, gated). additive — graceful
+# (gemini_adapter SDK import 지연 → 미설치 환경에서도 모듈 import 성공).
+google-genai>=1.0
+
 # Env
 python-dotenv==1.0.1
 
