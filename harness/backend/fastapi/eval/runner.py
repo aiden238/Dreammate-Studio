@@ -33,6 +33,7 @@ from ..schemas.output import (
     ValidationCheck,
 )
 from .golden_set_loader import load_golden_set
+from .mode import MODE_MOCK, MODE_REAL, ScoreContext, real_score_envelope, resolve_mode
 from .revise_effect import aggregate_revise_effects, measure_revise_effect
 
 logger = logging.getLogger(__name__)
@@ -357,34 +358,51 @@ def run_golden_set_eval(
     baseline_score: float | None = None,
     golden_set_path: str | None = None,
     include_revise_effect: bool = False,
+    ctx: ScoreContext | None = None,
 ) -> dict[str, Any]:
-    """11 케이스 → mock pipeline → 채점 → 요약 + 임계값 게이트.
+    """golden_set 케이스 → pipeline → 채점 → 요약 + 임계값 게이트.
+
+    ★ default mode="mock" — Phase 9.5 mock-deterministic 경로 불변 (behavior-preserving).
+    mode="real" 은 **capability** (Phase 10 S3 wire, ADR-033 §1):
+      - ctx.llm_caller 주입 + 실 LLM 키(OPENAI/ANTHROPIC) 존재 시에만 real 경로 활성 (opt-in).
+      - 키/caller 부재 시 mock 으로 graceful fallback (예외 X) → CI/test 실 호출 0.
+      - real 경로는 주입된 caller 가 case → 채점 envelope 합성 (운영 배치 구현). 본 모듈은
+        실 client 를 import 하지 않으며 default caller 가 없어 단독 실 호출 불가.
 
     Args:
-        mode: "mock" (deterministic primary) | "real" (실 LLM — 본 phase NotImplemented).
+        mode: "mock" (deterministic primary) | "real" (실 LLM capability — opt-in).
         cases: 케이스 list 주입 (None → load_golden_set).
         baseline_score: 직전 baseline 평균 canonical 점수 (점수 하락 게이트용, None → 게이트 skip).
         golden_set_path: golden_set.md 경로 (None → 기본).
         include_revise_effect: True → revise effect eval(ADR-033 §2.3) 집계를 result/summary 에 포함.
+        ctx: real 모드 컨텍스트 (llm_caller / 환경변수 주입). None → mock 전용.
 
     Returns:
         {mode, cases: [score_case...], summary: {...}, gate: {passed, violations}}.
+        mode 키는 **실효 모드** (real 요청이 graceful fallback 되면 "mock").
         include_revise_effect=True 시 result["revise_effect"](effects + aggregate) 추가 +
         summary["revise_effect"](mean_delta / improved_rate / regressed_rate) 추가.
     """
-    if mode == "real":  # pragma: no cover — 본 phase 미사용 (NG2, 문서)
-        raise NotImplementedError(
-            "mode='real' (실 LLM 8차원 채점) 은 운영 단계 야간 배치 — Phase 9.5 미사용 (ADR-033 NG2)."
+    # 모드 결정 — requested mode 를 ctx 와 합쳐 실효 모드 산출 (graceful fallback 포함).
+    score_ctx = ctx or ScoreContext()
+    if score_ctx.requested_mode is None:
+        score_ctx = ScoreContext(
+            requested_mode=mode,
+            llm_caller=score_ctx.llm_caller,
+            env=score_ctx.env,
         )
-    if mode != "mock":
-        raise ValueError(f"지원하지 않는 mode: {mode!r} (mock | real)")
+    effective_mode = resolve_mode(score_ctx)  # "mock" | "real" (ValueError on 미지원)
 
     if cases is None:
         cases = load_golden_set(golden_set_path)
 
     scored: list[dict[str, Any]] = []
     for case in cases:
-        envelope_dict = _mock_envelope_for_case(case)
+        if effective_mode == MODE_REAL:  # pragma: no cover — opt-in 운영 배치 (CI 미실행)
+            # capability 경로: 주입된 llm_caller 로 실 LLM 채점 envelope 생성.
+            envelope_dict = real_score_envelope(case, score_ctx)
+        else:
+            envelope_dict = _mock_envelope_for_case(case)
         scored.append(score_case(case, envelope_dict))
 
     total = len(scored)
@@ -412,7 +430,7 @@ def run_golden_set_eval(
     }
 
     result: dict[str, Any] = {
-        "mode": mode,
+        "mode": effective_mode,  # 실효 모드 (real 요청이 fallback 되면 "mock").
         "cases": scored,
         "summary": summary,
         "gate": None,  # placeholder — revise effect 반영 후 채운다.

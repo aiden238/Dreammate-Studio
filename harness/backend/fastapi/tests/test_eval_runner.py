@@ -33,12 +33,16 @@ from backend.fastapi.schemas.output import Envelope
 
 # ── load_golden_set ──────────────────────────────────────────────────
 
-def test_load_golden_set_11_cases() -> None:
-    """golden_set.md → GS-001~GS-011 정확히 11 케이스 (단일 출처 파싱)."""
+def test_load_golden_set_15_cases() -> None:
+    """golden_set.md → GS-001~GS-015 정확히 15 케이스 (단일 출처 파싱).
+
+    의도된 delta (Phase 10 golden_set 확대 11 → 15, CC-009):
+      GS-001~011 보존 + GS-012~015 추가 (Quick 저신뢰 / Discovery 다단계 / RAG graceful / 다른 도메인).
+    """
     cases = load_golden_set()
-    assert len(cases) == 11
+    assert len(cases) == 15
     ids = [c["id"] for c in cases]
-    assert ids == [f"GS-{n:03d}" for n in range(1, 12)]
+    assert ids == [f"GS-{n:03d}" for n in range(1, 16)]
 
 
 def test_load_golden_set_case_structure() -> None:
@@ -55,12 +59,16 @@ def test_load_golden_set_case_structure() -> None:
 
 
 def test_load_golden_set_priority_grades() -> None:
-    """golden_set.md §3 우선순위 정합 — P0 7개 / P1 3개 / P2 1개."""
+    """golden_set.md §3 우선순위 정합 — P0 7개 / P1 6개 / P2 2개.
+
+    의도된 delta (Phase 10 확대, CC-009): P1 3→6 (GS-012/013/014), P2 1→2 (GS-015).
+    P0 7개는 불변 (기존 핵심 흐름/보안 케이스 보존).
+    """
     cases = load_golden_set()
     grades = [c["priority"] for c in cases]
     assert grades.count("P0") == 7
-    assert grades.count("P1") == 3
-    assert grades.count("P2") == 1
+    assert grades.count("P1") == 6
+    assert grades.count("P2") == 2
 
 
 def test_load_golden_set_missing_file_graceful(tmp_path: Path) -> None:
@@ -159,10 +167,13 @@ def test_detect_blocked_words_case_insensitive() -> None:
 # ── run_golden_set_eval (mock) ───────────────────────────────────────
 
 def test_run_golden_set_eval_mock_passes() -> None:
-    """11 케이스 mock 실행 → schema 100% + 게이트 통과."""
+    """15 케이스 mock 실행 → schema 100% + 게이트 통과.
+
+    의도된 delta (Phase 10 확대 11 → 15, CC-009). mock 경로/채점 로직 불변.
+    """
     result = run_golden_set_eval(mode="mock")
     summary = result["summary"]
-    assert summary["total"] == 11
+    assert summary["total"] == 15
     assert summary["schema_rate"] == 1.0
     assert summary["pass_rate"] == 1.0
     assert summary["ad_rate"] == 0.0
@@ -180,10 +191,22 @@ def test_run_golden_set_eval_deterministic() -> None:
     assert r1["cases"] == r2["cases"]
 
 
-def test_run_golden_set_eval_real_mode_not_implemented() -> None:
-    """mode='real' → NotImplementedError (본 phase 미사용, NG2 문서)."""
-    with pytest.raises(NotImplementedError):
-        run_golden_set_eval(mode="real")
+def test_run_golden_set_eval_real_mode_graceful_fallback() -> None:
+    """mode='real' (Phase 10 capability) — caller/키 미주입 시 mock 으로 graceful fallback.
+
+    의도된 delta (Phase 10 S3): Phase 9.5 의 NotImplementedError → real 경로 wire 로 전환.
+    ★ CI/test 안전: llm_caller 미주입 + env 빈 dict → 실 LLM 호출 0, 실효 모드 'mock'.
+    """
+    result = run_golden_set_eval(mode="real")
+    # caller/키 없으므로 실효 모드는 mock (graceful) — 게이트 통과.
+    assert result["mode"] == "mock"
+    assert result["gate"]["passed"] is True
+
+
+def test_run_golden_set_eval_invalid_mode_raises() -> None:
+    """지원하지 않는 mode 문자열 → ValueError."""
+    with pytest.raises(ValueError):
+        run_golden_set_eval(mode="bogus")
 
 
 def test_run_golden_set_eval_injected_cases() -> None:

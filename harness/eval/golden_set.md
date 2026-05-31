@@ -23,7 +23,7 @@
 
 이 문서가 정의하는 대상:
 
-1. 회귀에 사용할 입력 케이스 11개 (GS-001 ~ GS-011)
+1. 회귀에 사용할 입력 케이스 15개 (GS-001 ~ GS-015) — Phase 10 확대 (11 → 15)
 2. 케이스 우선순위 등급 (P0 / P1 / P2)
 3. 회귀 실행 정책 (CI 트리거 / 통과 임계)
 4. 결과 기록 위치 / 보존 정책
@@ -69,7 +69,9 @@ notes:
 
 ---
 
-## 2. 케이스 정의 (11개)
+## 2. 케이스 정의 (15개)
+
+> Phase 10 (2026-05-31) 확대: GS-001~011 (11) 보존 + GS-012~015 (4) 추가 (Quick 저신뢰 / Discovery 다단계 / RAG graceful / 다른 도메인). CC-009 참조.
 
 ### 2.1 GS-001 · 신규 브랜드 / 콜드스타트 / Discovery Step 1
 
@@ -475,6 +477,157 @@ notes:
   - "→ output_schema §13, rag_data_contract §10.3"
 ```
 
+### 2.12 GS-012 · Quick Mode 저신뢰 → rewrite_offered (Phase 10 확대)
+
+```yaml
+case_id: GS-012
+name: "Quick Mode 모호 입력 / confidence < 0.5 → rewrite_offered=true"
+priority: P1
+mode: quick
+prompt_target: P-005 (oneline_direction)
+input:
+  user_message: "영상 하나 만들어줘"
+  brand_context:
+    brand_id: "brand-quick"
+    name: "1인 크리에이터 채널"
+    direction_label: "일상 기록형"
+    tone: { primary: "친근형" }
+  rag_context: []
+  brand_memory: null
+expected_path:
+  - intent_decision: allow
+  - discovery_step: quick
+  - prompt_id: P-005 (oneline_direction)
+  - cards_returned: 0
+expected_output:
+  body_keys: [one_line, components, missing_info, confidence, rewrite_offered]
+  validation:
+    - confidence < 0.5
+    - rewrite_offered == true (저신뢰 → 재작성 제안)
+    - missing_info.length ≥ 1 (포맷/길이 등 부족 정보 명시)
+    - one_line 20–70자
+  passing_criteria:
+    - 광고 단어 0개
+    - 저신뢰에서 임의 추정으로 진행하지 않고 명시적 재작성 제안
+notes:
+  - "Quick Mode 저신뢰 분기 회귀 (GS-002 고신뢰의 대칭 케이스)."
+  - "Phase 10 golden_set 확대 — Quick 분기 커버리지 보강."
+  - "→ output_schema §7 P-005, agent_io §3.1 Intent"
+```
+
+### 2.13 GS-013 · Discovery 다단계 진행 (Step 2 Tone 카드)
+
+```yaml
+case_id: GS-013
+name: "Discovery Step 2 진입 / Tone 카드 (Step 1 승인 후)"
+priority: P1
+mode: discovery
+prompt_target: P-002 (tone_cards)
+input:
+  user_message: "(Step 1에서 '성장 기록형' 승인 후 시점)"
+  brand_context:
+    brand_id: "brand-disc"
+    name: "대학생 창업동아리"
+    direction_label: "성장 기록형"
+  rag_context: []
+  brand_memory: null
+expected_path:
+  - intent_decision: allow
+  - discovery_step: 2
+  - prompt_id: P-002 (tone_cards)
+  - cards_returned: 4
+  - user_input_slot: 1
+expected_output:
+  body_keys: [cards, user_input_slot]
+  validation:
+    - cards.length == 4
+    - 모든 카드 kind == "ai_suggestion"
+    - 모든 카드 confidence ∈ [0,1]
+    - validation.passed == true
+    - 광고 단어 1차 단어 0개 (출력 전체)
+  passing_criteria:
+    - JSON schema 검증 통과 (envelope + body)
+    - 4장 + slot 1 구조 정합
+    - Step 1 승인 컨텍스트(direction_label) 가 Step 2 카드 생성에 반영
+notes:
+  - "Discovery 다단계(Step 1 → Step 2) 진행 회귀. GS-001(Step 1)의 후속 단계 커버리지."
+  - "Phase 10 golden_set 확대 — Discovery 분기 커버리지 보강."
+  - "→ output_schema §4 P-002"
+```
+
+### 2.14 GS-014 · RAG 빈 결과 graceful (no_rag_reference)
+
+```yaml
+case_id: GS-014
+name: "RAG 검색 0건 채택 (전부 threshold 미만) → graceful 진행"
+priority: P1
+mode: discovery
+prompt_target: RAG 검색 + P-006
+input:
+  user_message: "(P-005 통과 후, approved_direction='틈새 도메인 신규 주제 60초')"
+  brand_context: { brand_id: "brand-niche", name: "틈새 채널" }
+  rag_context_mock:
+    - { chunk_id: "c1", similarity: 0.62, content: "관련 약한 사례 A (threshold 미만)" }
+    - { chunk_id: "c2", similarity: 0.55, content: "관련 약한 사례 B (threshold 미만)" }
+  brand_memory: null
+expected_path:
+  - rag_search: top_k=5, threshold=0.7, final_adoption=0
+  - prompt_id: P-006
+expected_output:
+  body_keys: [plans, plans[*].rag_used]
+  validation:
+    - plans[*].rag_used.length == 0 (threshold 통과 chunk 없음)
+    - validation.warnings ⊇ ["no_rag_reference"]
+    - plans.length == 3 (RAG 없이도 3안 생성 — graceful degradation)
+    - validation.passed == true
+  passing_criteria:
+    - 검색 0건에도 예외 없이 3안 생성 (rag_context=[] 주입)
+    - retrieval_policy §7.1 빈 결과 처리 정합
+    - 광고 단어 0개
+notes:
+  - "RAG 빈 결과 graceful 회귀 (GS-007 채택 케이스의 대칭). retrieval_policy §7.1."
+  - "Phase 10 golden_set 확대 — graceful degradation 커버리지 보강."
+  - "→ rag_data_contract §5, retrieval_policy §7, output_schema §8.3"
+```
+
+### 2.15 GS-015 · 다른 도메인 (요식업 브랜드 홍보 영상)
+
+```yaml
+case_id: GS-015
+name: "다른 도메인 / 요식업 브랜드 홍보 영상 / Discovery Step 1"
+priority: P2
+mode: discovery
+prompt_target: P-001
+input:
+  user_message: "동네 작은 베이커리 운영하는데 신메뉴 홍보 영상 만들고 싶어요"
+  brand_context: null
+  rag_context: []
+  brand_memory: null
+expected_path:
+  - intent_decision: allow
+  - discovery_step: 1
+  - prompt_id: P-001 (brand_direction_cards)
+  - cards_returned: 4
+  - user_input_slot: 1
+expected_output:
+  body_keys: [cards, user_input_slot]
+  validation:
+    - cards.length == 4
+    - 모든 카드 kind == "ai_suggestion"
+    - 모든 카드 name 8–14자 (NFC 정규화 후)
+    - 모든 카드 confidence ∈ [0,1] AND 평균 ≥ 0.5
+    - validation.passed == true
+    - 광고 단어 1차 단어 0개 (출력 전체)
+  passing_criteria:
+    - JSON schema 검증 통과 (envelope + body)
+    - 4장 + slot 1 구조 정합
+    - 도메인 무관(요식업)하게 동일 구조/품질 baseline 유지
+notes:
+  - "도메인 다양성 회귀 (GS-001 창업동아리 vs 요식업). 도메인 편향 없이 동일 baseline."
+  - "Phase 10 golden_set 확대 — 다양 도메인 커버리지 보강."
+  - "→ output_schema §3 P-001"
+```
+
 ---
 
 ## 3. 우선순위 등급
@@ -482,17 +635,17 @@ notes:
 ```
 P0 (필수, 100% 통과):
   - 핵심 흐름 / 보안 / revise 무한 루프 차단
-  - GS-001, GS-002, GS-003, GS-004, GS-005, GS-006, GS-010
+  - GS-001, GS-002, GS-003, GS-004, GS-005, GS-006, GS-010   (7개)
   - CI 게이트: 1개라도 실패 시 머지 차단
 
 P1 (강력 권장, ≥ 90% 통과):
-  - 핵심 정책 / 학습 신호 / 데이터 흐름
-  - GS-007, GS-008, GS-009
+  - 핵심 정책 / 학습 신호 / 데이터 흐름 / 분기·graceful 커버리지
+  - GS-007, GS-008, GS-009, GS-012, GS-013, GS-014   (6개 — Phase 10 +3)
   - CI 게이트: 1개 실패는 warning, 2개 이상 실패 시 머지 차단
 
 P2 (참고, ≥ 80% 통과):
-  - 응용 / 예외 경로
-  - GS-011
+  - 응용 / 예외 경로 / 도메인 다양성
+  - GS-011, GS-015   (2개 — Phase 10 +1)
   - CI 게이트: 실패는 로그만, 머지 비차단
 ```
 
@@ -662,4 +815,7 @@ eval/regression_results/
 
 ```
 v1.0.0 (2026-05-26): Sprint S4-1 초안. 11개 케이스 + priority + 실행 정책 + 결과 기록.
+v1.1.0 (2026-05-31): Phase 10 Slice 3 확대 (CC-009). 11 → 15 케이스 (GS-001~011 보존,
+                     GS-012~015 추가 — Quick 저신뢰 / Discovery 다단계 / RAG graceful /
+                     다른 도메인). 우선순위: P0 7 / P1 6 / P2 2. additive (기존 케이스 무변경).
 ```
