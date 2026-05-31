@@ -7,9 +7,10 @@
 # v5 (Phase 9 Slice 6): 20 -> 25 scenarios (selected_plans + feedback_events + normalize wiring + brand_memory prep + 피드백 UI 추가)
 # v6 (Phase 9.5 Slice 5): 25 -> 30 scenarios (eval runner + revise effect + Critic deprecated 제거 + eval report + generate.py canonical wiring 추가)
 # v7 (Phase M0 Slice 3, ★ meta-phase): 30 -> 33 scenarios (SM1 meta_factory 구조 + SM2 harness-factory Skill + SM3 현재 하네스 blueprint 추가 — L3 Meta-Factory skeleton, 런타임 0)
+# v8 (Phase 10 Slice S1): 33 -> 36 scenarios (S31 MVP end-to-end 통합 test + S32 smoke_test_phase_10 + S33 behavior-preserving 마커 — 기존 시나리오 0 삭제, 신규 추가만)
 # Called automatically by phase-complete Skill v1.2.0 §1.6 at Phase close.
 #
-# Phase M0 final 목표: 33/33 PASS (P-X2 아홉 번째 자동 게이트)
+# Phase 10 final 목표: 36/36 PASS (P-X2 열 번째 자동 게이트)
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference   = 'SilentlyContinue'
@@ -17,9 +18,9 @@ $ProgressPreference   = 'SilentlyContinue'
 $ROOT = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Set-Location $ROOT
 
-Write-Host "=== scenario_simulation v7 (P-X2 auto-gate, Phase M0 meta-phase) ===" -ForegroundColor Cyan
+Write-Host "=== scenario_simulation v8 (P-X2 auto-gate, Phase 10 MVP 통합) ===" -ForegroundColor Cyan
 Write-Host "Root: $ROOT"
-Write-Host "Note: Phase M0 final target 33/33 PASS (P-X2 아홉 번째 자동 게이트, SM1~SM3 meta_factory 3개 추가)"
+Write-Host "Note: Phase 10 final target 36/36 PASS (P-X2 열 번째 자동 게이트, S31~S33 MVP 통합 3개 추가)"
 Write-Host ""
 
 $scenarios = @(
@@ -68,7 +69,12 @@ $scenarios = @(
     # Phase M0 신규 (3, ★ meta-phase — L3 Meta-Factory skeleton, 런타임 0)
     @{ Id = "SM1"; Name = "meta_factory 구조 (README + factory_contract — L1/L2/L3 + 8 규칙)"; Files = @("meta_factory/README.md", "meta_factory/factory_contract.md") },
     @{ Id = "SM2"; Name = "harness-factory Skill (proposal-only, 키워드 scoped) + INDEX #21"; Files = @(".claude/skills/harness-factory/SKILL.md", ".claude/skills/INDEX.md") },
-    @{ Id = "SM3"; Name = "현재 하네스 blueprint 실측 역정리 (10 섹션 + 부족점 5)"; Files = @("meta_factory/blueprints/dreammate_current_harness_blueprint.md") }
+    @{ Id = "SM3"; Name = "현재 하네스 blueprint 실측 역정리 (10 섹션 + 부족점 5)"; Files = @("meta_factory/blueprints/dreammate_current_harness_blueprint.md") },
+
+    # Phase 10 신규 (3, MVP end-to-end 통합 — behavior-preserving, 신규 추가만)
+    @{ Id = "S31"; Name = "MVP end-to-end 통합 test (Quick/Discovery 체인 + save/select/feedback/SSE + revise + graceful)"; Files = @("backend/fastapi/tests/test_integration_mvp.py") },
+    @{ Id = "S32"; Name = "Phase 10 통합 smoke (누적 baseline 회귀 + 통합 흐름 12 checks)"; Files = @("scripts/smoke_test_phase_10.ps1") },
+    @{ Id = "S33"; Name = "behavior-preserving 통합 (통합 test + 기존 endpoint/orchestrator/repo 무수정 관찰)"; Files = @("backend/fastapi/tests/test_integration_mvp.py", "backend/fastapi/orchestration/moa_orchestrator.py", "backend/fastapi/routers/plans.py", "backend/fastapi/routers/generate.py") }
 )
 
 $pass = 0
