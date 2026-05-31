@@ -28,7 +28,8 @@
 | **M0** | **Meta-Factory Prep (★ meta-phase — L3 Meta-Harness Factory skeleton)** | **done** (2026-05-31) | 3 Slices (모두 sub-agent) + A1~A10 10/10 + M1~M3 3/3 + **★ 런타임 변경 0 (A9 — FastAPI/Next.js/Supabase 0줄)** + **P-X1 50연속** + PlanCard 35연속 + component_map 45연속 + ADR-035 (L3 Meta-Factory 도입) + CC-006 (INDEX harness-factory #21 Skill 등록) + harness-factory Skill ★ 신규 등록 (proposal-only, 키워드 scoped) + multi-llm-validation formal 여덟 번째 (★ 첫 meta-phase, V1~V6) + pytest 339 유지 + smoke_test_phase_M0 6/6 + scenario_sim v7 33/33 (P-X2 아홉 번째, SM1~SM3) + Skill 20→21 + P-META-FACTORY-001 신규 + meta_factory/ 7 루트 + templates 6 + blueprint 실측 + outputs (★ 제품 phase 번호 분리 detour) |
 | **M1** | **Meta-Factory Sample Test (★ meta-phase dry-run — M0 machinery 팟캐스트 1회 검증)** | **done** (2026-05-31) | 2 Slice dry-run (sub-agent, outputs/TEST/ only) + doc-sync (main 별도 commit) + ★ 런타임 0 (A9) + dry-run outputs/TEST/ 외 0 (MG1) + **P-X1 52연속** + 6검증 PASS 5/PENDING 1 + with/without 6지표(누락 0v6/cross-ref 0v4/gate 1v0) + 5 gaps 전부 재현 + **GAP 8 백로그**(핵심 G2/G3/G5) + ADR-036 + harness-factory ★ 첫 실 트리거 (payoff deferred 첫 실증) + Skill 21 유지 + P-META-FACTORY-002 신규 + pytest 339 유지 (dry-run) |
 | **M2** | **Meta-Factory GAP Remediation (★ meta-phase — M1 8 GAP machinery 반영 + 재검증)** | **done** (2026-05-31) | 3 Slice (S1 생성-입력/절차 + S2 scaffold/schema + S3 재검증) + doc-sync + ★ 런타임 0 (A9) + **additive-only** backward-compat + **P-X1 55연속** + 백로그 **8→0** (addressed 7 + expressible 1) + 6검증 재판정 PASS 5/PENDING-BY-DESIGN 1 + CC-007 (machinery 8 GAP) + ADR-037 + harness-factory 두 번째 실 트리거 + multi-llm formal 아홉 번째 + **self-improvement loop 완주** (M0→M1→M2) + P-ADDITIVE-COMPAT-001 신규 + Skill 21 유지 + pytest 339 유지 |
-| **next** | **🟡 pending_user_decision** (A Phase 10 통합 / B Phase 11+) | **next** | Phase 9.5 + Phase M0 + M1 + M2(meta-phase) ✅ done — 다음 제품 phase 사용자 결정 대기 (meta-phase detour 종료, Meta-Factory self-improvement loop 완주, next_phase_status 불변) |
+| **M3** | **이질 도메인 dry-run (★ meta-phase — 범용성 2차 검증, 재무)** | **done** (2026-05-31) | 2 Slice dry-run (S1 생성 + S2 validation) + doc-sync + ★ machinery 0줄(개선본 읽기만) + 런타임 0(A9) + outputs/TEST/ 외 0(MG1) + **P-X1 57연속** + 범용 **강함**(미디어 편향 0) + M2 개선 유효 7/부분 1/부적합 0 + 6검증 PASS 4/PENDING-BY-DESIGN 2 + 새 GAP 3(전부 minor/nice-to-have, blocking 0 → 백로그) + harness-factory 세 번째 실 트리거 + ★ **분기 = Phase 10 직행** + Skill 21 유지 + pytest 339 유지 |
+| **10** | **MVP 통합 테스트** | **🟢 기획 진입 예정** | Phase M3 분기 = Phase 10 직행. meta-phase detour(M0~M3) 종료, 제품 로드맵 복귀 — MVP end-to-end 통합 + 누적 baseline 회귀 + (아래 §Phase 10 옵션 참조) |
 | 10 | MVP 통합 테스트 | planned | MVP 전체 end-to-end 검증 + Phase 1~9.5 누적 baseline 통합 회귀 + eval-run golden_set 회귀 baseline 활용 + P-AUX-2 brand_memory_extractor agent 실 구현 + 실 LLM eval mode + RAG eval_rubric golden_set 정식화 + 배포 테스트 게이트 준비 |
 | 11~20 | 서비스 안정화 | future | UX, eval, cost, fallback, 피드백 |
 | 21~30 | 확장 / 고도화 | future | Spring, Expo, Custom RAG, LangGraph |
@@ -342,10 +343,31 @@ Skill 첫 정식: contract-change 여덟 번째 본격 CC-007 (machinery 8 GAP a
 다음 단계  : 검증5 실 eval-run 표본 (pending-by-design 실측 해소, eval-run §3~§6) / 이질 도메인 dry-run (개선 machinery 범용성 2차 검증) / Phase 10 연결 — meta-phase detour(M0+M1+M2) 종료, next_phase_status pending_user_decision 불변
 ```
 
-## 🟡 Next phase: pending_user_decision (2026-05-31)
+## Phase M3 done (archive) — ★ meta-phase (이질 도메인 범용성 2차)
+
+`phases/archive/phase-M3-heterogeneous-dryrun/`
 
 ```
-Phase 9.5 + Phase M0 + Phase M1 + Phase M2 (meta-phase detour — Meta-Factory self-improvement loop 완주) 종료. 다음 phase는 사용자 결정 대기.
+Status     : ✅ DONE (2026-05-31)
+유형       : ★ meta-phase dry-run (M1 동형 — machinery 0 변경, 개선본 읽기만. 범용성 2차 검증, ~3h)
+Goal       : M2 개선 machinery(G1~G8)를 이질 도메인「개인 재무 플래닝 AI」에 dry-run 적용 — 범용성 + M2 개선 유효성 + 새 GAP
+Result     : 2 Slice dry-run (S1 생성 finance/ 9파일 + S2 validation) + doc-sync + ★ 런타임 0(A9) + machinery 0(개선본 읽기만) + outputs/TEST/ 외 0(MG1) + pytest 339 유지
+산출물     : outputs/TEST/finance/ (without+brief+blueprint+scaffold 6) + sample_test_finance_validation + 백로그(improvement_reports/2026-05-31_M3-new-gaps-backlog) + doc-sync (retrospective + patterns + skill_usage_log + state 2 + closing)
+Sub-agent  : 2 dispatches (S1·S2), 충돌 0 — P-X1 2/2 PASS (outputs/TEST/finance 격리)
+회고       : meta/retrospectives/phase-M3.md
+신규 패턴  : P-META-FACTORY-002 update (범용성 2차 — 인접+이질 양쪽 입증) + P-X1-EFFECT-001 update (57연속) + P-ADDITIVE-COMPAT-001 재확인
+Mitigated  : P-AGENT-SCOPE-001 (57연속 — ... + M2:3 + M3:2)
+Skill      : harness-factory 세 번째 실 트리거 (이질 도메인 생성·검증) + meta-retrospective
+결과       : 범용 강함(미디어 편향 0) + M2 개선 유효 7/부분 1(G3 문서)/부적합 0 + 6검증 PASS 4/PENDING-BY-DESIGN 2(fail 0) + 새 GAP 3(NEW-G9 minor/G10 nice/G11 nice, blocking 0)
+사용자 결정 : 2건 (이질 도메인 dry-run 진행 / 수정 요소 없으면 Phase 10 직행)
+핵심 성과  : **P-X1 57연속 + machinery 0줄(개선본 읽기만) + 런타임 0(A9) + 도메인 범용성 입증(인접 M1 팟캐스트 + 이질 M3 재무) + Meta-Factory detour(M0~M3) 종료**
+다음 단계  : ★ Phase 10 (MVP 통합 테스트) 기획 — 제품 로드맵 복귀. 새 GAP 3 백로그(Phase 10 후/차기 meta-phase, blocking 0)
+```
+
+## 🟢 Next phase: Phase 10 MVP 통합 테스트 기획 진입 (2026-05-31)
+
+```
+Phase 9.5 + Phase M0 + M1 + M2 + M3 (meta-phase detour — Meta-Factory self-improvement loop 완주 + 도메인 범용성 입증) 종료. 제품 로드맵 복귀 → Phase 10 기획.
 
 다음 phase 옵션:
 

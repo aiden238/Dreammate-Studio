@@ -100,9 +100,10 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **재평가 시점**: Phase 3 코드 phase 진행 중 (같은 .tsx 파일 sub-section 동시 수정 위험 ↑) — P-X1 적용 후 효과 측정
 - **연관 Skill / Contract**: phase-start §6.3, multi_slice_plan template, sub-agent prompt format
 
-### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 55연속 PASS 효과 측정 (update 2026-05-31 Phase M2 — Meta-Factory GAP 반영 additive-only machinery 변경)
+### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 57연속 PASS 효과 측정 (update 2026-05-31 Phase M3 — 이질 도메인 dry-run, machinery 개선본 읽기만)
 
-- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 + Phase M0 3 + Phase M1 2 + Phase M2 3 = **55 Slice 누적**, 0 deviation)
+- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 + Phase M0 3 + Phase M1 2 + Phase M2 3 + Phase M3 2 = **57 Slice 누적**, 0 deviation)
+- **Phase M3 update (2026-05-31)**: 이질 도메인(재무) dry-run 2 Slice(S1 generation dbd4f7e + S2 validation 3ad817e) §SELF-VERIFICATION PASS. dry-run sub-agent 가 machinery **개선본**(M2)을 읽기만 하고 쓰기는 outputs/TEST/finance + validation 리포트에만 — machinery·podcast(M1·M2)·런타임 0줄. MG1(outputs/TEST/ 외 0줄) 게이트. 57연속.
 - **Phase M2 update (2026-05-31)**: GAP 보완 3 Slice(S1 generation/input 131ee06 + S2 scaffold/schema 2058661 + S3 재검증 dd45cdc) 모두 §SELF-VERIFICATION PASS. ★ M1(dry-run, machinery 읽기만)과 반대로 M2 는 **machinery 를 실제 변경(additive)** — S1·S2 editable 은 지정 machinery 파일만, S3 editable 은 outputs/TEST/만. forbidden(product contract/Skill/runtime/blueprints) 0 변경 + ★ **additive-only 게이트(기존 필드·절차 삭제·재명명 0)** 로 backward-compat 강제. 55연속 누적.
 - **Phase M1 (2026-05-31)**: Meta-Factory 첫 dry-run(S1 dbe43c5 + S2 83fc1ac) 2 Slice §SELF-VERIFICATION PASS. ★ MG1 게이트(dry-run 변경이 outputs/TEST/ 외부 0줄)로 강제. dry-run sub-agent 는 machinery 읽기만, 쓰기는 outputs/TEST/ 에만. phase 등록/회고/archive 는 main 세션 별도 commit 분리.
 - **최초 식별**: 2026-05-28 (Phase 3) — Phase 4에서 9연속 update — Phase 4.5에서 13연속 update — Phase 6에서 17연속 update — Phase 5에서 22연속 update — Phase 5.5에서 26연속 update — Phase 7에서 31연속 update — Phase 8에서 36연속 update — Phase 9에서 42연속 update — Phase 9.5에서 47연속 update — Phase M0에서 **50연속 누적 update (★ 첫 meta-phase)**
@@ -164,7 +165,8 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - meta/retrospectives/phase-M1.md + meta/retrospectives/phase-M2.md
   - docs/decisions/phase_M1_meta_factory_sample_test.md (ADR-036) + phase_M2_meta_factory_gap_remediation.md (ADR-037)
   - meta_factory/outputs/TEST/sample_test_podcast_validation.md (M1 6검증 + GAP 8) + sample_test_podcast_revalidation.md (M2 재검증 before/after)
-- **상태**: 신규 등록 후보 → **첫 완주 입증** (M0→M1→M2 한 사이클). 두 번째 도메인/2nd 하네스 사이클 시 정식 채택.
+- **Phase M3 update (2026-05-31) — 범용성 2차 검증**: M2 개선본을 **이질 도메인(재무)**에 dry-run 적용 → **범용 강함**(미디어 편향 0) + M2 개선 8요소 유효 7/부분 1/부적합 0 + 새 GAP 3(전부 minor/nice-to-have, blocking 0 → 백로그). 인접(M1 팟캐스트) + 이질(M3 재무) 양쪽 입증 → Meta-Factory **도메인 범용성** 확인. 분기 = Phase 10 직행.
+- **상태**: 신규 등록 후보 → **완주 + 범용성 2차 입증** (M0 도입 → M1 인접 검증 → M2 반영 → M3 이질 범용성). 2nd 실 하네스 생성 시 정식 채택. 새 GAP 백로그: `meta_factory/outputs/improvement_reports/2026-05-31_M3-new-gaps-backlog.md` (G9/G10/G11).
 
 ### Pattern P-ADDITIVE-COMPAT-001: additive-only 로 machinery/contract 개선 시 backward-compat 보장 (Phase M2 신규 후보)
 
