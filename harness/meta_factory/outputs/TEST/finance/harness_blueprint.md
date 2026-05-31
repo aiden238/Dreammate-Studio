@@ -361,9 +361,9 @@ routing_docs:
 
 ```yaml
 validation:
-  trigger_validation: pending           # S2 검증 1 — 재사용 5 Skill 트리거 정합 + 신규 0 → false trigger 0 + agent supervisor 정합. (S1 dry-run: 미수행 = pending)
-  contract_consistency: pending          # S2 검증 3 — 4 cross-ref 축 + 조건부 산출 축(debt/insurance) drift 0 검증. (S1: pending)
-  with_without_skill_eval: pending       # S2 검증 4 — 누락률 정량 + 품질·일관성. (S1: pending)
+  trigger_validation: pass               # ★ S2 검증 1 PASS — 재사용 5 Skill 트리거 정합 + 신규 0 → false trigger 0 + 6 agent supervisor 정합(직접 호출 금지). (정적 정합 PASS, 런타임 트리거 실측 미수행 — sample_test_finance_validation.md §A1)
+  contract_consistency: pass             # ★ S2 검증 3 PASS — 4 cross-ref 축 + 조건부 산출 축(debt has_debt / insurance has_dependents) drift 0, G3 양면 정합. GAP-flag 없음. (§A3)
+  with_without_skill_eval: pass / pending-by-design  # ★ S2 검증 4 — 누락률 PASS(WITH 누락0 ≪ WITHOUT 누락6, §E) / 품질·일관성 = pending-by-design(실 LLM 미호출 dry-run 정상, G8). (§A4)
 
 # ★ G8 enum 행사 (harness_blueprint_schema §3.1 Validation — pending vs pending-by-design 구별):
 #   eval_run_integration: pending-by-design   # 검증5 — 절차/임계값/케이스 매핑 전부 적용 가능 / 실 LLM 호출 실측만 미수행 = dry-run 정상
