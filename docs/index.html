@@ -96,27 +96,36 @@ flowchart LR
     </section>
 
     <section id="wbs" class="slide">
-      <p class="eyebrow">04. WBS Dashboard</p>
-      <h2>진행중 프로젝트 WBS 일괄 확인</h2>
-      <div class="grid two">
-        <article class="progress"><strong>70%</strong><span>MVP 기준 진행률</span></article>
-        <div class="stack">
-          <article class="card"><span class="tag done">완료</span><h3>MVP 통합 테스트 / RAG Lite / MOA Lite / 결과 저장</h3><p>핵심 기능 흐름은 Phase 10 기준으로 통합 검증을 완료했습니다.</p></article>
-          <article class="card"><span class="tag doing">진행중</span><h3>GitHub Pages 발표자료 / WBS 시각화</h3><p>수업 요구사항에 맞춰 URL 기반 발표자료를 구성했습니다.</p></article>
-          <article class="card"><span class="tag next">다음</span><h3>배포 Gate B~G 또는 Phase 11+</h3><p>staging, alpha, beta, 운영 배포 또는 고도화 Phase로 이어갑니다.</p></article>
+      <div class="wbs-frame">
+        <div class="wbs-header">
+          <div>
+            <p class="eyebrow">04. WBS Dashboard</p>
+            <h2>진행중 프로젝트 WBS</h2>
+          </div>
+          <p class="wbs-subtitle">완료·진행중·다음 작업을 발표 한 화면에서 확인하도록 재정렬했습니다.</p>
         </div>
+
+        <div class="wbs-grid">
+          <article class="progress"><strong>70%</strong><span>MVP 기준 진행률</span></article>
+          <div class="stack">
+            <article class="card"><span class="tag done">완료</span><h3>MVP 통합 테스트</h3><p>RAG Lite, MOA Lite, 결과 저장까지 핵심 흐름 검증 완료</p></article>
+            <article class="card"><span class="tag doing">진행중</span><h3>GitHub Pages 발표자료</h3><p>URL 실행, WBS 시각화, Mermaid 아키텍처 표현</p></article>
+            <article class="card"><span class="tag next">다음</span><h3>배포 Gate B~G</h3><p>staging → alpha → beta → 운영 배포 또는 Phase 11+ 고도화</p></article>
+          </div>
+        </div>
+
+        <table class="wbs-table">
+          <thead><tr><th>구분</th><th>작업</th><th>산출물</th><th>상태</th></tr></thead>
+          <tbody>
+            <tr><td>기획</td><td>문제 정의·비전 정리</td><td>영상기획 AI 에이전트 방향성</td><td>완료</td></tr>
+            <tr><td>UX</td><td>Discovery / Quick Mode</td><td>사용자 입력 분기 흐름</td><td>완료</td></tr>
+            <tr><td>AI</td><td>RAG Lite + MOA + Critic</td><td>근거 검색·후보 생성·품질 검증</td><td>완료</td></tr>
+            <tr><td>데이터</td><td>결과 저장·피드백 이벤트</td><td>선택 결과와 피드백 저장 구조</td><td>완료</td></tr>
+            <tr><td>발표</td><td>GitHub Pages WBS</td><td>URL 방식 발표자료</td><td>진행중</td></tr>
+            <tr><td>배포</td><td>Gate B~G 준비</td><td>배포 단계 기준</td><td>다음</td></tr>
+          </tbody>
+        </table>
       </div>
-      <table>
-        <thead><tr><th>구분</th><th>작업</th><th>산출물</th><th>상태</th></tr></thead>
-        <tbody>
-          <tr><td>기획</td><td>문제 정의와 비전 정리</td><td>영상기획 AI 에이전트 방향성</td><td>완료</td></tr>
-          <tr><td>UX</td><td>Discovery Wizard / Quick Mode</td><td>사용자 분기 흐름</td><td>완료</td></tr>
-          <tr><td>AI</td><td>RAG Lite + MOA + Critic</td><td>근거 검색, 후보 생성, 품질 검증</td><td>완료</td></tr>
-          <tr><td>데이터</td><td>결과 저장과 피드백 이벤트</td><td>기획 선택과 피드백 저장 구조</td><td>완료</td></tr>
-          <tr><td>발표</td><td>GitHub Pages WBS 대시보드</td><td>URL 실행 발표자료</td><td>진행중</td></tr>
-          <tr><td>배포</td><td>Gate B~G 준비</td><td>배포 단계 기준</td><td>다음</td></tr>
-        </tbody>
-      </table>
     </section>
 
     <section id="script" class="slide">
