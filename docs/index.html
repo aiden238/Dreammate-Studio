@@ -91,15 +91,20 @@
     <section id="architecture" class="slide architecture-slide">
       <p class="eyebrow">03. System Architecture · Agent Pipeline</p>
       <h2>소프트웨어 아키텍처와 AI 에이전트 파이프라인</h2>
-      <div class="arch-split">
-        <article class="card diagram arch-block software-arch">
-          <h3>Software Architecture — Front / Back</h3>
+      <div class="arch-split upgraded-arch">
+        <article class="card arch-block software-arch">
+          <div class="arch-title-row">
+            <h3>Software Architecture</h3>
+            <span>Front / Back / Data</span>
+          </div>
+          <div class="arch-row-content">
+            <div class="diagram arch-mermaid-box">
 <pre class="mermaid">
 flowchart LR
-  U[사용자] --> FE[Next.js PWA<br/>브랜드 질문 UI]
-  FE --> API[FastAPI BFF<br/>인증·기획 요청·SSE]
-  API --> AI[AI Orchestrator<br/>기획 에이전트 실행]
-  API --> DB[Supabase<br/>Auth / DB / Storage]
+  U[User] --> FE[Next.js]
+  FE --> API[FastAPI]
+  API --> AI[AI Engine]
+  API --> DB[(Supabase)]
   AI --> API
   DB --> FE
 
@@ -110,33 +115,48 @@ flowchart LR
   class API,AI back;
   class DB data;
 </pre>
+            </div>
+            <div class="arch-notes">
+              <article><b>Next.js PWA</b><span>Discovery / Quick UI</span></article>
+              <article><b>FastAPI BFF</b><span>인증·기획 요청·SSE 진행률</span></article>
+              <article><b>AI Engine</b><span>기획 에이전트 실행</span></article>
+              <article><b>Supabase</b><span>Auth / DB / Storage</span></article>
+            </div>
+          </div>
         </article>
 
-        <article class="card diagram arch-block pipeline-arch">
-          <h3>AI Agent Pipeline — 내부 처리 흐름</h3>
+        <article class="card arch-block pipeline-arch">
+          <div class="arch-title-row">
+            <h3>AI Agent Pipeline</h3>
+            <span>내부 처리 흐름</span>
+          </div>
+          <div class="arch-row-content">
+            <div class="diagram arch-mermaid-box">
 <pre class="mermaid">
 flowchart LR
-  A[Intent Router<br/>신규·기존 분기] --> B[RAG Lite<br/>근거 검색]
-  B --> C[Plan Generator<br/>3개 후보 생성]
-  C --> D[Critic Agent<br/>품질 평가]
-  D --> E[Rewriter Loop<br/>최대 2회 개선]
-  E --> F[Result Save<br/>기획안·피드백 저장]
-  F --> G[Brand Memory<br/>다음 기획 반영]
+  A[Router] --> B[RAG]
+  B --> C[Generator]
+  C --> D[Critic]
+  D --> E[Rewriter]
+  E --> F[Save]
+  F --> G[Memory]
+  G -.next.-> A
 
   classDef agent fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#312e81;
   classDef memory fill:#f0fdf4,stroke:#12b76a,stroke-width:2px,color:#14532d;
   class A,B,C,D,E agent;
   class F,G memory;
 </pre>
+            </div>
+            <div class="arch-notes pipeline-notes">
+              <article><b>Router</b><span>신규·기존 사용자 분기</span></article>
+              <article><b>RAG</b><span>LLM Wiki + 근거 검색</span></article>
+              <article><b>Generator</b><span>3개 영상기획 후보 생성</span></article>
+              <article><b>Critic / Rewriter</b><span>품질 평가 후 최대 2회 개선</span></article>
+              <article><b>Save / Memory</b><span>결과·피드백 저장 후 다음 기획 반영</span></article>
+            </div>
+          </div>
         </article>
-      </div>
-      <div class="agent-pipeline-strip">
-        <span>1. 입력 분기</span>
-        <span>2. 근거 검색</span>
-        <span>3. 후보 생성</span>
-        <span>4. 품질 검증</span>
-        <span>5. 저장·피드백</span>
-        <span>6. 개인화 반영</span>
       </div>
     </section>
 
