@@ -190,10 +190,10 @@ main {
   border-bottom: 6px solid transparent;
 }
 
-.line-user-fe { left: 19%; top: 50%; width: 6%; }
-.line-fe-api { left: 41%; top: 50%; width: 7%; }
-.line-api-ai { left: 62%; top: 42%; width: 19%; transform: rotate(-18deg); }
-.line-api-db { left: 62%; top: 58%; width: 18%; transform: rotate(18deg); }
+.line-user-fe { left: 23.2%; top: 50%; width: 2.1%; }
+.line-fe-api { left: 45.8%; top: 50%; width: 2.2%; }
+.line-api-ai { left: 69.4%; top: 43%; width: 8.4%; transform: rotate(-18deg); }
+.line-api-db { left: 69.4%; top: 57%; width: 8.4%; transform: rotate(18deg); }
 
 .arch-notes {
   display: grid;
