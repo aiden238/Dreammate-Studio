@@ -34,15 +34,17 @@ from backend.fastapi.schemas.output import Envelope
 # ── load_golden_set ──────────────────────────────────────────────────
 
 def test_load_golden_set_15_cases() -> None:
-    """golden_set.md → GS-001~GS-015 정확히 15 케이스 (단일 출처 파싱).
+    """golden_set.md → GS-001~GS-025 정확히 25 케이스 (단일 출처 파싱).
 
     의도된 delta (Phase 10 golden_set 확대 11 → 15, CC-009):
       GS-001~011 보존 + GS-012~015 추가 (Quick 저신뢰 / Discovery 다단계 / RAG graceful / 다른 도메인).
+    # Phase 12 S1: golden_set 15→25 확대 (CC-011) — GS-001~015 보존 + GS-016~025 추가
+    #   (요리/뷰티/IT리뷰/운동/여행/교육/패션/반려동물/제품홍보/게임리뷰 도메인 다양성).
     """
     cases = load_golden_set()
-    assert len(cases) == 15
+    assert len(cases) == 25  # Phase 12 S1: golden_set 15→25 확대 (CC-011)
     ids = [c["id"] for c in cases]
-    assert ids == [f"GS-{n:03d}" for n in range(1, 16)]
+    assert ids == [f"GS-{n:03d}" for n in range(1, 26)]  # Phase 12 S1: 1~16 -> 1~26
 
 
 def test_load_golden_set_case_structure() -> None:
@@ -59,16 +61,18 @@ def test_load_golden_set_case_structure() -> None:
 
 
 def test_load_golden_set_priority_grades() -> None:
-    """golden_set.md §3 우선순위 정합 — P0 7개 / P1 6개 / P2 2개.
+    """golden_set.md §3 우선순위 정합 — P0 8개 / P1 12개 / P2 5개.
 
     의도된 delta (Phase 10 확대, CC-009): P1 3→6 (GS-012/013/014), P2 1→2 (GS-015).
-    P0 7개는 불변 (기존 핵심 흐름/보안 케이스 보존).
+    # Phase 12 S1: golden_set 15→25 확대 (CC-011) — P0 7→8 (GS-022 제품홍보 광고차단),
+    #   P1 6→12 (GS-016/018/020/023/024/025), P2 2→5 (GS-017/019/021).
+    #   기존 P0 7 케이스(핵심 흐름/보안)는 불변 (추가만).
     """
     cases = load_golden_set()
     grades = [c["priority"] for c in cases]
-    assert grades.count("P0") == 7
-    assert grades.count("P1") == 6
-    assert grades.count("P2") == 2
+    assert grades.count("P0") == 8  # Phase 12 S1: 7→8 (+GS-022)
+    assert grades.count("P1") == 12  # Phase 12 S1: 6→12 (+6)
+    assert grades.count("P2") == 5  # Phase 12 S1: 2→5 (+3)
 
 
 def test_load_golden_set_missing_file_graceful(tmp_path: Path) -> None:
@@ -167,13 +171,14 @@ def test_detect_blocked_words_case_insensitive() -> None:
 # ── run_golden_set_eval (mock) ───────────────────────────────────────
 
 def test_run_golden_set_eval_mock_passes() -> None:
-    """15 케이스 mock 실행 → schema 100% + 게이트 통과.
+    """25 케이스 mock 실행 → schema 100% + 게이트 통과.
 
-    의도된 delta (Phase 10 확대 11 → 15, CC-009). mock 경로/채점 로직 불변.
+    의도된 delta (Phase 10 확대 11 → 15, CC-009; Phase 12 S1 확대 15 → 25, CC-011).
+    mock 경로/채점 로직 불변 (추가 케이스도 동일 canonical fixture → 동일 pass).
     """
     result = run_golden_set_eval(mode="mock")
     summary = result["summary"]
-    assert summary["total"] == 15
+    assert summary["total"] == 25  # Phase 12 S1: golden_set 15→25 확대 (CC-011)
     assert summary["schema_rate"] == 1.0
     assert summary["pass_rate"] == 1.0
     assert summary["ad_rate"] == 0.0

@@ -67,6 +67,29 @@ LLM 자동 채점(P-007)과 룰 기반 검사로 거르지 못하는 케이스�
 5점: 사용자 만족 예상
 ```
 
+### 2.6 depth_actionability — 기획 깊이·실행가능성 (사람 채점, 0~1)
+
+> Phase 12 S1 (2026-06-02, CC-011) **additive** 추가. §2.1~2.5 (content_quality / safety /
+> brand_fit / promotion_value / user_response_risk) 정의·스케일은 **무변경**.
+> 본 차원은 `eval/video_planning_eval.md` §2.A.1 depth_actionability 와 **동일 축** — 사람이 직접 0~1 로 매긴다.
+> ★ 0~5 가 아닌 **0~1 실수 스케일** (§2.1~2.5 의 0~5 평균 산식 human_avg 에는 미포함 — 별도 기록).
+
+```
+정의: 출력이 "창작자가 추가 질문 없이 바로 촬영·편집에 착수할 만큼 구체적이고 실행 가능한가"를
+      사람이 판단. 현재 compact 출력(plan 골격)이 바로 쓰기엔 얼마나 얕은지 / 확장 출력이 얼마나
+      깊은지를 사람 눈으로 채점.
+측정 (video_planning_eval §2.A.1 과 동일): hook 변형 수 / beat 의 화면·대사·자막·목적 구체성 /
+      샷·B-roll / 썸네일·제목·CTA / 레퍼런스 / 길이 변형 포함도 / 전반 실행가능성.
+채점 스케일: 0.0 ~ 1.0 (실수).
+  0.2  매우 얕음 — 현 compact 수준 (plan 골격만, 바로 찍기엔 추가 질문 다수).
+  0.6  보통 — beat 화면·목적은 구체적이나 샷/B-roll/썸네일/제목/CTA/레퍼런스/길이변형 일부 누락.
+  1.0  매우 구체적 — hook 변형 + beat 4요소(화면/대사/자막/목적) + 샷·B-roll + 썸네일·제목·CTA
+       + 레퍼런스 + 길이 변형까지 포함, 추가 질문 없이 바로 촬영·편집 착수 가능.
+용도: Phase 12 검증 — compact vs 확장(B안) 출력의 깊이 격차를 사람 채점으로 정량화.
+     plan 생성 결과(P-006/최종 output) 검토 시 채점. RAG 승격/신고 검토에는 선택적.
+주의: 자동(LLM/룰) 채점이 의미있게 못 매기는 차원이므로 사람 채점이 1차 기준 (mock 러너 미채점).
+```
+
 ---
 
 ## 3. 입력 / 출력 형식
@@ -101,7 +124,8 @@ human_scores:
   brand_fit: 0~5
   promotion_value: 0~5
   user_response_risk: 0~5
-human_avg: 0~5
+human_avg: 0~5                       # §2.1~2.5 (0~5) 5 차원 평균 — §2.6 미포함
+depth_actionability: 0.0~1.0         # §2.6 (Phase 12 S1, CC-011) — plan 깊이·실행가능성, 별도 0~1 축. plan 검토 시 기록(선택)
 comment_standard: "string (§5 표준 코멘트 참조)"
 comment_free: "string (자유 메모, 100자 이내)"
 diff_with_llm: { llm_score - human_score per 차원 }

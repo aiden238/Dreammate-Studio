@@ -23,7 +23,7 @@
 
 이 문서가 정의하는 대상:
 
-1. 회귀에 사용할 입력 케이스 15개 (GS-001 ~ GS-015) — Phase 10 확대 (11 → 15)
+1. 회귀에 사용할 입력 케이스 25개 (GS-001 ~ GS-025) — Phase 10 확대 (11 → 15) · Phase 12 S1 확대 (15 → 25)
 2. 케이스 우선순위 등급 (P0 / P1 / P2)
 3. 회귀 실행 정책 (CI 트리거 / 통과 임계)
 4. 결과 기록 위치 / 보존 정책
@@ -69,9 +69,10 @@ notes:
 
 ---
 
-## 2. 케이스 정의 (15개)
+## 2. 케이스 정의 (25개)
 
 > Phase 10 (2026-05-31) 확대: GS-001~011 (11) 보존 + GS-012~015 (4) 추가 (Quick 저신뢰 / Discovery 다단계 / RAG graceful / 다른 도메인). CC-009 참조.
+> Phase 12 S1 (2026-06-02) 확대: GS-001~015 (15) 보존 + GS-016~025 (10) 추가 (영상기획 도메인 다양성↑ — 요리/뷰티/IT리뷰/운동/여행/교육/브이로그/제품홍보/패션/반려동물 × 길이 15s/30s/60s × intent quick/discovery). CC-011 참조. additive (기존 케이스 무변경).
 
 ### 2.1 GS-001 · 신규 브랜드 / 콜드스타트 / Discovery Step 1
 
@@ -628,6 +629,406 @@ notes:
   - "→ output_schema §3 P-001"
 ```
 
+### 2.16 GS-016 · 요리 / 레시피 숏폼 / Quick Mode 30초 (Phase 12 S1)
+
+```yaml
+case_id: GS-016
+name: "요리 도메인 / 한 그릇 레시피 30초 쇼츠 / Quick Mode"
+priority: P1
+mode: quick
+prompt_target: P-005 (oneline_direction)
+input:
+  user_message: "자취생 한 그릇 김치볶음밥 레시피 30초 쇼츠로 만들고 싶어"
+  brand_context:
+    brand_id: "brand-cook"
+    name: "자취요리 채널 한끼"
+    direction_label: "초간단 레시피형"
+    tone: { primary: "친근·실용형" }
+  rag_context: []
+  brand_memory:
+    preferred_phrases: ["10분 컷", "재료 최소"]
+    avoid_phrases: ["완벽한"]
+    preferred_tone: "친근·실용형"
+expected_path:
+  - intent_decision: allow
+  - discovery_step: quick
+  - prompt_id: P-005 (oneline_direction)
+  - cards_returned: 0
+expected_output:
+  body_keys: [one_line, components, missing_info, confidence, rewrite_offered]
+  validation:
+    - one_line 20–70자
+    - components.format == "shorts_30s"
+    - components.length_sec == 30
+    - missing_info.length ≤ 2
+    - confidence ≥ 0.5
+    - rewrite_offered == false (confidence ≥ 0.5이므로)
+  passing_criteria:
+    - 광고 단어 0개
+    - brand_memory.avoid_phrases 인용 없음
+    - missing_info에 "영상 포맷" 없음 (이미 30초로 명시됨)
+notes:
+  - "요리 도메인 Quick 베이스라인 (GS-002 동아리 Quick의 도메인 대칭). 도메인 편향 없이 동일 구조."
+  - "Phase 12 S1 golden_set 확대 — 요리 도메인 + Quick 커버리지 보강."
+  - "→ output_schema §7 P-005, agent_io §3.1 Intent"
+```
+
+### 2.17 GS-017 · 뷰티 / 메이크업 튜토리얼 / Discovery Step 1 (Phase 12 S1)
+
+```yaml
+case_id: GS-017
+name: "뷰티 도메인 / 데일리 메이크업 튜토리얼 / Discovery Step 1 (Brand 카드)"
+priority: P2
+mode: discovery
+prompt_target: P-001
+input:
+  user_message: "직장인 데일리 메이크업 알려주는 채널 영상 만들고 싶어요"
+  brand_context: null
+  rag_context: []
+  brand_memory: null
+expected_path:
+  - intent_decision: allow
+  - discovery_step: 1
+  - prompt_id: P-001 (brand_direction_cards)
+  - cards_returned: 4
+  - user_input_slot: 1
+expected_output:
+  body_keys: [cards, user_input_slot]
+  validation:
+    - cards.length == 4
+    - 모든 카드 kind == "ai_suggestion"
+    - 모든 카드 name 8–14자 (NFC 정규화 후)
+    - 모든 카드 description 30–50자
+    - 모든 카드 confidence ∈ [0,1] AND 평균 ≥ 0.5
+    - validation.passed == true
+    - 광고 단어 1차 단어 0개 (출력 전체)
+  passing_criteria:
+    - JSON schema 검증 통과 (envelope + body)
+    - 4장 + slot 1 구조 정합
+    - 도메인 무관(뷰티)하게 동일 구조/품질 baseline 유지
+notes:
+  - "뷰티 도메인 Discovery Step 1 (GS-001/GS-015 대칭). 도메인 편향 없이 동일 baseline."
+  - "Phase 12 S1 golden_set 확대 — 뷰티 도메인 커버리지 보강."
+  - "→ output_schema §3 P-001"
+```
+
+### 2.18 GS-018 · IT 제품 리뷰 / 60초 / Discovery Step 2 (Tone 카드) (Phase 12 S1)
+
+```yaml
+case_id: GS-018
+name: "IT 리뷰 도메인 / 가성비 무선이어폰 리뷰 60초 / Discovery Step 2 (Tone 카드)"
+priority: P1
+mode: discovery
+prompt_target: P-002 (tone_cards)
+input:
+  user_message: "(Step 1에서 'IT 제품 리뷰형' 승인 후 시점)"
+  brand_context:
+    brand_id: "brand-it"
+    name: "가성비 IT 리뷰어"
+    direction_label: "IT 제품 리뷰형"
+  rag_context: []
+  brand_memory: null
+expected_path:
+  - intent_decision: allow
+  - discovery_step: 2
+  - prompt_id: P-002 (tone_cards)
+  - cards_returned: 4
+  - user_input_slot: 1
+expected_output:
+  body_keys: [cards, user_input_slot]
+  validation:
+    - cards.length == 4
+    - 모든 카드 kind == "ai_suggestion"
+    - 모든 카드 confidence ∈ [0,1]
+    - validation.passed == true
+    - 광고 단어 1차 단어 0개 (출력 전체)
+  passing_criteria:
+    - JSON schema 검증 통과 (envelope + body)
+    - 4장 + slot 1 구조 정합
+    - Step 1 승인 컨텍스트(direction_label='IT 제품 리뷰형') 가 Step 2 카드 생성에 반영
+notes:
+  - "IT 리뷰 도메인 Discovery Step 2 (GS-013 동아리 Step 2의 도메인 대칭)."
+  - "Phase 12 S1 golden_set 확대 — IT 리뷰 도메인 + 60초 + Discovery 다단계 커버리지 보강."
+  - "→ output_schema §4 P-002"
+```
+
+### 2.19 GS-019 · 운동 / 홈트레이닝 / Quick Mode 15초 (Phase 12 S1)
+
+```yaml
+case_id: GS-019
+name: "운동 도메인 / 홈트 코어운동 15초 쇼츠 / Quick Mode"
+priority: P2
+mode: quick
+prompt_target: P-005 (oneline_direction)
+input:
+  user_message: "집에서 하는 코어운동 3동작 15초 쇼츠로 만들어줘"
+  brand_context:
+    brand_id: "brand-fit"
+    name: "홈트 채널 데일리핏"
+    direction_label: "초보 홈트형"
+    tone: { primary: "동기부여·간결형" }
+  rag_context: []
+  brand_memory:
+    preferred_phrases: ["딱 3동작", "맨몸"]
+    avoid_phrases: ["완벽한"]
+    preferred_tone: "동기부여·간결형"
+expected_path:
+  - intent_decision: allow
+  - discovery_step: quick
+  - prompt_id: P-005 (oneline_direction)
+  - cards_returned: 0
+expected_output:
+  body_keys: [one_line, components, missing_info, confidence, rewrite_offered]
+  validation:
+    - one_line 20–70자
+    - components.format == "shorts_15s"
+    - components.length_sec == 15
+    - missing_info.length ≤ 2
+    - confidence ≥ 0.5
+    - rewrite_offered == false (confidence ≥ 0.5이므로)
+  passing_criteria:
+    - 광고 단어 0개
+    - brand_memory.avoid_phrases 인용 없음
+    - missing_info에 "영상 포맷" 없음 (이미 15초로 명시됨)
+notes:
+  - "운동 도메인 + 15초 최단 포맷 Quick 케이스 (GS-002 30s / GS-016 30s 와 길이 대칭)."
+  - "Phase 12 S1 golden_set 확대 — 운동 도메인 + 15초 포맷 커버리지 보강 (포맷 enum shorts_15s 검증)."
+  - "→ output_schema §7 P-005, §18 enum 사전"
+```
+
+### 2.20 GS-020 · 여행 / 브이로그 / Critic revise 1회 → approve (Phase 12 S1)
+
+```yaml
+case_id: GS-020
+name: "여행 도메인 / 당일치기 여행 브이로그 / Critic revise 1회 후 approve"
+priority: P1
+mode: discovery
+prompt_target: P-006 → P-007 → P-008 → P-007
+input:
+  user_message: "(P-005 통과 후 시점, approved_direction='수도권 당일치기 감성 여행 60초')"
+  brand_context:
+    brand_id: "brand-travel"
+    name: "주말 여행 브이로그"
+    direction_label: "감성 기록형"
+  rag_context:
+    - { chunk_id: "c1", title: "여행 브이로그 오프닝 패턴", similarity: 0.81 }
+  brand_memory: { avoid_phrases: ["완벽한"] }
+expected_path:
+  - prompt_id: P-006 (plan_candidates)        # plans 3개
+  - prompt_id: P-007 × 3 (parallel)            # critic
+  - critic_revise_round: 0
+  - critic_verdict: revise                     # 1개 이상 revise
+  - prompt_id: P-008 (rewriter)
+  - prompt_id: P-007 (재평가)
+  - critic_revise_round: 1
+  - critic_verdict: approve
+expected_output:
+  body_keys: [improved_plan, changes_made, remaining_concerns, based_on_critic_id]
+  validation:
+    - improved_plan.plan_id == 원본 plan_id (id 보존)
+    - changes_made.length ≥ 1
+    - 재평가 결과 overall_score_avg ≥ 3.5
+    - 모든 점수 ≥ 2
+  passing_criteria:
+    - revise → rewriter → approve 흐름 1회 완주
+    - 무한 루프 없음
+    - quality_scores 테이블에 2 row (revise_round 0, 1)
+notes:
+  - "여행/브이로그 도메인 Critic revise 정상 흐름 (GS-005 동아리의 도메인 대칭)."
+  - "Phase 12 S1 golden_set 확대 — 여행/브이로그 도메인 + revise 흐름 커버리지 보강."
+  - "→ output_schema §9, §10, agent_io §5.8"
+```
+
+### 2.21 GS-021 · 교육 / 학습 콘텐츠 / Discovery Step 1 (Phase 12 S1)
+
+```yaml
+case_id: GS-021
+name: "교육 도메인 / 중학생 영어단어 암기법 채널 / Discovery Step 1 (Brand 카드)"
+priority: P2
+mode: discovery
+prompt_target: P-001
+input:
+  user_message: "중학생 대상 영어단어 외우는 법 알려주는 교육 채널 영상 만들고 싶어요"
+  brand_context: null
+  rag_context: []
+  brand_memory: null
+expected_path:
+  - intent_decision: allow
+  - discovery_step: 1
+  - prompt_id: P-001 (brand_direction_cards)
+  - cards_returned: 4
+  - user_input_slot: 1
+expected_output:
+  body_keys: [cards, user_input_slot]
+  validation:
+    - cards.length == 4
+    - 모든 카드 kind == "ai_suggestion"
+    - 모든 카드 name 8–14자 (NFC 정규화 후)
+    - 모든 카드 description 30–50자
+    - 모든 카드 confidence ∈ [0,1] AND 평균 ≥ 0.5
+    - validation.passed == true
+    - 광고 단어 1차 단어 0개 (출력 전체)
+  passing_criteria:
+    - JSON schema 검증 통과 (envelope + body)
+    - 4장 + slot 1 구조 정합
+    - 도메인 무관(교육)하게 동일 구조/품질 baseline 유지
+notes:
+  - "교육 도메인 Discovery Step 1 (GS-001/GS-015/GS-017 대칭). 도메인 편향 없이 동일 baseline."
+  - "Phase 12 S1 golden_set 확대 — 교육 도메인 커버리지 보강."
+  - "→ output_schema §3 P-001"
+```
+
+### 2.22 GS-022 · 제품 홍보 / 광고 단어 차단 (사용자 입력에 1차 단어 포함) (Phase 12 S1)
+
+```yaml
+case_id: GS-022
+name: "제품 홍보 도메인 / 광고 단어 차단 / 사용자 입력 1차 단어 (\"역대급\") 포함"
+priority: P0
+mode: discovery
+prompt_target: P-AUX-1 + 입력 정화
+input:
+  user_message: "우리 신상 텀블러는 역대급 보온력이에요. 이걸 제품 홍보 영상으로 만들고 싶어요"
+  brand_context: null
+  rag_context: []
+  brand_memory: null
+expected_path:
+  - intent_decision: allow         # 의도는 영상기획 맞음
+  - prompt_id: P-AUX-1 → P-001
+  - cards_returned: 4              # 카드는 생성되되 광고 단어 인용 금지
+expected_output:
+  body_keys: [cards, user_input_slot]
+  validation:
+    - 카드 출력 전체에 1차 광고 단어 0개 ("역대급", "최고의", "최고" 등)
+    - 2차 단어(특별한/놀라운/엄청난)가 카드에 있으면 validation.warnings에 기록
+    - 사용자 직접 인용은 검사 예외이나 LLM 출력은 인용해서는 안 됨
+  passing_criteria:
+    - LLM 출력 카드의 모든 텍스트 필드에서 1차 단어 미검출
+    - validation.passed == true
+    - 입력 자체 차단 정책일 경우 E-SEC-003 (현재는 LLM 출력만 차단)
+notes:
+  - "제품 홍보 도메인 광고 단어 차단 (GS-004 동아리 '최고의'의 도메인+단어 대칭, '역대급')."
+  - "사용자 입력의 광고 단어는 차단 대상 아님 (자기 표현 존중). LLM 출력 인용 시 자동 재생성."
+  - "Phase 12 S1 golden_set 확대 — 제품 홍보 도메인 + 광고 단어 정책 커버리지 보강."
+  - "→ output_schema §14, rag_data_contract §10"
+```
+
+### 2.23 GS-023 · 패션 / 코디 추천 / RAG retrieval 채택 (Phase 12 S1)
+
+```yaml
+case_id: GS-023
+name: "패션 도메인 / 가을 데일리룩 코디 / RAG 검색 top_k 5 → 채택 (similarity ≥ 0.7)"
+priority: P1
+mode: discovery
+prompt_target: RAG 검색 + P-006
+input:
+  user_message: "(P-005 통과 후, approved_direction='20대 가을 데일리룩 코디 60초 쇼츠')"
+  brand_context:
+    brand_id: "brand-fashion"
+    name: "데일리룩 코디 채널"
+    direction_label: "캐주얼 코디형"
+  rag_context_mock:               # 검색 mock 결과 (테스트용)
+    - { chunk_id: "c1", similarity: 0.84, content: "코디 비교 컷 전환 패턴 A" }
+    - { chunk_id: "c2", similarity: 0.76, content: "데일리룩 후킹 인트로 패턴 B" }
+    - { chunk_id: "c3", similarity: 0.71, content: "룩북 시퀀스 구성 패턴 C" }
+    - { chunk_id: "c4", similarity: 0.64, content: "장문 코디 해설 (threshold 미만)" }
+    - { chunk_id: "c5", similarity: 0.52, content: "관련 없는 사례 (threshold 미만)" }
+  brand_memory: null
+expected_path:
+  - rag_search: top_k=5, threshold=0.7, final_adoption≤3
+  - prompt_id: P-006
+expected_output:
+  body_keys: [plans, plans[*].rag_used]
+  validation:
+    - plans[*].rag_used.length ≤ 3
+    - rag_used의 source_id ⊆ {c1, c2, c3} (threshold 통과 chunk만)
+    - rag_used에 c4, c5 포함 금지
+    - validation.warnings에 "no_rag_reference" 없음 (3개 채택했으므로)
+  passing_criteria:
+    - 검색 정책 정합 (rag_data_contract §5.2)
+    - rag_used.used_reason 자유 텍스트 비어있지 않음
+notes:
+  - "패션 도메인 RAG 채택 (GS-007 동아리의 도메인 대칭). threshold/채택 수 정책 동일."
+  - "Phase 12 S1 golden_set 확대 — 패션 도메인 + RAG 검색 정책 커버리지 보강."
+  - "→ rag_data_contract §5, output_schema §8.3"
+```
+
+### 2.24 GS-024 · 반려동물 / 브이로그 / 포맷 분기 (15s / 30s / 60s) (Phase 12 S1)
+
+```yaml
+case_id: GS-024
+name: "반려동물 도메인 / 강아지 일상 브이로그 / 포맷 분기 (15초 / 30초 / 60초)"
+priority: P1
+mode: discovery
+prompt_target: P-005 → P-006
+input:
+  user_message: "(3가지 변형: 15초, 30초, 60초 각각 별도 케이스로 실행 — 강아지 산책 일상 브이로그)"
+  variants:
+    - { length_sec: 15, format: "shorts_15s" }
+    - { length_sec: 30, format: "shorts_30s" }
+    - { length_sec: 60, format: "shorts_60s" }
+  brand_context:
+    brand_id: "brand-pet"
+    name: "댕댕이 일상 채널"
+    direction_label: "일상 기록형"
+  rag_context: []
+  brand_memory: null
+expected_path:
+  - prompt_id: P-005
+  - prompt_id: P-006
+expected_output:
+  body_keys: [components.format, components.length_sec, plans[*].flow]
+  validation:
+    - 15초 케이스: format == "shorts_15s" AND length_sec == 15
+    - 30초 케이스: format == "shorts_30s" AND length_sec == 30
+    - 60초 케이스: format == "shorts_60s" AND length_sec == 60
+    - 모든 케이스: plans[*].flow.duration_sec 합 == length_sec ± 10%
+  passing_criteria:
+    - 포맷별 beat 수 다름 (15초 2~3 beat, 30초 3~4 beat, 60초 4~5 beat 권장)
+    - 도메인 무관(반려동물)하게 포맷 분기 동일 동작
+notes:
+  - "반려동물 도메인 포맷 분기 (GS-008 30/60/90의 길이 대칭 — 15/30/60 정상 enum 3종)."
+  - "Phase 12 S1 golden_set 확대 — 반려동물 도메인 + 포맷 enum 3종(15s/30s/60s) 커버리지 보강."
+  - "→ output_schema §7, §8, §18 enum 사전"
+```
+
+### 2.25 GS-025 · 게임 리뷰 / Quick Mode 모호 입력 → rewrite_offered (Phase 12 S1)
+
+```yaml
+case_id: GS-025
+name: "게임 리뷰 도메인 / Quick Mode 모호 입력 / confidence < 0.5 → rewrite_offered=true"
+priority: P1
+mode: quick
+prompt_target: P-005 (oneline_direction)
+input:
+  user_message: "게임 영상 하나 뽑아줘"
+  brand_context:
+    brand_id: "brand-game"
+    name: "인디게임 리뷰 채널"
+    direction_label: "게임 리뷰형"
+    tone: { primary: "솔직 리뷰형" }
+  rag_context: []
+  brand_memory: null
+expected_path:
+  - intent_decision: allow
+  - discovery_step: quick
+  - prompt_id: P-005 (oneline_direction)
+  - cards_returned: 0
+expected_output:
+  body_keys: [one_line, components, missing_info, confidence, rewrite_offered]
+  validation:
+    - confidence < 0.5
+    - rewrite_offered == true (저신뢰 → 재작성 제안)
+    - missing_info.length ≥ 1 (어떤 게임/포맷/길이 등 부족 정보 명시)
+    - one_line 20–70자
+  passing_criteria:
+    - 광고 단어 0개
+    - 저신뢰에서 임의 추정으로 진행하지 않고 명시적 재작성 제안
+notes:
+  - "게임 리뷰 도메인 Quick 저신뢰 분기 (GS-012 '영상 하나 만들어줘'의 도메인 대칭)."
+  - "Phase 12 S1 golden_set 확대 — 게임 리뷰 도메인 + Quick 저신뢰 커버리지 보강."
+  - "→ output_schema §7 P-005, agent_io §3.1 Intent"
+```
+
 ---
 
 ## 3. 우선순위 등급
@@ -635,17 +1036,18 @@ notes:
 ```
 P0 (필수, 100% 통과):
   - 핵심 흐름 / 보안 / revise 무한 루프 차단
-  - GS-001, GS-002, GS-003, GS-004, GS-005, GS-006, GS-010   (7개)
+  - GS-001, GS-002, GS-003, GS-004, GS-005, GS-006, GS-010, GS-022   (8개 — Phase 12 S1 +1)
   - CI 게이트: 1개라도 실패 시 머지 차단
 
 P1 (강력 권장, ≥ 90% 통과):
-  - 핵심 정책 / 학습 신호 / 데이터 흐름 / 분기·graceful 커버리지
-  - GS-007, GS-008, GS-009, GS-012, GS-013, GS-014   (6개 — Phase 10 +3)
+  - 핵심 정책 / 학습 신호 / 데이터 흐름 / 분기·graceful 커버리지 / 도메인 다양성
+  - GS-007, GS-008, GS-009, GS-012, GS-013, GS-014,
+    GS-016, GS-018, GS-020, GS-023, GS-024, GS-025   (12개 — Phase 10 +3, Phase 12 S1 +6)
   - CI 게이트: 1개 실패는 warning, 2개 이상 실패 시 머지 차단
 
 P2 (참고, ≥ 80% 통과):
   - 응용 / 예외 경로 / 도메인 다양성
-  - GS-011, GS-015   (2개 — Phase 10 +1)
+  - GS-011, GS-015, GS-017, GS-019, GS-021   (5개 — Phase 10 +1, Phase 12 S1 +3)
   - CI 게이트: 실패는 로그만, 머지 비차단
 ```
 
@@ -797,6 +1199,16 @@ eval/regression_results/
 | GS-009 | P-AUX-2 | output_schema §12, agent_io §7 | Brand Memory 추출 |
 | GS-010 | Step 1 요청 검사 | llm_security §3.3, error_response §4.6 | 보안 차단 |
 | GS-011 | P-001 + direct_input | output_schema §13, §14.3 | 직접 입력 흐름 |
+| GS-016 | P-005 (Quick) | output_schema §7, agent_io §3 | 요리 도메인 Quick 30s |
+| GS-017 | P-001 | output_schema §3 | 뷰티 도메인 Step 1 |
+| GS-018 | P-002 | output_schema §4 | IT 리뷰 도메인 Step 2 |
+| GS-019 | P-005 (Quick) | output_schema §7, §18 enum | 운동 도메인 Quick 15s |
+| GS-020 | P-006 → P-007 → P-008 → P-007 | output_schema §8/§9/§10 | 여행/브이로그 revise 1회 |
+| GS-021 | P-001 | output_schema §3 | 교육 도메인 Step 1 |
+| GS-022 | P-001 + 광고 단어 | output_schema §14, rag_data §10 | 제품 홍보 광고 단어 정책 |
+| GS-023 | RAG → P-006 | rag_data §5, output_schema §8.3 | 패션 도메인 RAG 채택 |
+| GS-024 | P-005 → P-006 | output_schema §7/§8/§18 enum | 반려동물 포맷 분기 15/30/60 |
+| GS-025 | P-005 (Quick) | output_schema §7, agent_io §3 | 게임 리뷰 Quick 저신뢰 |
 
 ---
 
@@ -818,4 +1230,8 @@ v1.0.0 (2026-05-26): Sprint S4-1 초안. 11개 케이스 + priority + 실행 정
 v1.1.0 (2026-05-31): Phase 10 Slice 3 확대 (CC-009). 11 → 15 케이스 (GS-001~011 보존,
                      GS-012~015 추가 — Quick 저신뢰 / Discovery 다단계 / RAG graceful /
                      다른 도메인). 우선순위: P0 7 / P1 6 / P2 2. additive (기존 케이스 무변경).
+v1.2.0 (2026-06-02): Phase 12 Slice 1 확대 (CC-011). 15 → 25 케이스 (GS-001~015 보존,
+                     GS-016~025 추가 — 요리/뷰티/IT리뷰/운동/여행/교육/패션/반려동물/제품홍보/
+                     게임리뷰 도메인 × 길이 15s/30s/60s × intent quick/discovery). 우선순위:
+                     P0 8 / P1 12 / P2 5. additive (기존 케이스·우선순위 무변경, 추가만).
 ```
