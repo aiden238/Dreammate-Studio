@@ -63,6 +63,30 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 11 A안 Slice 2 — cross-validation 게이트 + Gemini 튜닝 (additive) ─
+    # ★ behavior-preserving / gated default-off: cross_validation_enabled=False →
+    #   호출측(orchestrator 등)에서 교차검증 skip. 본 Slice 는 모듈만 추가 — 자동
+    #   연결 0 (orchestrator 미변경). 기존 Field 전부 보존.
+    cross_validation_enabled: bool = Field(
+        default=False,
+        description=(
+            "Phase 11 A안 Slice 2: Critic 교차검증(Gemini) pass 활성 여부. "
+            "★ gated default-off — False 면 호출측에서 cross_validate 를 skip "
+            "(orchestrator 미연결, behavior-preserving). True 활성은 유료 정책/키 확정 후. "
+            "환경변수 CROSS_VALIDATION_ENABLED 로 override."
+        ),
+    )
+    gemini_thinking_budget: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Phase 11 A안 Slice 2: Gemini 3.x flash thinking budget (tokens). "
+            "★ default 0 = thinking 비활성 → max_output_tokens 가 추론에 소진되지 않고 "
+            "출력에 온전히 사용(출력 0 문제 방지). SDK 가 ThinkingConfig 미지원이면 graceful skip. "
+            "환경변수 GEMINI_THINKING_BUDGET 로 override."
+        ),
+    )
+
     # ─── Phase 4 Slice 2: multi-model (사용자 결정 4-b) ─────────────────
     # 향후 모델 추가 가능 구조 — Phase 4는 OpenAI만 (default 동일 모델 × 3).
     # Anthropic / Google 등 multi-provider 확장은 Phase 21+에서 검토.

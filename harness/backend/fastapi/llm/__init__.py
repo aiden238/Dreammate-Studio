@@ -9,14 +9,17 @@ provider 추가 = adapter 1개 + registry 항목, agent 코드 0 변경.
   get_model                  — registry key → concrete 모델 메타
   LLMRequest / LLMResponse / LLMMessage / LLMUsage — canonical 타입
   LLMError                   — provider 에러 정규화
+  cross_validate / compare / CrossCheck — Slice 2 교차검증 (★ gated default-off, 순수 함수)
 
-★ behavior-preserving: 본 Slice 는 gateway 를 만들기만 — 기존 agents/routers/
-  orchestration 미연결(Stage A 연결은 후속 Slice). 기존 381 test 무영향.
+★ behavior-preserving: gateway/cross-validation 모듈은 만들기만 — 기존 agents/routers/
+  orchestration 미연결(자동 호출 경로 0). cross-validation 은 config
+  cross_validation_enabled(default False) 게이트로 호출측이 skip. 기존 test 무영향.
 """
 
 from __future__ import annotations
 
 from .aliases import resolve as resolve_alias
+from .cross_validation import CrossCheck, compare, cross_validate
 from .errors import LLMError
 from .gateway import LLMGateway, get_gateway
 from .registry import get_model
@@ -32,4 +35,8 @@ __all__ = [
     "LLMMessage",
     "LLMUsage",
     "LLMError",
+    # ─── Slice 2 (gated default-off, 순수 함수 — 자동 연결 0) ───
+    "cross_validate",
+    "compare",
+    "CrossCheck",
 ]
