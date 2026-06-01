@@ -22,7 +22,7 @@
   <main id="top">
     <section class="slide hero">
       <div>
-        <p class="eyebrow">GitHub Pages · WBS · Mermaid Architecture</p>
+        <p class="eyebrow">GitHub Pages · WBS · Agent Pipeline</p>
         <h1>영상기획을<br>실행 가능한 계획으로 바꾸는 AI 에이전트</h1>
         <p class="lead">Dreammate Studio는 영상 브랜딩과 브랜드 마케팅을 위한 기획 과정을 질문형 AI로 구조화하는 영상기획 AI 에이전트 플랫폼입니다.</p>
       </div>
@@ -87,63 +87,75 @@
       </div>
     </section>
 
-    <section id="architecture" class="slide">
-      <p class="eyebrow">03. Design · Mermaid</p>
-      <h2>아키텍처 구성</h2>
-      <article class="card diagram arch-card minimal-arch">
+    <section id="architecture" class="slide architecture-slide">
+      <p class="eyebrow">03. System Architecture · Agent Pipeline</p>
+      <h2>현재 시스템 아키텍처와 에이전트 흐름</h2>
+      <article class="card diagram arch-card agent-arch">
 <pre class="mermaid">
 flowchart LR
-  A[사용자 입력] --> B[기획 AI 엔진]
-  B --> C[근거 검색 / 품질 검증]
-  C --> D[기획안 저장]
-  D --> E[WBS 대시보드]
+  U[사용자] --> FE[Next.js PWA<br/>Discovery / Quick]
+  FE --> API[FastAPI BFF<br/>Auth / Plan / SSE]
 
-  classDef input fill:#ecfeff,stroke:#06b6d4,stroke-width:2px,color:#164e63;
-  classDef engine fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#312e81;
-  classDef output fill:#f0fdf4,stroke:#12b76a,stroke-width:2px,color:#14532d;
-  class A input;
-  class B,C engine;
-  class D,E output;
+  API --> ROUTER[Intent Router<br/>신규·기존 분기]
+  ROUTER --> RAG[LLM Wiki + RAG Lite<br/>근거 검색]
+  RAG --> GEN[Plan Generator<br/>3개 후보 생성]
+  GEN --> CRITIC[Critic Agent<br/>품질 평가]
+  CRITIC --> REWRITE[Rewriter Loop<br/>최대 2회 개선]
+  REWRITE --> DB[Supabase<br/>결과·피드백 저장]
+  DB --> BM[Brand Memory<br/>피드백 개인화]
+  DB --> WBS[GitHub Pages<br/>WBS Dashboard]
+  BM -.다음 기획 반영.-> ROUTER
+
+  classDef ux fill:#ecfeff,stroke:#06b6d4,stroke-width:2px,color:#164e63;
+  classDef ai fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#312e81;
+  classDef data fill:#f0fdf4,stroke:#12b76a,stroke-width:2px,color:#14532d;
+  classDef out fill:#fff7ed,stroke:#f79009,stroke-width:2px,color:#7c2d12;
+  class U,FE ux;
+  class API,ROUTER,RAG,GEN,CRITIC,REWRITE ai;
+  class DB,BM data;
+  class WBS out;
 </pre>
       </article>
-      <div class="arch-legend compact-legend">
-        <span>입력</span>
-        <span>AI 처리</span>
-        <span>저장</span>
-        <span>실행관리</span>
+      <div class="agent-pipeline-strip">
+        <span>1. 입력 분기</span>
+        <span>2. 근거 검색</span>
+        <span>3. 3개 후보 생성</span>
+        <span>4. 품질 검증·수정</span>
+        <span>5. 저장·개인화</span>
+        <span>6. WBS 확인</span>
       </div>
     </section>
 
     <section id="wbs" class="slide">
-      <div class="wbs-frame">
+      <div class="wbs-frame detail-wbs-frame">
         <div class="wbs-header">
           <div>
             <p class="eyebrow">04. WBS Dashboard</p>
             <h2>진행중 프로젝트 WBS</h2>
           </div>
-          <p class="wbs-subtitle">완료·진행중·다음 작업을 한 화면에서 바로 판단할 수 있도록 카드형 WBS로 재설계했습니다.</p>
+          <p class="wbs-subtitle">진척률, 진행중 작업, 다음 예정 작업을 한 화면에서 판단할 수 있도록 재구성했습니다.</p>
         </div>
 
-        <div class="wbs-infographic">
-          <article class="progress-bar-card">
-            <div class="bar-head"><strong>70%</strong><span>MVP 기준 진행률</span></div>
+        <div class="wbs-progress-panel">
+          <article class="progress-bar-card wide-progress">
+            <div class="bar-head"><strong>70%</strong><span>MVP 이후 배포 준비 기준 진행률</span></div>
             <div class="bar-track"><div class="bar-fill"></div></div>
-            <div class="bar-labels"><span>완료</span><span>진행중</span><span>다음</span></div>
+            <div class="bar-labels"><span>완료 4개</span><span>진행중 1개</span><span>예정 1개</span></div>
           </article>
-          <div class="wbs-lanes">
-            <article class="lane done-lane"><span class="tag done">완료</span><h3>기획·UX·AI·데이터</h3><p>문제 정의, Discovery, RAG Lite, MOA Lite, 결과 저장, MVP 통합 테스트</p></article>
-            <article class="lane doing-lane"><span class="tag doing">진행중</span><h3>GitHub Pages 발표자료</h3><p>URL 실행 발표자료, WBS 시각화, Mermaid 아키텍처 표현</p></article>
-            <article class="lane next-lane"><span class="tag next">다음</span><h3>배포 Gate B~G</h3><p>staging → alpha → beta → 운영 배포 또는 Phase 11+ 고도화</p></article>
+          <div class="next-work-card">
+            <span class="tag next">진행 예정</span>
+            <h3>배포 Gate B~G / Phase 11+</h3>
+            <p>staging → alpha → beta → 운영 배포 또는 브랜드 개인화·자동 평가 고도화로 확장합니다.</p>
           </div>
         </div>
 
-        <div class="wbs-mini-grid">
-          <article><b>기획</b><span>문제·비전</span><em>완료</em></article>
-          <article><b>UX</b><span>Discovery / Quick</span><em>완료</em></article>
-          <article><b>AI</b><span>RAG + MOA + Critic</span><em>완료</em></article>
-          <article><b>데이터</b><span>결과·피드백 저장</span><em>완료</em></article>
-          <article><b>발표</b><span>GitHub Pages WBS</span><em>진행중</em></article>
-          <article><b>배포</b><span>Gate B~G 준비</span><em>다음</em></article>
+        <div class="wbs-detail-grid">
+          <article class="wbs-task done-task"><b>기획·비전</b><span>문제 정의, 브랜드 방향, 핵심 가치 정리</span><em>100%</em><i class="meter p100"></i></article>
+          <article class="wbs-task done-task"><b>UX 설계</b><span>Discovery Wizard, Quick Mode, 사용자 분기</span><em>100%</em><i class="meter p100"></i></article>
+          <article class="wbs-task done-task"><b>AI 파이프라인</b><span>RAG Lite, MOA, Critic, Rewriter Loop</span><em>90%</em><i class="meter p90"></i></article>
+          <article class="wbs-task done-task"><b>데이터·피드백</b><span>결과 저장, feedback_events, Brand Memory 준비</span><em>85%</em><i class="meter p85"></i></article>
+          <article class="wbs-task active-task"><b>발표·시각화</b><span>GitHub Pages, WBS, Mermaid, 슬라이드 UX</span><em>80%</em><i class="meter p80"></i></article>
+          <article class="wbs-task next-task"><b>배포·운영</b><span>Gate B~G, 알파·베타 운영, Phase 11+</span><em>20%</em><i class="meter p20"></i></article>
         </div>
       </div>
     </section>
@@ -152,7 +164,32 @@ flowchart LR
   <footer>Dreammate Studio · GitHub Pages Presentation</footer>
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { curve: 'basis', htmlLabels: true } });
+  </script>
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    function moveSlide(direction) {
+      const currentY = window.scrollY;
+      let index = slides.findIndex((slide, i) => {
+        const next = slides[i + 1];
+        return currentY >= slide.offsetTop - 90 && (!next || currentY < next.offsetTop - 90);
+      });
+      if (index < 0) index = 0;
+      const nextIndex = Math.max(0, Math.min(slides.length - 1, index + direction));
+      slides[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    window.addEventListener('keydown', (event) => {
+      const tag = document.activeElement.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (event.code === 'Space' || event.key === 'ArrowRight' || event.key === 'PageDown') {
+        event.preventDefault();
+        moveSlide(1);
+      }
+      if ((event.shiftKey && event.code === 'Space') || event.key === 'ArrowLeft' || event.key === 'PageUp') {
+        event.preventDefault();
+        moveSlide(-1);
+      }
+    });
   </script>
 </body>
 </html>
