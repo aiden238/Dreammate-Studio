@@ -236,6 +236,10 @@ async def generate_plan(
     critic_evaluation: CriticEvaluation | None = None
     revise_histories: list[list[dict[str, Any]]] | None = None
     recommended_idx: int | None = None  # Phase 4.5 Slice 3 (Z-X3)
+    # Phase 11 A안 Slice 3 (cross-validation hook): plan 별 critic canonical verdict
+    #   누적 — recommended plan 의 canonical(overall_score + dimensions) 추출용.
+    #   ★ additive: 기존 흐름/Envelope 무영향 (cross-validation 게이트 OFF 시 미사용).
+    per_plan_verdicts: list[dict[str, Any] | None] | None = None
 
     if req.use_critic:
         max_revise = settings.critic_max_revise
@@ -339,6 +343,10 @@ async def generate_plan(
             )
             plans_list = [r[0] for r in results]
             revise_histories = [r[2] for r in results]
+            # Phase 11 A안 Slice 3 (cross-validation hook): plan 별 canonical verdict
+            #   누적 (plans_list 와 동일 순서). recommended plan 의 canonical 추출에 사용.
+            #   ★ additive — Envelope 무영향.
+            per_plan_verdicts = [r[1] for r in results]
             # Phase 4.5 Slice 3 (Z-X3): plan 별 final verdict 누적 → best-plan idx.
             final_verdicts = [r[1] for r in results if r[1] is not None]
             if final_verdicts:
@@ -367,6 +375,41 @@ async def generate_plan(
             critic_evaluation = None
             revise_histories = None
             recommended_idx = None
+
+    # 5.5 Cross-validation hook (Phase 11 A안 Slice 3 — ★ gated default-off, additive) ─
+    # recommended/best plan 이 정해진 직후(Envelope 조립 전), Gemini 독립 교차검증을
+    # 1회 수행하여 OpenAI Critic 평가와 비교한다 (single-model self-bias 완화).
+    # ★★ behavior-preserving:
+    #   - settings.cross_validation_enabled(default False) → 아무 동작 안 함(기존 경로 100% 동일).
+    #   - 결과는 **로깅(관측성)만** — Envelope/output_schema/응답 필드 0 변경.
+    #     (응답 노출은 후속 phase + output_schema contract-change 대상.)
+    #   - 모든 예외/실패는 graceful 흡수 → 기존 흐름 절대 차단 X.
+    if settings.cross_validation_enabled:
+        try:
+            # late import — 순환 회피 + 테스트 monkeypatch 용이.
+            from ..llm.cross_validation import compare, cross_validate
+
+            # recommended plan = best-plan idx(없으면 대표 0). plans_list/per_plan_verdicts
+            #   는 동일 순서 보장 (asyncio.gather 정렬).
+            rec_idx = recommended_idx if recommended_idx is not None else 0
+            rec_plan = plans_list[rec_idx] if 0 <= rec_idx < len(plans_list) else plans_list[0]
+            rec_plan_text = rec_plan.model_dump_json()
+            rec_critic_canonical: dict[str, Any] = {}
+            if per_plan_verdicts is not None and 0 <= rec_idx < len(per_plan_verdicts):
+                rec_critic_canonical = per_plan_verdicts[rec_idx] or {}
+
+            cross = cross_validate(rec_plan_text)
+            cmp = compare(rec_critic_canonical, cross)
+            logger.info(
+                "cross_validation: model=%s gemini=%s openai=%s agreement=%s -> %s",
+                cross.model_id,
+                cmp.get("gemini_score"),
+                cmp.get("openai_score"),
+                cmp.get("agreement"),
+                cmp.get("recommendation"),
+            )
+        except Exception:
+            logger.exception("cross_validation hook 실패 (graceful — 응답 무영향)")
 
     # 6. DB save (graceful) ──────────────────────────────────────────
     request_id = str(uuid4())
