@@ -121,6 +121,15 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 12 B안 Slice S2b-2a — 3-provider 다양성 게이트 (additive) ─
+    # ★ behavior-preserving / gated default-off: True 여도 본 Slice 는 신규 함수
+    #   run_planning_multi_provider_3 를 추가만 — 아무 곳도 호출 X (orchestrator 분기는
+    #   후속 S2b-2b). False 일 때 기존 OpenAI 3-call(run_planning_parallel_3) 경로 유지.
+    multi_provider_plans_enabled: bool = Field(
+        default=False,
+        description="B안: 3-plan 을 3-provider(GPT/Claude/Gemini) alias 로 다양화 (gated, default OFF).",
+    )
+
     # ─── Phase 4 Slice 2: multi-model (사용자 결정 4-b) ─────────────────
     # 향후 모델 추가 가능 구조 — Phase 4는 OpenAI만 (default 동일 모델 × 3).
     # Anthropic / Google 등 multi-provider 확장은 Phase 21+에서 검토.

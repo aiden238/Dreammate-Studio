@@ -386,6 +386,174 @@ async def run_planning_parallel_3(
     return final_results
 
 
+# ─── Phase 12 B안 Slice S2b-2a: 3-provider 다양성 (gateway 기반, additive) ─
+
+# 3-plan 다양성 alias 슬롯 (제안서 §18.B / aliases.py).
+#   슬롯 i ↔ _APPROACH_HINTS[i] 1:1 (run_planning_parallel_3 와 동일 매핑).
+#   plan_primary→GPT(gpt-4o-mini) / plan_secondary→Claude(haiku) / plan_tertiary→Gemini(flash).
+_MULTI_PROVIDER_PLAN_ALIASES: tuple[str, ...] = (
+    "plan_primary",
+    "plan_secondary",
+    "plan_tertiary",
+)
+
+
+async def _run_planning_single_via_gateway(
+    user_input: str,
+    *,
+    rag_context_list: list[Any],
+    alias: str,
+    approach_hint: str,
+    gateway: Any,
+) -> dict[str, Any]:
+    """gateway alias 기반 단일 planning 호출 (async). 슬롯 1개 = alias 1회 호출.
+
+    Phase 12 B안 S2b-2a:
+      - system prompt 합성은 _run_planning_single 과 동일(_build_system_prompt_with_hint +
+        _format_rag_context block).
+      - messages 는 LLMMessage(role/content) 시퀀스 (cross_validation.py 동작 본뜸).
+      - gateway.complete 는 sync → run_in_executor 로 async 화 (gather 병렬 전제).
+      - resp.text → json.loads → "plan" 키 필수(없으면 ValueError) → {"plan": {...}}.
+
+    Raises:
+        Exception: gateway/파싱 실패 (호출자가 retry/fallback graceful 처리).
+    """
+    from ..llm.types import LLMMessage  # 지연 import (provider-neutral 타입)
+
+    rag_block = _format_rag_context(rag_context_list)
+    base_prompt = _build_system_prompt_with_hint(approach_hint)
+    system_prompt = base_prompt + (("\n" + rag_block) if rag_block else "")
+
+    messages = [
+        LLMMessage(role="system", content=system_prompt),
+        LLMMessage(role="user", content=user_input),
+    ]
+
+    logger.info(
+        "planning(multi-provider) call start alias=%s input_len=%d rag_refs=%d hint=%s",
+        alias,
+        len(user_input),
+        len(rag_context_list),
+        approach_hint.split(" ", 1)[0],
+    )
+
+    def _sync_call() -> Any:
+        return gateway.complete(
+            alias,
+            messages,
+            temperature=0.8,  # 다양성 (3 슬롯 — run_planning_parallel_3 와 동일 기조)
+            max_tokens=1500,
+            json_mode=True,
+        )
+
+    loop = asyncio.get_event_loop()
+    resp = await loop.run_in_executor(None, _sync_call)
+
+    raw = (resp.text or "").strip()
+    parsed = json.loads(raw)
+    if "plan" not in parsed:
+        raise ValueError("Planning(multi-provider) response missing 'plan' key")
+    return {"plan": parsed["plan"], "_model_id": resp.model_id}
+
+
+async def run_planning_multi_provider_3(
+    user_input: str,
+    *,
+    rag_context: Sequence[Any] | None = None,
+    gateway: Any = None,
+) -> list[dict[str, Any]]:
+    """Phase 12 B안 §18.B — gateway 기반 3-provider 다양성 3-plan 생성 (gated, additive).
+
+    ★★ behavior-preserving: 본 함수는 **신설**이며 아직 **아무 곳에서도 호출되지 않는다**
+    (orchestrator 분기는 후속 S2b-2b). config `multi_provider_plans_enabled`(default OFF)
+    가 활성 게이트 — 호출측이 결정한다(본 함수는 flag 강제 X). 기존 OpenAI 3-call 경로
+    (run_planning_parallel_3)는 무변경.
+
+    3안을 서로 다른 provider 로 생성하여 단일-provider 편향을 줄인다:
+      plan_primary   → GPT(gpt-4o-mini)   [슬롯0: narrative hint]
+      plan_secondary → Claude(haiku)      [슬롯1: informational hint]
+      plan_tertiary  → Gemini(flash)      [슬롯2: experiment hint]
+    슬롯 i 는 _APPROACH_HINTS[i] 와 1:1 (run_planning_parallel_3 와 동일 hint 매핑).
+
+    Args:
+        user_input: 사용자 입력 텍스트 (Intent 통과 후).
+        rag_context: RAGReference 또는 dict 시퀀스 (Slice 4 호환). None/빈 배열 허용.
+        gateway: LLMGateway DI (None 이면 get_gateway() 싱글톤). 테스트가 fake 주입.
+
+    Returns:
+        list of 3 planning dicts. 각 dict 은 {"plan": {...}} 형식 (length 3 보장).
+        슬롯 실패(예외) 시 retry 1회 → 또 실패 시 _fallback_plan_dict(i) 로 대체.
+
+    Note:
+        graceful — run_planning_parallel_3 의 retry/fallback 로직을 그대로 본뜬다.
+        응답 파싱은 clean JSON 가정(S2b-1 이 adapter 단에서 Claude 펜스 제거 처리).
+    """
+    gw = gateway
+    if gw is None:
+        from ..llm.gateway import get_gateway  # 지연 import (순환 방지)
+
+        gw = get_gateway()
+
+    rag_context_list = list(rag_context or [])
+
+    # 3 슬롯 병렬 호출 (run_planning_parallel_3 패턴).
+    tasks = [
+        _run_planning_single_via_gateway(
+            user_input,
+            rag_context_list=rag_context_list,
+            alias=_MULTI_PROVIDER_PLAN_ALIASES[i],
+            approach_hint=_APPROACH_HINTS[i],
+            gateway=gw,
+        )
+        for i in range(3)
+    ]
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # 슬롯별 관측 로깅 + 일부 실패 시 retry 1회 → fallback (graceful, length 3 보장).
+    final_results: list[dict[str, Any]] = []
+    for i, r in enumerate(results):
+        alias = _MULTI_PROVIDER_PLAN_ALIASES[i]
+        if isinstance(r, BaseException):
+            logger.warning(
+                "planning(multi-provider) slot=%d alias=%s failed (%s), retrying once",
+                i, alias, type(r).__name__,
+            )
+            try:
+                retry = await _run_planning_single_via_gateway(
+                    user_input,
+                    rag_context_list=rag_context_list,
+                    alias=alias,
+                    approach_hint=_APPROACH_HINTS[i],
+                    gateway=gw,
+                )
+                model_id = retry.pop("_model_id", "")
+                logger.info(
+                    "planning(multi-provider) slot=%d alias=%s model=%s ok (retry)",
+                    i, alias, model_id,
+                )
+                final_results.append(retry)
+            except Exception as e2:
+                logger.warning(
+                    "planning(multi-provider) slot=%d alias=%s retry also failed: %s "
+                    "— using fallback dict",
+                    i, alias, e2,
+                )
+                final_results.append(_fallback_plan_dict(i))
+        else:
+            model_id = r.pop("_model_id", "") if isinstance(r, dict) else ""
+            logger.info(
+                "planning(multi-provider) slot=%d alias=%s model=%s ok",
+                i, alias, model_id,
+            )
+            final_results.append(copy.deepcopy(r))
+
+    # approach_label unique 강제 (run_planning_parallel_3 와 동일).
+    final_results = _enforce_unique_approach_labels(final_results)
+
+    return final_results
+
+
 # ─── 메타 ────────────────────────────────────────────────────────────
 
 PROMPT_ID = "P-006"

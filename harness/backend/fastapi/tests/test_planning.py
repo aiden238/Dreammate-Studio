@@ -20,7 +20,9 @@ from backend.fastapi.agents.planning import (
     PROMPT_ID,
     PROMPT_VERSION,
     run_planning,
+    run_planning_multi_provider_3,
 )
+from backend.fastapi.llm.types import LLMResponse
 from backend.fastapi.schemas.output import Plan, PlanFlowBeat
 
 
@@ -139,3 +141,105 @@ def test_planning_raises_on_missing_plan_field() -> None:
     client = _make_fake_client(json.dumps({"intent_ok": True}))
     with pytest.raises(ValueError, match="plan"):
         run_planning("input", client=client, model="gpt-4o-mini")
+
+
+# ─── Phase 12 B안 S2b-2a: run_planning_multi_provider_3 (gateway 기반) ─
+
+def _plan_json(label: str) -> str:
+    """slot 별 valid {"plan": {...}} JSON 문자열 (approach_label 다양화)."""
+    return json.dumps(
+        {
+            "plan": {
+                "name": f"plan-{label}",
+                "concept": f"{label} 콘셉트",
+                "hook": f"{label} 후크 — 첫 3초 시선 고정",
+                "flow": [
+                    {"beat_index": 0, "beat": "도입", "duration_sec": 3, "purpose": "관심"},
+                    {"beat_index": 1, "beat": "전개", "duration_sec": 15, "purpose": "메시지"},
+                ],
+                "pros": "장점 1줄",
+                "risks": "위험 1줄",
+                "approach_label": label,
+            }
+        }
+    )
+
+
+class _FakeGateway:
+    """alias 별로 서로 다른 LLMResponse 를 반환하는 fake gateway.
+
+    complete(alias, messages, **kw) → LLMResponse(text=valid plan JSON, model_id=alias 별 상이).
+    raise_on: 이 alias 호출 시 항상 예외 (retry 도 실패하도록).
+    """
+
+    def __init__(self, raise_on: str | None = None) -> None:
+        self.raise_on = raise_on
+        self.calls: list[str] = []
+        # alias → (approach_label, model_id)
+        self._map = {
+            "plan_primary": ("narrative", "gpt-4o-mini"),
+            "plan_secondary": ("informational", "claude-haiku-4-5"),
+            "plan_tertiary": ("experiment", "gemini-3-flash"),
+        }
+
+    def complete(self, alias: str, messages: Any, **kwargs: Any) -> LLMResponse:
+        self.calls.append(alias)
+        if alias == self.raise_on:
+            raise RuntimeError(f"fake gateway 강제 실패: {alias}")
+        label, model_id = self._map[alias]
+        return LLMResponse(text=_plan_json(label), model_id=model_id, alias=alias)
+
+
+@pytest.mark.asyncio
+async def test_multi_provider_3_returns_length_3_unique_labels() -> None:
+    """fake gateway 주입 → length 3 + 각 {"plan": {...}} shape + approach_label unique."""
+    gw = _FakeGateway()
+    results = await run_planning_multi_provider_3("유튜브 쇼츠 기획", gateway=gw)
+
+    assert len(results) == 3
+    for r in results:
+        assert "plan" in r
+        assert isinstance(r["plan"], dict)
+        # 내부 _model_id 누수 없음 (pop 되어야 함).
+        assert "_model_id" not in r
+    labels = [r["plan"]["approach_label"] for r in results]
+    assert len(set(labels)) == 3, f"approach_label not unique: {labels}"
+    # 3 alias 모두 정확히 1회씩 호출.
+    assert set(gw.calls) == {"plan_primary", "plan_secondary", "plan_tertiary"}
+
+
+@pytest.mark.asyncio
+async def test_multi_provider_3_slot_failure_fallback_keeps_length_3() -> None:
+    """한 슬롯 gateway.complete 예외 → retry 후에도 예외 → fallback 으로 대체, length 3 유지."""
+    gw = _FakeGateway(raise_on="plan_secondary")
+    results = await run_planning_multi_provider_3("테스트", gateway=gw)
+
+    assert len(results) == 3
+    # 실패 슬롯(secondary, index 1)은 fallback dict 로 대체.
+    fallback = results[1]
+    assert "plan" in fallback
+    assert "graceful fallback" in fallback["plan"]["risks"]
+    # plan_secondary 는 최초 1회 + retry 1회 = 2회 호출.
+    assert gw.calls.count("plan_secondary") == 2
+
+
+@pytest.mark.asyncio
+async def test_multi_provider_3_clean_json_parses() -> None:
+    """gateway 가 펜스 없는 clean JSON 을 주면(S2b-1 adapter 처리 전제) 파싱 성공."""
+    gw = _FakeGateway()
+    results = await run_planning_multi_provider_3("clean json 테스트", gateway=gw)
+    assert len(results) == 3
+    # primary slot 의 plan 이 정상 파싱되어 name 노출.
+    assert results[0]["plan"]["name"] == "plan-narrative"
+
+
+@pytest.mark.asyncio
+async def test_multi_provider_3_with_rag_context() -> None:
+    """rag_context 주입 시에도 정상 동작 (length 3)."""
+    gw = _FakeGateway()
+    rag = [{"title": "참고1", "snippet": "검증된 패턴 스니펫"}]
+    results = await run_planning_multi_provider_3(
+        "rag 주입 테스트", rag_context=rag, gateway=gw
+    )
+    assert len(results) == 3
+    assert all("plan" in r for r in results)
