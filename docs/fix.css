@@ -59,52 +59,85 @@
   font-weight: 900;
 }
 
-.minimal-arch .mermaid {
-  min-width: 720px;
+body {
+  height: 100vh;
+  overflow: hidden;
 }
 
-.compact-legend {
-  max-width: 780px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-html {
-  scroll-snap-type: y mandatory;
+main {
+  height: calc(100vh - 64px);
+  overflow: hidden;
 }
 
 .slide {
-  scroll-snap-align: start;
-  scroll-margin-top: 72px;
+  display: none;
+  height: calc(100vh - 64px);
+  min-height: 0;
+  padding: 40px 0;
+  overflow: hidden;
+}
+
+.slide.active {
+  display: grid;
+}
+
+.topbar nav a.active {
+  background: #eef2ff;
+  border-color: rgba(79, 70, 229, 0.35);
+  color: #3730a3;
 }
 
 .architecture-slide h2 {
-  margin-bottom: 18px;
+  margin-bottom: 14px;
+  font-size: 50px;
 }
 
-.agent-arch {
-  padding: 20px;
+.arch-split {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 14px;
+  height: 560px;
 }
 
-.agent-arch .mermaid {
-  min-width: 1040px;
+.arch-block {
+  padding: 18px 20px;
+  overflow: hidden;
+}
+
+.arch-block h3 {
+  font-size: 21px;
+  margin-bottom: 8px;
+}
+
+.arch-block .mermaid {
+  min-width: 920px;
+  transform: scale(0.9);
+  transform-origin: center top;
+}
+
+.software-arch {
+  background: linear-gradient(180deg, #ecfeff, #ffffff);
+}
+
+.pipeline-arch {
+  background: linear-gradient(180deg, #eef2ff, #ffffff);
 }
 
 .agent-pipeline-strip {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
-  margin-top: 16px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .agent-pipeline-strip span {
-  padding: 12px 10px;
+  padding: 10px 8px;
   border-radius: 999px;
   background: #eef2ff;
   color: #3730a3;
   border: 1px solid rgba(79, 70, 229, 0.18);
   text-align: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
 }
 
@@ -215,13 +248,54 @@ html {
 .active-task { background: linear-gradient(180deg, #fff7ed, #ffffff); }
 .next-task { background: linear-gradient(180deg, #eef2ff, #ffffff); }
 
+.deck-hint {
+  position: fixed;
+  right: 24px;
+  bottom: 18px;
+  z-index: 30;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--line);
+  color: #667085;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+footer {
+  display: none;
+}
+
 @media (max-width: 980px) {
-  html { scroll-snap-type: none; }
+  body,
+  main {
+    height: auto;
+    overflow: auto;
+  }
+
+  .slide,
+  .slide.active {
+    display: grid;
+    height: auto;
+    min-height: calc(100vh - 64px);
+    overflow: visible;
+  }
+
+  .arch-split,
   .agent-pipeline-strip,
   .wbs-progress-panel,
   .wbs-detail-grid {
     grid-template-columns: 1fr;
     height: auto;
+  }
+
+  .arch-split {
+    grid-template-rows: auto;
+  }
+
+  .arch-block .mermaid {
+    min-width: 760px;
+    transform: none;
   }
 
   .wide-progress,
