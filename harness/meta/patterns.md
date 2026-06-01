@@ -100,9 +100,11 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
 - **재평가 시점**: Phase 3 코드 phase 진행 중 (같은 .tsx 파일 sub-section 동시 수정 위험 ↑) — P-X1 적용 후 효과 측정
 - **연관 Skill / Contract**: phase-start §6.3, multi_slice_plan template, sub-agent prompt format
 
-### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 60연속 PASS 효과 측정 (update 2026-05-31 Phase 10 — 제품 통합 phase 복귀, behavior-preserving)
+### Pattern P-X1-EFFECT-001: P-X1 §SELF-VERIFICATION 63연속 PASS 효과 측정 (update 2026-06-01 Phase 11 — LLM Gateway, behavior-preserving 멀티-provider)
 
-- **유형**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 + Phase M0 3 + Phase M1 2 + Phase M2 3 + Phase M3 2 + Phase 10 3 = **60 Slice 누적**, 0 deviation)
+- **유형**: 반복 성공 (... + Phase 10 3 + Phase 11 3 = **63 Slice 누적**, 0 deviation)
+- **Phase 11 update (2026-06-01)**: LLM Gateway A안 S1·S2·S3 sub-agent §SELF-VERIFICATION PASS. ★ 멀티-provider(OpenAI/Gemini) gateway 도입에도 **behavior-preserving**(기존 endpoint/agent 0 수정 + 신규 llm/ 패키지 + gated default-off, 기존 381 test green) 으로 forbidden 0. P-LLM-GATEWAY-001(신규 후보 — alias→provider 추상화로 provider 추가 시 agent 0 변경). 63연속.
+- **유형(이전)**: 반복 성공 (Phase 3 5 + Phase 4 4 + Phase 4.5 4 + Phase 6 4 + Phase 5 5 + Phase 5.5 4 + Phase 7 5 + Phase 8 5 + Phase 9 6 + Phase 9.5 5 + Phase M0 3 + Phase M1 2 + Phase M2 3 + Phase M3 2 + Phase 10 3 = 60 Slice 누적, 0 deviation)
 - **Phase 10 update (2026-05-31)**: 제품 phase 복귀(meta detour 종료) — S1·S2·S3 sub-agent §SELF-VERIFICATION PASS(S4 close main). ★ meta-phase(런타임 0) → **제품 phase(런타임 有)** 전환에도 **behavior-preserving**(기존 endpoint/agent 0 수정 + 신규/additive만, 기존 339 green) 으로 sub-agent forbidden 0건. PlanCard/component_map 0줄 유지(page 레벨 통합). 60연속.
 - **Phase M3 update (2026-05-31)**: 이질 도메인(재무) dry-run 2 Slice(S1 generation dbd4f7e + S2 validation 3ad817e) §SELF-VERIFICATION PASS. dry-run sub-agent 가 machinery **개선본**(M2)을 읽기만 하고 쓰기는 outputs/TEST/finance + validation 리포트에만 — machinery·podcast(M1·M2)·런타임 0줄. MG1(outputs/TEST/ 외 0줄) 게이트. 57연속.
 - **Phase M2 update (2026-05-31)**: GAP 보완 3 Slice(S1 generation/input 131ee06 + S2 scaffold/schema 2058661 + S3 재검증 dd45cdc) 모두 §SELF-VERIFICATION PASS. ★ M1(dry-run, machinery 읽기만)과 반대로 M2 는 **machinery 를 실제 변경(additive)** — S1·S2 editable 은 지정 machinery 파일만, S3 editable 은 outputs/TEST/만. forbidden(product contract/Skill/runtime/blueprints) 0 변경 + ★ **additive-only 게이트(기존 필드·절차 삭제·재명명 0)** 로 backward-compat 강제. 55연속 누적.
