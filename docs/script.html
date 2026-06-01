@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dreammate Studio 발표 대본</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./index.html"><span class="logo"></span>Dreammate Studio</a>
+    <nav>
+      <a href="./index.html">발표자료</a>
+      <a href="#script">2분 대본</a>
+      <a href="#qa">예상 질문</a>
+    </nav>
+  </header>
+
+  <main id="script">
+    <section class="slide">
+      <p class="eyebrow">Standalone Script</p>
+      <h1>2분 발표 대본</h1>
+      <p class="lead">스마트폰 타이머를 2분으로 맞추고, 아래 순서대로 읽으면 발표 요구사항에 맞게 끝낼 수 있습니다.</p>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">0:00 ~ 0:25</p>
+      <h2>문제 정의</h2>
+      <div class="script">
+        <p>안녕하세요. 제가 진행 중인 프로젝트는 Dreammate Studio라는 영상기획 AI 에이전트입니다. 영상 제작을 시작할 때 많은 사람들은 아이디어는 가지고 있지만, 그 아이디어를 브랜드 방향, 타깃, 콘텐츠 구조, 실행 계획으로 정리하는 데 어려움을 겪습니다. 그래서 이 프로젝트는 단순히 아이디어를 생성하는 AI가 아니라, 영상기획 과정을 구조화하는 AI를 목표로 하고 있습니다.</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">0:25 ~ 0:55</p>
+      <h2>비전과 해결 방식</h2>
+      <div class="script">
+        <p>Dreammate Studio의 핵심 비전은 사용자의 막연한 아이디어를 실행 가능한 영상 기획안으로 바꾸는 것입니다. 사용자가 예를 들어 “게임 쇼츠를 운영하고 싶다”처럼 단순하게 입력하면, AI가 아키네이터처럼 질문을 던지면서 브랜드 방향을 좁혀갑니다. 이후 타깃, 콘텐츠 톤, 레퍼런스를 정리하고 최종적으로 기획안과 WBS까지 연결합니다.</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">0:55 ~ 1:25</p>
+      <h2>아키텍처 설명</h2>
+      <div class="script">
+        <p>아키텍처는 사용자가 보는 Next.js PWA 화면, 요청을 처리하는 FastAPI BFF, 그리고 내부 AI 기획 모듈로 나뉩니다. AI 영역에서는 MOA Orchestrator가 여러 기획 후보를 만들고, RAG Lite가 LLM Wiki 기반으로 근거를 보강합니다. 이후 Critic Agent가 기획 품질을 검증하고, 사용자가 선택한 결과와 피드백은 Supabase에 저장됩니다.</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">1:25 ~ 1:55</p>
+      <h2>WBS 진행 상황</h2>
+      <div class="script">
+        <p>현재 WBS 기준으로 문제 정의, 비전 정리, Discovery Wizard와 Quick Mode 설계, RAG Lite, MOA Lite, 결과 저장, MVP 통합 테스트까지 완료했습니다. 이번 발표 요구사항에 맞춰 GitHub Pages에서 WBS와 아키텍처를 한 번에 확인할 수 있는 페이지를 따로 구성했습니다. 그래서 URL만 열면 발표자료가 바로 실행됩니다.</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">1:55 ~ 2:00</p>
+      <h2>마무리</h2>
+      <div class="script">
+        <p>정리하면, Dreammate Studio는 AI가 단순히 답변하는 것을 넘어 영상기획을 구조화하고 실행 관리까지 연결하는 프로젝트입니다. 감사합니다.</p>
+      </div>
+    </section>
+
+    <section id="qa" class="slide">
+      <p class="eyebrow">예상 질문 대비</p>
+      <h2>짧은 답변 준비</h2>
+      <div class="script">
+        <p><b>Q. 일반 챗봇과 차이가 뭔가요?</b><br>일반 챗봇은 답변 생성이 중심이고, 이 프로젝트는 브랜드 방향 설정, 타깃 정리, 기획안 생성, 품질 검증, WBS 관리까지 하나의 흐름으로 연결하는 점이 다릅니다.</p>
+        <p><b>Q. 왜 GitHub Pages를 사용했나요?</b><br>PC에서 URL만 열면 바로 발표할 수 있고, WBS와 아키텍처를 정적 웹페이지로 안정적으로 보여줄 수 있기 때문입니다.</p>
+        <p><b>Q. Mermaid를 사용한 이유는 뭔가요?</b><br>아키텍처를 코드처럼 관리할 수 있고, 수정할 때 이미지 파일을 다시 만들 필요 없이 구조를 빠르게 바꿀 수 있기 때문입니다.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>Dreammate Studio · Standalone Presentation Script</footer>
+</body>
+</html>
