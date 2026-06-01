@@ -89,30 +89,102 @@ main {
 
 .architecture-slide h2 {
   margin-bottom: 14px;
-  font-size: 50px;
+  font-size: 46px;
 }
 
 .arch-split {
   display: grid;
   grid-template-rows: 1fr 1fr;
   gap: 14px;
-  height: 560px;
+  height: 590px;
 }
 
 .arch-block {
-  padding: 18px 20px;
+  padding: 16px 18px;
   overflow: hidden;
 }
 
-.arch-block h3 {
-  font-size: 21px;
-  margin-bottom: 8px;
+.arch-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
 }
 
-.arch-block .mermaid {
-  min-width: 920px;
-  transform: scale(0.9);
-  transform-origin: center top;
+.arch-title-row h3 {
+  font-size: 21px;
+  margin: 0;
+}
+
+.arch-title-row span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.arch-row-content {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 14px;
+  align-items: stretch;
+  height: calc(100% - 44px);
+}
+
+.arch-mermaid-box {
+  min-width: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.58);
+  border: 1px solid rgba(228,231,236,0.7);
+}
+
+.arch-mermaid-box .mermaid {
+  min-width: 560px;
+  max-width: 100%;
+  transform: scale(0.86);
+  transform-origin: center center;
+}
+
+.arch-notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.pipeline-notes {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.arch-notes article {
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.86);
+  border: 1px solid var(--line);
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.arch-notes b {
+  font-size: 14px;
+  line-height: 1.15;
+}
+
+.arch-notes span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 800;
 }
 
 .software-arch {
@@ -124,21 +196,7 @@ main {
 }
 
 .agent-pipeline-strip {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.agent-pipeline-strip span {
-  padding: 10px 8px;
-  border-radius: 999px;
-  background: #eef2ff;
-  color: #3730a3;
-  border: 1px solid rgba(79, 70, 229, 0.18);
-  text-align: center;
-  font-size: 12px;
-  font-weight: 900;
+  display: none;
 }
 
 .detail-wbs-frame {
@@ -282,6 +340,8 @@ footer {
   }
 
   .arch-split,
+  .arch-row-content,
+  .arch-notes,
   .agent-pipeline-strip,
   .wbs-progress-panel,
   .wbs-detail-grid {
@@ -293,7 +353,7 @@ footer {
     grid-template-rows: auto;
   }
 
-  .arch-block .mermaid {
+  .arch-mermaid-box .mermaid {
     min-width: 760px;
     transform: none;
   }
