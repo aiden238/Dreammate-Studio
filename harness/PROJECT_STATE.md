@@ -20,7 +20,8 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 
 - **S1 완료** (cac2b9b + b060c2b fix): Anthropic adapter + registry Claude(haiku/sonnet)·Gemini + gateway 3-provider 분기(openai/google/anthropic) + config(anthropic_api_key + model placeholder). pytest 435→**452**. behavior-preserving.
 - ★ **3-provider 라이브 연결 입증**: GPT(gpt-4o-mini) + Claude(haiku-4-5, sonnet-4-6) + Gemini(3.5-flash) 전부 gateway 경유 실제 호출 OK. 버그(sonnet prefill 미지원 400) → adapter JSON prefill 제거(system 지시문 방식)로 수정.
-- 다음 **B안 S2**: 3-plan 슬롯을 3-provider alias 로 다양화(plan_a→GPT, plan_b→Claude, plan_c→Gemini) + planning 경로 gated 연결 + Claude ```json 펜스 stripping 견고화 + cost_control 재조정. (제안서 §18.B)
+- **S2a 완료** (6948d3e): 3-plan 다양성 alias 3개 — plan_primary→gpt-4o-mini(openai), plan_secondary→claude-haiku(anthropic), plan_tertiary→gemini-flash(google). registry 엔 키만/alias 0 이던 상태 해소. pytest 452→**457**. additive-only, gated/default-off.
+- 다음 **B안 S2b** (다음 세션 권장 — orchestration 경로 변경 = behavior-preserving 최고 난도, 신규 컨텍스트): ① gated 다중-provider 3-plan 경로(`multi_provider_plans_enabled` default False, Envelope 불변) ② Claude ```json 펜스 stripping ③ cost_control 재조정(§18.D) ④ 라이브 3-provider 3안 데모 + Phase 12 정식화(entry 8/ADR/archive). 상세 = handoff §4·4.
 
 ## 현재 Active Phase
 

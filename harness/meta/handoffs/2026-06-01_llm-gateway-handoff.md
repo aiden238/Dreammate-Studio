@@ -61,7 +61,12 @@
 4. **B안** (제안서 §18.B) — 3-provider. 키 3개 준비됨.
    - ✅ **S1 완료** (cac2b9b + b060c2b): Anthropic adapter + registry Claude(haiku/sonnet)·Gemini + gateway 3-provider 분기 + config. pytest 435→**452**. ★ **3-provider 라이브 연결 입증**(GPT+Claude haiku/sonnet+Gemini 전부 gateway 호출 OK). 버그(sonnet prefill 미지원 400)→adapter JSON prefill 제거(system 지시문)로 수정. **둘 다 push 됨**(origin/main=b060c2b).
    - ⚠️ **관찰**: Claude haiku 는 JSON 을 ` ```json ``` ` 펜스로 감쌈(sonnet 은 clean). S2 에서 펜스 stripping 견고화 필요.
-   - **남은 S2**: 3-plan 슬롯 다양화(plan_a→GPT, plan_b→Claude, plan_c→Gemini) alias 추가(registry 엔 Claude/Gemini 모델 있으나 **이를 가리키는 alias 아직 0** — `gateway.complete('claude-haiku')` 는 KeyError) + planning 경로 gated 연결 + 펜스 stripping + cost_control 재조정(신모델 5~7배). cost: registry 키만 추가됨, alias/wiring/cost 가 S2.
+   - ✅ **S2a 완료** (6948d3e): 3-plan 다양성 alias 3개 추가 — `plan_primary`→gpt-4o-mini(openai), `plan_secondary`→claude-haiku(anthropic), `plan_tertiary`→gemini-flash(google). registry 엔 키만 있고 alias 0 이던 상태 해소. pytest 452→**457**. additive-only, gated/default-off, 기존 alias/resolve/test 0 수정. **push 됨**(origin/main=6948d3e). 독립검증: 세 alias 가 openai/anthropic/google provider 로 정확히 해석, planning/critic 회귀 불변.
+   - ★ **남은 S2b** (다음 세션 권장 — orchestration 경로 변경이라 behavior-preserving 최고 난도, 신규 컨텍스트에서 시작):
+     1. **gated 다중-provider 3-plan 경로**: moa_orchestrator(또는 plans 경로)에 `multi_provider_plans_enabled`(신규 config Field, default **False**) 게이트 하에 3안을 plan_primary/secondary/tertiary alias 로 생성하는 경로 추가. ★ default-off → 기존 단일-provider 3안 흐름 100% 불변. Envelope 스키마 불변.
+     2. **Claude ```json 펜스 stripping 견고화**: anthropic_adapter(또는 공통 JSON 파서)에서 ` ```json ... ``` ` 펜스를 벗기는 처리(haiku 가 펜스로 감쌈; sonnet 은 clean). 작은 유틸 + 단위 test.
+     3. **cost_control 재조정**: §18.D — 다중 provider 3안의 per-request cost 추정/로깅(haiku $1/$5, gemini-flash $0.5/$3, sonnet $3/$15 per 1M). cost_control_policy.md 확장(additive).
+     4. 라이브 3-provider 3-plan 데모(게이트 ON) + Phase 12 정식화(entry 8 + ADR + archive).
 5. **frontend 손-검증** — Node 설치됨. `cd harness/apps/web && npm install && npm run dev` → localhost:3000 ↔ 백엔드 localhost:8000. (실 기획 생성은 OPENAI_API_KEY 필요 — .env 있음.)
 6. **잡정리**: `harness/backend/fastapi/새 텍스트 문서.txt`(0바이트, 불필요) 삭제 가능.
 
