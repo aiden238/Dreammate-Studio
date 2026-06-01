@@ -38,13 +38,13 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 - **사용자 확정 scope**: ① 깊이 = 자동 eval + **human review 표본**(staging S4 제외) ② golden_set = **확장 후 측정(~25)**.
 - **확정 슬라이스 (entry + 5)** — ★ 운영 코드 0 수정 + behavior-preserving(pytest 471):
   - Entry ✅: phase entry 8파일 + multi-llm-validation self(11th). (`phases/active/phase-12-validation/` + `meta/validations/2026-06-02_phase-12-pre-entry_self.md`)
-  - S1: golden_set 확장 15→~25 + **depth/actionability 평가 차원 추가** (eval-design + contract-change additive).
-  - S2: 실 LLM eval ON → golden_set ~25 **실 품질 점수** + 임계값 판정 (eval-run, ★ 실 LLM 호출=실비용 승인).
-  - S3: **깊이 격차 정량 분석** — compact vs rich 비교(필드수/beat 깊이/대사·자막·샷·썸네일/토큰/실행가능성) → 현재 X/잠재 Y/gap Z.
-  - S4: human review 표본 **kit** — 표본 + 채점 시트 + LLM-as-judge 대조 설계 (★ 사용자 실 채점은 deferred).
-  - S5: 검증 종합 + **확장 우선순위 제안** (meta-retrospective → Phase 13~20 근거).
-- B안(Phase 11) 비차단 잔여 추적: cost_control 다중-provider 재조정 / B안 ADR / agent_io·registry contract-change (Phase 12 비용·범위 기준 영향, blocking 아님).
-- 다음 액션: S1 dispatch(golden_set·rubric contract-change). (staging 실사용 = Phase 13+ 배포 골격으로 이관 / 운영 prompt·schema 확장 = Phase 13.)
+  - S1 ✅ (8ad9594): golden_set 15→**25** + **depth_actionability 차원** (CC-011, additive).
+  - S2+S3 ✅ (ef165bb): **깊이 격차 실측** — 같은 모델(gpt-4o-mini) compact(run_planning) vs rich, 6 도메인, 13 feature → **compact 0.231 vs rich 1.000 = 4.3x, 편차 0**. compact 결핍 10/13. (`eval/regression_results/2026-06-02_phase-12-s2-s3-depth-gap.md`)
+  - S4 ✅ kit (f991b0e): human review kit 3케이스(compact vs rich 실출력 + 5차원 채점 시트). ★ **사용자 실 채점 대기** (`eval/human_review/2026-06-02_phase-12-s4-review-kit.md`).
+  - S5 ✅: 종합 + Phase 13 제안 (`phases/active/phase-12-validation/s5_synthesis_and_phase13_proposal.md`).
+- ★ **검증 결론**: MVP 출력 단순함 = **모델 한계 아님, prompt/schema 설계** (같은 모델 0.231→1.000). 결핍 다수가 스키마 슬롯 부재 → 확장 레버 = prompt+schema.
+- B안(Phase 11) 비차단 잔여 추적: cost_control 다중-provider 재조정 / B안 ADR / agent_io·registry contract-change.
+- 다음 액션: **S4 사용자 채점** → Phase 12 phase-complete(retrospective/archive) → **Phase 13 = 스키마+프롬프트 확장**(prompt-version-review + cost 재조정, additive/gated, 제품경계 유지). (staging 실사용 = Phase 13+.)
 
 ## 현재 Active Phase
 
