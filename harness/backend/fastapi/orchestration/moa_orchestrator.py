@@ -164,12 +164,21 @@ async def generate_plan(
     # 3. 3-plan parallel (★ multi-model 인터페이스) ────────────────────
     progress.emit("planning", step=3, message="영상기획안 3개 생성 중...")
     try:
-        planning_results = await plans_router.run_planning_parallel_3(
-            user_input,
-            rag_context=rag_refs,
-            # models=None → settings.openai_models_for_3plan_list 사용.
-            # 향후 req에 models 파라미터 추가 시 여기서 주입 (Phase 21+).
-        )
+        if settings.multi_provider_plans_enabled:
+            # B안(§18.B): 3안을 3-provider(GPT/Claude/Gemini) alias 로 다양화 (★ gated, default OFF).
+            #   flag OFF 시 아래 else 의 기존 OpenAI 3-call 경로와 100% 동일(behavior-preserving).
+            #   다중-provider 증거는 run_planning_multi_provider_3 의 슬롯별 로깅으로 관측.
+            planning_results = await plans_router.run_planning_multi_provider_3(
+                user_input,
+                rag_context=rag_refs,
+            )
+        else:
+            planning_results = await plans_router.run_planning_parallel_3(
+                user_input,
+                rag_context=rag_refs,
+                # models=None → settings.openai_models_for_3plan_list 사용.
+                # 향후 req에 models 파라미터 추가 시 여기서 주입 (Phase 21+).
+            )
     except Exception as e:
         logger.exception("Planning parallel 3 호출 실패")
         return error_envelope_response(

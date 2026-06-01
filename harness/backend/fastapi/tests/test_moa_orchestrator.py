@@ -24,6 +24,7 @@ from typing import Any
 import pytest
 from fastapi.responses import JSONResponse
 
+from backend.fastapi.config import get_settings
 from backend.fastapi.db.types import PersistenceResult
 from backend.fastapi.orchestration import NullProgressSink, generate_plan
 from backend.fastapi.rag.types import RetrievalResult
@@ -302,3 +303,98 @@ async def test_plan_entry_mutation(patch_agents_ok) -> None:
     assert plan_entry["status"] == "generated"
     assert plan_entry["envelope"] is not None
     assert len(plan_entry["envelope"]["body"]["plan_candidates"]) == 3
+
+
+# ─── 9. Phase 12 B안 S2b-2b: multi_provider_plans_enabled gate ────────
+# step-3 의 gated 분기 검증:
+#   - flag ON  → plans_router.run_planning_multi_provider_3 사용 (run_planning_parallel_3 미호출)
+#   - flag OFF → 기존 run_planning_parallel_3 사용 (multi_provider 미호출, 회귀 가드)
+# ★ behavior-preserving: flag default False 이므로 기존 경로 100% 동일.
+#   다중-provider 증거는 함수 내부 로깅으로만 관측 — Envelope 불변.
+
+def _set_multi_provider_flag(monkeypatch: pytest.MonkeyPatch, enabled: bool) -> None:
+    """settings.multi_provider_plans_enabled override (lru_cache 재생성).
+
+    test_cross_validation_wiring._set_cross_flag 와 동일 패턴 — env override + cache_clear.
+    """
+    monkeypatch.setenv("MULTI_PROVIDER_PLANS_ENABLED", "true" if enabled else "false")
+    get_settings.cache_clear()
+    assert get_settings().multi_provider_plans_enabled is enabled
+
+
+@pytest.mark.asyncio
+async def test_multi_provider_flag_on_uses_multi_provider_fn(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """flag ON → run_planning_multi_provider_3 사용 + run_planning_parallel_3 미호출.
+
+    multi_provider 함수가 3-plan 을 반환하고, 정상 Envelope(200, plan 3개) 반환.
+    """
+    import copy
+
+    multi_calls: list[tuple[Any, ...]] = []
+
+    async def fake_multi(*args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+        multi_calls.append((args, kwargs))
+        return copy.deepcopy(_parallel_3_payload())
+
+    async def parallel_must_not_run(*args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+        raise AssertionError("run_planning_parallel_3 must NOT be called when flag ON")
+
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_intent", lambda *a, **k: dict(_INTENT_OK))
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_rag_retrieval", _rag_fallback)
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_planning_multi_provider_3", fake_multi)
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_planning_parallel_3", parallel_must_not_run)
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_critic", _critic_approve)
+    monkeypatch.setattr("backend.fastapi.routers.plans.save_video_planning", _db_save_ok)
+
+    _set_multi_provider_flag(monkeypatch, True)
+
+    result = await generate_plan("test-plan-id", _make_plan_entry(), GenerateRequest())
+
+    assert isinstance(result, Envelope)
+    assert len(result.body.plan_candidates) == 3
+    # ★ multi_provider 함수가 정확히 1회 사용됨 (parallel 은 raise 로 가드).
+    assert len(multi_calls) == 1
+    # validation.checks 순서 7개 보존 (Envelope 불변).
+    check_names = [c.name for c in result.validation.checks]
+    assert check_names == [
+        "schema_envelope", "intent_filter", "rag_retrieval", "plan_count",
+        "critic_evaluation", "db_persistence", "multi_model",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_multi_provider_flag_off_uses_parallel_fn(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """flag OFF(명시) → 기존 run_planning_parallel_3 사용 + multi_provider 미호출 (회귀 가드)."""
+    import copy
+
+    parallel_calls: list[tuple[Any, ...]] = []
+    multi_calls: list[tuple[Any, ...]] = []
+
+    async def fake_parallel(*args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+        parallel_calls.append((args, kwargs))
+        return copy.deepcopy(_parallel_3_payload())
+
+    async def fake_multi(*args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+        multi_calls.append((args, kwargs))
+        return copy.deepcopy(_parallel_3_payload())
+
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_intent", lambda *a, **k: dict(_INTENT_OK))
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_rag_retrieval", _rag_fallback)
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_planning_parallel_3", fake_parallel)
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_planning_multi_provider_3", fake_multi)
+    monkeypatch.setattr("backend.fastapi.routers.plans.run_critic", _critic_approve)
+    monkeypatch.setattr("backend.fastapi.routers.plans.save_video_planning", _db_save_ok)
+
+    _set_multi_provider_flag(monkeypatch, False)
+
+    result = await generate_plan("test-plan-id", _make_plan_entry(), GenerateRequest())
+
+    assert isinstance(result, Envelope)
+    assert len(result.body.plan_candidates) == 3
+    # ★ 기존 경로만 사용 — parallel 1회, multi_provider 0회 (회귀 가드).
+    assert len(parallel_calls) == 1
+    assert multi_calls == []

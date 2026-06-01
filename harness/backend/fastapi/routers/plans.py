@@ -38,6 +38,7 @@ from ..agents.intent import (
 from ..agents.planning import (
     PARALLEL_3_PROMPT_ID,
     PARALLEL_3_PROMPT_VERSION,
+    run_planning_multi_provider_3,
     run_planning_parallel_3,
 )
 from ..agents.rewriter import run_rewriter
