@@ -30,10 +30,18 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 - pytest **471** + P-X1 유지 + behavior-preserving(flag OFF byte-identical) + 키 커밋 0.
 - 남은 B안 정식화(비차단, 다음 세션/검증 entry 흡수 가능): cost_control_policy 다중-provider cost 재조정(§18.D) + ADR(B안 결정) + agent_io/registry contract-change 반영.
 
-## 🟡 다음: Phase 12 = 검증 페이즈 (validation, slice 단위 — 사용자 지침)
+## 🟡 다음: Phase 12 = 검증 페이즈 (validation) — ★ scope 확정 (2026-06-02)
 
-- 목적: MVP 출력 **품질·가치** 실측(지금까지 구조 정확성만 검증됨). 실 LLM eval ON + golden_set 실점수 + (선택) staging 실사용 → 확장 우선순위 근거 확보.
-- ★ 기획 착수 전 scope 확정 필요(실 LLM eval 깊이 / human review 포함 여부 / staging 배포 결합 / golden_set 규모). 슬라이스 분해는 다음 단계.
+- 목적: MVP 출력(영상기획안) **품질·가치** 실측(지금까지 구조 정확성만 검증). 확장(13~20) 우선순위 근거 확보.
+- **사용자 확정 scope**: ① 깊이 = 자동 eval + **human review 표본**(staging S4 제외) ② golden_set = **확장 후 측정(20~30)**.
+- **확정 슬라이스 (entry + 5)**:
+  - Entry: phase entry 8파일 + multi-llm-validation(11th).
+  - S1: golden_set 확장 15→~25 (eval-design — 신규 케이스 + rubric 정합, CC).
+  - S2: 실 LLM eval ON → golden_set ~25 **실 품질 점수** + 임계값 판정 (eval-run, 실 LLM 호출=실비용).
+  - S3: 차원별 약점 분석 (hook 강도/구체성/도메인 적합성) → 품질 GAP 도출.
+  - S4: human review 표본 — 사용자 직접 채점 → LLM-as-judge 신뢰도 대조 (human_review_rubric).
+  - S5: 검증 종합 + **확장 우선순위 제안** (회고 → Phase 13~20 근거).
+- 다음 액션: phase-start → entry 8파일 작성(정식 진입). (staging 실사용 = Phase 13+ 배포 골격으로 이관.)
 
 ## 현재 Active Phase
 
