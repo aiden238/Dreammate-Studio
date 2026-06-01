@@ -5,7 +5,7 @@
 영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5 + Phase M0(meta-phase) + Phase M1(meta-phase dry-run) + Phase M2(meta-phase machinery 개선) + Phase M3(meta-phase 이질 도메인 범용성 2차) + Phase 10(MVP 통합 테스트) 완료 + Phase 11(LLM Gateway A안 + B안 3-provider 확장) 완료**.
 Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /auth/* + /sse/* + /plans/{id}/select + /plans/{id}/feedback 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions, **normalize wiring live**) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계 (실 stage 연동)** + **RAG Lite (candidate_knowledge 5단계 MVP 전부 + pgvector retrieval + LLM Wiki 보조)** + **MOA Orchestrator 추출 (orchestration/moa_orchestrator + ProgressSink + progress_store 브릿지) + prompt_registry semver 정식화 + Critic v1.1.0 conservative adapter** + **결과 저장(selected_plans) + 피드백(feedback_events) 영속화 graceful + PII 마스킹 + 피드백 UI inline + Brand Memory 준비(feedback→candidate pending 적재)** 모두 동작.
 **Phase 9 ✅ done (2026-05-31)** — 결과 저장 + 피드백 (selected_plans/feedback_events 영속화 graceful + normalize_to_canonical wiring + Brand Memory 준비 + 피드백 UI wrapper, ADR-030/031/032, CC-004, large phase 6 Slice 실측 ~10~13h).
-**🟢 최신 = Phase 11(LLM Gateway A안+B안) ✅ done (2026-06-02) — 다음 = Phase 12 검증 페이즈(validation).**
+**🟢 최신 = Phase 12 검증 페이즈(validation) **active** (entry 작성 2026-06-02) — Phase 11(LLM Gateway A안+B안) done 후. 핵심 = MVP 출력 품질·가치 실측 + 깊이 격차(depth gap) 정량화.**
 
 ## 🟢 Phase 11 A안 — LLM Gateway ✅ done (2026-06-01)
 
@@ -31,24 +31,29 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 - pytest **471** + P-X1 유지 + behavior-preserving(flag OFF byte-identical) + 키 커밋 0.
 - 남은 B안 정식화(비차단, 다음 세션/검증 entry 흡수 가능): cost_control_policy 다중-provider cost 재조정(§18.D) + ADR(B안 결정) + agent_io/registry contract-change 반영.
 
-## 🟡 다음: Phase 12 = 검증 페이즈 (validation) — ★ scope 확정 (2026-06-02)
+## 🟢 Phase 12 = 검증 페이즈 (validation) — ★ active (entry 작성 2026-06-02)
 
 - 목적: MVP 출력(영상기획안) **품질·가치** 실측(지금까지 구조 정확성만 검증). 확장(13~20) 우선순위 근거 확보.
-- **사용자 확정 scope**: ① 깊이 = 자동 eval + **human review 표본**(staging S4 제외) ② golden_set = **확장 후 측정(20~30)**.
-- **확정 슬라이스 (entry + 5)**:
-  - Entry: phase entry 8파일 + multi-llm-validation(11th).
-  - S1: golden_set 확장 15→~25 (eval-design — 신규 케이스 + rubric 정합, CC).
-  - S2: 실 LLM eval ON → golden_set ~25 **실 품질 점수** + 임계값 판정 (eval-run, 실 LLM 호출=실비용).
-  - S3: 차원별 약점 분석 (hook 강도/구체성/도메인 적합성) → 품질 GAP 도출.
-  - S4: human review 표본 — 사용자 직접 채점 → LLM-as-judge 신뢰도 대조 (human_review_rubric).
-  - S5: 검증 종합 + **확장 우선순위 제안** (회고 → Phase 13~20 근거).
-- 다음 액션: phase-start → entry 8파일 작성(정식 진입). (staging 실사용 = Phase 13+ 배포 골격으로 이관.)
+- ★ 핵심 GAP = **깊이 격차(depth gap)**: 같은 모델(gpt-4o-mini)에 확장 프롬프트만으로 compact(name/concept/hook/2~4 beat/pros/risks 7필드)→rich(hook 3변형·타임코드·대사·자막·B-roll·썸네일/제목·CTA·레퍼런스·길이 변형). 2026-06-02 라이브 데모 입증 → 단순함=모델 한계 아니라 prompt/schema 설계 선택. Phase 12 = 이 격차를 수치(현재 X/잠재 Y/gap Z)로 확정.
+- **사용자 확정 scope**: ① 깊이 = 자동 eval + **human review 표본**(staging S4 제외) ② golden_set = **확장 후 측정(~25)**.
+- **확정 슬라이스 (entry + 5)** — ★ 운영 코드 0 수정 + behavior-preserving(pytest 471):
+  - Entry ✅: phase entry 8파일 + multi-llm-validation self(11th). (`phases/active/phase-12-validation/` + `meta/validations/2026-06-02_phase-12-pre-entry_self.md`)
+  - S1: golden_set 확장 15→~25 + **depth/actionability 평가 차원 추가** (eval-design + contract-change additive).
+  - S2: 실 LLM eval ON → golden_set ~25 **실 품질 점수** + 임계값 판정 (eval-run, ★ 실 LLM 호출=실비용 승인).
+  - S3: **깊이 격차 정량 분석** — compact vs rich 비교(필드수/beat 깊이/대사·자막·샷·썸네일/토큰/실행가능성) → 현재 X/잠재 Y/gap Z.
+  - S4: human review 표본 **kit** — 표본 + 채점 시트 + LLM-as-judge 대조 설계 (★ 사용자 실 채점은 deferred).
+  - S5: 검증 종합 + **확장 우선순위 제안** (meta-retrospective → Phase 13~20 근거).
+- B안(Phase 11) 비차단 잔여 추적: cost_control 다중-provider 재조정 / B안 ADR / agent_io·registry contract-change (Phase 12 비용·범위 기준 영향, blocking 아님).
+- 다음 액션: S1 dispatch(golden_set·rubric contract-change). (staging 실사용 = Phase 13+ 배포 골격으로 이관 / 운영 prompt·schema 확장 = Phase 13.)
 
 ## 현재 Active Phase
 
-**🟢 Phase 11 A안+B안 done (2026-06-02), 다음 = Phase 12 검증 페이즈 entry — pending_user_decision/entry.**
+**🟢 Phase 12 검증 페이즈 active (entry 작성, 2026-06-02)** — MVP 출력(영상기획안) 품질·가치 실측. 핵심 GAP = **깊이 격차(depth gap)**: 같은 모델(gpt-4o-mini)에 확장 프롬프트만으로 compact(7필드)→rich(hook 3변형·타임코드·대사·자막·B-roll·썸네일·CTA·레퍼런스·길이 변형)됨이 2026-06-02 라이브 데모로 입증 → 단순함=모델 한계 아니라 prompt/schema 설계 선택. entry 8파일 + validation self(11th) 작성 완료. Entry+S1~S5: golden_set 15→~25 + depth/actionability 차원(CC) / 실 LLM eval baseline(실비용 승인) / 깊이 격차 정량(compact vs rich) / human review kit / 종합→Phase 13 우선순위. ★ 운영 코드 0 수정 + behavior-preserving(pytest **471** 유지) + 키 0. B안 잔여(cost/ADR/contract-change) 추적.
 
-<details><summary>과거 Active Phase 요약 (Phase 10/M3 — 보존)</summary>
+<details><summary>과거 Active Phase 요약 (Phase 11/10/M3 — 보존)</summary>
+
+**🟢 Phase 11 A안+B안 done (2026-06-02)** — LLM Gateway(A안 골격+cross_validation+gated hook / B안 3-provider 3안 라이브 입증). pytest 471 + behavior-preserving + 키 0. 다음 = Phase 12 검증 페이즈.
+
 
 **🟢 Phase 10 ✅ done (2026-05-31) — MVP 통합 완료, 배포 Gate A 통과** — Phase M0~M3(meta detour) + Phase 10(MVP 통합) 완료. 다음 = 배포 Gate B~G(staging→알파→베타→운영, 키·인프라 user-provided + 운영 phase) 또는 Phase 11+(4계층 linkage / async worker / prompt A/B / 자동 promotion / 실 LLM eval default / M3 GAP). 사용자 결정 대기.
 
