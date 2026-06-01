@@ -153,58 +153,97 @@ footer { padding: 40px 20px 64px; text-align: center; color: var(--muted); font-
 #wbs {
   width: 1180px;
   max-width: 1180px;
-  height: 820px;
-  min-height: 820px;
-  max-height: 820px;
-  align-items: start;
+  height: 760px;
+  min-height: 760px;
+  max-height: 760px;
+  align-items: center;
   overflow: hidden;
-  padding: 36px 0;
+  padding: 18px 0;
   font-size: 16px;
 }
-#wbs .eyebrow { font-size: 13px; }
-#wbs h2 { font-size: clamp(34px, 5vw, 58px); margin-bottom: 18px; }
-#wbs h3 { font-size: 22px; }
-#wbs .grid.two {
-  grid-template-columns: 340px 1fr;
-  gap: 20px;
-  height: 330px;
-  align-items: stretch;
+.wbs-frame {
+  width: 100%;
+  height: 720px;
+  display: grid;
+  grid-template-rows: 92px 270px 1fr;
+  gap: 16px;
+  overflow: hidden;
+}
+.wbs-header {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+  align-items: end;
+}
+#wbs .eyebrow {
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+#wbs h2 {
+  font-size: 48px;
+  margin-bottom: 0;
+  line-height: 1.05;
+}
+.wbs-subtitle {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+.wbs-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 18px;
+  height: 270px;
 }
 #wbs .progress {
-  min-height: 300px;
-  height: 300px;
+  min-height: 0;
+  height: 270px;
+  border-radius: 24px;
 }
-#wbs .progress strong { font-size: 64px; }
-#wbs .progress span { font-size: 16px; }
+#wbs .progress strong {
+  font-size: 58px;
+}
+#wbs .progress span {
+  font-size: 14px;
+}
 #wbs .stack {
-  height: 300px;
+  height: 270px;
+  display: grid;
   grid-template-rows: repeat(3, 1fr);
   gap: 10px;
 }
 #wbs .stack .card {
   min-height: 0;
-  padding: 16px 18px;
+  padding: 14px 18px;
   border-radius: 18px;
+  box-shadow: none;
+}
+#wbs .stack .card h3 {
+  font-size: 20px;
+  line-height: 1.18;
 }
 #wbs .stack .card p {
-  margin: 6px 0 0;
-  font-size: 15px;
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
 }
 #wbs .tag {
-  padding: 4px 10px;
-  font-size: 12px;
-  margin-bottom: 8px;
+  padding: 3px 9px;
+  font-size: 11px;
+  margin-bottom: 7px;
 }
-#wbs table {
-  height: 315px;
-  margin-top: 18px;
+.wbs-table {
+  height: 310px;
+  margin-top: 0;
   table-layout: fixed;
 }
 #wbs th,
 #wbs td {
-  padding: 10px 12px;
+  padding: 9px 12px;
   font-size: 14px;
-  line-height: 1.45;
+  line-height: 1.35;
 }
 #wbs th:nth-child(1),
 #wbs td:nth-child(1) { width: 12%; }
@@ -230,7 +269,12 @@ footer { padding: 40px 20px 64px; text-align: center; color: var(--muted); font-
     max-height: none;
     overflow: visible;
   }
-  #wbs .grid.two {
+  .wbs-frame {
+    height: auto;
+    grid-template-rows: auto;
+  }
+  .wbs-header,
+  .wbs-grid {
     grid-template-columns: 1fr;
     height: auto;
   }
