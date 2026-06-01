@@ -12,6 +12,7 @@
   <header class="topbar">
     <a class="brand" href="#top"><span class="logo"></span>Dreammate Studio</a>
     <nav>
+      <a href="#top">표지</a>
       <a href="#problem">문제·비전</a>
       <a href="#solution">해결</a>
       <a href="#architecture">아키텍처</a>
@@ -20,7 +21,7 @@
   </header>
 
   <main id="top">
-    <section class="slide hero">
+    <section class="slide hero" id="cover">
       <div>
         <p class="eyebrow">GitHub Pages · WBS · Agent Pipeline</p>
         <h1>영상기획을<br>실행 가능한 계획으로 바꾸는 AI 에이전트</h1>
@@ -89,40 +90,53 @@
 
     <section id="architecture" class="slide architecture-slide">
       <p class="eyebrow">03. System Architecture · Agent Pipeline</p>
-      <h2>현재 시스템 아키텍처와 에이전트 흐름</h2>
-      <article class="card diagram arch-card agent-arch">
+      <h2>소프트웨어 아키텍처와 AI 에이전트 파이프라인</h2>
+      <div class="arch-split">
+        <article class="card diagram arch-block software-arch">
+          <h3>Software Architecture — Front / Back</h3>
 <pre class="mermaid">
 flowchart LR
-  U[사용자] --> FE[Next.js PWA<br/>Discovery / Quick]
-  FE --> API[FastAPI BFF<br/>Auth / Plan / SSE]
+  U[사용자] --> FE[Next.js PWA<br/>브랜드 질문 UI]
+  FE --> API[FastAPI BFF<br/>인증·기획 요청·SSE]
+  API --> AI[AI Orchestrator<br/>기획 에이전트 실행]
+  API --> DB[Supabase<br/>Auth / DB / Storage]
+  AI --> API
+  DB --> FE
 
-  API --> ROUTER[Intent Router<br/>신규·기존 분기]
-  ROUTER --> RAG[LLM Wiki + RAG Lite<br/>근거 검색]
-  RAG --> GEN[Plan Generator<br/>3개 후보 생성]
-  GEN --> CRITIC[Critic Agent<br/>품질 평가]
-  CRITIC --> REWRITE[Rewriter Loop<br/>최대 2회 개선]
-  REWRITE --> DB[Supabase<br/>결과·피드백 저장]
-  DB --> BM[Brand Memory<br/>피드백 개인화]
-  DB --> WBS[GitHub Pages<br/>WBS Dashboard]
-  BM -.다음 기획 반영.-> ROUTER
-
-  classDef ux fill:#ecfeff,stroke:#06b6d4,stroke-width:2px,color:#164e63;
-  classDef ai fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#312e81;
+  classDef front fill:#ecfeff,stroke:#06b6d4,stroke-width:2px,color:#164e63;
+  classDef back fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#312e81;
   classDef data fill:#f0fdf4,stroke:#12b76a,stroke-width:2px,color:#14532d;
-  classDef out fill:#fff7ed,stroke:#f79009,stroke-width:2px,color:#7c2d12;
-  class U,FE ux;
-  class API,ROUTER,RAG,GEN,CRITIC,REWRITE ai;
-  class DB,BM data;
-  class WBS out;
+  class U,FE front;
+  class API,AI back;
+  class DB data;
 </pre>
-      </article>
+        </article>
+
+        <article class="card diagram arch-block pipeline-arch">
+          <h3>AI Agent Pipeline — 내부 처리 흐름</h3>
+<pre class="mermaid">
+flowchart LR
+  A[Intent Router<br/>신규·기존 분기] --> B[RAG Lite<br/>근거 검색]
+  B --> C[Plan Generator<br/>3개 후보 생성]
+  C --> D[Critic Agent<br/>품질 평가]
+  D --> E[Rewriter Loop<br/>최대 2회 개선]
+  E --> F[Result Save<br/>기획안·피드백 저장]
+  F --> G[Brand Memory<br/>다음 기획 반영]
+
+  classDef agent fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#312e81;
+  classDef memory fill:#f0fdf4,stroke:#12b76a,stroke-width:2px,color:#14532d;
+  class A,B,C,D,E agent;
+  class F,G memory;
+</pre>
+        </article>
+      </div>
       <div class="agent-pipeline-strip">
         <span>1. 입력 분기</span>
         <span>2. 근거 검색</span>
-        <span>3. 3개 후보 생성</span>
-        <span>4. 품질 검증·수정</span>
-        <span>5. 저장·개인화</span>
-        <span>6. WBS 확인</span>
+        <span>3. 후보 생성</span>
+        <span>4. 품질 검증</span>
+        <span>5. 저장·피드백</span>
+        <span>6. 개인화 반영</span>
       </div>
     </section>
 
@@ -161,6 +175,7 @@ flowchart LR
     </section>
   </main>
 
+  <div class="deck-hint">← 이전 · 다음 →</div>
   <footer>Dreammate Studio · GitHub Pages Presentation</footer>
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
@@ -168,28 +183,44 @@ flowchart LR
   </script>
   <script>
     const slides = Array.from(document.querySelectorAll('.slide'));
-    function moveSlide(direction) {
-      const currentY = window.scrollY;
-      let index = slides.findIndex((slide, i) => {
-        const next = slides[i + 1];
-        return currentY >= slide.offsetTop - 90 && (!next || currentY < next.offsetTop - 90);
-      });
-      if (index < 0) index = 0;
-      const nextIndex = Math.max(0, Math.min(slides.length - 1, index + direction));
-      slides[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const navLinks = Array.from(document.querySelectorAll('nav a'));
+    let currentIndex = Math.max(0, slides.findIndex((slide) => '#' + slide.id === window.location.hash));
+
+    function setSlide(index, pushHash = true) {
+      currentIndex = Math.max(0, Math.min(slides.length - 1, index));
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === currentIndex));
+      const activeId = slides[currentIndex].id;
+      navLinks.forEach((link) => link.classList.toggle('active', link.getAttribute('href') === '#' + activeId || (activeId === 'cover' && link.getAttribute('href') === '#top')));
+      if (pushHash) {
+        const hash = activeId === 'cover' ? '#top' : '#' + activeId;
+        history.replaceState(null, '', hash);
+      }
     }
+
+    navLinks.forEach((link) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        const href = link.getAttribute('href');
+        const targetId = href === '#top' ? 'cover' : href.slice(1);
+        const targetIndex = slides.findIndex((slide) => slide.id === targetId);
+        if (targetIndex >= 0) setSlide(targetIndex);
+      });
+    });
+
     window.addEventListener('keydown', (event) => {
       const tag = document.activeElement.tagName.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
-      if (event.code === 'Space' || event.key === 'ArrowRight' || event.key === 'PageDown') {
+      if (event.key === 'ArrowRight' || event.code === 'Space' || event.key === 'PageDown') {
         event.preventDefault();
-        moveSlide(1);
+        setSlide(currentIndex + 1);
       }
-      if ((event.shiftKey && event.code === 'Space') || event.key === 'ArrowLeft' || event.key === 'PageUp') {
+      if (event.key === 'ArrowLeft' || event.key === 'PageUp' || (event.shiftKey && event.code === 'Space')) {
         event.preventDefault();
-        moveSlide(-1);
+        setSlide(currentIndex - 1);
       }
     });
+
+    setSlide(currentIndex, false);
   </script>
 </body>
 </html>
