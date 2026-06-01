@@ -292,3 +292,85 @@ def test_gateway_missing_anthropic_key_raises_graceful_llmerror(
     assert ei.value.provider == "anthropic"
     assert "key" in ei.value.message.lower()
     get_settings.cache_clear()
+
+
+# ─── S2b-1: json_mode 코드펜스 정규화 (라이브 관찰 haiku 펜스 방어) ──────
+# 일부 Claude 모델(haiku 등)이 system 지시에도 ```json ... ``` 펜스를 덧붙여 반환 →
+# json_mode 응답에 한해 _strip_json_fences 로 벗겨 clean JSON 으로 정규화한다.
+# clean JSON / json_mode=False 는 불변(behavior-preserving).
+
+from backend.fastapi.llm.providers.anthropic_adapter import _strip_json_fences
+
+
+def test_complete_json_mode_strips_json_lang_fence() -> None:
+    # ```json\n{...}\n``` (lang 지정) → 펜스 제거된 clean JSON.
+    client = _make_fake_anthropic_client('```json\n{"a":1}\n```')
+    adapter = AnthropicAdapter(client=client)
+    req = LLMRequest(
+        messages=[LLMMessage(role="user", content="x")],
+        model_id="claude-haiku-4-5",
+        json_mode=True,
+    )
+    resp = adapter.complete(req, api_key="sk-ant-x")
+    assert resp.text == '{"a":1}'
+
+
+def test_complete_json_mode_strips_bare_fence() -> None:
+    # bare ```\n{...}\n``` (lang 없음) → 펜스 제거.
+    client = _make_fake_anthropic_client('```\n{"b":2}\n```')
+    adapter = AnthropicAdapter(client=client)
+    req = LLMRequest(
+        messages=[LLMMessage(role="user", content="x")],
+        model_id="claude-haiku-4-5",
+        json_mode=True,
+    )
+    resp = adapter.complete(req, api_key="sk-ant-x")
+    assert resp.text == '{"b":2}'
+
+
+def test_complete_json_mode_clean_json_unchanged() -> None:
+    # 펜스 없는 clean JSON → 불변 (behavior-preserving).
+    client = _make_fake_anthropic_client('{"c":3}')
+    adapter = AnthropicAdapter(client=client)
+    req = LLMRequest(
+        messages=[LLMMessage(role="user", content="x")],
+        model_id="claude-sonnet-4-6",
+        json_mode=True,
+    )
+    resp = adapter.complete(req, api_key="sk-ant-x")
+    assert resp.text == '{"c":3}'
+
+
+def test_complete_non_json_mode_does_not_strip_fence() -> None:
+    # ★ json_mode=False → 펜스가 있어도 벗기지 않는다 (원본 유지).
+    fenced = '```json\n{"d":4}\n```'
+    client = _make_fake_anthropic_client(fenced)
+    adapter = AnthropicAdapter(client=client)
+    req = LLMRequest(
+        messages=[LLMMessage(role="user", content="x")],
+        model_id="claude-haiku-4-5",
+        json_mode=False,
+    )
+    resp = adapter.complete(req, api_key="sk-ant-x")
+    assert resp.text == fenced
+
+
+# ─── _strip_json_fences 직접 단위 테스트 ──────────────────────────────
+
+def test_strip_json_fences_lang_fence() -> None:
+    assert _strip_json_fences('```json\n{"a":1}\n```') == '{"a":1}'
+
+
+def test_strip_json_fences_bare_fence() -> None:
+    assert _strip_json_fences('```\n{"b":2}\n```') == '{"b":2}'
+
+
+def test_strip_json_fences_no_fence_returns_original() -> None:
+    # 펜스로 시작하지 않으면 원본 그대로 (불변).
+    assert _strip_json_fences('{"c":3}') == '{"c":3}'
+    assert _strip_json_fences('plain text {"x":1}') == 'plain text {"x":1}'
+
+
+def test_strip_json_fences_leading_trailing_whitespace() -> None:
+    # 앞뒤 공백/개행이 있어도 펜스를 인식하고 벗긴다.
+    assert _strip_json_fences('  \n```json\n{"e":5}\n```\n  ') == '{"e":5}'

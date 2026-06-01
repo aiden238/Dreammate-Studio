@@ -31,6 +31,8 @@ assistant prefill 기법은 사용하지 않는다 — claude-sonnet-4-6 등 신
 미지원("conversation must end with a user message", 400 BadRequest)하기 때문이며,
 system 지시문 방식은 모든 Claude 모델(haiku-4-5 / sonnet-4-6 등)과 호환된다.
 messages 는 user turn 으로 끝나도록 유지된다(prefill assistant turn 미추가).
+펜스 방어 정규화: 일부 모델(haiku 등)이 system 지시에도 ```json ... ``` 펜스를 덧붙이므로
+json_mode 응답에 한해 코드펜스를 벗겨 clean JSON 으로 정규화한다(다운스트림 json.loads 안정화).
 """
 
 from __future__ import annotations
@@ -111,6 +113,8 @@ class AnthropicAdapter:
 
         # ★ prefill 미사용 → 모델이 완전한 JSON 을 직접 반환하므로 복원 후처리 불필요.
         text = _extract_text(response)
+        if req.json_mode:
+            text = _strip_json_fences(text)   # ★ Claude 펜스 정규화 (json_mode 한정)
         usage = _extract_usage(response)
         return LLMResponse(
             text=text,
@@ -156,6 +160,23 @@ def _extract_text(response: Any) -> str:
         if isinstance(block_text, str) and block_text:
             chunks.append(block_text)
     return "".join(chunks)
+
+
+def _strip_json_fences(text: str) -> str:
+    """마크다운 코드펜스로 감싼 JSON 을 벗긴다 (json_mode 정규화용).
+
+    일부 Claude 모델(haiku 등)은 system 지시에도 ```json ... ``` 펜스를 덧붙인다.
+    펜스로 시작하지 않으면 원본을 그대로 반환(비-펜스/clean JSON 은 불변 = behavior-preserving).
+    """
+    s = text.strip()
+    if not s.startswith("```"):
+        return text  # 펜스 아님 → 원본 그대로 (clean JSON / 비-Claude 불변)
+    lines = s.splitlines()
+    if lines and lines[0].startswith("```"):   # 첫 줄: ``` 또는 ```json 등 제거
+        lines = lines[1:]
+    if lines and lines[-1].strip() == "```":   # 마지막 줄: 닫는 ``` 제거
+        lines = lines[:-1]
+    return "\n".join(lines).strip()
 
 
 def _extract_usage(response: Any) -> LLMUsage:
