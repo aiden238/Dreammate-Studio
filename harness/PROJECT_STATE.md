@@ -16,12 +16,24 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 - ADR-039 + CC-010(cost_control tier×mode→alias 표 additive) + P-LLM-GATEWAY-001(신규 후보).
 - 다음(B안+): full 라이브 /generate(wizard) 데모 ✅(consensus) / frontend 손-검증 / **B안(Phase 12) 진행 중** — 아래.
 
-## 🟢 진행 중 (2026-06-01): Phase 12 B안 — 3-provider
+## 🟢 LLM Gateway B안 (Phase 11 확장) — 3-provider ✅ 기능 완성·라이브 입증 (2026-06-02)
 
-- **S1 완료** (cac2b9b + b060c2b fix): Anthropic adapter + registry Claude(haiku/sonnet)·Gemini + gateway 3-provider 분기(openai/google/anthropic) + config(anthropic_api_key + model placeholder). pytest 435→**452**. behavior-preserving.
-- ★ **3-provider 라이브 연결 입증**: GPT(gpt-4o-mini) + Claude(haiku-4-5, sonnet-4-6) + Gemini(3.5-flash) 전부 gateway 경유 실제 호출 OK. 버그(sonnet prefill 미지원 400) → adapter JSON prefill 제거(system 지시문 방식)로 수정.
-- **S2a 완료** (6948d3e): 3-plan 다양성 alias 3개 — plan_primary→gpt-4o-mini(openai), plan_secondary→claude-haiku(anthropic), plan_tertiary→gemini-flash(google). registry 엔 키만/alias 0 이던 상태 해소. pytest 452→**457**. additive-only, gated/default-off.
-- 다음 **B안 S2b** (다음 세션 권장 — orchestration 경로 변경 = behavior-preserving 최고 난도, 신규 컨텍스트): ① gated 다중-provider 3-plan 경로(`multi_provider_plans_enabled` default False, Envelope 불변) ② Claude ```json 펜스 stripping ③ cost_control 재조정(§18.D) ④ 라이브 3-provider 3안 데모 + Phase 12 정식화(entry 8/ADR/archive). 상세 = handoff §4·4.
+> ★ 번호 확정: B안 = **Phase 11 확장**(LLM Gateway A안→B안, 같은 서브시스템). **Phase 12 = 검증 페이즈**로 비움(사용자 지침 "12=검증"). 확장 = Phase 13~20.
+
+- **S1** (cac2b9b + b060c2b): Anthropic adapter + registry Claude·Gemini + gateway 3-provider 분기(openai/google/anthropic) + config. sonnet prefill 400 버그 수정. pytest 435→452.
+- **S2a** (6948d3e): 3-plan 다양성 alias — plan_primary→GPT / plan_secondary→Claude(haiku) / plan_tertiary→Gemini(flash). 452→457.
+- **S2b-1** (dcf46e5): Claude ```json 펜스 stripping(json_mode 정규화, haiku 대응). 457→465.
+- **S2b-2a** (7e1e7a2): `run_planning_multi_provider_3`(gateway 3-provider 3안, graceful len-3) + `multi_provider_plans_enabled` flag(default False). 미연결. 465→469.
+- **S2b-2b** (c9fe16d): orchestrator step-3 gated 분기(ON→multi-provider / OFF→기존 byte-identical, Envelope 불변). 469→**471**.
+- **S2b-2c** (f2ae80d): gemini-flash registry model_id 'gemini-3-flash' 404 → config field(default live 'gemini-3.5-flash')로 교정.
+- ★ **라이브 3-provider 3안 데모 (2026-06-02)**: slot0 openai/gpt-4o-mini · slot1 anthropic/claude-haiku-4-5 · slot2 google/gemini-3.5-flash — **3안 전부 실 생성, FALLBACK 0**, approach_label 다양(narrative/informational/experiment). gated default-off로 기존 단일-provider 흐름 100% 보존.
+- pytest **471** + P-X1 유지 + behavior-preserving(flag OFF byte-identical) + 키 커밋 0.
+- 남은 B안 정식화(비차단, 다음 세션/검증 entry 흡수 가능): cost_control_policy 다중-provider cost 재조정(§18.D) + ADR(B안 결정) + agent_io/registry contract-change 반영.
+
+## 🟡 다음: Phase 12 = 검증 페이즈 (validation, slice 단위 — 사용자 지침)
+
+- 목적: MVP 출력 **품질·가치** 실측(지금까지 구조 정확성만 검증됨). 실 LLM eval ON + golden_set 실점수 + (선택) staging 실사용 → 확장 우선순위 근거 확보.
+- ★ 기획 착수 전 scope 확정 필요(실 LLM eval 깊이 / human review 포함 여부 / staging 배포 결합 / golden_set 규모). 슬라이스 분해는 다음 단계.
 
 ## 현재 Active Phase
 
