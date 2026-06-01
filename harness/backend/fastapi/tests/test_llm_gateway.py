@@ -117,6 +117,44 @@ def test_known_aliases_list() -> None:
         assert a in known
 
 
+# ─── B안(Phase 12 S2a): 3-plan 다양성 슬롯 alias (★ gated, 직접 연결 X) ──
+
+def test_resolve_plan_diversity_slot_aliases() -> None:
+    # 슬롯별 provider 다양성: OpenAI / Anthropic / Google.
+    assert alias_mod.resolve("plan_primary") == "gpt-4o-mini"
+    assert alias_mod.resolve("plan_secondary") == "claude-haiku"
+    assert alias_mod.resolve("plan_tertiary") == "gemini-flash"
+
+
+def test_known_aliases_includes_plan_diversity_slots() -> None:
+    known = alias_mod.known_aliases()
+    for a in ("plan_primary", "plan_secondary", "plan_tertiary"):
+        assert a in known
+
+
+def test_plan_diversity_aliases_roundtrip_to_registry() -> None:
+    # alias → registry key → get_model: KeyError 없이 dict 반환 + provider 검증.
+    primary = registry_mod.get_model(alias_mod.resolve("plan_primary"))
+    assert primary["provider"] == registry_mod.PROVIDER_OPENAI
+
+    secondary = registry_mod.get_model(alias_mod.resolve("plan_secondary"))
+    assert secondary["provider"] == registry_mod.PROVIDER_ANTHROPIC
+
+    tertiary = registry_mod.get_model(alias_mod.resolve("plan_tertiary"))
+    assert tertiary["provider"] == registry_mod.PROVIDER_GOOGLE
+
+
+def test_plan_diversity_aliases_ignore_tier_and_mode() -> None:
+    # 단일 str alias 이므로 tier/mode 파라미터는 결과에 무영향.
+    assert alias_mod.resolve("plan_secondary", tier="paid", mode="cost_saving") == "claude-haiku"
+
+
+def test_plan_diversity_aliases_preserve_existing_behavior() -> None:
+    # ★ behavior-preserving 회귀 가드: 기존 alias 동작 불변 재확인.
+    assert alias_mod.resolve("planning") == "gpt-4o-mini"
+    assert alias_mod.resolve("critic", mode="standard") == "gpt-4o"
+
+
 # ─── registry get_model 단위 (제안서 §5.1) ────────────────────────────
 
 def test_registry_openai_models() -> None:
