@@ -150,6 +150,149 @@ tr:last-child td { border-bottom: 0; }
 .script b { color: #3730a3; }
 footer { padding: 40px 20px 64px; text-align: center; color: var(--muted); font-weight: 800; font-size: 24px; }
 
+.hero-infographic h2 { font-size: 42px; }
+.hero-flow {
+  display: grid;
+  grid-template-columns: 1fr 34px 1fr 34px 1fr;
+  gap: 10px;
+  align-items: center;
+  margin-top: 18px;
+}
+.hero-node {
+  min-height: 132px;
+  padding: 18px;
+  border-radius: 24px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  text-align: center;
+  border: 1px solid var(--line);
+}
+.hero-node span { font-size: 15px; font-weight: 900; color: var(--muted); }
+.hero-node strong { font-size: 22px; line-height: 1.2; }
+.hero-node.input { background: #ecfeff; }
+.hero-node.engine { background: #eef2ff; }
+.hero-node.output { background: #f0fdf4; }
+.hero-arrow { text-align: center; color: var(--primary); font-size: 28px; font-weight: 900; }
+.metrics.compact div { padding: 14px; }
+
+.problem-infographic { display: grid; gap: 22px; }
+.pain-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.pain-card {
+  min-height: 230px;
+  padding: 28px;
+  border-radius: 28px;
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.pain-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 8px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+}
+.pain-card span { color: var(--primary); font-size: 20px; font-weight: 900; }
+.pain-card h3 { margin-top: 14px; }
+.pain-card p { color: var(--muted); font-weight: 800; }
+.bridge-card {
+  display: grid;
+  gap: 8px;
+  place-items: center;
+  min-height: 120px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  color: white;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.bridge-card span { font-size: 18px; font-weight: 900; opacity: 0.85; }
+.bridge-card strong { font-size: 34px; line-height: 1.15; }
+.vision-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+.vision-strip div {
+  padding: 18px 10px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid var(--line);
+  text-align: center;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.process-infographic {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  position: relative;
+}
+.process-step {
+  min-height: 270px;
+  padding: 22px;
+  border-radius: 28px;
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  position: relative;
+}
+.process-step::after {
+  content: "→";
+  position: absolute;
+  right: -18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary);
+  font-size: 28px;
+  font-weight: 900;
+  z-index: 2;
+}
+.process-step:last-child::after { content: ""; }
+.process-step b {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 18px;
+  border-radius: 14px;
+  background: rgba(79, 70, 229, 0.12);
+  color: #3730a3;
+}
+.process-step h3 { font-size: 26px; }
+.process-step p { color: var(--muted); font-size: 18px; font-weight: 800; }
+.decision-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 22px;
+}
+.decision-bar span {
+  padding: 18px;
+  border-radius: 18px;
+  text-align: center;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 18px;
+  font-weight: 900;
+}
+.arch-card { padding: 22px; }
+.arch-legend {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+.arch-legend span {
+  padding: 14px;
+  border-radius: 999px;
+  text-align: center;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 16px;
+  font-weight: 900;
+}
+
 #wbs {
   width: 1180px;
   max-width: 1180px;
@@ -165,25 +308,18 @@ footer { padding: 40px 20px 64px; text-align: center; color: var(--muted); font-
   width: 100%;
   height: 720px;
   display: grid;
-  grid-template-rows: 92px 270px 1fr;
+  grid-template-rows: 92px 330px 1fr;
   gap: 16px;
   overflow: hidden;
 }
 .wbs-header {
   display: grid;
-  grid-template-columns: 1fr 360px;
+  grid-template-columns: 1fr 420px;
   gap: 24px;
   align-items: end;
 }
-#wbs .eyebrow {
-  font-size: 13px;
-  margin-bottom: 10px;
-}
-#wbs h2 {
-  font-size: 48px;
-  margin-bottom: 0;
-  line-height: 1.05;
-}
+#wbs .eyebrow { font-size: 13px; margin-bottom: 10px; }
+#wbs h2 { font-size: 48px; margin-bottom: 0; line-height: 1.05; }
 .wbs-subtitle {
   margin: 0 0 4px;
   color: var(--muted);
@@ -191,78 +327,76 @@ footer { padding: 40px 20px 64px; text-align: center; color: var(--muted); font-
   font-weight: 800;
   line-height: 1.45;
 }
-.wbs-grid {
+.wbs-infographic {
   display: grid;
   grid-template-columns: 300px 1fr;
   gap: 18px;
-  height: 270px;
+  height: 330px;
 }
 #wbs .progress {
   min-height: 0;
-  height: 270px;
-  border-radius: 24px;
+  height: 330px;
+  border-radius: 28px;
 }
-#wbs .progress strong {
-  font-size: 58px;
-}
-#wbs .progress span {
-  font-size: 14px;
-}
-#wbs .stack {
-  height: 270px;
+#wbs .progress strong { font-size: 58px; }
+#wbs .progress span { font-size: 14px; }
+.wbs-lanes {
   display: grid;
-  grid-template-rows: repeat(3, 1fr);
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  height: 330px;
+}
+.lane {
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid var(--line);
+  background: #fff;
+  display: grid;
+  align-content: start;
   gap: 10px;
 }
-#wbs .stack .card {
+.lane h3 { font-size: 21px; line-height: 1.2; }
+.lane p { margin: 0; color: var(--muted); font-size: 14px; font-weight: 800; line-height: 1.45; }
+.done-lane { background: linear-gradient(180deg, #f0fdf4, #fff); }
+.doing-lane { background: linear-gradient(180deg, #fff7ed, #fff); }
+.next-lane { background: linear-gradient(180deg, #eef2ff, #fff); }
+#wbs .tag { padding: 4px 10px; font-size: 12px; margin-bottom: 4px; }
+.wbs-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  height: 252px;
+}
+.wbs-mini-grid article {
   min-height: 0;
-  padding: 14px 18px;
-  border-radius: 18px;
-  box-shadow: none;
+  padding: 16px 12px;
+  border-radius: 22px;
+  background: #fff;
+  border: 1px solid var(--line);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 8px;
 }
-#wbs .stack .card h3 {
-  font-size: 20px;
-  line-height: 1.18;
+.wbs-mini-grid b { font-size: 18px; }
+.wbs-mini-grid span { color: var(--muted); font-size: 13px; font-weight: 800; line-height: 1.35; }
+.wbs-mini-grid em {
+  justify-self: start;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f8fafc;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 900;
 }
-#wbs .stack .card p {
-  margin: 4px 0 0;
-  font-size: 13px;
-  line-height: 1.35;
-}
-#wbs .tag {
-  padding: 3px 9px;
-  font-size: 11px;
-  margin-bottom: 7px;
-}
-.wbs-table {
-  height: 310px;
-  margin-top: 0;
-  table-layout: fixed;
-}
-#wbs th,
-#wbs td {
-  padding: 9px 12px;
-  font-size: 14px;
-  line-height: 1.35;
-}
-#wbs th:nth-child(1),
-#wbs td:nth-child(1) { width: 12%; }
-#wbs th:nth-child(2),
-#wbs td:nth-child(2) { width: 30%; }
-#wbs th:nth-child(3),
-#wbs td:nth-child(3) { width: 42%; }
-#wbs th:nth-child(4),
-#wbs td:nth-child(4) { width: 16%; }
 
 @media (max-width: 1220px) {
-  #wbs {
-    width: 100%;
-    max-width: 100%;
-  }
+  #wbs { width: 100%; max-width: 100%; }
 }
 @media (max-width: 980px) {
-  .hero, .two, .five { grid-template-columns: 1fr; }
+  .hero, .two, .five, .pain-group, .process-infographic, .decision-bar, .arch-legend, .vision-strip { grid-template-columns: 1fr; }
   .topbar { align-items: flex-start; flex-direction: column; }
+  .hero-flow { grid-template-columns: 1fr; }
+  .hero-arrow, .process-step::after { display: none; }
   #wbs {
     height: auto;
     min-height: calc(100vh - 64px);
@@ -274,13 +408,11 @@ footer { padding: 40px 20px 64px; text-align: center; color: var(--muted); font-
     grid-template-rows: auto;
   }
   .wbs-header,
-  .wbs-grid {
+  .wbs-infographic,
+  .wbs-lanes,
+  .wbs-mini-grid {
     grid-template-columns: 1fr;
     height: auto;
   }
-  #wbs .stack,
-  #wbs .progress,
-  #wbs table {
-    height: auto;
-  }
+  #wbs .progress { height: auto; min-height: 260px; }
 }
