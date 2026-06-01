@@ -26,9 +26,16 @@
         <h1>영상기획을<br>실행 가능한 계획으로 바꾸는 AI 에이전트</h1>
         <p class="lead">Dreammate Studio는 막연한 영상 아이디어를 브랜드 방향, 타깃, 레퍼런스, 기획안, WBS로 단계적으로 구조화하는 영상기획 AI 에이전트 플랫폼입니다.</p>
       </div>
-      <aside class="card">
-        <h2>발표 핵심</h2>
-        <div class="metrics">
+      <aside class="card hero-infographic">
+        <h2>발표 핵심 구조</h2>
+        <div class="hero-flow">
+          <div class="hero-node input"><span>입력</span><strong>막연한 아이디어</strong></div>
+          <div class="hero-arrow">→</div>
+          <div class="hero-node engine"><span>AI</span><strong>질문·분석·검증</strong></div>
+          <div class="hero-arrow">→</div>
+          <div class="hero-node output"><span>출력</span><strong>기획안 + WBS</strong></div>
+        </div>
+        <div class="metrics compact">
           <div><strong>Phase 10</strong><span>MVP 통합 완료</span></div>
           <div><strong>381</strong><span>pytest 기준선</span></div>
           <div><strong>11</strong><span>PWA routes</span></div>
@@ -41,58 +48,78 @@
     <section id="problem" class="slide">
       <p class="eyebrow">01. Planning · Vision</p>
       <h2>문제는 아이디어가 아니라 구조화입니다</h2>
-      <div class="grid two">
-        <article class="card">
-          <h3>문제 정의</h3>
-          <ul class="clean-list">
-            <li>초보자는 브랜드 방향을 정하기 어렵습니다.</li>
-            <li>타깃과 콘텐츠 톤이 흐리면 영상이 쉽게 흔들립니다.</li>
-            <li>기획안이 작업 단위로 나뉘지 않아 실행 관리가 어렵습니다.</li>
-          </ul>
-        </article>
-        <article class="card">
-          <h3>비전</h3>
-          <div class="flow-list">
-            <div>아이디어 입력</div>
-            <div>브랜드 방향 정리</div>
-            <div>타깃·레퍼런스 구체화</div>
-            <div>영상기획안 생성</div>
-            <div>WBS 기반 실행 관리</div>
-          </div>
-        </article>
+      <div class="problem-infographic">
+        <div class="pain-group">
+          <article class="pain-card"><span>01</span><h3>방향 불명확</h3><p>브랜드 방향이 없으면 영상 톤이 흔들립니다.</p></article>
+          <article class="pain-card"><span>02</span><h3>타깃 모호</h3><p>누구에게 보여줄지 불명확하면 기획이 약해집니다.</p></article>
+          <article class="pain-card"><span>03</span><h3>실행 단절</h3><p>기획안이 작업 단위로 분해되지 않으면 진행 관리가 어렵습니다.</p></article>
+        </div>
+        <div class="bridge-card">
+          <span>Dreammate Studio</span>
+          <strong>아이디어를 실행 가능한 영상기획 흐름으로 변환</strong>
+        </div>
+        <div class="vision-strip">
+          <div>아이디어</div>
+          <div>브랜드</div>
+          <div>타깃</div>
+          <div>레퍼런스</div>
+          <div>기획안</div>
+          <div>WBS</div>
+        </div>
       </div>
     </section>
 
     <section id="solution" class="slide">
       <p class="eyebrow">02. Solution Flow</p>
       <h2>질문형 AI로 방향을 좁혀갑니다</h2>
-      <div class="grid five">
-        <article class="step"><b>1</b><h3>Discovery</h3><p>5단계 카드 질문으로 브랜드 방향을 찾습니다.</p></article>
-        <article class="step"><b>2</b><h3>Target</h3><p>누구에게 보여줄 영상인지 구체화합니다.</p></article>
-        <article class="step"><b>3</b><h3>Reference</h3><p>LLM Wiki와 RAG Lite로 근거를 보강합니다.</p></article>
-        <article class="step"><b>4</b><h3>Plan</h3><p>3개 후보 기획안을 만들고 품질을 검증합니다.</p></article>
-        <article class="step"><b>5</b><h3>WBS</h3><p>선택된 기획을 작업 단위로 전환합니다.</p></article>
+      <div class="process-infographic">
+        <article class="process-step"><b>1</b><h3>Discovery</h3><p>5단계 질문으로 브랜드 방향을 찾습니다.</p></article>
+        <article class="process-step"><b>2</b><h3>Target</h3><p>시청자와 콘텐츠 상황을 구체화합니다.</p></article>
+        <article class="process-step"><b>3</b><h3>Reference</h3><p>LLM Wiki와 RAG Lite로 근거를 보강합니다.</p></article>
+        <article class="process-step"><b>4</b><h3>Plan</h3><p>3개 후보 기획안을 생성하고 검증합니다.</p></article>
+        <article class="process-step"><b>5</b><h3>WBS</h3><p>선택된 기획을 작업 단위로 전환합니다.</p></article>
+      </div>
+      <div class="decision-bar">
+        <span>사용자 선택</span>
+        <span>피드백 저장</span>
+        <span>Brand Memory 준비</span>
+        <span>다음 기획에 반영</span>
       </div>
     </section>
 
     <section id="architecture" class="slide">
       <p class="eyebrow">03. Design · Mermaid</p>
       <h2>아키텍처 구성</h2>
-      <article class="card diagram">
+      <article class="card diagram arch-card">
 <pre class="mermaid">
 flowchart LR
-  U[사용자] --> FE[Next.js PWA]
-  FE --> API[FastAPI BFF]
-  API --> ORCH[MOA Orchestrator]
-  ORCH --> RAG[LLM Wiki + RAG Lite]
-  ORCH --> GEN[Plan Generator]
-  GEN --> CRITIC[Critic Agent]
-  CRITIC --> DB[Supabase Storage]
-  DB --> WBS[GitHub Pages WBS]
-  DB -.피드백 반영.-> ORCH
+  U[사용자 아이디어] --> FE[Next.js PWA<br/>Discovery / Quick Mode]
+  FE --> API[FastAPI BFF<br/>Auth / Plan / SSE]
+  API --> ORCH[MOA Orchestrator<br/>3개 후보 생성]
+  ORCH --> RAG[LLM Wiki + RAG Lite<br/>근거 보강]
+  ORCH --> GEN[Plan Generator<br/>영상기획안 생성]
+  RAG --> GEN
+  GEN --> CRITIC[Critic Agent<br/>품질 검증]
+  CRITIC --> DB[Supabase<br/>결과·피드백 저장]
+  DB --> WBS[GitHub Pages<br/>WBS Dashboard]
+  DB -.Brand Memory.-> ORCH
+
+  classDef user fill:#ecfeff,stroke:#06b6d4,stroke-width:2px,color:#164e63;
+  classDef ai fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#312e81;
+  classDef data fill:#f0fdf4,stroke:#12b76a,stroke-width:2px,color:#14532d;
+  classDef output fill:#fff7ed,stroke:#f79009,stroke-width:2px,color:#7c2d12;
+  class U,FE user;
+  class API,ORCH,RAG,GEN,CRITIC ai;
+  class DB data;
+  class WBS output;
 </pre>
       </article>
-      <p class="note">설명 순서: 사용자 입력 → 기획 생성 → 근거 보강 → 검증 → 저장 → WBS 확인</p>
+      <div class="arch-legend">
+        <span>사용자 경험</span>
+        <span>AI 오케스트레이션</span>
+        <span>데이터 저장</span>
+        <span>실행 관리</span>
+      </div>
     </section>
 
     <section id="wbs" class="slide">
@@ -102,29 +129,26 @@ flowchart LR
             <p class="eyebrow">04. WBS Dashboard</p>
             <h2>진행중 프로젝트 WBS</h2>
           </div>
-          <p class="wbs-subtitle">완료·진행중·다음 작업을 발표 한 화면에서 확인하도록 재정렬했습니다.</p>
+          <p class="wbs-subtitle">완료·진행중·다음 작업을 한 화면에서 바로 판단할 수 있도록 카드형 WBS로 재설계했습니다.</p>
         </div>
 
-        <div class="wbs-grid">
+        <div class="wbs-infographic">
           <article class="progress"><strong>70%</strong><span>MVP 기준 진행률</span></article>
-          <div class="stack">
-            <article class="card"><span class="tag done">완료</span><h3>MVP 통합 테스트</h3><p>RAG Lite, MOA Lite, 결과 저장까지 핵심 흐름 검증 완료</p></article>
-            <article class="card"><span class="tag doing">진행중</span><h3>GitHub Pages 발표자료</h3><p>URL 실행, WBS 시각화, Mermaid 아키텍처 표현</p></article>
-            <article class="card"><span class="tag next">다음</span><h3>배포 Gate B~G</h3><p>staging → alpha → beta → 운영 배포 또는 Phase 11+ 고도화</p></article>
+          <div class="wbs-lanes">
+            <article class="lane done-lane"><span class="tag done">완료</span><h3>기획·UX·AI·데이터</h3><p>문제 정의, Discovery, RAG Lite, MOA Lite, 결과 저장, MVP 통합 테스트</p></article>
+            <article class="lane doing-lane"><span class="tag doing">진행중</span><h3>GitHub Pages 발표자료</h3><p>URL 실행 발표자료, WBS 시각화, Mermaid 아키텍처 표현</p></article>
+            <article class="lane next-lane"><span class="tag next">다음</span><h3>배포 Gate B~G</h3><p>staging → alpha → beta → 운영 배포 또는 Phase 11+ 고도화</p></article>
           </div>
         </div>
 
-        <table class="wbs-table">
-          <thead><tr><th>구분</th><th>작업</th><th>산출물</th><th>상태</th></tr></thead>
-          <tbody>
-            <tr><td>기획</td><td>문제 정의·비전 정리</td><td>영상기획 AI 에이전트 방향성</td><td>완료</td></tr>
-            <tr><td>UX</td><td>Discovery / Quick Mode</td><td>사용자 입력 분기 흐름</td><td>완료</td></tr>
-            <tr><td>AI</td><td>RAG Lite + MOA + Critic</td><td>근거 검색·후보 생성·품질 검증</td><td>완료</td></tr>
-            <tr><td>데이터</td><td>결과 저장·피드백 이벤트</td><td>선택 결과와 피드백 저장 구조</td><td>완료</td></tr>
-            <tr><td>발표</td><td>GitHub Pages WBS</td><td>URL 방식 발표자료</td><td>진행중</td></tr>
-            <tr><td>배포</td><td>Gate B~G 준비</td><td>배포 단계 기준</td><td>다음</td></tr>
-          </tbody>
-        </table>
+        <div class="wbs-mini-grid">
+          <article><b>기획</b><span>문제·비전</span><em>완료</em></article>
+          <article><b>UX</b><span>Discovery / Quick</span><em>완료</em></article>
+          <article><b>AI</b><span>RAG + MOA + Critic</span><em>완료</em></article>
+          <article><b>데이터</b><span>결과·피드백 저장</span><em>완료</em></article>
+          <article><b>발표</b><span>GitHub Pages WBS</span><em>진행중</em></article>
+          <article><b>배포</b><span>Gate B~G 준비</span><em>다음</em></article>
+        </div>
       </div>
     </section>
 
