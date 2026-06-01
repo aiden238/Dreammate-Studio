@@ -6,6 +6,16 @@
 Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /auth/* + /sse/* + /plans/{id}/select + /plans/{id}/feedback 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions, **normalize wiring live**) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계 (실 stage 연동)** + **RAG Lite (candidate_knowledge 5단계 MVP 전부 + pgvector retrieval + LLM Wiki 보조)** + **MOA Orchestrator 추출 (orchestration/moa_orchestrator + ProgressSink + progress_store 브릿지) + prompt_registry semver 정식화 + Critic v1.1.0 conservative adapter** + **결과 저장(selected_plans) + 피드백(feedback_events) 영속화 graceful + PII 마스킹 + 피드백 UI inline + Brand Memory 준비(feedback→candidate pending 적재)** 모두 동작.
 **Phase 9 ✅ done (2026-05-31)** — 결과 저장 + 피드백 (selected_plans/feedback_events 영속화 graceful + normalize_to_canonical wiring + Brand Memory 준비 + 피드백 UI wrapper, ADR-030/031/032, CC-004, large phase 6 Slice 실측 ~10~13h).
 
+## 🟢 진행 중 (2026-06-01): Phase 11 A안 — LLM Gateway
+
+> 가속 빌드(정식 phase entry 미작성 — `meta/handoffs/2026-06-01_llm-gateway-handoff.md` + `meta/proposals/2026-05-31_llm-gateway-design.md` 가 근거).
+
+- **LLM Gateway** (`backend/fastapi/llm/`) S1·S2·S3 완료: registry/alias/gateway + OpenAI·Gemini adapter + cross_validation(cross_validate+compare) + orchestrator gated hook(default-off, 로깅만, Envelope 불변).
+- pytest 381→**435** (gateway 31 + cross-val 19 + wiring 4). ★ behavior-preserving(기존 0 수정) + gated default-off + 키 커밋 0.
+- 라이브 검증: gateway 경유 OpenAI 생성 ✅ / Gemini 교차검증(8차원)+compare(consensus) ✅. Node.js v24.16.0 설치. 키 3개(.env, 인증 OK, Anthropic 오타 수정).
+- ⚠️ gemini-3.5-flash 현재 503(Google 측 일시) → 임시 `gemini-3-flash-preview`. 회복 시 기본값 복귀.
+- 다음: Phase 11 정식화(entry/ADR/cost_control 확장) / full 라이브 /generate(wizard) / B안(3-provider) / frontend 손-검증. (handoff §4)
+
 ## 현재 Active Phase
 
 **🟢 Phase 10 ✅ done (2026-05-31) — MVP 통합 완료, 배포 Gate A 통과** — Phase M0~M3(meta detour) + Phase 10(MVP 통합) 완료. 다음 = 배포 Gate B~G(staging→알파→베타→운영, 키·인프라 user-provided + 운영 phase) 또는 Phase 11+(4계층 linkage / async worker / prompt A/B / 자동 promotion / 실 LLM eval default / M3 GAP). 사용자 결정 대기.
