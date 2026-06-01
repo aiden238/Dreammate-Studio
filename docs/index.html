@@ -91,36 +91,29 @@
     <section id="architecture" class="slide architecture-slide">
       <p class="eyebrow">03. System Architecture · Agent Pipeline</p>
       <h2>소프트웨어 아키텍처와 AI 에이전트 파이프라인</h2>
-      <div class="arch-split upgraded-arch">
+      <div class="arch-split css-arch">
         <article class="card arch-block software-arch">
           <div class="arch-title-row">
             <h3>Software Architecture</h3>
             <span>Front / Back / Data</span>
           </div>
-          <div class="arch-row-content">
-            <div class="diagram arch-mermaid-box">
-<pre class="mermaid">
-flowchart LR
-  U[User] --> FE[Next.js]
-  FE --> API[FastAPI]
-  API --> AI[AI Engine]
-  API --> DB[(Supabase)]
-  AI --> API
-  DB --> FE
-
-  classDef front fill:#ecfeff,stroke:#06b6d4,stroke-width:2px,color:#164e63;
-  classDef back fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#312e81;
-  classDef data fill:#f0fdf4,stroke:#12b76a,stroke-width:2px,color:#14532d;
-  class U,FE front;
-  class API,AI back;
-  class DB data;
-</pre>
+          <div class="arch-layout">
+            <div class="arch-canvas software-canvas" aria-label="소프트웨어 아키텍처 도식">
+              <div class="arch-node user-node">User</div>
+              <div class="arch-line arrow-right line-user-fe"></div>
+              <div class="arch-node front-node">Next.js<br><small>PWA</small></div>
+              <div class="arch-line arrow-right line-fe-api"></div>
+              <div class="arch-node back-node">FastAPI<br><small>BFF</small></div>
+              <div class="arch-line arrow-right line-api-ai"></div>
+              <div class="arch-node ai-node">AI Engine</div>
+              <div class="arch-line arrow-down line-api-db"></div>
+              <div class="arch-node data-node">Supabase<br><small>Auth · DB · Storage</small></div>
             </div>
             <div class="arch-notes">
-              <article><b>Next.js PWA</b><span>Discovery / Quick UI</span></article>
-              <article><b>FastAPI BFF</b><span>인증·기획 요청·SSE 진행률</span></article>
-              <article><b>AI Engine</b><span>기획 에이전트 실행</span></article>
-              <article><b>Supabase</b><span>Auth / DB / Storage</span></article>
+              <article><b>Next.js PWA</b><span>브랜드 질문 UI와 결과 확인 화면</span></article>
+              <article><b>FastAPI BFF</b><span>인증, 기획 요청, SSE 진행률 처리</span></article>
+              <article><b>AI Engine</b><span>기획 에이전트와 품질 검증 실행</span></article>
+              <article><b>Supabase</b><span>사용자, 기획안, 피드백 데이터 저장</span></article>
             </div>
           </div>
         </article>
@@ -130,31 +123,22 @@ flowchart LR
             <h3>AI Agent Pipeline</h3>
             <span>내부 처리 흐름</span>
           </div>
-          <div class="arch-row-content">
-            <div class="diagram arch-mermaid-box">
-<pre class="mermaid">
-flowchart LR
-  A[Router] --> B[RAG]
-  B --> C[Generator]
-  C --> D[Critic]
-  D --> E[Rewriter]
-  E --> F[Save]
-  F --> G[Memory]
-  G -.next.-> A
-
-  classDef agent fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#312e81;
-  classDef memory fill:#f0fdf4,stroke:#12b76a,stroke-width:2px,color:#14532d;
-  class A,B,C,D,E agent;
-  class F,G memory;
-</pre>
-            </div>
-            <div class="arch-notes pipeline-notes">
-              <article><b>Router</b><span>신규·기존 사용자 분기</span></article>
-              <article><b>RAG</b><span>LLM Wiki + 근거 검색</span></article>
-              <article><b>Generator</b><span>3개 영상기획 후보 생성</span></article>
-              <article><b>Critic / Rewriter</b><span>품질 평가 후 최대 2회 개선</span></article>
-              <article><b>Save / Memory</b><span>결과·피드백 저장 후 다음 기획 반영</span></article>
-            </div>
+          <div class="pipeline-canvas" aria-label="AI 에이전트 파이프라인 도식">
+            <article class="pipeline-node"><b>Route</b><span>입력 분기</span></article>
+            <div class="pipeline-arrow">→</div>
+            <article class="pipeline-node"><b>Retrieve</b><span>근거 검색</span></article>
+            <div class="pipeline-arrow">→</div>
+            <article class="pipeline-node wide"><b>Generate + Review</b><span>3개 후보 생성 · 품질 평가 · 최대 2회 개선</span></article>
+            <div class="pipeline-arrow">→</div>
+            <article class="pipeline-node memory"><b>Save + Memory</b><span>결과 저장 · 다음 기획 반영</span></article>
+          </div>
+          <div class="pipeline-chip-row">
+            <span>Intent Router</span>
+            <span>RAG Lite</span>
+            <span>Plan Generator</span>
+            <span>Critic Agent</span>
+            <span>Rewriter Loop</span>
+            <span>Brand Memory</span>
           </div>
         </article>
       </div>
@@ -197,10 +181,6 @@ flowchart LR
 
   <div class="deck-hint">← 이전 · 다음 →</div>
   <footer>Dreammate Studio · GitHub Pages Presentation</footer>
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { curve: 'basis', htmlLabels: true } });
-  </script>
   <script>
     const slides = Array.from(document.querySelectorAll('.slide'));
     const navLinks = Array.from(document.querySelectorAll('nav a'));
