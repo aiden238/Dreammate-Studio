@@ -1,0 +1,24 @@
+.progress {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress strong,
+.progress span {
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: center;
+  line-height: 1.05;
+}
+
+.progress strong {
+  margin: 0;
+}
+
+.progress span {
+  margin: 0;
+}
