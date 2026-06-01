@@ -148,3 +148,54 @@ cost_saving 모드에서는 Critic도 gpt-4o-mini로 폴백 (Critic agent §6).
 3. Critic gpt-4o → mini 폴백 시 품질 저하 정량(현재 미측정).
 4. system prompt 캐싱이 모델 변경 시 깨지는 문제 (Phase 11+ 검토).
 5. 유료 tier 가격 책정 (Phase 11+).
+
+---
+
+## 11. LLM Gateway — tier×mode → alias → model 표 (Phase 11 A안, ★ additive)
+
+> 추가: 2026-06-01 (contract-change **CC-010**, Phase 11 A안 LLM Gateway)
+> 근거: 제안서 `meta/proposals/2026-05-31_llm-gateway-design.md` §6 / §18.A·§18.D, ADR-039
+> ★ **additive / behavior-preserving**: §1~§10(기존 user tier 무료/유료 + 호출당/세션당/일일 상한 + cost_saving Critic 폴백)은 **전부 보존**. 본 절은 §5 "모델 선택 정책"을 LLM Gateway alias 표로 **선언적 정식화**한 것(로직 분산 해소). 현 동작과 동일 해석.
+
+### 11.1 alias 개념
+
+agent 는 concrete 모델명이 아니라 **alias(논리명)**만 참조하고, LLM Gateway(`backend/fastapi/llm/`)가 **tier × mode** 를 입력으로 alias → registry key → concrete model_id 를 해석한다. → provider/모델 교체 시 agent 코드 0 변경(ADR-039).
+
+- **tier**: 기존 §4 user tier(`free` 무료 / `paid` 유료). A안에서는 모델 분기에 미사용(B안 premium mode 도입 시 확장 — 제안서 §6 후속). 시그니처는 미리 수용.
+- **mode**: 기존 §1·§5 cost mode(`standard` / `cost_saving`). Critic alias 만 분기.
+
+### 11.2 tier×mode → alias → model 표 (제안서 §6 / §18.A)
+
+| tier × mode | planning / intent / rewriter / memory | critic | cross_validation (신규, gated) |
+|---|---|---|---|
+| free × standard | gpt-4o-mini | **gpt-4o** | ❌ off (default) / ⚪ flag opt-in |
+| free × cost_saving | gpt-4o-mini | **gpt-4o-mini** | ❌ off (default) / ⚪ flag opt-in |
+| paid × standard | gpt-4o-mini | **gpt-4o** | ❌ off (default) / ⚪ flag opt-in |
+| paid × premium (신규, **후속 B안**) | gpt-4o-mini | gpt-4o | ✅ 1회 교차검증 (제안서 §18.B) |
+
+- ★ **현 동작 보존**: `free × standard` = 현 default(§5 — workhorse gpt-4o-mini + Critic gpt-4o). `cost_saving` = 현 Critic gpt-4o→gpt-4o-mini 폴백(§5 마지막 줄)을 alias 로 정식화 — **byte-identical** 해석(gateway.resolve_model 단위 test 강제).
+- alias→registry: `planning/intent/rewriter/memory → gpt-4o-mini`, `critic → {standard: gpt-4o, cost_saving: gpt-4o-mini}`, `cross_validation → gemini-cross`(model_id = config `cross_validation_model`).
+- "premium" mode + premium_review(flagship) 활성은 **후속 B안**(제안서 §7·§18.B) — A안 미구현. ★ Opus/GPT flagship 기본 호출 0.
+
+## 12. cross_validation 비용 (Gemini 1회, ★ gated default-off)
+
+> 추가: 2026-06-01 (CC-010, Phase 11 A안 Slice 2·3)
+
+A안의 cross_validation 은 표준 Critic(OpenAI gpt-4o) 평가 후 **다른 family(Gemini) 1회 교차검증 pass**(Critic 의 추가 pass — MOA 4 agent 불변). single-model self-bias 완화용.
+
+### 12.1 게이트 (★ 필수)
+- config `cross_validation_enabled` default **False** → orchestrator hook 미발화 → **비용 증가 0**(기존 흐름 100% 동일).
+- 활성 = 명시적 flag(`CROSS_VALIDATION_ENABLED=true`) + GOOGLE 키 opt-in. 키 없으면 graceful skip(비용 0).
+- 모델: `gemini-cross`(default `cross_validation_model=gemini-3.5-flash`). ★ Gemini 가 동급 최저가(제안서 §18.0).
+
+### 12.2 호출당 상한 (cross_validation 활성 시 — additive 권고)
+
+| Alias / Pass | model | 상한/호출 |
+|---|---|---|
+| cross_validation (Gemini, gated) | gemini-cross (gemini-3.5-flash 등) | $0.002 (1.5×: $0.003 abort) |
+
+- cross_validation_enabled=True 시, plan 생성당 **Gemini 1회분**(약 $0.002 추정 — registry cost input 0.002 / output 0.012 per-1M, max_tokens 1500)을 §2 호출당 / §3 세션당 상한에 **additive 반영 권고**(제안서 §18.D). recommended plan 1개에만 적용(전 3안 아님) → 세션당 +1회.
+- ★ default OFF 면 본 비용 미발생. 활성 시 cost-review Skill(§8)로 Gemini 호출 분포 점검 권장.
+
+### 12.3 B안 cost 재조정 (후속 — ★ 보관)
+- B안(3-provider 다양성, 제안서 §18.B)은 신모델이 gpt-4o-mini 대비 **5~7배** → §2 호출당 / §3 세션당 상한 **전면 재조정 필수**(별도 contract-change). 본 CC-010 은 A안 cross_validation 1회분 additive 까지만.
