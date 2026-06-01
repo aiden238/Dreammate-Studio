@@ -55,11 +55,10 @@ class Settings(BaseSettings):
         ),
     )
     cross_validation_model: str = Field(
-        default="gemini-2.5-flash",
+        default="gemini-3.5-flash",
         description=(
             "Phase 11 A안 cross_validation Gemini model_id (registry 'gemini-cross'). "
-            "★ placeholder 기본값 — 사용자가 정확한 model ID 확정 필요 "
-            "(제안서 §18.0 / §18.A: 예 'gemini-3.1-pro' 등 provider dev 페이지 확인값). "
+            "★ 사용자 확정 (2026-06): gemini-3.5-flash (live models.list 확인, $1.5/$9, Search grounding). "
             "환경변수 CROSS_VALIDATION_MODEL 로 override 가능 (agent 코드 0 변경)."
         ),
     )
