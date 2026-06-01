@@ -3,8 +3,9 @@
 검증 대상 (전부 mock — 실 API 호출 0, 실 키 불필요):
   - AnthropicAdapter.complete: mock client 주입 → messages.create 호출 인자 검증
     (system 분리 / max_tokens / model / temperature) + LLMResponse 파싱(text/usage)
-  - JSON 모드: response_format 부재 → system 지시 + assistant prefill("{") 유도,
-    응답 text 앞에 "{" 복원
+  - JSON 모드: response_format 부재 → system 지시문만 덧붙여 JSON 유도 (assistant
+    prefill 미사용 — Phase 12 sonnet-4-6 prefill 미지원 400 회피). 모델이 완전한 JSON 을
+    직접 반환하므로 응답을 그대로 파싱하고 messages 는 user turn 으로 끝난다.
   - system/user/assistant role 매핑 (system → system= 파라미터, 나머지 → messages)
   - 예외(anthropic.AnthropicError 등) → LLMError 정규화
   - registry: claude-haiku / claude-sonnet 항목 (provider=anthropic, config Field model_id)
@@ -94,24 +95,25 @@ def test_complete_passes_system_and_params_non_json() -> None:
     assert kwargs["messages"] == [{"role": "user", "content": "이 plan을 평가해줘."}]
 
 
-def test_complete_json_mode_adds_hint_and_prefill() -> None:
-    # JSON 모드: response_format 부재 → system 지시 + assistant prefill("{") 유도.
-    client = _make_fake_anthropic_client('"verdict": "approve"}')
+def test_complete_json_mode_adds_system_hint_no_prefill() -> None:
+    # ★ Phase 12 의도된 delta: JSON 모드는 system 지시문만 덧붙이고 assistant prefill 을
+    #   사용하지 않는다 (sonnet-4-6 등 prefill 미지원 신모델 400 회피). 모델이 완전한
+    #   JSON 을 직접 반환하므로 응답을 그대로 파싱하고, messages 는 user 로 끝난다.
+    client = _make_fake_anthropic_client('{"verdict": "approve"}')
     adapter = AnthropicAdapter(client=client)
     req = LLMRequest(messages=_msgs(), model_id="claude-sonnet-4-6", json_mode=True)
     resp = adapter.complete(req, api_key="sk-ant-x")
 
-    # ★ prefill "{" 가 응답 text 앞에 복원되어 완전한 JSON 이 된다.
+    # ★ 모델 응답을 그대로 파싱 (prefill 복원 없음 — 완전한 JSON).
     assert resp.text == '{"verdict": "approve"}'
 
     _, kwargs = client.messages.create.call_args
     # system 에 JSON 지시문이 덧붙는다.
     assert "JSON" in kwargs["system"]
     assert "당신은 평가자다." in kwargs["system"]
-    # 마지막 messages turn 은 assistant prefill "{".
-    assert kwargs["messages"][-1] == {"role": "assistant", "content": "{"}
-    # user turn 은 보존.
-    assert kwargs["messages"][0] == {"role": "user", "content": "이 plan을 평가해줘."}
+    # ★ assistant prefill turn 미추가 → messages 는 user turn 으로 끝난다 (prefill 미지원 호환).
+    assert kwargs["messages"][-1] == {"role": "user", "content": "이 plan을 평가해줘."}
+    assert all(m["role"] != "assistant" for m in kwargs["messages"])
 
 
 def test_complete_no_system_message_omits_system_param() -> None:
@@ -245,9 +247,9 @@ def test_gateway_dispatches_anthropic_via_mock_client(
 
     monkeypatch.setitem(alias_mod._ALIAS_TABLE, "_claude_test", "claude-haiku")
     gw = LLMGateway()
-    # gateway default json_mode=True → adapter 가 prefill "{" 를 앞에 복원하므로
-    # mock 응답 text 는 "{" 없이 JSON 본문만 (prefill 복원 후 완전한 JSON).
-    client = _make_fake_anthropic_client('"ok": true}')
+    # ★ Phase 12 의도된 delta: prefill 미사용 → 모델이 완전한 JSON 을 직접 반환하므로
+    #   mock 응답 text 를 그대로 파싱한다 (앞에 "{" 복원 없음).
+    client = _make_fake_anthropic_client('{"ok": true}')
     resp = gw.complete("_claude_test", _msgs(), client=client)
 
     assert resp.text == '{"ok": true}'

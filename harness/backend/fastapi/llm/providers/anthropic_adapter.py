@@ -26,9 +26,11 @@ canonical LLMMessage(system/user/assistant)를 Anthropic shape 로 매핑한다:
   - 그 외        → messages (user/assistant turn)
 
 JSON 모드: Anthropic Messages API 는 response_format 이 없다 → system 지시문에
-"JSON 으로만 응답" 을 덧붙이고, "{" prefill assistant turn 으로 JSON 시작을 유도한다
-(req.json_mode=True 시). prefill 한 "{" 는 응답 text 앞에 다시 이어붙여 완전한 JSON 을
-복원한다.
+"JSON 으로만 응답" 을 덧붙여 JSON 출력을 유도한다 (req.json_mode=True 시).
+assistant prefill 기법은 사용하지 않는다 — claude-sonnet-4-6 등 신모델이 prefill 을
+미지원("conversation must end with a user message", 400 BadRequest)하기 때문이며,
+system 지시문 방식은 모든 Claude 모델(haiku-4-5 / sonnet-4-6 등)과 호환된다.
+messages 는 user turn 으로 끝나도록 유지된다(prefill assistant turn 미추가).
 """
 
 from __future__ import annotations
@@ -42,12 +44,12 @@ from ..types import LLMMessage, LLMRequest, LLMResponse, LLMUsage
 logger = logging.getLogger(__name__)
 
 # JSON 모드 system 지시문 (Anthropic 은 response_format 미지원 → prompt 로 유도).
+# ★ assistant prefill 미사용 (prefill 미지원 신모델 sonnet-4-6 400 회피) — 모든 Claude
+#   모델 호환. 모델이 완전한 JSON 을 직접 반환하므로 응답 후처리 복원도 불필요.
 _JSON_SYSTEM_HINT = (
     "You must respond with a single valid JSON object only. "
     "Do not include any prose, markdown, or code fences."
 )
-# JSON 모드 assistant prefill — "{" 로 시작을 강제하면 모델이 JSON 본문만 잇는다.
-_JSON_PREFILL = "{"
 
 
 class AnthropicAdapter:
@@ -81,9 +83,10 @@ class AnthropicAdapter:
         system, messages = _split_messages(req.messages)
 
         if req.json_mode:
-            # response_format 부재 → system 지시 + assistant prefill 로 JSON 유도.
+            # response_format 부재 → system 지시문만 덧붙여 JSON 유도 (prefill 미사용).
+            # ★ assistant prefill turn 을 추가하지 않으므로 messages 는 user 로 끝나
+            #   sonnet-4-6 등 prefill 미지원 모델에서도 400 없이 동작한다.
             system = f"{system}\n\n{_JSON_SYSTEM_HINT}".strip()
-            messages = messages + [{"role": "assistant", "content": _JSON_PREFILL}]
 
         kwargs: dict[str, Any] = {
             "model": req.model_id,
@@ -106,10 +109,8 @@ class AnthropicAdapter:
                 self.provider, req.model_id, f"Anthropic 호출 실패: {e}", cause=e
             ) from e
 
+        # ★ prefill 미사용 → 모델이 완전한 JSON 을 직접 반환하므로 복원 후처리 불필요.
         text = _extract_text(response)
-        if req.json_mode:
-            # prefill 한 "{" 는 응답에 포함되지 않으므로 앞에 다시 이어붙여 완전한 JSON 복원.
-            text = _JSON_PREFILL + text
         usage = _extract_usage(response)
         return LLMResponse(
             text=text,
