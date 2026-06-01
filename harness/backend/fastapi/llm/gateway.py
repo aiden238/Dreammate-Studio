@@ -25,10 +25,11 @@ from typing import Any
 from ..config import get_settings
 from . import aliases, registry
 from .errors import LLMError
+from .providers.anthropic_adapter import AnthropicAdapter
 from .providers.base import ProviderAdapter
 from .providers.gemini_adapter import GeminiAdapter
 from .providers.openai_adapter import OpenAIAdapter
-from .registry import PROVIDER_GOOGLE, PROVIDER_OPENAI
+from .registry import PROVIDER_ANTHROPIC, PROVIDER_GOOGLE, PROVIDER_OPENAI
 from .types import LLMMessage, LLMRequest, LLMResponse
 
 logger = logging.getLogger(__name__)
@@ -75,6 +76,9 @@ class LLMGateway:
             return OpenAIAdapter(client=client)
         if provider == PROVIDER_GOOGLE:
             return GeminiAdapter(client=client)
+        # ★ Phase 12 B안: Anthropic(Claude) provider (additive).
+        if provider == PROVIDER_ANTHROPIC:
+            return AnthropicAdapter(client=client)
         raise LLMError(provider, "", f"지원하지 않는 provider: {provider!r}")
 
     def _api_key_for(self, provider: str) -> str:
@@ -84,6 +88,9 @@ class LLMGateway:
             return settings.openai_api_key
         if provider == PROVIDER_GOOGLE:
             return settings.google_api_key
+        # ★ Phase 12 B안: Anthropic(Claude) provider (additive).
+        if provider == PROVIDER_ANTHROPIC:
+            return settings.anthropic_api_key
         return ""
 
     def complete(

@@ -63,6 +63,40 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 12 B안 Slice 1 — Anthropic(Claude) provider (additive, graceful) ─
+    # ★ behavior-preserving: gateway 신규 provider 전용 — 기존 agents 미연결.
+    #   default 호출 경로(OpenAI workhorse/critic) 불변. anthropic 미설정 시 비활성.
+    # ★ 실 키 불필요: graceful default="" (미설정 시 anthropic provider 비활성
+    #   → gateway LLMError("missing key")). 키는 .env(이미 .gitignore)에만.
+    #   코드/commit/채팅 평문 절대 금지 (제안서 §18.C).
+    anthropic_api_key: str = Field(
+        default="",
+        description=(
+            "Anthropic Claude API key (Phase 12 B안 — Claude provider). "
+            "graceful: 미설정 시 Anthropic provider 비활성 (gateway LLMError). "
+            "환경변수 ANTHROPIC_API_KEY (제안서 §18.C)."
+        ),
+    )
+    # ★ Claude model_id 는 placeholder — 사용자가 dev 페이지에서 정확한 ID 를 확정한다.
+    #   registry 'claude-haiku'/'claude-sonnet' 가 조회 시점에 이 값을 읽어 model_id 결정
+    #   (provider 추가 = registry 항목 + config Field, agent 코드 0 변경 — 제안서 §2/§5.2).
+    anthropic_model_haiku: str = Field(
+        default="claude-haiku-4-5",
+        description=(
+            "Phase 12 B안: Anthropic workhorse model_id (registry 'claude-haiku'). "
+            "★ placeholder (제안서 §18.B 2026-06 라인업) — 사용자 dev 페이지 확인값 확정 필요. "
+            "환경변수 ANTHROPIC_MODEL_HAIKU 로 override 가능 (agent 코드 0 변경)."
+        ),
+    )
+    anthropic_model_sonnet: str = Field(
+        default="claude-sonnet-4-6",
+        description=(
+            "Phase 12 B안: Anthropic critic-급 model_id (registry 'claude-sonnet'). "
+            "★ placeholder (제안서 §18.B 2026-06 라인업) — 사용자 dev 페이지 확인값 확정 필요. "
+            "환경변수 ANTHROPIC_MODEL_SONNET 로 override 가능 (agent 코드 0 변경)."
+        ),
+    )
+
     # ─── Phase 11 A안 Slice 2 — cross-validation 게이트 + Gemini 튜닝 (additive) ─
     # ★ behavior-preserving / gated default-off: cross_validation_enabled=False →
     #   호출측(orchestrator 등)에서 교차검증 skip. 본 Slice 는 모듈만 추가 — 자동

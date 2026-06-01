@@ -22,6 +22,9 @@ from .aliases import resolve as resolve_alias
 from .cross_validation import CrossCheck, compare, cross_validate
 from .errors import LLMError
 from .gateway import LLMGateway, get_gateway
+from .providers.anthropic_adapter import AnthropicAdapter
+from .providers.gemini_adapter import GeminiAdapter
+from .providers.openai_adapter import OpenAIAdapter
 from .registry import get_model
 from .types import LLMMessage, LLMRequest, LLMResponse, LLMUsage
 
@@ -39,4 +42,8 @@ __all__ = [
     "cross_validate",
     "compare",
     "CrossCheck",
+    # ─── provider adapters (Phase 12 B안: 3-provider GPT/Claude/Gemini) ───
+    "OpenAIAdapter",
+    "GeminiAdapter",
+    "AnthropicAdapter",
 ]
