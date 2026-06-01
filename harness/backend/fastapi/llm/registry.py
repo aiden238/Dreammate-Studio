@@ -93,11 +93,12 @@ def _registry() -> dict[str, dict[str, Any]]:
             "tier_allowed": ["free", "paid"],
         },
         # ── Google Gemini workhorse (B안 3-plan 슬롯 3, ★ gated/default-off) ──
-        # model_id placeholder (제안서 §18.B: Gemini 3 Flash) — config Field 미신설로
-        # 직접 문자열. 사용자 dev 페이지 확인값 확정 필요. cost: §18.0 ($0.5/$3).
+        # model_id 는 config Field(gemini_flash_model, default live 확인 "gemini-3.5-flash")
+        # 로 교체 가능 — gemini-cross 동일 패턴. (이전 placeholder "gemini-3-flash" 는 404.)
+        # cost: §18.0 ($0.5/$3).
         "gemini-flash": {
             "provider": PROVIDER_GOOGLE,
-            "model_id": "gemini-3-flash",
+            "model_id": settings.gemini_flash_model,
             "json_mode": True,
             "max_tokens": 1500,
             "cost": {"input": 0.0005, "output": 0.003},

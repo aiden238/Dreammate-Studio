@@ -96,6 +96,17 @@ class Settings(BaseSettings):
             "환경변수 ANTHROPIC_MODEL_SONNET 로 override 가능 (agent 코드 0 변경)."
         ),
     )
+    # ★ Gemini workhorse model_id (registry 'gemini-flash', B안 3-plan 슬롯3 plan_tertiary).
+    #   gemini-cross 와 동일하게 config Field 로 교체 가능 — 조회 시점에 registry 가 읽는다.
+    #   default 는 live 확인된 gemini-3.5-flash (이전 placeholder "gemini-3-flash" 는 404 NOT_FOUND).
+    gemini_flash_model: str = Field(
+        default="gemini-3.5-flash",
+        description=(
+            "Phase 12 B안: Gemini workhorse model_id (registry 'gemini-flash', plan_tertiary). "
+            "★ live 확인값 (2026-06): gemini-3.5-flash (cross_validation 과 동일 라인). "
+            "환경변수 GEMINI_FLASH_MODEL 로 override 가능 (agent 코드 0 변경)."
+        ),
+    )
 
     # ─── Phase 11 A안 Slice 2 — cross-validation 게이트 + Gemini 튜닝 (additive) ─
     # ★ behavior-preserving / gated default-off: cross_validation_enabled=False →
