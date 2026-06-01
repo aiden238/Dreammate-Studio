@@ -1,4 +1,4 @@
-"""Anthropic (Claude) provider adapter — Phase 12 B안 Slice 1.
+"""Anthropic (Claude) provider adapter — Phase 11 B안 Slice 1.
 
 제안서 §8 / §18.B. B안 3-provider(GPT/Claude/Gemini) 다양성을 위해 Anthropic
 Messages API 를 canonical LLMRequest/LLMResponse 로 래핑한다:

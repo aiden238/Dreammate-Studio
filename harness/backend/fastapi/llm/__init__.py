@@ -42,7 +42,7 @@ __all__ = [
     "cross_validate",
     "compare",
     "CrossCheck",
-    # ─── provider adapters (Phase 12 B안: 3-provider GPT/Claude/Gemini) ───
+    # ─── provider adapters (Phase 11 B안: 3-provider GPT/Claude/Gemini) ───
     "OpenAIAdapter",
     "GeminiAdapter",
     "AnthropicAdapter",

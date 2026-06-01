@@ -76,7 +76,7 @@ class LLMGateway:
             return OpenAIAdapter(client=client)
         if provider == PROVIDER_GOOGLE:
             return GeminiAdapter(client=client)
-        # ★ Phase 12 B안: Anthropic(Claude) provider (additive).
+        # ★ Phase 11 B안: Anthropic(Claude) provider (additive).
         if provider == PROVIDER_ANTHROPIC:
             return AnthropicAdapter(client=client)
         raise LLMError(provider, "", f"지원하지 않는 provider: {provider!r}")
@@ -88,7 +88,7 @@ class LLMGateway:
             return settings.openai_api_key
         if provider == PROVIDER_GOOGLE:
             return settings.google_api_key
-        # ★ Phase 12 B안: Anthropic(Claude) provider (additive).
+        # ★ Phase 11 B안: Anthropic(Claude) provider (additive).
         if provider == PROVIDER_ANTHROPIC:
             return settings.anthropic_api_key
         return ""

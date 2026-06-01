@@ -143,7 +143,7 @@ def test_planning_raises_on_missing_plan_field() -> None:
         run_planning("input", client=client, model="gpt-4o-mini")
 
 
-# ─── Phase 12 B안 S2b-2a: run_planning_multi_provider_3 (gateway 기반) ─
+# ─── Phase 11 B안 S2b-2a: run_planning_multi_provider_3 (gateway 기반) ─
 
 def _plan_json(label: str) -> str:
     """slot 별 valid {"plan": {...}} JSON 문자열 (approach_label 다양화)."""

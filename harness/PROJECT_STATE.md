@@ -2,9 +2,10 @@
 
 ## 현재 상태
 
-영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5 + Phase M0(meta-phase) + Phase M1(meta-phase dry-run) + Phase M2(meta-phase machinery 개선) + Phase M3(meta-phase 이질 도메인 범용성 2차) + Phase 10(MVP 통합 테스트) 완료**.
+영상기획 AI 에이전트 플랫폼의 **하네스 마이그레이션(Phase 0) + Phase 1~4 + Phase 4.5 + Phase 6 + Phase 5 + Phase 5.5 + Phase 7 + Phase 8 + Phase 9 + Phase 9.5 + Phase M0(meta-phase) + Phase M1(meta-phase dry-run) + Phase M2(meta-phase machinery 개선) + Phase M3(meta-phase 이질 도메인 범용성 2차) + Phase 10(MVP 통합 테스트) 완료 + Phase 11(LLM Gateway A안 + B안 3-provider 확장) 완료**.
 Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /auth/* + /sse/* + /plans/{id}/select + /plans/{id}/feedback 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions, **normalize wiring live**) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계 (실 stage 연동)** + **RAG Lite (candidate_knowledge 5단계 MVP 전부 + pgvector retrieval + LLM Wiki 보조)** + **MOA Orchestrator 추출 (orchestration/moa_orchestrator + ProgressSink + progress_store 브릿지) + prompt_registry semver 정식화 + Critic v1.1.0 conservative adapter** + **결과 저장(selected_plans) + 피드백(feedback_events) 영속화 graceful + PII 마스킹 + 피드백 UI inline + Brand Memory 준비(feedback→candidate pending 적재)** 모두 동작.
 **Phase 9 ✅ done (2026-05-31)** — 결과 저장 + 피드백 (selected_plans/feedback_events 영속화 graceful + normalize_to_canonical wiring + Brand Memory 준비 + 피드백 UI wrapper, ADR-030/031/032, CC-004, large phase 6 Slice 실측 ~10~13h).
+**🟢 최신 = Phase 11(LLM Gateway A안+B안) ✅ done (2026-06-02) — 다음 = Phase 12 검증 페이즈(validation).**
 
 ## 🟢 Phase 11 A안 — LLM Gateway ✅ done (2026-06-01)
 
@@ -45,7 +46,13 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 
 ## 현재 Active Phase
 
+**🟢 Phase 11 A안+B안 done (2026-06-02), 다음 = Phase 12 검증 페이즈 entry — pending_user_decision/entry.**
+
+<details><summary>과거 Active Phase 요약 (Phase 10/M3 — 보존)</summary>
+
 **🟢 Phase 10 ✅ done (2026-05-31) — MVP 통합 완료, 배포 Gate A 통과** — Phase M0~M3(meta detour) + Phase 10(MVP 통합) 완료. 다음 = 배포 Gate B~G(staging→알파→베타→운영, 키·인프라 user-provided + 운영 phase) 또는 Phase 11+(4계층 linkage / async worker / prompt A/B / 자동 promotion / 실 LLM eval default / M3 GAP). 사용자 결정 대기.
+
+</details>
 
 **Phase 10. MVP 통합 테스트 ✅ done (2026-05-31, 제품 phase scope C)** — Phase 1~9.5 누적 MVP 를 end-to-end 통합 검증(결함 0) + P-AUX-2 brand_memory_extractor agent 실구현 + 실 LLM eval mode capability(default mock) + RAG eval_rubric 정식화 + golden_set 11→15 + 배포 게이트 A~G 준비. ★ 제품 phase(런타임 有) — behavior-preserving(기존 0 수정) + 키 0 + PlanCard/component_map 0줄.
 

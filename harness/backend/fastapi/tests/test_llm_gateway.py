@@ -117,7 +117,7 @@ def test_known_aliases_list() -> None:
         assert a in known
 
 
-# ─── B안(Phase 12 S2a): 3-plan 다양성 슬롯 alias (★ gated, 직접 연결 X) ──
+# ─── B안(Phase 11 B안 S2a): 3-plan 다양성 슬롯 alias (★ gated, 직접 연결 X) ──
 
 def test_resolve_plan_diversity_slot_aliases() -> None:
     # 슬롯별 provider 다양성: OpenAI / Anthropic / Google.

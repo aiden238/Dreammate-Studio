@@ -13,7 +13,7 @@ A안 alias 표 (제안서 §18.A / §5.2):
   critic    → { standard: gpt-4o, cost_saving: gpt-4o-mini }   # 현 cost_saving 폴백 정식화
   cross_validation → gemini-cross   (★ gated, default 사용처 없음)
 
-B안 3-plan 다양성 슬롯 (제안서 §18.B / Phase 12 S2a — ★ gated, 직접 연결 X):
+B안 3-plan 다양성 슬롯 (제안서 §18.B / Phase 11 B안 S2a — ★ gated, 직접 연결 X):
   plan_primary   → gpt-4o-mini   (슬롯1: OpenAI)
   plan_secondary → claude-haiku  (슬롯2: Anthropic 다양성)
   plan_tertiary  → gemini-flash  (슬롯3: Google 다양성)
@@ -36,7 +36,7 @@ _ALIAS_TABLE: dict[str, object] = {
     "critic": {"standard": "gpt-4o", "cost_saving": "gpt-4o-mini"},
     # ★ A안 cross_validation: gated/default-off. registry gemini-cross 로 해석.
     "cross_validation": "gemini-cross",
-    # ── B안(Phase 12 §18.B): 3-plan 다양성 슬롯 (★ gated/default-off, 직접 연결 X) ──
+    # ── B안(Phase 11 B안 §18.B): 3-plan 다양성 슬롯 (★ gated/default-off, 직접 연결 X) ──
     # 3안 다양성을 위해 슬롯별로 다른 provider 를 가리킨다. cost 합리적 조합:
     # haiku($1/$5)·gemini-flash($0.5/$3) ≈ gpt-4o 급 (sonnet 은 critic-급 보존).
     # ★ 본 alias 는 카탈로그 등록만 — orchestration 연결은 후속 S2b(gated).

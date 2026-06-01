@@ -9,7 +9,7 @@ A안 범위 (제안서 §18.A):
   - gpt-4o       : critic (standard)
   - gemini-cross : cross_validation (★ gated, default 사용처 없음)
 
-B안 추가 (제안서 §18.B, Phase 12 Slice 1 — ★ gated, default alias 미연결):
+B안 추가 (제안서 §18.B, Phase 11 B안 Slice 1 — ★ gated, default alias 미연결):
   - claude-haiku  : Anthropic workhorse (model_id = settings.anthropic_model_haiku)
   - claude-sonnet : Anthropic critic-급 (model_id = settings.anthropic_model_sonnet)
   - gemini-flash  : Google workhorse (3-plan 슬롯 3 후보)
@@ -32,7 +32,7 @@ from ..config import get_settings
 # provider 식별자 (canonical).
 PROVIDER_OPENAI = "openai"
 PROVIDER_GOOGLE = "google"
-# ★ Phase 12 B안: Anthropic(Claude) provider (additive).
+# ★ Phase 11 B안: Anthropic(Claude) provider (additive).
 PROVIDER_ANTHROPIC = "anthropic"
 
 

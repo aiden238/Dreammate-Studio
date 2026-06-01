@@ -305,7 +305,7 @@ async def test_plan_entry_mutation(patch_agents_ok) -> None:
     assert len(plan_entry["envelope"]["body"]["plan_candidates"]) == 3
 
 
-# ─── 9. Phase 12 B안 S2b-2b: multi_provider_plans_enabled gate ────────
+# ─── 9. Phase 11 B안 S2b-2b: multi_provider_plans_enabled gate ────────
 # step-3 의 gated 분기 검증:
 #   - flag ON  → plans_router.run_planning_multi_provider_3 사용 (run_planning_parallel_3 미호출)
 #   - flag OFF → 기존 run_planning_parallel_3 사용 (multi_provider 미호출, 회귀 가드)

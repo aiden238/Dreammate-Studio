@@ -386,7 +386,7 @@ async def run_planning_parallel_3(
     return final_results
 
 
-# ─── Phase 12 B안 Slice S2b-2a: 3-provider 다양성 (gateway 기반, additive) ─
+# ─── Phase 11 B안 Slice S2b-2a: 3-provider 다양성 (gateway 기반, additive) ─
 
 # 3-plan 다양성 alias 슬롯 (제안서 §18.B / aliases.py).
 #   슬롯 i ↔ _APPROACH_HINTS[i] 1:1 (run_planning_parallel_3 와 동일 매핑).
@@ -408,7 +408,7 @@ async def _run_planning_single_via_gateway(
 ) -> dict[str, Any]:
     """gateway alias 기반 단일 planning 호출 (async). 슬롯 1개 = alias 1회 호출.
 
-    Phase 12 B안 S2b-2a:
+    Phase 11 B안 S2b-2a:
       - system prompt 합성은 _run_planning_single 과 동일(_build_system_prompt_with_hint +
         _format_rag_context block).
       - messages 는 LLMMessage(role/content) 시퀀스 (cross_validation.py 동작 본뜸).
@@ -462,7 +462,7 @@ async def run_planning_multi_provider_3(
     rag_context: Sequence[Any] | None = None,
     gateway: Any = None,
 ) -> list[dict[str, Any]]:
-    """Phase 12 B안 §18.B — gateway 기반 3-provider 다양성 3-plan 생성 (gated, additive).
+    """Phase 11 B안 §18.B — gateway 기반 3-provider 다양성 3-plan 생성 (gated, additive).
 
     ★★ behavior-preserving: 본 함수는 **신설**이며 아직 **아무 곳에서도 호출되지 않는다**
     (orchestrator 분기는 후속 S2b-2b). config `multi_provider_plans_enabled`(default OFF)

@@ -1,10 +1,10 @@
-"""Anthropic (Claude) adapter 단위 테스트 — Phase 12 B안 Slice 1 (제안서 §8 / §18.B).
+"""Anthropic (Claude) adapter 단위 테스트 — Phase 11 B안 Slice 1 (제안서 §8 / §18.B).
 
 검증 대상 (전부 mock — 실 API 호출 0, 실 키 불필요):
   - AnthropicAdapter.complete: mock client 주입 → messages.create 호출 인자 검증
     (system 분리 / max_tokens / model / temperature) + LLMResponse 파싱(text/usage)
   - JSON 모드: response_format 부재 → system 지시문만 덧붙여 JSON 유도 (assistant
-    prefill 미사용 — Phase 12 sonnet-4-6 prefill 미지원 400 회피). 모델이 완전한 JSON 을
+    prefill 미사용 — Phase 11 B안 sonnet-4-6 prefill 미지원 400 회피). 모델이 완전한 JSON 을
     직접 반환하므로 응답을 그대로 파싱하고 messages 는 user turn 으로 끝난다.
   - system/user/assistant role 매핑 (system → system= 파라미터, 나머지 → messages)
   - 예외(anthropic.AnthropicError 등) → LLMError 정규화
@@ -96,7 +96,7 @@ def test_complete_passes_system_and_params_non_json() -> None:
 
 
 def test_complete_json_mode_adds_system_hint_no_prefill() -> None:
-    # ★ Phase 12 의도된 delta: JSON 모드는 system 지시문만 덧붙이고 assistant prefill 을
+    # ★ Phase 11 B안 의도된 delta: JSON 모드는 system 지시문만 덧붙이고 assistant prefill 을
     #   사용하지 않는다 (sonnet-4-6 등 prefill 미지원 신모델 400 회피). 모델이 완전한
     #   JSON 을 직접 반환하므로 응답을 그대로 파싱하고, messages 는 user 로 끝난다.
     client = _make_fake_anthropic_client('{"verdict": "approve"}')
@@ -247,7 +247,7 @@ def test_gateway_dispatches_anthropic_via_mock_client(
 
     monkeypatch.setitem(alias_mod._ALIAS_TABLE, "_claude_test", "claude-haiku")
     gw = LLMGateway()
-    # ★ Phase 12 의도된 delta: prefill 미사용 → 모델이 완전한 JSON 을 직접 반환하므로
+    # ★ Phase 11 B안 의도된 delta: prefill 미사용 → 모델이 완전한 JSON 을 직접 반환하므로
     #   mock 응답 text 를 그대로 파싱한다 (앞에 "{" 복원 없음).
     client = _make_fake_anthropic_client('{"ok": true}')
     resp = gw.complete("_claude_test", _msgs(), client=client)

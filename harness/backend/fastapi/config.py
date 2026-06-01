@@ -63,7 +63,7 @@ class Settings(BaseSettings):
         ),
     )
 
-    # ─── Phase 12 B안 Slice 1 — Anthropic(Claude) provider (additive, graceful) ─
+    # ─── Phase 11 B안 Slice 1 — Anthropic(Claude) provider (additive, graceful) ─
     # ★ behavior-preserving: gateway 신규 provider 전용 — 기존 agents 미연결.
     #   default 호출 경로(OpenAI workhorse/critic) 불변. anthropic 미설정 시 비활성.
     # ★ 실 키 불필요: graceful default="" (미설정 시 anthropic provider 비활성
@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str = Field(
         default="",
         description=(
-            "Anthropic Claude API key (Phase 12 B안 — Claude provider). "
+            "Anthropic Claude API key (Phase 11 B안 — Claude provider). "
             "graceful: 미설정 시 Anthropic provider 비활성 (gateway LLMError). "
             "환경변수 ANTHROPIC_API_KEY (제안서 §18.C)."
         ),
@@ -83,7 +83,7 @@ class Settings(BaseSettings):
     anthropic_model_haiku: str = Field(
         default="claude-haiku-4-5",
         description=(
-            "Phase 12 B안: Anthropic workhorse model_id (registry 'claude-haiku'). "
+            "Phase 11 B안: Anthropic workhorse model_id (registry 'claude-haiku'). "
             "★ placeholder (제안서 §18.B 2026-06 라인업) — 사용자 dev 페이지 확인값 확정 필요. "
             "환경변수 ANTHROPIC_MODEL_HAIKU 로 override 가능 (agent 코드 0 변경)."
         ),
@@ -91,7 +91,7 @@ class Settings(BaseSettings):
     anthropic_model_sonnet: str = Field(
         default="claude-sonnet-4-6",
         description=(
-            "Phase 12 B안: Anthropic critic-급 model_id (registry 'claude-sonnet'). "
+            "Phase 11 B안: Anthropic critic-급 model_id (registry 'claude-sonnet'). "
             "★ placeholder (제안서 §18.B 2026-06 라인업) — 사용자 dev 페이지 확인값 확정 필요. "
             "환경변수 ANTHROPIC_MODEL_SONNET 로 override 가능 (agent 코드 0 변경)."
         ),
@@ -102,7 +102,7 @@ class Settings(BaseSettings):
     gemini_flash_model: str = Field(
         default="gemini-3.5-flash",
         description=(
-            "Phase 12 B안: Gemini workhorse model_id (registry 'gemini-flash', plan_tertiary). "
+            "Phase 11 B안: Gemini workhorse model_id (registry 'gemini-flash', plan_tertiary). "
             "★ live 확인값 (2026-06): gemini-3.5-flash (cross_validation 과 동일 라인). "
             "환경변수 GEMINI_FLASH_MODEL 로 override 가능 (agent 코드 0 변경)."
         ),
@@ -132,7 +132,7 @@ class Settings(BaseSettings):
         ),
     )
 
-    # ─── Phase 12 B안 Slice S2b-2a — 3-provider 다양성 게이트 (additive) ─
+    # ─── Phase 11 B안 Slice S2b-2a — 3-provider 다양성 게이트 (additive) ─
     # ★ behavior-preserving / gated default-off: True 여도 본 Slice 는 신규 함수
     #   run_planning_multi_provider_3 를 추가만 — 아무 곳도 호출 X (orchestrator 분기는
     #   후속 S2b-2b). False 일 때 기존 OpenAI 3-call(run_planning_parallel_3) 경로 유지.
