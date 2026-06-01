@@ -53,9 +53,11 @@
 
 ## 4. 다음 작업 (재개 시)
 
-1. **Gemini 3.5-flash 회복 확인** → `python scripts/verify_llm_keys.py` + cross_validate 테스트. 회복 시 임시 override 제거.
-2. **Phase 11 정식화** — 가속 빌드라 phase entry 8파일/ADR/회고 미작성. `phases/active/phase-11-llm-gateway/` 생성 + ADR(LLM Gateway) + cost_control_policy 확장(tier×mode→alias, contract-change) + retrospective + archive. (제안서 §11 migration M0~M5 / §14 Codex 티켓 참조.)
-3. **full 라이브 /generate 데모** — Quick 모드는 wizard 단계(start→quick.initial→clarify→direction→generate) 필요. 전체 흐름 + flag ON 으로 cross_validation 로그 라이브 확인. (test_integration_mvp 가 mock 으로 전체 흐름 커버.)
+> ★ 2026-06-01 update: ①②③-1 완료. 아래 1·2·3 은 ✅, 남은 것은 4(B안)·5(frontend).
+
+1. ✅ **Gemini 3.5-flash 회복 확인** — 회복됨(기본값 그대로). 임시 override는 .env 에 쓴 적 없음(제거 불요).
+2. ✅ **Phase 11 정식화** — entry 8 + closing + ADR-039 + CC-010(cost_control §11/§12 tier×mode→alias) + 회고 + archive(`phases/archive/phase-11-llm-gateway/`) + state/registry + P-X1 63. commit 3859663.
+3. ✅ **full 라이브 /generate 데모** — quick wizard(start→quick.initial→clarify→direction→generate) + flag ON → 실 OpenAI 3안+Critic + gemini-3.5-flash 교차검증 → 로그 `cross_validation: model=gemini-3.5-flash gemini=0.65 openai=0.8 agreement=True -> consensus`. Envelope 불변(200, 3안 정상).
 4. **B안** (제안서 §18.B) — 3-provider 다양성(GPT/Claude/Gemini 3-plan). 키 3개 준비됨. cost_control_policy 재조정 필수(신모델 5~7배 비쌈).
 5. **frontend 손-검증** — Node 설치됨. `cd harness/apps/web && npm install && npm run dev` → localhost:3000 ↔ 백엔드 localhost:8000. (실 기획 생성은 OPENAI_API_KEY 필요 — .env 있음.)
 6. **잡정리**: `harness/backend/fastapi/새 텍스트 문서.txt`(0바이트, 불필요) 삭제 가능.
