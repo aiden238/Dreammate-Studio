@@ -14,7 +14,13 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 - pytest 381→**435** (gateway 31 + cross-val 19 + wiring 4). ★ behavior-preserving(기존 0 수정) + gated default-off + 키 커밋 0. P-X1 **63**.
 - 라이브 검증: gateway 경유 OpenAI 생성 ✅ / Gemini 교차검증(8차원)+compare(consensus 0.7375 vs 0.72) ✅. Node.js v24.16.0. 키 3개(.env 인증 OK, Anthropic 오타 수정). ★ gemini-3.5-flash **회복됨**(기본값 그대로).
 - ADR-039 + CC-010(cost_control tier×mode→alias 표 additive) + P-LLM-GATEWAY-001(신규 후보).
-- 다음(B안+): full 라이브 /generate(wizard) 데모 / **B안 3-provider 다양성**(키 준비됨, cost 재조정) / frontend 손-검증 (handoff §4).
+- 다음(B안+): full 라이브 /generate(wizard) 데모 ✅(consensus) / frontend 손-검증 / **B안(Phase 12) 진행 중** — 아래.
+
+## 🟢 진행 중 (2026-06-01): Phase 12 B안 — 3-provider
+
+- **S1 완료** (cac2b9b + b060c2b fix): Anthropic adapter + registry Claude(haiku/sonnet)·Gemini + gateway 3-provider 분기(openai/google/anthropic) + config(anthropic_api_key + model placeholder). pytest 435→**452**. behavior-preserving.
+- ★ **3-provider 라이브 연결 입증**: GPT(gpt-4o-mini) + Claude(haiku-4-5, sonnet-4-6) + Gemini(3.5-flash) 전부 gateway 경유 실제 호출 OK. 버그(sonnet prefill 미지원 400) → adapter JSON prefill 제거(system 지시문 방식)로 수정.
+- 다음 **B안 S2**: 3-plan 슬롯을 3-provider alias 로 다양화(plan_a→GPT, plan_b→Claude, plan_c→Gemini) + planning 경로 gated 연결 + Claude ```json 펜스 stripping 견고화 + cost_control 재조정. (제안서 §18.B)
 
 ## 현재 Active Phase
 

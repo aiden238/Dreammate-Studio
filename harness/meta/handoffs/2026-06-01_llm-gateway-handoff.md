@@ -58,7 +58,10 @@
 1. ✅ **Gemini 3.5-flash 회복 확인** — 회복됨(기본값 그대로). 임시 override는 .env 에 쓴 적 없음(제거 불요).
 2. ✅ **Phase 11 정식화** — entry 8 + closing + ADR-039 + CC-010(cost_control §11/§12 tier×mode→alias) + 회고 + archive(`phases/archive/phase-11-llm-gateway/`) + state/registry + P-X1 63. commit 3859663.
 3. ✅ **full 라이브 /generate 데모** — quick wizard(start→quick.initial→clarify→direction→generate) + flag ON → 실 OpenAI 3안+Critic + gemini-3.5-flash 교차검증 → 로그 `cross_validation: model=gemini-3.5-flash gemini=0.65 openai=0.8 agreement=True -> consensus`. Envelope 불변(200, 3안 정상).
-4. **B안** (제안서 §18.B) — 3-provider 다양성(GPT/Claude/Gemini 3-plan). 키 3개 준비됨. cost_control_policy 재조정 필수(신모델 5~7배 비쌈).
+4. **B안** (제안서 §18.B) — 3-provider. 키 3개 준비됨.
+   - ✅ **S1 완료** (cac2b9b + b060c2b): Anthropic adapter + registry Claude(haiku/sonnet)·Gemini + gateway 3-provider 분기 + config. pytest 435→**452**. ★ **3-provider 라이브 연결 입증**(GPT+Claude haiku/sonnet+Gemini 전부 gateway 호출 OK). 버그(sonnet prefill 미지원 400)→adapter JSON prefill 제거(system 지시문)로 수정. **둘 다 push 됨**(origin/main=b060c2b).
+   - ⚠️ **관찰**: Claude haiku 는 JSON 을 ` ```json ``` ` 펜스로 감쌈(sonnet 은 clean). S2 에서 펜스 stripping 견고화 필요.
+   - **남은 S2**: 3-plan 슬롯 다양화(plan_a→GPT, plan_b→Claude, plan_c→Gemini) alias 추가(registry 엔 Claude/Gemini 모델 있으나 **이를 가리키는 alias 아직 0** — `gateway.complete('claude-haiku')` 는 KeyError) + planning 경로 gated 연결 + 펜스 stripping + cost_control 재조정(신모델 5~7배). cost: registry 키만 추가됨, alias/wiring/cost 가 S2.
 5. **frontend 손-검증** — Node 설치됨. `cd harness/apps/web && npm install && npm run dev` → localhost:3000 ↔ 백엔드 localhost:8000. (실 기획 생성은 OPENAI_API_KEY 필요 — .env 있음.)
 6. **잡정리**: `harness/backend/fastapi/새 텍스트 문서.txt`(0바이트, 불필요) 삭제 가능.
 
