@@ -808,3 +808,62 @@ meta-retrospective Skill이 회고를 거듭하면서 식별하는 **반복되�
   - meta_factory/README.md + factory_contract.md + generation_workflow.md + validation_workflow.md
   - meta_factory/blueprints/dreammate_current_harness_blueprint.md (현재 하네스 실측 역정리 + L3 부족점 5)
 - **상태**: 신규 등록 후보 (Phase M0 첫 적용 — L3 Meta-Factory skeleton, Phase M1+ 자동 generator / 2nd 하네스 착수 시점 효과 재측정 후 정식 패턴 채택 결정)
+
+### Pattern P-VALIDATION-DEPTH-GAP-001: 같은 모델·prompt/schema 설계로 출력 가치 격차 정량 + 운영 반영·재측정 (Phase 12 신규 후보 + Phase 13 운영 재측정 입증)
+
+- **유형**: 반복 성공 (Phase 12 첫 적용 — 깊이 격차 정량 + Phase 13 운영 반영·재측정 — 격차 해소 입증)
+- **최초 식별**: 2026-06-02 (Phase 12 — 검증 페이즈, 깊이 격차 4.3x 실측)
+- **운영 재측정 입증**: 2026-06-03 (Phase 13 S6 — 운영 run_planning flag 토글 재측정, OFF 0.231 / ON 1.000)
+- **관련 회고**: meta/retrospectives/phase-12.md §5 + meta/retrospectives/phase-13.md §5
+- **요약**: 같은 모델(gpt-4o-mini)·같은 비용 근방에서 **prompt/schema 설계만으로 출력 가치 격차를 정량 측정**(compact vs rich, depth_actionability 13 feature 구조 채점 0/1 → depth 비율)하여 확장 ROI·우선순위의 데이터 근거 확보. "모델 한계인가 설계 선택인가"를 수치로 분리. 그 격차를 운영에 gated 반영 후 **운영 코드(run_planning) flag 토글로 재측정**하여 격차 해소를 운영으로 입증.
+- **핵심 메커니즘**:
+  1. **측정 전용 → 운영 측정 분리** (Phase 12): compact 는 실 운영 `run_planning()` import 만(수정 0), rich 는 측정 전용 프롬프트(운영 미반영) → 측정이 측정 대상 오염 0 (P-CAPABILITY-DEFAULT-OFF-001 정신).
+  2. **feature 구조 채점 0/1 → depth 비율**: 13 feature 존재 여부(타깃·톤·후크변형·대사·자막·샷·썸네일·제목·CTA·레퍼런스·길이변형 등)를 0/1 채점 → 존재 비율. 도메인 무관 일관성(편차 0)으로 소표본도 robust.
+  3. **격차 원인 분해**: 단순 "얕다"가 아니라 (a) compact 보유 / (b) 프롬프트만으로 채워짐 / (c) **스키마 슬롯 부재**로 분해 → 확장 레버를 "프롬프트 + 스키마"로 정확히 지목.
+  4. **★ 운영 반영 → 운영 재측정 (Phase 13 S6)**: 격차를 gated additive 로 운영 반영(스키마+프롬프트+wiring) 후 운영 `run_planning()` 을 `rich_output_enabled` OFF/ON 토글(`get_settings.cache_clear`)하며 재측정 → **OFF 0.231(Phase 12 baseline byte-identical 재확인) / ON 1.000(≥0.8 PASS)**. 측정→반영→재측정 닫힌 루프.
+  5. **정직한 캘리브레이션**: rich=1.0 = "이만큼 가능"의 상한선(슬롯 충족)이지 콘텐츠 우수성 아님 + feature 존재(0/1)는 품질 미반영(human review / LLM-as-judge 보강) + 표본 한정 명시.
+- **효과 측정 (Phase 12 + Phase 13)**:
+  - Phase 12: compact 0.231 vs rich 1.000 = 4.3x, 6/6 편차 0. 결핍 10/13 feature, 다수 스키마 슬롯 부재 → Phase 13 레버 정의. + 88점 함정 발견(Critic 이 깊이 미반영).
+  - Phase 13 S6: 운영 ON 0.231→1.000(4/4 편차 0, ≥0.8 PASS) + OFF byte-identical → 격차 해소를 운영으로 완결. 88점 함정 해소(S4 Critic depth 9차원).
+- **권장 대응**:
+  - 출력 가치 확장 전 "모델 한계인가 설계 선택인가"를 측정 전용 prompt/schema 격차로 수치화(운영 코드 0 수정 측정).
+  - 격차 반영 후 운영 코드 flag 토글로 재측정(OFF byte-identical 확인 + ON 목표 달성) — 측정→반영→재측정 닫힌 루프.
+  - feature 존재 채점(0/1)의 품질 미반영 한계 명시 + human review 보강 경로 보존.
+- **연관 Skill / Contract**: eval-design (depth_actionability 차원 CC-011) + eval-run (격차 측정·재측정) + P-CAPABILITY-DEFAULT-OFF-001 (측정 전용 분리) + P-GATED-OUTPUT-CHANGE-001 (Phase 13 — 격차 반영을 gated 안전 롤아웃) + depth_actionability rubric (eval/video_planning_eval.md §2.A.1)
+- **관련 회고**:
+  - meta/retrospectives/phase-12.md (첫 — 깊이 격차 4.3x 실측)
+  - meta/retrospectives/phase-13.md (운영 재측정 — 0.231→1.000)
+  - eval/regression_results/2026-06-02_phase-12-s2-s3-depth-gap.md (Phase 12 측정 전용)
+  - eval/regression_results/2026-06-03_phase-13-s6-depth-remeasure.md (Phase 13 운영 토글 재측정)
+- **상태**: 신규 등록 후보 (Phase 12 첫 + Phase 13 운영 재측정 입증 — 다음 출력 가치 측정·확장 시 재측정 후 정식 패턴 채택 결정)
+
+### Pattern P-GATED-OUTPUT-CHANGE-001: 출력 변경을 flag + additive + compact-serialize 로 회귀 0 안전 롤아웃 (Phase 13 신규 후보)
+
+- **유형**: 반복 성공 (Phase 13 첫 적용 — ★ 이 프로젝트 첫 의도적 출력 변경, OFF 회귀 0 / ON rich)
+- **최초 식별**: 2026-06-03 (Phase 13 — 출력 확장 compact→rich, S1~S6)
+- **관련 회고**: meta/retrospectives/phase-13.md §3 §5
+- **요약**: 출력(직렬화 결과)을 의도적으로 변경할 때 **3중 안전장치**로 OFF 회귀 0(기존 test 수정 0 = byte-identical 증거)을 보장하며 ON 에서만 변경된 출력(rich):
+  1. **flag default OFF** (`rich_output_enabled` default False) — 운영은 기존 compact 경로, 변경은 명시적 활성 시에만.
+  2. **additive 스키마** (rich 12 슬롯 전부 Optional) — 기존 필드 무수정 + 신규는 추가만 → 기존 소비자 회귀 0.
+  3. **compact-serialize** (OFF 경로 `model_dump_compact()` + POST response_model 미지정으로 rich 누수 차단) — flag OFF 면 신규 슬롯이 응답에 절대 새지 않음 → OFF byte-identical 보장.
+  - + **prompt gated 공존** (P-006 v1.0.0 active / v1.1.0 gated, P-007 v1.1.0 active / v1.2.0 gated — deactivate 아님) — flag 로 두 prompt 버전 공존, OFF 경로 byte-identical. prompt-version-review semver 의 gated 변형.
+- **핵심 메커니즘**:
+  1. **OFF byte-identical 증거 = 기존 test 수정 0**: rich 추가에도 기존 471 test 한 줄 수정 없이 ON 신규 28 test 추가 → OFF 동작 불변을 회귀 게이트로 증명 (P-BEHAVIOR-PRESERVING-001 정신).
+  2. **단계화된 contract-change** (CC-012 스키마 / CC-013 프롬프트 / CC-014 wiring / CC-015 Critic depth / CC-016 cost): 출력 변경을 슬라이스별 additive CC 로 분해 → 검토·rollback 단위 최소화.
+  3. **운영 재측정으로 가치 입증** (S6): flag 토글 깊이 재측정(OFF 0.231 / ON 1.000) — 안전(OFF byte-identical) + 가치(ON ≥0.8) 동시 입증.
+  4. **default 전환은 별도 결정**: gated OFF 유지(검증·라이브 입증까지) — flag default ON 전환(전 사용자 노출)은 cost/품질 합의 후 후속 phase. 안전 롤아웃과 노출 결정 분리.
+- **효과 측정 (Phase 13)**:
+  - pytest 471→499(+28, 기존 471 수정 0) — OFF 회귀 0 입증.
+  - 깊이 OFF 0.231(byte-identical) / ON 1.000(≥0.8 PASS) + 라이브 /generate end-to-end rich HTTP 200.
+  - 88점 함정 해소(Critic depth gated 9차원) — 기존 8차원 SYSTEM_PROMPT/DIMENSIONS/PROMPT_VERSION/normalize 본문 무수정.
+- **권장 대응**:
+  - 출력(직렬화) 변경 시 flag(default OFF) + additive 스키마(신규 슬롯 Optional) + compact-serialize(OFF 누수 차단) 3중 적용.
+  - prompt 변경은 gated 공존(active/gated 버전 flag 분기, deactivate 아님)으로 OFF byte-identical 유지.
+  - OFF 회귀 0 을 "기존 test 수정 0" 게이트로 증명 + 운영 재측정으로 ON 가치 입증.
+  - default 전환(전 사용자 노출)은 안전 롤아웃과 분리 — cost/품질 합의 후 별도 결정.
+- **연관 Skill / Contract**: prompt-version-review (P-006/P-007 gated semver) + contract-change (CC-012~016) + agent-io-check (스키마 additive PASS) + P-BEHAVIOR-PRESERVING-001 (기존 test 수정 0 = 동작 불변) + P-VALIDATION-DEPTH-GAP-001 (Phase 12 격차 → Phase 13 gated 반영) + P-CAPABILITY-DEFAULT-OFF-001 (gated default-off 정신) + product_boundary (확장본도 기획 브리프)
+- **관련 회고**:
+  - meta/retrospectives/phase-13.md
+  - docs/contract_changes/2026-06-02_phase-13-output-schema-rich.md (CC-012) + 2026-06-02_phase-13-prompt-p006.md (CC-013) + 2026-06-02_phase-13-s3-gated-wiring.md (CC-014) + 2026-06-03_phase-13-s4-critic-depth.md (CC-015) + 2026-06-03_phase-13-s6-cost.md (CC-016)
+  - eval/regression_results/2026-06-03_phase-13-s6-depth-remeasure.md (OFF byte-identical / ON ≥0.8)
+- **상태**: 신규 등록 후보 (Phase 13 첫 적용 — ★ 첫 의도적 출력 변경. 두 번째 출력 변경 / rich default ON 전환 시 효과 재측정 후 정식 패턴 채택 결정)

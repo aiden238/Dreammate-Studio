@@ -32,28 +32,55 @@
 | **10** | **MVP 통합 테스트 (scope C)** | **done** (2026-05-31) | 4 Slice + entry(multi-llm 10th) + ★ 제품 phase(런타임 有, behavior-preserving) + MVP end-to-end 통합 **PASS(결함 0)** + pytest 339→**381** + P-AUX-2 brand_memory_extractor 실구현(agent 5→6, CC-008) + 실 LLM eval mode capability(default mock) + RAG eval_rubric v1.0.0 + golden_set 11→15(CC-009) + 배포 Gate A 통과 + ADR-038 + P-X1 60연속 + PlanCard/component_map 0줄 유지 |
 | **11** | **LLM Gateway (A안 + B안 — registry/alias + 3-provider + cross-validation)** | **done** (A안 2026-06-01 / B안 2026-06-02) | A안: gateway 골격 + cross_validation + orchestrator gated hook(ADR-039/CC-010). **B안 확장**: Anthropic adapter + 3-provider 분기 + 3-plan 다양성 alias + 펜스 stripping + `run_planning_multi_provider_3` + orchestrator gated 분기(`multi_provider_plans_enabled` default OFF) + gemini-flash model 교정. pytest 381→**471** + behavior-preserving + ★ **라이브 3-provider 3안 입증**(openai/anthropic/google 각 1안 실생성, FALLBACK 0). B안 정식화(ADR/cost) 일부 비차단 잔여. |
 | **12** | **검증 페이즈 (Validation — MVP 품질·가치 실측)** | **done** (2026-06-02) | ★ 사용자 지침 "12=검증". 구조 정확성(완료)이 아닌 **출력 품질·가치** 실측. **깊이 격차 4.3x 실측**(compact 0.231 vs rich 1.000, 6/6 편차 0) → 결론(단순함=모델 한계 아님, prompt/schema 설계) + golden_set 15→25 + depth_actionability 차원(CC-011) + S4 human review kit. ★ **S4 사용자 실 채점 = deferred**(사용자 실 UI 직접 확인으로 결론 확정, kit 은 optional 보정 보존). ★ 운영 코드 0 수정 + behavior-preserving(pytest 471). P-VALIDATION-DEPTH-GAP-001(신규 후보). |
-| **13** | **출력 확장 (Output Enrichment — compact→rich)** | **active** (entry 작성 2026-06-02) | ★ 이 프로젝트 **첫 의도적 출력 변경** phase. Phase 12 가 입증한 깊이 격차(0.231→잠재 1.0)를 **운영 출력에 반영** — gated 단계 롤아웃 + additive 스키마로 안전하게. 6 Slice: S1 스키마 확장(`Plan` optional 슬롯) / S2 프롬프트 확장(P-006 bump) / S3 gated wiring(`rich_output_enabled` default OFF) / S4 Critic depth 반영(88점 함정) / S5 frontend 렌더링(/generate rich) / S6 cost 재조정 + 깊이 재측정(목표 ≥0.8) + 종료. 롤아웃=gated(flag OFF→검증후 ON) / 범위=풀(backend+frontend) / 제품 경계=기획 브리프(product_boundary). |
-| 14~20 | 안정화 / 배포 (검증·확장 근거 기반) | future | 배포 Gate B~G + 4계층 linkage / SSE async worker / prompt A/B / 자동 promotion / B안 다중-provider UX 노출 / M3 새 GAP 3(G9/G10/G11) / flag default ON 전환 결정 — ★ 검증·확장 결과로 우선순위 결정 |
+| **13** | **출력 확장 (Output Enrichment — compact→rich)** | **done** (2026-06-03) | ★ 이 프로젝트 **첫 의도적 출력 변경** phase를 gated 로 안전하게. Phase 12 가 입증한 깊이 격차를 운영 출력에 반영 — **깊이 0.231→1.000(≥0.8 PASS, OFF byte-identical)** + Critic depth(88점 함정 해소) + frontend rich + ★ 라이브 입증(/generate end-to-end rich HTTP 200). 6 Slice(S1 스키마 CC-012 / S2 프롬프트 P-006 v1.1.0 CC-013 / S3 gated wiring CC-014 / S4 Critic depth P-007 v1.2.0 CC-015 / S5 frontend + 품질점수 숨김 / S6 cost CC-016 + 깊이 재측정 + close). pytest 471→**499**(기존 471 수정 0 = OFF 회귀 0) + 키 0. ★ rich default 전환 미결정(non_goal — gated OFF 유지). |
+| **14** | **안정화 / 확장 (pending_user_decision)** | **next** (pending_user_decision) | 후보: 위저드(/new/*) ↔ 백엔드 실연결(현재 랜딩 / 만 실생성, 위저드 mock) / rich default 전환 결정(flag default ON, cost·품질 합의 후) / 배포 Gate B~G(staging→운영) / Phase 12 S4 human review 실 채점 + 전수 실 LLM eval / B안 정식화 잔여(B-RES-2 ADR, B-RES-3 contract-change) / 4계층 linkage / SSE async worker / prompt A/B / 자동 promotion / M3 새 GAP 3(G9/G10/G11). ★ 사용자 결정 대기. |
+| 15~20 | 안정화 / 배포 (검증·확장 근거 기반) | future | 배포 Gate B~G + 4계층 linkage / SSE async worker / prompt A/B / 자동 promotion / B안 다중-provider UX 노출 / M3 새 GAP 3(G9/G10/G11) — ★ 검증·확장 결과로 우선순위 결정 |
 | 21~30 | 고도화 | future | Spring, Expo, Custom RAG, LangGraph |
 
-## 🟢 Phase 13 active (출력 확장 — Output Enrichment, compact→rich)
+## Phase 13 done (archive) — 제품 phase (출력 확장 — Output Enrichment, compact→rich)
 
-`phases/active/phase-13-output-enrichment/`
+`phases/archive/phase-13-output-enrichment/`
 
 ```
-Status     : 🟢 ACTIVE (entry 작성 2026-06-02)
+Status     : ✅ DONE (2026-06-03)
 유형       : 제품 phase (런타임 有 — ★ 이 프로젝트 첫 의도적 출력 변경) — gated 단계 롤아웃 + additive 스키마(flag OFF byte-identical, behavior-preserving)
 Goal       : Phase 12 가 입증한 깊이 격차(compact 0.231 → rich 잠재 1.0, 4.3x)를 운영 출력에 반영 — compact 7필드 → rich(후크 변형·타임코드·화면·대사·자막·샷·썸네일·제목·CTA·레퍼런스·길이변형·타깃·톤). 목표 depth 0.231 → ≥0.8.
-롤아웃     : ★ gated — rich_output_enabled default **False** → 검증(S6) 후 ON (default ON 즉시 전환은 별도 결정)
-범위       : ★ 풀 — backend(스키마/프롬프트/wiring/Critic) + frontend(/generate 화면 rich)
-6 Slice    : S1 스키마 확장(Plan optional 슬롯, output_schema CC + agent-io-check) / S2 프롬프트 확장(planning rich, prompt-version-review P-006 bump v1.1.0) / S3 gated wiring(rich_output_enabled default False + generate·orchestrator 분기, OFF byte-identical) / S4 Critic depth(depth_actionability 차원 additive, P-007 bump, 88점 함정 해소) / S5 frontend(PlanCard rich conditional 렌더, design-review) / S6 cost 재조정(rich 토큰 × 3안 + B-RES-1 통합) + depth 재측정(≥0.8) + flag ON 라이브 데모 + phase-complete
+Result     : Entry + 6 Slice + ★ flag OFF byte-identical(behavior-preserving, 기존 471 test 수정 0) + pytest 471→499(+28: S1 10 + S2 5 + S3 7 + S4 6) + 키 0. 깊이 재측정(운영 run_planning OFF/ON 토글) OFF 0.231 / ON **1.000(≥0.8 PASS, 4/4 편차 0)** + Critic depth 88점 함정 해소 + frontend rich 조건부 8섹션 + ★ 라이브 입증(/generate end-to-end rich HTTP 200, rich 9슬롯 + beat visual/dialogue/caption + 화면 rich)
+핵심 발견  : ★ 첫 의도적 출력 변경을 **gated + additive 스키마 + compact-serialize** 3중 안전장치로 회귀 0 롤아웃 (OFF byte-identical / ON rich). prompt gated 공존(P-006 v1.0.0 active/v1.1.0 gated, P-007 v1.1.0 active/v1.2.0 gated — deactivate 아님). Phase 12 측정 → Phase 13 운영 반영 → S6 운영 재측정 닫힌 루프(0.231→1.000).
+★ 미결정/미완: rich default 전환 **미결정**(non_goal — gated OFF 유지, 사용자 opt-in / Phase 14) + 위저드(/new/*) ↔ 백엔드 실연결 미완(랜딩 / 만 실생성, 위저드 mock — Phase 14 후보) + 품질점수 숨김(SHOW_QUALITY_SCORE flag, 사용자 요청)
+6 Slice    : S1 스키마(output_schema §8.1 v1.1.0→v1.2.0 + rich 12 슬롯 additive + model_dump_compact + agent-io-check PASS, CC-012) / S2 프롬프트(planning RICH_SYSTEM_PROMPT + P-006 v1.0.0→v1.1.0 gated 공존, prompt-version-review, CC-013) / S3 gated wiring(config rich_output_enabled default False + 직렬화·프롬프트 분기, OFF byte-identical, CC-014) / S4 Critic depth(9차원 depth_actionability + P-007 v1.2.0 gated + agent-io-check PASS, 88점 함정 해소, CC-015) / S5 frontend(PlanCard rich 조건부 8섹션 순수 additive + 품질점수 숨김) / S6 cost 재조정(CC-016 — rich 3~5배 × 3안 + B-RES-1 통합) + 깊이 재측정 + phase-complete
 제품 경계  : ★ 확장본도 "기획 브리프"(촬영·편집 가이드) — 완성 대본/영상 제작 아님 (product_boundary 영구 non-goal)
-entry      : 8파일(goals/scope/non_goals/dependencies/acceptance/assumptions/multi_slice_plan/notes) + multi-llm-validation self(12th, S1 직전/entry)
-근거       : Phase 12 깊이 격차 리포트(eval/regression_results/2026-06-02_phase-12-s2-s3-depth-gap.md) + S5 종합(phases/archive/phase-12-validation/s5_synthesis_and_phase13_proposal.md) + depth_actionability rubric(CC-011)
-승계       : B안 잔여(B-RES-1 cost 재조정 = S6 흡수 / B-RES-2 ADR / B-RES-3 contract-change) + Phase 12 S4 human review 실 채점
-acceptance : A1~A10 + MG1~MG3 — 스키마 additive(기존 회귀 0) / P-006·P-007 bump(prompt-version-review) / flag OFF byte-identical(behavior-preserving) / Critic depth 반영 / frontend rich 렌더 / depth 재측정 ≥0.8 / cost 재조정 / pytest green / P-X1 / 키 0
-신규 패턴(예정): 출력 확장 gated+additive(첫 출력 변경 안전 롤아웃)
-다음 Phase : Phase 14+ (flag default ON 전환 결정 / 모델 tier 상향 2차 레버 / staging 배포 / B안 UX 노출)
+Sub-agent  : Entry·S1~S5 (sub-agent / S6 main close), 충돌 0 — P-X1 PASS (S6 런타임 .py 0)
+회고       : meta/retrospectives/phase-13.md
+신규 패턴  : P-GATED-OUTPUT-CHANGE-001 (출력 변경 flag+additive+compact-serialize 회귀 0 신규 후보) + P-VALIDATION-DEPTH-GAP-001 update(Phase 12 계승 — 운영 재측정 입증) + P-BEHAVIOR-PRESERVING-001 update(출력 변경 phase) + P-CONTRACT-FIRST-001 update(CC-012~016 Phase 13 만 5 CC, 누적 17회) + P-X1-EFFECT-001 update
+5 CC       : CC-012(스키마) + CC-013(프롬프트 P-006) + CC-014(gated wiring) + CC-015(Critic depth P-007) + CC-016(cost 재조정 rich/B-RES-1)
+2 리포트   : eval/regression_results/2026-06-03_phase-13-s6-depth-remeasure.md (OFF 0.231/ON 1.000) + (S6 cost = cost_control_policy §13~§14)
+핵심 성과  : **★ 첫 의도적 출력 변경 gated 안전 롤아웃(OFF byte-identical) + 깊이 0.231→1.000(≥0.8) + Critic depth 88점 함정 해소 + frontend rich + 라이브 입증 + pytest 471→499(OFF 회귀 0) + 키 0**
+다음 Phase : **Phase 14 (pending_user_decision)** — rich default 전환 결정 / 위저드(/new/*) 실연결 / 배포 Gate B~G / Phase 12 S4 human review 실 채점 + 전수 실 LLM eval / B안 정식화 잔여(B-RES-2/B-RES-3)
+```
+
+## 🟢 Next phase: Phase 14 pending_user_decision (2026-06-03)
+
+```
+Phase 1~13 완료. MVP 통합(Phase 10) + LLM Gateway(Phase 11) + 검증(Phase 12) + 출력 확장(Phase 13 — compact→rich gated, 깊이 0.231→1.000, 라이브 입증). 다음 사용자 결정 대기.
+
+A. rich default 전환 결정
+  - flag `rich_output_enabled` default ON(전 사용자 rich) 전환 여부. cost(CC-016 — 출력 토큰 3~5배 × 3안, tier 유료/opt-in 권고) + 품질(feature 존재 ≠ 콘텐츠 우수성, human review 보강) 합의 후. 현재 = gated OFF 유지.
+
+B. 위저드(/new/*) ↔ 백엔드 실연결
+  - Discovery/Quick 위저드(/new/*) 가 현재 mock — 랜딩 / 만 실 생성(/generate) 경로. rich 라이브는 / 경로로 입증됨. 위저드 실연결 = 격차 해소.
+
+C. 배포 Gate B~G (운영 진행)
+  - B Staging 배포(env/secret — ★ user-provided) → C 내부 알파 → D Beta(실 LLM opt-in) → E 제한 사용자 → F 비용/성능(cost-review — rich/다중-provider 합산 §13~§14) → G Production Readiness.
+
+D. 품질·정식화 보강
+  - Phase 12 S4 human review 실 채점 ↔ LLM-as-judge 신뢰도 대조 + 전수(golden_set 25) 실 LLM eval baseline / B안 정식화 잔여(B-RES-2 ADR / B-RES-3 agent_io·registry contract-change) / 4계층 linkage / SSE async worker / prompt A/B / 자동 promotion / M3 새 GAP 3(G9/G10/G11).
+
+진입 전 권장 검토:
+  - phases/archive/phase-13-output-enrichment/closing_notes.md (Phase 13 총괄 + 미결정/미완)
+  - eval/regression_results/2026-06-03_phase-13-s6-depth-remeasure.md (깊이 재측정 OFF/ON)
+  - ai_system/orchestration/cost_control_policy.md §13~§14 (rich/다중-provider cost, CC-016)
+  - meta/retrospectives/phase-13.md (P-GATED-OUTPUT-CHANGE-001 + P-VALIDATION-DEPTH-GAP-001)
 ```
 
 ## Phase 0 완료 (archive)
@@ -428,9 +455,10 @@ Skill      : eval-design(golden_set 25 + depth 차원) + eval-run(깊이 격차 
 다음 Phase : **Phase 13 (Output Enrichment — compact→rich) — active**. 깊이 격차를 운영 출력에 반영 (gated 단계 롤아웃 + additive 스키마, 첫 의도적 출력 변경). 승계: B안 잔여(B-RES-1 cost 재조정=S6 흡수) + S4 human review 실 채점
 ```
 
-## 🟢 Next phase: pending_user_decision (2026-05-31)
+## ⬛ Next phase (2026-05-31, ★ superseded — Phase 11~13 완료 후 위 "Phase 14 pending_user_decision (2026-06-03)" 블록이 현행)
 
 ```
+[보존 — 2026-05-31 시점 Phase 10 직후 분기. 이후 Phase 11(LLM Gateway) + Phase 12(검증) + Phase 13(출력 확장) 완료. 현행 분기는 상단 Phase 14 블록 참조.]
 Phase 1~10 + Meta-Factory detour(M0~M3) 완료. MVP end-to-end 통합 + 배포 Gate A 통과. 다음 사용자 결정 대기.
 
 A. 배포 Gate B~G (운영 진행)

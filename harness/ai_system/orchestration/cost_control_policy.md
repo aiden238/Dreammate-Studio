@@ -1,7 +1,7 @@
 # cost_control_policy.md — 비용 통제 정책
 
 > 위치: `ai_system/orchestration/cost_control_policy.md`
-> 상태: S4-3 deep
+> 상태: S4-3 deep + §11~§12 LLM Gateway(CC-010) + §13~§14 rich/B-RES-1(CC-016, Phase 13 S6) additive
 > 참조: `docs/contracts/agent_io_contract.md` §9, `docs/contracts/rate_limit_policy.md`
 > 참조: `eval/cost_snapshots/` (스냅샷), `cost-review` Skill
 
@@ -199,3 +199,55 @@ A안의 cross_validation 은 표준 Critic(OpenAI gpt-4o) 평가 후 **다른 fa
 
 ### 12.3 B안 cost 재조정 (후속 — ★ 보관)
 - B안(3-provider 다양성, 제안서 §18.B)은 신모델이 gpt-4o-mini 대비 **5~7배** → §2 호출당 / §3 세션당 상한 **전면 재조정 필수**(별도 contract-change). 본 CC-010 은 A안 cross_validation 1회분 additive 까지만.
+
+## 13. rich 출력 cost (Phase 13 — ★ gated default-off, additive)
+
+> 추가: 2026-06-03 (contract-change **CC-016**, Phase 13 S6 cost 재조정)
+> 근거: `eval/regression_results/2026-06-02_phase-12-s2-s3-depth-gap.md` §6 + `eval/regression_results/2026-06-03_phase-13-s6-depth-remeasure.md` §6
+> ★ **additive / behavior-preserving**: §1~§12(기존 호출당/세션당/일일 상한 + alias 표 + cross_validation)는 **전부 보존**. 본 절은 Phase 13 rich 출력(compact→rich)의 cost 영향을 gated 로 정식화한 것. flag OFF=기존 cost 100% 동일 해석.
+
+### 13.1 rich 출력 = 출력 토큰 증가 (compact 대비 대략 3~5배)
+
+Phase 13 rich 출력은 compact(name/concept/hook/2~4 beat/pros/risks 7필드) 대비 **출력 토큰이 크게 증가**한다. rich 프롬프트(P-006 v1.1.0)가 **12 슬롯**(후크 3변형·타임코드·화면·대사·자막·B-roll/샷·썸네일·제목·CTA·레퍼런스·길이변형·타깃/톤)을 명시적으로 요구하기 때문이다.
+
+- **출력 토큰 추정**: compact 수백 토큰 → rich ~1000+ 토큰 (데모 기준). **대략 3~5배** (입력 토큰은 rich 시스템 프롬프트 추가분만 — 상대적으로 작음, 증가의 주축은 출력).
+- **3-plan 경로**: `/plans/{id}/generate` 3안 생성이면 위 증가가 **× 3안**. (revise 왕복 시 추가 — rich 보존 경로.)
+- ★ Critic depth(S4) ON 시 P-007 9차원(v1.2.0)으로 평가 → Critic 입력(plan 본문 rich)·출력(차원 1개 추가) 소폭 증가. 모델 불변(gpt-4o standard / cost_saving mini 폴백 §5 유지).
+
+### 13.2 게이트 (★ 필수)
+
+- config `rich_output_enabled` default **False** → 직렬화/프롬프트가 compact 경로(S3 gated wiring) → **rich cost 증가 0**(§2 호출당 / §3 세션당 상한 기존 그대로, byte-identical).
+- 활성 = 명시적 flag(`RICH_OUTPUT_ENABLED=true`) — rich 출력 + Critic depth 가 한 flag 로 묶임(S3 CC-014 / S4 CC-015). 활성 시 본 §13.3 cost 반영.
+- ★ flag OFF 면 본 절 비용 미발생 — OFF 회귀 0 (S6 깊이 재측정 OFF 0.231 byte-identical 재확인과 정합).
+
+### 13.3 호출당 상한 (rich 활성 시 — additive 권고)
+
+| Agent / Prompt | model | compact 상한(§2) | rich 상한 (gated ON) |
+|---|---|---|---|
+| Planning P-006 (1안) | gpt-4o-mini | $0.003 (1.5×: $0.0045 abort) | **~$0.009~$0.015** (출력 3~5배, 1.5× abort 비례 상향) |
+| Critic P-007 (9차원 depth, ON) | gpt-4o | $0.006 (cost_saving: $0.001) | **~$0.007~$0.008** (rich plan 입력 + depth 차원 소폭) |
+
+- 3-plan 경로: Planning rich × 3안 → §3 세션당 누적에 **× 3안 반영**. revise 왕복 시 추가 가산.
+- ★ 위 수치는 **추정 상향**(데모 토큰 기준) — rich 활성 후 `cost-review` Skill(§8)로 실측 분포 점검 + agent_io_logs 기반 정밀 재조정 권장.
+
+### 13.4 tier 정책 — rich 활성 조건 (§11 alias 표 연계, 1줄)
+
+- ★ **rich 출력 활성은 유료(paid tier) / opt-in 권장** — rich = 출력 토큰 3~5배 × (3-plan 시 ×3) → 무료(free) 일일 $0.10 상한(§4) 소진 가속. free tier 는 compact(OFF) 기본 유지, rich 는 paid/opt-in 에서 활성 권장. (§11.1 tier 시그니처 활용 — 후속 정책으로 tier 분기 정식화.)
+
+## 14. rich + 다중-provider 동시 ON cost 합산 (★ B-RES-1 통합)
+
+> 추가: 2026-06-03 (CC-016, Phase 13 S6 — B안 잔여 B-RES-1 다중-provider cost 재조정 통합)
+
+Phase 11 B안(3-provider 3안 다양성, `multi_provider_plans_enabled` default OFF — §12.3 / PROJECT_STATE) 의 잔여 **B-RES-1(다중-provider cost 재조정)** 을 본 절로 흡수한다.
+
+### 14.1 단독 vs 동시 ON
+
+- **다중-provider 단독 ON** (`multi_provider_plans_enabled=true`, rich OFF): 3안을 GPT/Claude/Gemini 분산 생성 → 신모델이 gpt-4o-mini 대비 **5~7배**(§12.3 보관 항목) → §2/§3 상한 재조정 필요. 단 compact 출력이라 토큰량은 compact 수준.
+- **rich 단독 ON** (`rich_output_enabled=true`, 다중-provider OFF): 단일 provider(gpt-4o-mini) 3안 rich → 출력 토큰 3~5배 × 3안 (§13.3).
+- ★ **rich + 다중-provider 동시 ON**: 두 배수가 **합산(곱)** — provider 단가 5~7배 × rich 출력 토큰 3~5배 → 세션당 cost 가 compact-single-provider 대비 **십수 배 이상** 가능. ★ 두 flag 동시 활성 시 §3 세션당 상한이 빠르게 도달 → **선제 차단(§7) + cost-review 모니터링 필수**.
+
+### 14.2 권고
+
+- 두 flag 동시 활성은 **paid tier + 명시적 opt-in** 한정 권장 (free tier 차단 — §13.4 연계).
+- 동시 ON 정밀 단가는 B안 정식화(ADR + provider별 registry cost) 완료 후 별도 contract-change 로 §2/§3 상한 전면 재조정 (본 CC-016 은 합산 주의 + gated 정식화까지 — additive 범위).
+- ★ default = 둘 다 OFF → 본 합산 비용 미발생 (기존 흐름 100% 보존).
