@@ -46,6 +46,16 @@ Phase 9.5 Slice 4 변경 (ADR-034 — deprecated 0–5 Full 제거):
     로 넘겨도 deprecated 0–5 키를 무시하고 canonical 만 추출 → 회귀 0.
   - run_critic 의 0–5 출력(scores + overall_score_avg) 은 P-007 prompt contract 로 불변
     (LLM-facing). CriticScores 모델도 run_critic 산출 typing 용으로 유지.
+
+Phase 13 Slice 1 추가 (CC-012 — output_schema rich 슬롯 additive):
+  - Plan rich 9종(PLAN_RICH_FIELDS: target_audience / tone / hook_variants / shots /
+    thumbnail / title_candidates / cta / references / length_variants) +
+    PlanFlowBeat rich 3종(BEAT_RICH_FIELDS: visual / dialogue / caption) 추가.
+  - ★ 전부 Optional default None/[] → 기존 7필드(+rag_used)·소비자 회귀 0 (additive).
+  - rich 값은 flag ON(rich_output_enabled, S3) 경로에서만 채워진다. OFF 경로는
+    Plan.model_dump_compact() 가 rich 키를 제외 → compact 출력 byte-identical (A5-PP).
+  - 깊이 격차 근거: eval/regression_results/2026-06-02_phase-12-s2-s3-depth-gap.md
+    (compact depth 0.231 / rich 1.000 — 결핍 10 feature 중 7개가 스키마 슬롯 부재).
 """
 
 from datetime import datetime, timezone
@@ -115,18 +125,62 @@ class Meta(BaseModel):
 # ─── Body (Plans) ─────────────────────────────────────────────────────
 
 class PlanFlowBeat(BaseModel):
-    """plan.flow의 한 비트 (output_schema.md §8.1)."""
+    """plan.flow의 한 비트 (output_schema.md §8.1).
+
+    Phase 13 S1 (CC-012, additive): rich 슬롯 3종(visual/dialogue/caption) 추가.
+      - 전부 Optional default None → 기존 4필드(beat_index/beat/duration_sec/purpose)
+        직렬화·소비자 회귀 0. rich 값은 flag ON(rich_output_enabled, S3) 경로에서만 채워짐.
+    """
 
     beat_index: int = Field(..., ge=0)
     beat: str = Field(..., min_length=1)
     duration_sec: int = Field(..., ge=1)
     purpose: str = Field(..., min_length=1)
+    # ── Phase 13 S1 rich (additive, Optional — flag ON 경로에서만 채워짐) ──
+    visual: str | None = Field(
+        default=None,
+        description="rich(Phase 13): 화면/구도/연출 묘사 (beat 라벨보다 구체적 화면 지시).",
+    )
+    dialogue: str | None = Field(
+        default=None,
+        description="rich(Phase 13): 내레이션·대사.",
+    )
+    caption: str | None = Field(
+        default=None,
+        description="rich(Phase 13): 자막 텍스트.",
+    )
+
+
+# ── Phase 13 S1 (CC-012): rich 슬롯 이름 집합 ──
+# S3 gated wiring(rich_output_enabled OFF 경로)이 model_dump_compact() 를 호출하여
+# 이 필드들을 직렬화에서 제외 → 기존 compact 출력 byte-identical (acceptance A5-PP).
+PLAN_RICH_FIELDS: frozenset[str] = frozenset(
+    {
+        "target_audience",
+        "tone",
+        "hook_variants",
+        "shots",
+        "thumbnail",
+        "title_candidates",
+        "cta",
+        "references",
+        "length_variants",
+    }
+)
+BEAT_RICH_FIELDS: frozenset[str] = frozenset({"visual", "dialogue", "caption"})
 
 
 class Plan(BaseModel):
     """plan_candidate 1개 (output_schema.md §8.1).
 
     Phase 1: approach_label 단일 값 허용 (3개 plan 미생성).
+
+    Phase 13 S1 (CC-012, additive): rich 슬롯 9종 추가 (PLAN_RICH_FIELDS) +
+      PlanFlowBeat rich 3종(BEAT_RICH_FIELDS). 전부 Optional default None/[] →
+      기존 7필드(name/concept/hook/flow/pros/risks/approach_label) + rag_used 직렬화·
+      소비자(orchestrator/Critic/Rewriter/PlanCard) 회귀 0. rich 값은 flag ON
+      (rich_output_enabled, S3) 경로에서만 채워지고, OFF 경로는 model_dump_compact()
+      로 rich 키를 제외해 byte-identical 유지.
     """
 
     plan_id: str = Field(..., description="uuid")
@@ -146,6 +200,53 @@ class Plan(BaseModel):
         "other",
     ] = "informational"
     rag_used: list[dict[str, Any]] = Field(default_factory=list)
+
+    # ── Phase 13 S1 rich (additive, Optional — flag ON 경로에서만 채워짐) ──
+    target_audience: str | None = Field(
+        default=None, description="rich(Phase 13): 타깃 시청자."
+    )
+    tone: str | None = Field(default=None, description="rich(Phase 13): 톤·무드.")
+    hook_variants: list[str] = Field(
+        default_factory=list,
+        max_length=3,
+        description="rich(Phase 13): 후크 변형 (기존 단일 hook 외 추가, ≤3).",
+    )
+    shots: list[str] = Field(
+        default_factory=list, description="rich(Phase 13): B-roll/샷 리스트."
+    )
+    thumbnail: str | None = Field(
+        default=None, description="rich(Phase 13): 썸네일 컨셉."
+    )
+    title_candidates: list[str] = Field(
+        default_factory=list,
+        max_length=5,
+        description="rich(Phase 13): 제목 후보 (≤5).",
+    )
+    cta: str | None = Field(
+        default=None, description="rich(Phase 13): Call-to-action."
+    )
+    references: list[str] = Field(
+        default_factory=list,
+        max_length=5,
+        description="rich(Phase 13): 창작 레퍼런스 (rag_used = RAG 출처와 구분, ≤5).",
+    )
+    length_variants: list[str] = Field(
+        default_factory=list,
+        description="rich(Phase 13): 길이 변형 (예: 30s/60s 컷).",
+    )
+
+    def model_dump_compact(self, **kwargs: Any) -> dict[str, Any]:
+        """Phase 13 S1 (CC-012, 결정 3): rich 슬롯을 제외한 compact 직렬화.
+
+        S3 gated wiring 의 OFF 경로(rich_output_enabled=False)가 이 메서드로 직렬화하면
+        Phase 12 이전의 7필드(+rag_used) 출력과 byte-identical 하다 (acceptance A5-PP).
+        flow 의 beat rich 3종(visual/dialogue/caption)도 함께 제외한다.
+
+        ★ S1 은 이 capability 만 제공·검증한다 — 실제 호출(OFF 경로 분기)은 S3.
+        """
+        exclude: dict[str, Any] = {name: True for name in PLAN_RICH_FIELDS}
+        exclude["flow"] = {"__all__": {name: True for name in BEAT_RICH_FIELDS}}
+        return self.model_dump(exclude=exclude, **kwargs)
 
 
 class CriticScores(BaseModel):

@@ -54,7 +54,7 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 - **사용자 확정**: 롤아웃 = **gated**(flag OFF → 검증 후 ON) / 범위 = **풀**(backend + frontend, /generate 화면까지 rich).
 - **6 Slice (entry + 6)** — ★ flag OFF byte-identical(behavior-preserving) + additive:
   - Entry: entry 8파일 + multi-llm-validation self(12th).
-  - S1 스키마 확장: `Plan` 결핍 feature optional 슬롯(output_schema contract-change + agent-io-check).
+  - S1 ✅ 스키마 확장 (2026-06-02, CC-012, commit 대기): `Plan` rich 9 + `PlanFlowBeat` rich 3 = **12 슬롯 전부 Optional/additive** + `PLAN_RICH_FIELDS`/`BEAT_RICH_FIELDS` 상수 + `Plan.model_dump_compact()`(A5-PP byte-identical capability, OFF 경로 wiring=S3) + output_schema §8.1 **v1.1.0→v1.2.0** + agent-io-check **PASS(발견 0)** + 신규 test 10 → **pytest 471→481 green** (기존 471 수정 0). 운영 .py = schemas/output.py(additive)만. 키 0.
   - S2 프롬프트 확장: planning rich SYSTEM_PROMPT(prompt-version-review **P-006 bump** v1.1.0, compact 보존).
   - S3 gated wiring: config `rich_output_enabled` default False + generate/orchestrator 분기(OFF byte-identical).
   - S4 Critic depth: depth_actionability 차원 additive(P-007 bump, 88점 함정 해소).
@@ -66,7 +66,7 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 
 ## 현재 Active Phase
 
-**🟢 Phase 13 출력 확장(Output Enrichment, compact→rich) active (entry 작성, 2026-06-02)** — Phase 12 가 입증한 깊이 격차(compact 0.231 → rich 잠재 1.0, 4.3x)를 운영 출력에 반영. compact 7필드 → rich(후크 변형·타임코드·화면·대사·자막·샷·썸네일·제목·CTA·레퍼런스·길이변형·타깃·톤). ★ **이 프로젝트 첫 의도적 출력 변경** — gated 단계 롤아웃(`rich_output_enabled` default **False** → 검증 후 ON) + additive 스키마(rich 슬롯 전부 Optional → 기존 회귀 0, flag OFF byte-identical). 롤아웃=gated / 범위=풀(backend+frontend). entry 8파일 + validation self(12th). 6 Slice: S1 스키마(output_schema CC + agent-io-check) / S2 프롬프트(P-006 bump, prompt-version-review) / S3 gated wiring(rich_output_enabled OFF) / S4 Critic depth(P-007 bump, 88점 함정) / S5 frontend(PlanCard rich conditional) / S6 cost 재조정(B-RES-1 통합) + depth 재측정(≥0.8) + close. ★ 제품 경계=기획 브리프(product_boundary) + 키 0 + flag OFF byte-identical. 본 entry = 종료+계획(운영 .py 0) — 실제 변경은 S1+.
+**🟢 Phase 13 출력 확장(Output Enrichment, compact→rich) active (entry 작성, 2026-06-02)** — Phase 12 가 입증한 깊이 격차(compact 0.231 → rich 잠재 1.0, 4.3x)를 운영 출력에 반영. compact 7필드 → rich(후크 변형·타임코드·화면·대사·자막·샷·썸네일·제목·CTA·레퍼런스·길이변형·타깃·톤). ★ **이 프로젝트 첫 의도적 출력 변경** — gated 단계 롤아웃(`rich_output_enabled` default **False** → 검증 후 ON) + additive 스키마(rich 슬롯 전부 Optional → 기존 회귀 0, flag OFF byte-identical). 롤아웃=gated / 범위=풀(backend+frontend). entry 8파일 + validation self(12th). 6 Slice: S1 스키마(output_schema CC + agent-io-check) / S2 프롬프트(P-006 bump, prompt-version-review) / S3 gated wiring(rich_output_enabled OFF) / S4 Critic depth(P-007 bump, 88점 함정) / S5 frontend(PlanCard rich conditional) / S6 cost 재조정(B-RES-1 통합) + depth 재측정(≥0.8) + close. ★ 제품 경계=기획 브리프(product_boundary) + 키 0 + flag OFF byte-identical. 본 entry = 종료+계획(운영 .py 0) — 실제 변경은 S1+. **★ S1 ✅ done (2026-06-02, CC-012, commit 대기)**: output_schema §8.1 v1.1.0→v1.2.0 + `Plan`/`PlanFlowBeat` rich 12 슬롯 additive(전부 Optional) + `model_dump_compact()`(A5-PP) + 상수 2종 + agent-io-check PASS(발견 0) + 신규 test 10 → pytest 471→**481 green**. **다음 = S2** (planning rich SYSTEM_PROMPT + P-006 v1.0.0→v1.1.0 bump, prompt-version-review).
 
 <details><summary>과거 Active Phase 요약 (Phase 12/11/10 — 보존)</summary>
 

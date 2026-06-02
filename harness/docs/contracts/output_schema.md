@@ -360,6 +360,13 @@ Direction Summary. 한 줄 기획 방향.
 
 > **v1.1.0 (2026-05-26 CC-001 적용)**: body 키 `plans` → `plan_candidates` 로 변경.
 > DB 테이블명 (`plan_candidates`) + prompt_registry P-006 명명과 정합.
+>
+> **v1.2.0 (2026-06-02 Phase 13 S1, CC-012 적용)**: `Plan` rich 슬롯 12종 **additive**
+> (전부 Optional). `Plan` +9 (target_audience / tone / hook_variants / shots / thumbnail /
+> title_candidates / cta / references / length_variants) + `flow[]`(PlanFlowBeat) +3
+> (visual / dialogue / caption). ★ rich 값은 `rich_output_enabled` flag **ON**(S3) 경로에서만
+> 채워지고, **OFF(default)** 경로는 rich 키를 직렬화에서 제외 → 기존 7필드 출력 **byte-identical**.
+> 근거: Phase 12 깊이 격차(compact depth 0.231 / rich 1.000, 결핍 10 feature 중 7개 슬롯 부재).
 
 ```json
 {
@@ -375,7 +382,11 @@ Direction Summary. 한 줄 기획 방향.
           "beat_index": 0,
           "beat": "string",
           "duration_sec": 3,
-          "purpose": "string"
+          "purpose": "string",
+
+          "visual": "string | null   // rich(v1.2.0): 화면/구도/연출 묘사",
+          "dialogue": "string | null // rich(v1.2.0): 내레이션·대사",
+          "caption": "string | null  // rich(v1.2.0): 자막 텍스트"
         }
       ],
       "pros": "string",
@@ -383,11 +394,25 @@ Direction Summary. 한 줄 기획 방향.
       "approach_label": "narrative | informational | empathy | experiment | review | other",
       "rag_used": [
         { "source_id": "string", "title": "string", "used_reason": "string" }
-      ]
+      ],
+
+      "target_audience": "string | null  // rich(v1.2.0): 타깃 시청자",
+      "tone": "string | null             // rich(v1.2.0): 톤·무드",
+      "hook_variants": ["string"],      // rich(v1.2.0): 후크 변형 (≤3, 기존 hook 외)
+      "shots": ["string"],              // rich(v1.2.0): B-roll/샷 리스트
+      "thumbnail": "string | null        // rich(v1.2.0): 썸네일 컨셉",
+      "title_candidates": ["string"],   // rich(v1.2.0): 제목 후보 (≤5)
+      "cta": "string | null              // rich(v1.2.0): Call-to-action",
+      "references": ["string"],         // rich(v1.2.0): 창작 레퍼런스 (rag_used 와 구분, ≤5)
+      "length_variants": ["string"]     // rich(v1.2.0): 길이 변형 (예: 30s/60s 컷)
     }
   ]
 }
 ```
+
+> ★ **rich 슬롯은 전부 Optional/additive** — 미존재 시 `Plan` 은 기존 7필드(+rag_used)만으로 valid.
+> Pydantic 모델 = `backend/fastapi/schemas/output.py` `Plan` / `PlanFlowBeat` (PLAN_RICH_FIELDS /
+> BEAT_RICH_FIELDS 상수 + `Plan.model_dump_compact()` = OFF 경로 byte-identical 직렬화).
 
 ### 8.2 검증 규칙
 
@@ -400,6 +425,10 @@ Direction Summary. 한 줄 기획 방향.
 - hook 20~60자, 광고 카피톤 차단
 - rag_used가 빈 배열인 경우 validation.warnings에 "no_rag_reference" 기록
 - Brand Memory의 avoid_phrases 위반 시 즉시 재생성
+- (v1.2.0, Phase 13 S1) rich 슬롯(target_audience/tone/hook_variants/shots/thumbnail/
+  title_candidates/cta/references/length_variants/beat.visual/dialogue/caption)은 전부 Optional —
+  미존재(None/[]) 시 검증 통과 (rich_output_enabled OFF 경로 compact 출력 회귀 0). rich 경로
+  품질 검증은 S4 Critic depth_actionability 차원 + S6 depth 재측정에서.
 ```
 
 ### 8.3 RAG 참조 표기
