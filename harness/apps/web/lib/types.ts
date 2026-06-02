@@ -45,6 +45,14 @@ export interface PlanFlowBeat {
   beat: string;
   duration_sec: number;
   purpose: string;
+  /**
+   * Phase 13 S1 rich (additive, optional — backend rich_output_enabled ON 경로에서만 채워짐).
+   * compact 응답(model_dump_compact)은 이 키들을 제외하므로 undefined → 옵셔널.
+   * 참조: backend/fastapi/schemas/output.py PlanFlowBeat / BEAT_RICH_FIELDS.
+   */
+  visual?: string | null; // 화면/구도/연출 묘사
+  dialogue?: string | null; // 내레이션·대사
+  caption?: string | null; // 자막 텍스트
 }
 
 export type ApproachLabel =
@@ -73,6 +81,20 @@ export interface Plan {
   risks: string;
   approach_label: ApproachLabel;
   rag_used: RagUsedEntry[];
+  /**
+   * Phase 13 S1 rich 슬롯 9종 (additive, 전부 optional — backend rich_output_enabled ON
+   * 경로에서만 채워짐). compact 응답(model_dump_compact)은 이 키들을 제외하므로 undefined.
+   * 참조: backend/fastapi/schemas/output.py Plan / PLAN_RICH_FIELDS.
+   */
+  hook_variants?: string[]; // 후크 변형 (단일 hook 외 추가, ≤3)
+  target_audience?: string | null; // 타깃 시청자
+  tone?: string | null; // 톤·무드
+  shots?: string[]; // B-roll/샷 리스트
+  thumbnail?: string | null; // 썸네일 컨셉
+  title_candidates?: string[]; // 제목 후보 (≤5)
+  cta?: string | null; // Call-to-action
+  references?: string[]; // 창작 레퍼런스 (rag_used 와 구분, ≤5)
+  length_variants?: string[]; // 길이 변형 (예: 30s/60s 컷)
 }
 
 // ─── Critic Evaluation (Slice 3) ──────────────────────────────────────

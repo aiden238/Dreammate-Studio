@@ -77,6 +77,30 @@ export default function PlanCard({ plan }: PlanCardProps) {
         {plan.concept}
       </p>
 
+      {/* rich: 타깃·톤 메타 (값 있을 때만 — 읽기 전용 텍스트) */}
+      {(plan.target_audience || plan.tone) && (
+        <p
+          className="text-xs text-neutral-500 -mt-1 flex flex-wrap gap-x-2 gap-y-1"
+          aria-label="타깃과 톤"
+        >
+          {plan.target_audience && (
+            <span>
+              <span className="font-semibold text-neutral-600">타깃</span>{" "}
+              {plan.target_audience}
+            </span>
+          )}
+          {plan.target_audience && plan.tone && (
+            <span aria-hidden="true">·</span>
+          )}
+          {plan.tone && (
+            <span>
+              <span className="font-semibold text-neutral-600">톤</span>{" "}
+              {plan.tone}
+            </span>
+          )}
+        </p>
+      )}
+
       {/* Hook (강조 박스) */}
       <section
         className="rounded-md border-l-4 border-primary-500 bg-primary-50 px-3 py-3"
@@ -87,6 +111,25 @@ export default function PlanCard({ plan }: PlanCardProps) {
           {plan.hook}
         </p>
       </section>
+
+      {/* rich: 대안 후크 (값 있을 때만 — 읽기 전용 텍스트) */}
+      {plan.hook_variants && plan.hook_variants.length > 0 && (
+        <section aria-label="다른 후크 후보">
+          <h3 className="text-xs font-semibold text-neutral-900 mb-2">
+            다른 후크
+          </h3>
+          <ul className="flex flex-col gap-2">
+            {plan.hook_variants.map((variant, i) => (
+              <li
+                key={i}
+                className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700 leading-relaxed"
+              >
+                {variant}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Flow (numbered list) */}
       <section aria-label="영상 흐름">
@@ -118,11 +161,151 @@ export default function PlanCard({ plan }: PlanCardProps) {
                   </span>
                 </div>
                 <p className="text-xs text-neutral-600 mt-1">{beat.purpose}</p>
+                {/* rich: beat 상세 (값 있을 때만 — 화면/대사/자막 읽기 전용) */}
+                {(beat.visual || beat.dialogue || beat.caption) && (
+                  <dl className="mt-2 flex flex-col gap-1 border-t border-neutral-200 pt-2">
+                    {beat.visual && (
+                      <div className="flex gap-2 text-xs">
+                        <dt className="flex-shrink-0 font-semibold text-neutral-500">
+                          화면
+                        </dt>
+                        <dd className="text-neutral-700 leading-relaxed">
+                          {beat.visual}
+                        </dd>
+                      </div>
+                    )}
+                    {beat.dialogue && (
+                      <div className="flex gap-2 text-xs">
+                        <dt className="flex-shrink-0 font-semibold text-neutral-500">
+                          대사
+                        </dt>
+                        <dd className="text-neutral-700 leading-relaxed">
+                          {beat.dialogue}
+                        </dd>
+                      </div>
+                    )}
+                    {beat.caption && (
+                      <div className="flex gap-2 text-xs">
+                        <dt className="flex-shrink-0 font-semibold text-neutral-500">
+                          자막
+                        </dt>
+                        <dd className="text-neutral-700 leading-relaxed">
+                          {beat.caption}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                )}
               </div>
             </li>
           ))}
         </ol>
       </section>
+
+      {/* rich: 촬영 샷 / B-roll (값 있을 때만 — 읽기 전용 가이드 텍스트) */}
+      {plan.shots && plan.shots.length > 0 && (
+        <section aria-label="촬영 샷">
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+            촬영 샷
+          </h3>
+          <ul className="flex flex-col gap-1.5 list-disc pl-5">
+            {plan.shots.map((shot, i) => (
+              <li
+                key={i}
+                className="text-sm text-neutral-700 leading-relaxed"
+              >
+                {shot}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* rich: 썸네일 / 제목 후보 (값 있을 때만 — 읽기 전용 텍스트) */}
+      {(plan.thumbnail ||
+        (plan.title_candidates && plan.title_candidates.length > 0)) && (
+        <section
+          className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-3 flex flex-col gap-3"
+          aria-label="썸네일과 제목 후보"
+        >
+          {plan.thumbnail && (
+            <div>
+              <h3 className="text-xs font-semibold text-neutral-900 mb-1">
+                썸네일
+              </h3>
+              <p className="text-sm text-neutral-700 leading-relaxed">
+                {plan.thumbnail}
+              </p>
+            </div>
+          )}
+          {plan.title_candidates && plan.title_candidates.length > 0 && (
+            <div>
+              <h3 className="text-xs font-semibold text-neutral-900 mb-1">
+                제목 후보
+              </h3>
+              <ul className="flex flex-col gap-1 list-disc pl-5">
+                {plan.title_candidates.map((title, i) => (
+                  <li
+                    key={i}
+                    className="text-sm text-neutral-700 leading-relaxed"
+                  >
+                    {title}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* rich: CTA (값 있을 때만 — 읽기 전용 텍스트) */}
+      {plan.cta && (
+        <section
+          className="rounded-md border-l-4 border-neutral-300 bg-neutral-50 px-3 py-2"
+          aria-label="콜 투 액션"
+        >
+          <h3 className="text-xs font-semibold text-neutral-600 mb-1">CTA</h3>
+          <p className="text-sm text-neutral-700 leading-relaxed">{plan.cta}</p>
+        </section>
+      )}
+
+      {/* rich: 참고 스타일 / 레퍼런스 (값 있을 때만 — 읽기 전용 텍스트) */}
+      {plan.references && plan.references.length > 0 && (
+        <section aria-label="참고 스타일">
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+            참고 스타일
+          </h3>
+          <ul className="flex flex-col gap-1.5 list-disc pl-5">
+            {plan.references.map((ref, i) => (
+              <li
+                key={i}
+                className="text-sm text-neutral-700 leading-relaxed"
+              >
+                {ref}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* rich: 길이 변형 (값 있을 때만 — 읽기 전용 텍스트) */}
+      {plan.length_variants && plan.length_variants.length > 0 && (
+        <section aria-label="길이 변형">
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+            길이 변형
+          </h3>
+          <ul className="flex flex-wrap gap-2">
+            {plan.length_variants.map((variant, i) => (
+              <li
+                key={i}
+                className="inline-flex items-center rounded-sm bg-neutral-100 text-neutral-700 text-xs font-medium px-2 py-1"
+              >
+                {variant}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Pros / Risks */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
