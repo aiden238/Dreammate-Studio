@@ -37,5 +37,9 @@ yarn-debug.log*
 # OS temp
 *~
 
+# 로컬 dev 런처/임시 스크립트 (레포 밖 운용 — measure/demo/run_local_backend 등)
+Temp/
+harness/Temp/
+
 # 개인/참고 이미지 (저장소 미포함 — 세션 내내 제외 항목)
 사진/
