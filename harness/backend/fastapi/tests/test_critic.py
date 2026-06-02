@@ -23,13 +23,16 @@ import pytest
 
 from backend.fastapi.agents.critic import (
     DIMENSIONS,
+    DIMENSIONS_RICH,
     PROMPT_ID,
     PROMPT_VERSION,
+    RICH_PROMPT_VERSION,
     _derive_verdict,
     normalize_to_canonical,
     run_critic,
     select_best_plan_index,
 )
+from backend.fastapi.config import get_settings
 from backend.fastapi.schemas.output import CriticEvaluation
 
 
@@ -530,3 +533,161 @@ def test_critic_evaluation_ignores_deprecated_0_5_keys() -> None:
     # deprecated 0–5 키는 무시 (모델 속성 미존재)
     assert not hasattr(evaluation, "scores")
     assert not hasattr(evaluation, "overall_score_avg")
+
+
+# ─── Phase 13 Slice S4 — gated depth_actionability (9차원, ON 경로) ────
+#
+# 검증:
+#   - ON(rich_output_enabled=True): RICH_SYSTEM_PROMPT + DIMENSIONS_RICH 9차원 평가
+#     → result["scores"] 에 depth_actionability 포함, avg 가 9 점수 평균.
+#   - "88점 함정" 해소: 8 차원 강함 + depth 낮음(rich 슬롯 빈약) plan 이
+#     ON(9차원 avg) 에서 OFF(8차원 avg) 보다 낮게 채점된다.
+#   - OFF 경로는 위 기존 테스트가 byte-identical 보장(8키, depth_actionability 미존재).
+#
+# config override 는 기존 관례 (monkeypatch.setenv("RICH_OUTPUT_ENABLED") + cache_clear).
+# 전부 mock — 실 LLM 호출 0, 실 키 불필요.
+
+
+def _set_rich_flag(monkeypatch: pytest.MonkeyPatch, enabled: bool) -> None:
+    """settings.rich_output_enabled override (lru_cache 재생성)."""
+    monkeypatch.setenv("RICH_OUTPUT_ENABLED", "true" if enabled else "false")
+    get_settings.cache_clear()
+    assert get_settings().rich_output_enabled is enabled
+
+
+def _full_scores_rich(value: int = 4) -> dict[str, int]:
+    """9차원(depth_actionability 포함) 동일값 점수."""
+    return {k: value for k in DIMENSIONS_RICH}
+
+
+def _make_response_rich(
+    *,
+    scores: dict[str, int],
+    verdict: str = "approve",
+    blocking: list[str] | None = None,
+) -> str:
+    """9차원 critic LLM 응답 JSON 문자열 생성 (reasons/suggestions 9키)."""
+    payload = {
+        "scores": scores,
+        "reasons": {k: f"{k} 평가 사유" for k in DIMENSIONS_RICH},
+        "suggestions": {k: f"{k} 개선 제안" for k in DIMENSIONS_RICH},
+        "overall_verdict": verdict,
+        "blocking_issues": blocking or [],
+    }
+    return json.dumps(payload, ensure_ascii=False)
+
+
+def test_critic_rich_version_constant() -> None:
+    """gated rich 버전 상수 — ON 경로 P-007 v1.2.0 (OFF=v1.1.0 불변)."""
+    assert PROMPT_VERSION == "v1.1.0"  # OFF/active 불변
+    assert RICH_PROMPT_VERSION == "v1.2.0"  # gated rich 9차원
+    assert DIMENSIONS_RICH == DIMENSIONS + ("depth_actionability",)
+    assert len(DIMENSIONS_RICH) == 9
+
+
+def test_critic_on_returns_9_dim_scores(monkeypatch: pytest.MonkeyPatch) -> None:
+    """ON: 9차원 mock → result["scores"] 에 depth_actionability 포함, avg=9 평균."""
+    _set_rich_flag(monkeypatch, True)
+    scores = _full_scores_rich(4)
+    client = _make_fake_client(_make_response_rich(scores=scores, verdict="approve"))
+
+    result = run_critic(_SAMPLE_PLAN, client=client, model="gpt-4o")
+
+    assert set(result["scores"].keys()) == set(DIMENSIONS_RICH)
+    assert "depth_actionability" in result["scores"]
+    assert result["scores"]["depth_actionability"] == 4
+    # reasons/suggestions 도 9키 보강
+    assert "depth_actionability" in result["reasons"]
+    assert result["suggestions"]["depth_actionability"]
+    # avg = 9 점수 평균 (전부 4 → 4.0)
+    assert result["overall_score_avg"] == pytest.approx(4.0)
+    assert result["overall_verdict"] == "approve"
+
+
+def test_critic_on_requires_depth_dimension(monkeypatch: pytest.MonkeyPatch) -> None:
+    """ON: depth_actionability 누락 시 ValueError (9키 검증)."""
+    _set_rich_flag(monkeypatch, True)
+    scores = _full_scores(4)  # 8키만 — depth_actionability 없음
+    client = _make_fake_client(_make_response(scores=scores, verdict="approve"))
+
+    with pytest.raises(ValueError, match="누락"):
+        run_critic(_SAMPLE_PLAN, client=client, model="gpt-4o")
+
+
+def test_critic_88_trap_resolved_shallow_plan_scores_lower(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """"88점 함정" 해소: 8차원 강함 + 깊이 낮은 얕은 plan 이 ON(9차원) 에서
+    OFF(8차원) 대비 avg 하락.
+
+    같은 8차원 점수(평균 ~4.4 = 0.88 정규화 = "88점")를 OFF 와 ON 양쪽에 주되,
+    ON 에서는 depth_actionability=1(rich 슬롯 빈약한 얕은 plan)을 추가 → 9차원 평균이
+    8차원 평균보다 낮아진다. 즉 OFF 에서 approve 되던 얕은 plan 이 깊이 페널티를 받는다.
+    """
+    # 8차원: 평균 4.375 ≈ 0.875 정규화 ("88점 함정" 재현용 고득점)
+    eight_dim = {
+        "intent_fit": 5,
+        "target_clarity": 4,
+        "hook_strength": 5,
+        "message_clarity": 4,
+        "structure": 4,
+        "feasibility": 5,
+        "brand_consistency": 4,
+        "differentiation": 4,
+    }
+    off_avg_expected = sum(eight_dim.values()) / 8  # 35/8 = 4.375
+
+    # OFF: 8차원만 채점 (depth 미평가) → 기존 "88점" 결과 재현.
+    _set_rich_flag(monkeypatch, False)
+    off_client = _make_fake_client(_make_response(scores=eight_dim, verdict="approve"))
+    off_result = run_critic(_SAMPLE_PLAN, client=off_client, model="gpt-4o")
+    assert off_result["overall_score_avg"] == pytest.approx(off_avg_expected)
+    assert "depth_actionability" not in off_result["scores"]
+
+    # ON: 동일 8차원 + depth_actionability=1 (얕은 plan — rich 슬롯 빈약).
+    nine_dim = dict(eight_dim)
+    nine_dim["depth_actionability"] = 1
+    on_avg_expected = sum(nine_dim.values()) / 9  # 36/9 = 4.0
+    _set_rich_flag(monkeypatch, True)
+    on_client = _make_fake_client(_make_response_rich(scores=nine_dim, verdict="approve"))
+    on_result = run_critic(_SAMPLE_PLAN, client=on_client, model="gpt-4o")
+
+    # ★ 88점 함정 해소: ON avg < OFF avg (깊이 페널티 반영)
+    assert on_result["overall_score_avg"] < off_result["overall_score_avg"]
+    assert on_result["overall_score_avg"] == pytest.approx(on_avg_expected)
+    assert on_result["scores"]["depth_actionability"] == 1
+
+
+def test_critic_on_canonical_includes_depth(monkeypatch: pytest.MonkeyPatch) -> None:
+    """ON: normalize_to_canonical → CriticEvaluation.dimensions 에 9번째 키 additive.
+
+    dimensions 가 자유 dict 이므로 depth_actionability 가 스키마 위반 없이 들어간다.
+    """
+    _set_rich_flag(monkeypatch, True)
+    scores = _full_scores_rich(4)
+    scores["depth_actionability"] = 2  # 2/5 = 0.4
+    client = _make_fake_client(_make_response_rich(scores=scores, verdict="approve"))
+
+    result = run_critic(_SAMPLE_PLAN, client=client, model="gpt-4o")
+    verdict = normalize_to_canonical(result)
+    evaluation = CriticEvaluation(**verdict)
+    assert len(evaluation.dimensions) == 9
+    assert evaluation.dimensions["depth_actionability"] == pytest.approx(0.4)
+
+
+def test_derive_verdict_rich_dimensions_arg() -> None:
+    """_derive_verdict(dimensions=DIMENSIONS_RICH): 9차원 평균 + 미달 카운트.
+
+    OFF 호출(인자 생략)은 기존 8차원 — byte-identical (test_derive_verdict_rules 가 보장).
+    """
+    # 8차원 전부 4 + depth 1 → 9 평균 = (32+1)/9 = 3.666... → revise (1개 < 2)
+    scores = _full_scores_rich(4)
+    scores["depth_actionability"] = 1
+    avg, v = _derive_verdict(scores, dimensions=DIMENSIONS_RICH)
+    assert avg == pytest.approx((4 * 8 + 1) / 9, abs=1e-4)  # round(.,4)
+    assert v == "revise"  # depth 1 < 2 → 1개 차원 미달
+
+    # 8차원 인자 생략(기본값) → depth 무시, 8차원 평균만 (기존 동작)
+    avg8, v8 = _derive_verdict(scores)
+    assert avg8 == pytest.approx(4.0)
+    assert v8 == "approve"

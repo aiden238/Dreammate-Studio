@@ -297,9 +297,13 @@ class CriticEvaluation(BaseModel):
     dimensions: dict[str, float] = Field(
         default_factory=dict,
         description=(
-            "Phase 6 canonical (ADR-018): 8-dim 점수 dict[str, float] "
+            "Phase 6 canonical (ADR-018): 점수 dict[str, float] "
             "(예: {'hook_strength': 0.8, 'target_clarity': 0.7, ...}). "
-            "정규화 0.0~1.0 (Phase 9.5 ADR-034 으로 0~5 정수 scores 필드는 제거됨)."
+            "정규화 0.0~1.0 (Phase 9.5 ADR-034 으로 0~5 정수 scores 필드는 제거됨). "
+            "Phase 13 S4 (CC-015, gated): rich_output_enabled ON 경로의 Critic 은 9번째 "
+            "차원 'depth_actionability' 를 추가로 포함한다(8 → 9 키). dimensions 가 고정 "
+            "키가 아닌 자유 dict 이므로 9번째 키는 additive(스키마 위반 아님) — OFF 경로는 "
+            "8 키 그대로 유지되어 회귀 0."
         ),
     )
 

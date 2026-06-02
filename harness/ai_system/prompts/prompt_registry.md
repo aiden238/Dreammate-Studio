@@ -403,9 +403,10 @@ variant 정책: Phase 4 Slice 2 의 3-plan parallel 확장(run_planning_parallel
 ## 8. P-007 · critic (Critic Agent)
 
 **Stage**: 품질 평가 (생성된 기획안 1개에 대해)
-**Version**: v1.1.0 (이전: v1.0.0 — Phase 8 ADR-029)
+**Version**: v1.1.0 (active, OFF default 8차원) · **v1.2.0 (gated, rich 9차원 — Phase 13 S4)**
+            (이전: v1.0.0 — Phase 8 ADR-029)
 **Input variables**: `target_plan`, `one_line_direction`, `selected_context`, `brand_memory`
-**Output schema** (LLM-facing — 0–5 정수 8 dims 유지):
+**Output schema** (LLM-facing — 0–5 정수, v1.1.0=8 dims / v1.2.0=9 dims):
 
 ```
 {
@@ -488,9 +489,16 @@ v1.1.0 (2026-05-29, Phase 8 ADR-029): code-side 0–5 ↔ 0–1 canonical adapte
         (normalize_to_canonical) 추가. LLM-facing prompt(0–5)는 불변.
         Phase 6 CriticEvaluation(0–1, ADR-018) 정합. semver minor — output schema 미변경
         (deprecated 0–5 필드 병행 유지 → backward-compat 100%, 회귀 0).
+v1.2.0 (2026-06-03, Phase 13 S4 ADR-CC-015, ★ gated): rich 9번째 차원 `depth_actionability`
+        (0–5) 추가 — 얕은 plan(rich 슬롯 빈약)이 8차원 평균만으로 승인되던 "88점 함정"을 해소.
+        rubric 정합: `eval/video_planning_eval.md` §2.A.1 (CC-011, anchors 0.2/0.6/1.0).
+        ★ gated 공존 — `rich_output_enabled` ON 경로 전용(RICH_SYSTEM_PROMPT + DIMENSIONS_RICH).
+        OFF(default)=v1.1.0 8차원 byte-identical(deprecate 아님). verdict 규칙 구조 동일(9 dim avg).
+        output_schema CriticEvaluation.dimensions 는 자유 dict → 9번째 키 additive(스키마 위반 아님).
 변경 시: prompt-version-review (golden_set 최소 10케이스 — Phase 9+, NG7).
-단일 출처: 본 registry SoT. 구현 상수 critic.PROMPT_(ID|VERSION) = P-007 / v1.1.0 정합
-          (Phase 8 Slice 4 test_prompt_registry_consistency).
+단일 출처: 본 registry SoT. 구현 상수 critic.PROMPT_(ID|VERSION) = P-007 / v1.1.0 정합 (active/OFF).
+          rich 변형은 critic.RICH_PROMPT_VERSION = v1.2.0 (gated, ON 경로)
+          (Phase 8 Slice 4 / Phase 13 S4 test_prompt_registry_consistency).
 ```
 
 #### 0–5 ↔ 0–1 conservative adapter (ADR-029)

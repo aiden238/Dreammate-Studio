@@ -117,15 +117,123 @@ DIMENSIONS: tuple[str, ...] = (
 )
 
 
+# ─── Phase 13 Slice S4 (gated): rich 9번째 차원 depth_actionability ─────
+# ★ rich_output_enabled ON 경로 전용 (default OFF — 본 상수/프롬프트는 OFF 경로 미사용 →
+#   OFF byte-identical). rich plan(S1~S3) 의 깊이(후크 변형·beat 화면/대사/자막·샷·썸네일·
+#   제목·CTA·레퍼런스·길이변형)를 평가해 "88점 함정"(얕은 compact 가 승인되던 문제)을 해소한다.
+# ★ 제품 경계: 깊이 = 기획 브리프의 구체성(촬영·편집 바로 착수 가능 수준)이지 완성 대본이 아니다.
+# rubric 정합: eval/video_planning_eval.md §2.A.1 depth_actionability (CC-011, anchors 0.2/0.6/1.0).
+
+DIMENSIONS_RICH: tuple[str, ...] = DIMENSIONS + ("depth_actionability",)
+
+RICH_SYSTEM_PROMPT = """당신은 영상기획 AI 에이전트의 품질 평가자(Critic)이다.
+
+입력으로 plan 1개(JSON)가 주어진다. 다음 9차원에 대해 각각 0~5 정수 점수를 부여하고,
+짧은 reason(1~2줄)과 suggestion(1줄)을 작성한다.
+
+9 평가 차원 (1~8 은 기존 정의 불변, 9 는 깊이·실행가능성 추가):
+  1. intent_fit          : 사용자 요청의 의도와 plan이 부합하는가
+  2. target_clarity      : 시청자 페르소나가 구체적인가 (광범위 = 낮은 점수)
+  3. hook_strength       : 첫 3초 후크가 스크롤을 멈추게 하는가
+                           ("안녕하세요", "오늘은 ~에 대해" 형 = 1~2점)
+  4. message_clarity     : 핵심 메시지가 한 줄로 정리되는가, 사실 정확한가
+                           (검증 불가능한 통계 = 낮은 점수)
+  5. structure           : flow 비트 구성이 도입-전개-마무리로 자연스러운가
+  6. feasibility         : 1인/스마트폰/저예산으로 촬영·편집 실행 가능한가
+                           (드론·8K·고예산 가정 = 낮은 점수)
+  7. brand_consistency   : 광고적 과장 표현 없는가
+                           ("혁신적", "최고의", "완벽한", "최선의", "최첨단",
+                            "획기적", "1위", "압도적" = 즉시 1점)
+  8. differentiation     : 흔한 패턴이 아닌, 차별화된 접근인가
+  9. depth_actionability : 기획 깊이·실행가능성 — 창작자가 추가 질문 없이 바로 촬영·편집에
+                           착수할 만큼 구체적인가. 아래 요소의 포함도·구체성을 종합한다:
+                           후크 변형(2~3개)·각 beat 의 화면(visual)/대사(dialogue)/자막(caption)·
+                           샷/B-roll 리스트·썸네일 문구·제목 후보(2~3안)·CTA·레퍼런스·
+                           길이 변형(15/30/60s) 제안 여부.
+                           ★ 채점 기준 (rubric anchors):
+                             0~1점: 매우 얕음 — plan 골격(name/concept/hook 1개/flow 골격)만.
+                                    beat 화면/대사/자막 없음, 샷·썸네일·제목·CTA·레퍼런스 전부 부재.
+                                    "이걸로 뭘 어떻게 찍지?" 추가 질문 다수 발생.
+                             2~3점: 보통 — beat 별 화면·목적은 구체적이나 일부 항목 누락.
+                                    후크 변형 1~2개 또는 샷/썸네일/제목 일부만 포함, 레퍼런스·길이변형 미포함.
+                             4~5점: 매우 구체적 — 후크 2~3 변형 + beat 화면/대사/자막 + 샷·B-roll +
+                                    썸네일·제목 2~3안·CTA + 레퍼런스 + 길이 변형. 바로 착수 가능.
+                           ★ 제품 경계: 깊이 = "기획 브리프"의 구체성이지 완성 대본 작성 여부가 아니다.
+                           (rich 슬롯이 빈약한 얕은 plan = 낮은 점수.)
+
+판정 규칙 (overall_verdict):
+  - approve: avg ≥ 3.5 AND 모든 점수 ≥ 2
+  - revise:  2.5 ≤ avg < 3.5  OR  1~2개 점수가 < 2
+  - reject:  avg < 2.5  OR  3개 이상 점수가 < 2
+
+blocking_issues:
+  - 광고적 과장 표현 발견 시 단어를 명시
+  - 검증 불가능한 통계 발견 시 해당 문장 명시
+  - 1인 운영자 가정 위반 시 명시
+  - 최대 3개
+
+응답 형식 (JSON 1개 객체만, 자연어 머리말/꼬리말 금지):
+{
+  "scores": {
+    "intent_fit": 0-5,
+    "target_clarity": 0-5,
+    "hook_strength": 0-5,
+    "message_clarity": 0-5,
+    "structure": 0-5,
+    "feasibility": 0-5,
+    "brand_consistency": 0-5,
+    "differentiation": 0-5,
+    "depth_actionability": 0-5
+  },
+  "reasons": {
+    "intent_fit": "...",
+    "target_clarity": "...",
+    "hook_strength": "...",
+    "message_clarity": "...",
+    "structure": "...",
+    "feasibility": "...",
+    "brand_consistency": "...",
+    "differentiation": "...",
+    "depth_actionability": "..."
+  },
+  "suggestions": {
+    "intent_fit": "...",
+    "target_clarity": "...",
+    "hook_strength": "...",
+    "message_clarity": "...",
+    "structure": "...",
+    "feasibility": "...",
+    "brand_consistency": "...",
+    "differentiation": "...",
+    "depth_actionability": "..."
+  },
+  "overall_verdict": "approve | revise | reject",
+  "blocking_issues": ["..."]
+}
+
+9개 키는 반드시 모두 채운다. overall_score_avg와 revise_round는 서버에서 채우므로
+생략 가능하다. plan 안의 plan_id는 응답에서 사용하지 않는다 (서버가 주입).
+"""
+
+
 # ─── verdict 산출 (server-side 보정) ──────────────────────────────────
 
-def _derive_verdict(scores: dict[str, int]) -> tuple[float, str]:
+def _derive_verdict(
+    scores: dict[str, int],
+    *,
+    dimensions: tuple[str, ...] = DIMENSIONS,
+) -> tuple[float, str]:
     """평균 + 미달 카운트로 verdict 산출 (output_schema §9.2).
+
+    Phase 13 S4 (gated): `dimensions` 인자로 평가 차원 집합을 받는다. 기본값은
+    기존 8차원 DIMENSIONS 이므로 OFF 경로 호출(인자 생략)은 byte-identical.
+    rich(ON) 경로는 DIMENSIONS_RICH(9차원)를 넘겨 depth_actionability 를 평균에 포함한다
+    (임계 식·verdict 규칙 구조는 동일 — dim 수만 9).
 
     Returns:
         (overall_score_avg, verdict)
     """
-    values = [int(scores.get(k, 0)) for k in DIMENSIONS]
+    values = [int(scores.get(k, 0)) for k in dimensions]
     avg = sum(values) / len(values)
     below_2 = sum(1 for v in values if v < 2)
 
@@ -173,6 +281,18 @@ def run_critic(
     _client = client or OpenAI(api_key=settings.openai_api_key)
     _model = model or settings.openai_model_critic
 
+    # Phase 13 S4 (gated): rich_output_enabled ON 이면 9차원(RICH_SYSTEM_PROMPT +
+    # DIMENSIONS_RICH) 평가, OFF(default) 면 기존 8차원 경로 byte-identical.
+    # ★ OFF 경로는 아래 변수가 전부 기존 상수/리터럴과 동일 → 동작·점수·prompt·user msg 불변.
+    if settings.rich_output_enabled:
+        _system_prompt = RICH_SYSTEM_PROMPT
+        _expected: tuple[str, ...] = DIMENSIONS_RICH
+        _user_intro = "다음 plan을 9차원으로 평가해줘:\n\n"
+    else:
+        _system_prompt = SYSTEM_PROMPT
+        _expected = DIMENSIONS
+        _user_intro = "다음 plan을 8차원으로 평가해줘:\n\n"
+
     target_plan_id = str(plan.get("plan_id") or "")
 
     logger.info("critic call start model=%s plan_id=%s", _model, target_plan_id)
@@ -181,10 +301,10 @@ def run_critic(
         response = _client.chat.completions.create(
             model=_model,
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": _system_prompt},
                 {
                     "role": "user",
-                    "content": "다음 plan을 8차원으로 평가해줘:\n\n"
+                    "content": _user_intro
                     + json.dumps(plan, ensure_ascii=False),
                 },
             ],
@@ -207,13 +327,13 @@ def run_critic(
     scores = parsed.get("scores")
     if not isinstance(scores, dict):
         raise ValueError("Critic LLM 응답에 scores 객체 없음")
-    missing = [k for k in DIMENSIONS if k not in scores]
+    missing = [k for k in _expected if k not in scores]
     if missing:
         raise ValueError(f"Critic scores 누락 차원: {missing}")
 
     # 점수 정수화 + clamp 0~5 (LLM이 4.5 같은 실수를 줄 수도 있으므로)
     norm_scores: dict[str, int] = {}
-    for k in DIMENSIONS:
+    for k in _expected:
         v = scores[k]
         try:
             iv = int(round(float(v)))
@@ -227,11 +347,12 @@ def run_critic(
         raise ValueError("Critic reasons/suggestions 형식 불일치")
 
     # 키 보강: LLM이 빠뜨린 차원은 빈 문자열로 채움
-    reasons = {k: str(reasons.get(k, "")) for k in DIMENSIONS}
-    suggestions = {k: str(suggestions.get(k, "")) for k in DIMENSIONS}
+    reasons = {k: str(reasons.get(k, "")) for k in _expected}
+    suggestions = {k: str(suggestions.get(k, "")) for k in _expected}
 
     # server-side verdict 보정 (output_schema §9.2 규칙 강제)
-    avg, derived_verdict = _derive_verdict(norm_scores)
+    # OFF=8차원(DIMENSIONS), ON=9차원(DIMENSIONS_RICH) — depth_actionability 가 평균에 포함됨.
+    avg, derived_verdict = _derive_verdict(norm_scores, dimensions=_expected)
     llm_verdict = str(parsed.get("overall_verdict", "")).strip().lower()
     if llm_verdict not in {"approve", "revise", "reject"}:
         llm_verdict = derived_verdict
@@ -393,4 +514,9 @@ PROMPT_ID = "P-007"
 # Phase 8 ADR-029: v1.0.0 → v1.1.0 — code-side 0–5↔0–1 conservative adapter
 # (normalize_to_canonical) 추가. LLM-facing prompt(0–5) 불변, run_critic 출력 의미 불변
 # (helper additive, 미강제 주입 → 회귀 0). semver minor (output schema 미변경).
+# ★ PROMPT_VERSION = OFF(default, rich_output_enabled=False) 경로 활성 버전 (8차원, 불변).
 PROMPT_VERSION = "v1.1.0"
+# Phase 13 S4 (gated, CC-015): rich 9번째 차원 depth_actionability 추가 — semver minor
+# (additive 차원 + 신규 채점 지시, output_schema CriticEvaluation 은 additive Optional).
+# ★ rich_output_enabled=True(ON) 경로 전용. OFF 면 PROMPT_VERSION(v1.1.0) 유지 → byte-identical.
+RICH_PROMPT_VERSION = "v1.2.0"
