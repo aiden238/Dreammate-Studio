@@ -70,10 +70,24 @@ Sub-agent  : Entry·S1~S5 (sub-agent / S6 main close), 충돌 0 — P-X1 PASS (S
 다음 Phase : **Phase 14 (pending_user_decision)** — rich default 전환 결정 / 위저드(/new/*) 실연결 / 배포 Gate B~G / Phase 12 S4 human review 실 채점 + 전수 실 LLM eval / B안 정식화 잔여(B-RES-2/B-RES-3)
 ```
 
-## 🟢 Next phase: Phase 14 pending_user_decision (2026-06-03)
+## 🟢 Phase 14 = 위저드 ↔ 백엔드 실연결 — ★ active (entry 작성 2026-06-03)
 
 ```
-Phase 1~13 완료. MVP 통합(Phase 10) + LLM Gateway(Phase 11) + 검증(Phase 12) + 출력 확장(Phase 13 — compact→rich gated, 깊이 0.231→1.000, 라이브 입증). 다음 사용자 결정 대기.
+Status     : ACTIVE (entry 작성 2026-06-03) — 사용자 결정 B (위저드 실연결) + Scope A (최소 배선)
+유형       : 제품 phase (프론트 배선 + 백엔드 additive) — ★ 랜딩 `/` byte-identical(behavior-preserving)
+Goal       : mock 위저드(/new/quick 4 · /new/discovery 7)를 실 생성 경로(/plans/start→/wizard/{step}→/generate→/plan/[id])에 배선.
+             위저드도 실 기획안(rich gated 상속). per-step P-001~P-005 실 LLM 카드 = NG1(PARKED PKM/RAG 이연).
+방향 근거  : project-1(메인 세션 6f30283a) 위저드 분석 — 위저드 mock·랜딩만 실동작·실연결=한 페이즈·per-step LLM=PKM/RAG(PARKED)
+Entry+4Slice: Entry(8 + self 13th) / S1 백엔드 wizard_data additive 조립(랜딩 byte-identical) / S2 Quick 실연결 / S3 Discovery 실연결 / S4 라이브 e2e + 회귀(499) + close
+회귀 게이트: pytest 499 + 랜딩 `/` byte-identical + 키 0
+폴더       : phases/active/phase-14-wizard-backend-wiring/
+다음 Phase : (Phase 14 후 재평가) rich default 전환(A) / 배포 Gate B~G(C) / 품질·정식화(D) / PARKED(PKM-RAG→commercial_viral, 선행조건=본 위저드 실연결)
+```
+
+## 🟡 Phase 14 진입 시 보류된 후보 (B 채택, A/C/D 잔존)
+
+```
+Phase 1~13 완료. MVP 통합(Phase 10) + LLM Gateway(Phase 11) + 검증(Phase 12) + 출력 확장(Phase 13 — compact→rich gated, 깊이 0.231→1.000, 라이브 입증). ★ Phase 14 = B(위저드 실연결) active. 잔존 후보(차기 결정):
 
 A. rich default 전환 결정
   - flag `rich_output_enabled` default ON(전 사용자 rich) 전환 여부. cost(CC-016 — 출력 토큰 3~5배 × 3안, tier 유료/opt-in 권고) + 품질(feature 존재 ≠ 콘텐츠 우수성, human review 보강) 합의 후. 현재 = gated OFF 유지.

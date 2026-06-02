@@ -66,7 +66,7 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 
 ## 현재 Active Phase
 
-**Phase 13 done (2026-06-03) — rich 출력 gated, 깊이 0.231→1.000. 다음 = Phase 14 pending_user_decision.**
+**🟢 Phase 14 = 위저드 ↔ 백엔드 실연결 active (entry 작성 2026-06-03)** — 사용자 결정 **B**(위저드 실연결) + **Scope A**(최소 배선). mock 위저드(/new/quick 4 · /new/discovery 7)를 실 생성 경로(`/plans/start`→`/wizard/{step}`→`/generate`→`/plan/[id]`)에 배선 → 위저드도 실 기획안(rich gated 상속). ★ 랜딩 `/` byte-identical(behavior-preserving) + per-step P-001~P-005 실 LLM 카드 = NG1(PARKED PKM/RAG 이연) + pytest 499 회귀 게이트 + 키 0. 방향 근거 = project-1(6f30283a) 위저드 분석. Entry + 4 Slice(S1 백엔드 wizard_data additive 조립 / S2 Quick / S3 Discovery / S4 라이브 e2e+회귀+close). 폴더 `phases/active/phase-14-wizard-backend-wiring/`. (Phase 13 done(2026-06-03, archive) — rich gated 깊이 0.231→1.000.)
 
 **🟢 Phase 13 출력 확장(Output Enrichment, compact→rich) ✅ done (2026-06-03, archive)** — Phase 12 가 입증한 깊이 격차(compact 0.231 → rich 잠재 1.0, 4.3x)를 운영 출력에 반영. ★ **이 프로젝트 첫 의도적 출력 변경**을 gated 로 안전하게 — `rich_output_enabled` default **False**(OFF=compact byte-identical / ON=rich) + additive 스키마(rich 12 슬롯 전부 Optional). Entry + 6 Slice 전부 ✅ + pytest 471→**499**(기존 471 수정 0 = OFF 회귀 0) + 키 0. **깊이 재측정(운영 run_planning OFF/ON 토글, get_settings.cache_clear) OFF 0.231 / ON 1.000(≥0.8 PASS, 4/4 편차 0)** + Critic depth 88점 함정 해소 + frontend rich 조건부 8섹션 + ★ **라이브 입증**(/generate end-to-end rich HTTP 200, rich 9슬롯 + beat visual/dialogue/caption + 화면 rich).
 - **S1 ✅** (CC-012): output_schema §8.1 v1.1.0→v1.2.0 + rich 12 슬롯 additive + `model_dump_compact()` + agent-io-check PASS + test 10 → 471→481.
