@@ -248,9 +248,20 @@ async def plans_generate(plan_id: str, req: GenerateRequest):
     # Phase 8 Slice 3 (ADR-028): StoreProgressSink 주입 → generate stage 진행을
     # progress_store 에 기록 (sse.py 가 read). Slice 2 default(NullProgressSink) 대비
     # 부수효과(store 기록)만 추가 — Envelope/응답 동일 (회귀 0).
-    return await generate_plan(
+    result = await generate_plan(
         plan_id, plan_entry, req, progress=StoreProgressSink(plan_id),
     )
+    # Phase 13 S3 (gated 직렬화 분기 — live POST):
+    #   본 POST 라우트는 response_model 미지정이라, Envelope 모델을 그대로 반환하면
+    #   FastAPI jsonable_encoder 가 rich Optional 슬롯(None/[])까지 직렬화 → OFF 에서
+    #   응답 byte 가 Phase 13 이전과 달라진다. OFF 경로는 generate_plan 이 plan_entry["envelope"]
+    #   에 저장한 compact dict(rich 제외, byte-identical)를 JSONResponse 로 그대로 반환한다.
+    #   ON 경로는 Envelope 모델을 그대로 반환(rich 포함 full 직렬화). 에러(JSONResponse)는 그대로 전달.
+    if isinstance(result, Envelope) and not get_settings().rich_output_enabled:
+        stored = plan_entry.get("envelope")
+        if stored is not None:
+            return JSONResponse(content=stored, status_code=200)
+    return result
 
 
 # ─── GET /plans/{plan_id} ─────────────────────────────────────────────

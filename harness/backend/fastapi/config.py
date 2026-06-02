@@ -141,6 +141,18 @@ class Settings(BaseSettings):
         description="B안: 3-plan 을 3-provider(GPT/Claude/Gemini) alias 로 다양화 (gated, default OFF).",
     )
 
+    # ─── Phase 13 Slice S3 — rich 출력 게이트 (additive, default False) ─
+    # ★ behavior-preserving / gated default-off: OFF=compact byte-identical
+    #   (Plan.model_dump_compact() 가 rich 슬롯 제외 → Phase 13 이전 응답과 동일),
+    #   ON=rich(확장 스키마+RICH_SYSTEM_PROMPT). 기존 486 테스트는 OFF default 라 불변.
+    rich_output_enabled: bool = Field(
+        default=False,
+        description=(
+            "Phase 13: rich 출력(확장 스키마+프롬프트) 활성. "
+            "OFF=compact byte-identical, ON=rich. 환경변수 RICH_OUTPUT_ENABLED."
+        ),
+    )
+
     # ─── Phase 4 Slice 2: multi-model (사용자 결정 4-b) ─────────────────
     # 향후 모델 추가 가능 구조 — Phase 4는 OpenAI만 (default 동일 모델 × 3).
     # Anthropic / Google 등 multi-provider 확장은 Phase 21+에서 검토.

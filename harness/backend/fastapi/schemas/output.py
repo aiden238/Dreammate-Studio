@@ -507,3 +507,17 @@ class ErrorEnvelope(BaseModel):
     ok: bool = False
     error: ErrorBody
     meta: ErrorMeta
+
+
+# ─── Phase 13 Slice S3 — gated 직렬화 헬퍼 (additive) ─────────────────
+
+def envelope_to_response_dict(
+    envelope: "Envelope", plans: list["Plan"], *, rich_enabled: bool
+) -> dict:
+    """Envelope → 응답 dict. rich_enabled=False 면 plan_candidates 를 model_dump_compact()
+    로 직렬화해 rich 슬롯 제외(Phase 13 이전과 byte-identical, A5-PP). True 면 full(rich 포함).
+    plans 는 envelope.body.plan_candidates 와 동일 순서의 Plan 객체 리스트."""
+    d = envelope.model_dump(mode="json")
+    if not rich_enabled:
+        d["body"]["plan_candidates"] = [p.model_dump_compact(mode="json") for p in plans]
+    return d

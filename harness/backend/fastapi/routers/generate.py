@@ -245,6 +245,10 @@ def generate(req: GenerateRequest, response: Response) -> Union[Envelope, JSONRe
                     beat=b.get("beat", ""),
                     duration_sec=int(b.get("duration_sec", 5)),
                     purpose=b.get("purpose", ""),
+                    # Phase 13 S3 (additive rich read — OFF 경로엔 키 없어 None).
+                    visual=b.get("visual"),
+                    dialogue=b.get("dialogue"),
+                    caption=b.get("caption"),
                 )
                 for i, b in enumerate(plan_raw.get("flow", []))
             ],
@@ -261,6 +265,18 @@ def generate(req: GenerateRequest, response: Response) -> Union[Envelope, JSONRe
                 }
                 for r in rag_refs
             ],
+            # Phase 13 S3 (additive rich read): rich 프롬프트(ON) 응답에만 채워지고,
+            # OFF 경로(compact 프롬프트)는 키 부재 → default(None/[]). 직렬화 분기가
+            # OFF 면 model_dump_compact() 로 제외 → byte-identical.
+            hook_variants=plan_raw.get("hook_variants", []),
+            target_audience=plan_raw.get("target_audience"),
+            tone=plan_raw.get("tone"),
+            shots=plan_raw.get("shots", []),
+            thumbnail=plan_raw.get("thumbnail"),
+            title_candidates=plan_raw.get("title_candidates", []),
+            cta=plan_raw.get("cta"),
+            references=plan_raw.get("references", []),
+            length_variants=plan_raw.get("length_variants", []),
         )
     except Exception as e:
         logger.exception("Plan 모델 검증 실패")
@@ -409,4 +425,17 @@ def generate(req: GenerateRequest, response: Response) -> Union[Envelope, JSONRe
         persistence.project_id,
         envelope.meta.request_id,
     )
-    return envelope
+    # Phase 13 S3 (gated 직렬화 분기):
+    #   ON  → response_model=Envelope 가 rich 슬롯 포함 직렬화 (return envelope).
+    #   OFF → model_dump_compact() 로 rich 슬롯 제외 → Phase 13 이전과 byte-identical
+    #         (JSONResponse 로 직접 직렬화 + deprecation header 명시 보존, status 200).
+    if settings.rich_output_enabled:
+        return envelope
+    from ..schemas.output import envelope_to_response_dict
+
+    payload = envelope_to_response_dict(envelope, [plan], rich_enabled=False)
+    return JSONResponse(
+        content=payload,
+        status_code=200,
+        headers={"X-API-Deprecation": _DEPRECATION_HEADER_VALUE},
+    )

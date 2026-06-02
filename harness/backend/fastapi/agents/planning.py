@@ -183,7 +183,9 @@ def run_planning(
     _model = model or settings.openai_model_default
 
     rag_block = _format_rag_context(rag_context or [])
-    system_prompt = SYSTEM_PROMPT + (("\n" + rag_block) if rag_block else "")
+    # Phase 13 S3 (gated): rich_output_enabled ON 이면 RICH_SYSTEM_PROMPT, OFF 면 기존 compact.
+    base = RICH_SYSTEM_PROMPT if settings.rich_output_enabled else SYSTEM_PROMPT
+    system_prompt = base + (("\n" + rag_block) if rag_block else "")
 
     logger.info(
         "planning call start model=%s input_len=%d rag_refs=%d",
@@ -287,7 +289,12 @@ async def _run_planning_single(
     _client = client or OpenAI(api_key=settings.openai_api_key)
 
     rag_block = _format_rag_context(rag_context or [])
-    base_prompt = _build_system_prompt_with_hint(approach_hint)
+    # Phase 13 S3 (gated): rich_output_enabled ON 이면 rich hint 프롬프트, OFF 면 기존 compact.
+    base_prompt = (
+        _build_rich_system_prompt_with_hint(approach_hint)
+        if settings.rich_output_enabled
+        else _build_system_prompt_with_hint(approach_hint)
+    )
     system_prompt = base_prompt + (("\n" + rag_block) if rag_block else "")
 
     logger.info(
@@ -492,7 +499,13 @@ async def _run_planning_single_via_gateway(
     from ..llm.types import LLMMessage  # 지연 import (provider-neutral 타입)
 
     rag_block = _format_rag_context(rag_context_list)
-    base_prompt = _build_system_prompt_with_hint(approach_hint)
+    # Phase 13 S3 (gated, 일관성): rich_output_enabled ON 이면 rich hint 프롬프트.
+    #   ★ multi_provider 는 별 게이트(multi_provider_plans_enabled, default OFF)라
+    #     이 함수는 통상 호출되지 않는다 — settings 는 late get_settings() 로 조회.
+    if get_settings().rich_output_enabled:
+        base_prompt = _build_rich_system_prompt_with_hint(approach_hint)
+    else:
+        base_prompt = _build_system_prompt_with_hint(approach_hint)
     system_prompt = base_prompt + (("\n" + rag_block) if rag_block else "")
 
     messages = [

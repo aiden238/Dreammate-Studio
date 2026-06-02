@@ -214,6 +214,10 @@ async def generate_plan(
                         beat=b.get("beat", "") or "—",
                         duration_sec=int(b.get("duration_sec", 5)),
                         purpose=b.get("purpose", "") or "—",
+                        # Phase 13 S3 (additive rich read — OFF 경로엔 키 없어 None).
+                        visual=b.get("visual"),
+                        dialogue=b.get("dialogue"),
+                        caption=b.get("caption"),
                     )
                     for j, b in enumerate(plan_raw.get("flow") or [])
                 ] or [
@@ -224,6 +228,17 @@ async def generate_plan(
                 risks=plan_raw.get("risks", ""),
                 approach_label=plan_raw.get("approach_label", "informational"),
                 rag_used=rag_used_payload,
+                # Phase 13 S3 (additive rich read): rich 프롬프트(ON) 응답에만 채워지고,
+                # OFF 경로는 키 부재 → default(None/[]). 직렬화 분기가 OFF 면 제외.
+                hook_variants=plan_raw.get("hook_variants", []),
+                target_audience=plan_raw.get("target_audience"),
+                tone=plan_raw.get("tone"),
+                shots=plan_raw.get("shots", []),
+                thumbnail=plan_raw.get("thumbnail"),
+                title_candidates=plan_raw.get("title_candidates", []),
+                cta=plan_raw.get("cta"),
+                references=plan_raw.get("references", []),
+                length_variants=plan_raw.get("length_variants", []),
             )
             plans_list.append(p)
         except Exception as e:
@@ -328,6 +343,10 @@ async def generate_plan(
                             beat=str(b.get("beat", "") or "—"),
                             duration_sec=int(b.get("duration_sec", 5)),
                             purpose=str(b.get("purpose", "") or "—"),
+                            # Phase 13 S3 (rich 보존): revise 왕복 dict 에서 rich 슬롯 유지.
+                            visual=b.get("visual"),
+                            dialogue=b.get("dialogue"),
+                            caption=b.get("caption"),
                         )
                         for j, b in enumerate(current_plan_dict.get("flow") or [])
                     ] or list(plan_model.flow),
@@ -335,6 +354,17 @@ async def generate_plan(
                     risks=str(current_plan_dict.get("risks") or plan_model.risks or ""),
                     approach_label=current_plan_dict.get("approach_label") or plan_model.approach_label,
                     rag_used=current_plan_dict.get("rag_used") or list(plan_model.rag_used),
+                    # Phase 13 S3 (rich 보존): rewriter dict 에 rich 슬롯이 있으면 유지,
+                    # 없으면 원본 plan_model 의 rich 값으로 fallback (revise 왕복 유실 방지).
+                    hook_variants=current_plan_dict.get("hook_variants") or list(plan_model.hook_variants),
+                    target_audience=current_plan_dict.get("target_audience") or plan_model.target_audience,
+                    tone=current_plan_dict.get("tone") or plan_model.tone,
+                    shots=current_plan_dict.get("shots") or list(plan_model.shots),
+                    thumbnail=current_plan_dict.get("thumbnail") or plan_model.thumbnail,
+                    title_candidates=current_plan_dict.get("title_candidates") or list(plan_model.title_candidates),
+                    cta=current_plan_dict.get("cta") or plan_model.cta,
+                    references=current_plan_dict.get("references") or list(plan_model.references),
+                    length_variants=current_plan_dict.get("length_variants") or list(plan_model.length_variants),
                 )
             except Exception as exc:
                 logger.warning(
@@ -534,8 +564,15 @@ async def generate_plan(
     )
 
     # plan_store 저장 (GET /plans/{plan_id} 에서 envelope 반환).
+    # Phase 13 S3 (gated 직렬화 분기): OFF=model_dump_compact(rich 제외, byte-identical) /
+    #   ON=full(rich 포함). plans_list 는 최종 plan 리스트 (Critic+revise 반영).
+    from ..schemas.output import envelope_to_response_dict
+
+    response_payload = envelope_to_response_dict(
+        envelope, plans_list, rich_enabled=settings.rich_output_enabled,
+    )
     plan_entry["status"] = "generated"
-    plan_entry["envelope"] = envelope.model_dump(mode="json")
+    plan_entry["envelope"] = response_payload  # GET /plans/{plan_id} read 와 동일 직렬화.
     plan_entry["updated_at"] = now_iso()
 
     logger.info(
