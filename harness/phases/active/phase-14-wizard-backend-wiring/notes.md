@@ -18,7 +18,7 @@
 - PARKED: `meta/proposals/2026-06-03_pkm-rag-orchestrator-design.md`(per-step 지능 = 여기) / `2026-06-03_commercial-viral-mode-design.md`.
 
 ## TODO (slice 진행하며 갱신)
-- [ ] S1 백엔드 wizard_data 조립 (additive, 랜딩 byte-identical) + tests
+- [x] **S1 ✅ 백엔드 wizard_data 조립** (2026-06-03, commit 대기): `moa_orchestrator.py` `build_user_input_from_wizard()` 헬퍼(additive) + `_WIZARD_STEP_ORDER` + 입력 우선순위 `initial_input > wizard 조립 > "(빈 입력)"`. ★ 랜딩(initial_input) byte-identical — wizard_data 없으면 기존 동일. 신규 test 9 → **pytest 499→508 green**(기존 499 수정 0). contract 무변경(요청/응답 스키마 불변 — 내부 입력 조립만). 다음=S2.
 - [ ] S2 Quick 위저드 실연결
 - [ ] S3 Discovery 위저드 실연결
 - [ ] S4 라이브 e2e(rich ON) + 회귀 + close

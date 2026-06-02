@@ -64,6 +64,54 @@ from .responses import error_envelope_response, now_iso
 logger = logging.getLogger(__name__)
 
 
+# ─── Phase 14 S1: 위저드 입력 조립 (additive, behavior-preserving) ────
+# 위저드(/new/quick·/new/discovery)가 누적한 wizard_data(step별 WizardStepRequest dump)를
+# 단일 user_input 문자열로 조립한다. ★ 랜딩 `/` 는 initial_input 을 채우므로 이 경로를 타지
+# 않는다(byte-identical). generate 입력 우선순위: initial_input > wizard_data 조립 > "(빈 입력)".
+_WIZARD_STEP_ORDER: tuple[str, ...] = (
+    "step1", "step2", "step3", "step4", "step5", "step6", "step7",
+    "quick.initial", "quick.clarify", "quick.direction",
+)
+
+
+def build_user_input_from_wizard(wizard_data: dict[str, Any] | None) -> str:
+    """wizard_data(step→{selected_card_id?, user_input?, extra}) → user_input 문자열.
+
+    Phase 14 S1 (additive): 위저드가 백엔드에 누적한 step 입력을 결정적 순서로 조립한다.
+    known step(step1~7 / quick.*) 먼저, 그 외 step 은 사전순. 각 step 에서 selected_card_id /
+    user_input / extra(비어있지 않은 값)를 모아 한 줄로, step 사이는 개행. 의미있는 입력이
+    없으면 "" 반환(호출자가 "(빈 입력)" 폴백 유지).
+
+    ★ behavior-preserving: 본 함수는 신설이며 initial_input 이 없을 때만 호출된다 →
+      랜딩 경로(initial_input 채움)는 영향 0.
+    """
+    if not wizard_data:
+        return ""
+    ordered = [k for k in _WIZARD_STEP_ORDER if k in wizard_data]
+    ordered += sorted(k for k in wizard_data if k not in _WIZARD_STEP_ORDER)
+
+    lines: list[str] = []
+    for key in ordered:
+        step = wizard_data.get(key)
+        if not isinstance(step, dict):
+            continue
+        seg: list[str] = []
+        card = step.get("selected_card_id")
+        if card:
+            seg.append(str(card))
+        ui = step.get("user_input")
+        if ui:
+            seg.append(str(ui))
+        extra = step.get("extra")
+        if isinstance(extra, dict):
+            for ek, ev in extra.items():
+                if ev not in (None, "", [], {}):
+                    seg.append(f"{ek}: {ev}")
+        if seg:
+            lines.append(" / ".join(seg))
+    return "\n".join(lines).strip()
+
+
 async def generate_plan(
     plan_id: str,
     plan_entry: dict[str, Any],
@@ -85,7 +133,13 @@ async def generate_plan(
     from ..routers import plans as plans_router
 
     settings = get_settings()
-    user_input = plan_entry.get("initial_input") or "(빈 입력)"
+    # Phase 14 S1 (additive): initial_input(랜딩 `/` — byte-identical) 우선,
+    #   없으면 위저드 누적 입력(wizard_data) 조립, 그래도 없으면 기존 폴백.
+    user_input = (
+        plan_entry.get("initial_input")
+        or build_user_input_from_wizard(plan_entry.get("wizard_data"))
+        or "(빈 입력)"
+    )
     locale = plan_entry.get("locale", "ko-KR")
 
     # 1. Intent ──────────────────────────────────────────────────────
