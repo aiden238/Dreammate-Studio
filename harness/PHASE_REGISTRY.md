@@ -31,9 +31,30 @@
 | **M3** | **이질 도메인 dry-run (★ meta-phase — 범용성 2차 검증, 재무)** | **done** (2026-05-31) | 2 Slice dry-run (S1 생성 + S2 validation) + doc-sync + ★ machinery 0줄(개선본 읽기만) + 런타임 0(A9) + outputs/TEST/ 외 0(MG1) + **P-X1 57연속** + 범용 **강함**(미디어 편향 0) + M2 개선 유효 7/부분 1/부적합 0 + 6검증 PASS 4/PENDING-BY-DESIGN 2 + 새 GAP 3(전부 minor/nice-to-have, blocking 0 → 백로그) + harness-factory 세 번째 실 트리거 + ★ **분기 = Phase 10 직행** + Skill 21 유지 + pytest 339 유지 |
 | **10** | **MVP 통합 테스트 (scope C)** | **done** (2026-05-31) | 4 Slice + entry(multi-llm 10th) + ★ 제품 phase(런타임 有, behavior-preserving) + MVP end-to-end 통합 **PASS(결함 0)** + pytest 339→**381** + P-AUX-2 brand_memory_extractor 실구현(agent 5→6, CC-008) + 실 LLM eval mode capability(default mock) + RAG eval_rubric v1.0.0 + golden_set 11→15(CC-009) + 배포 Gate A 통과 + ADR-038 + P-X1 60연속 + PlanCard/component_map 0줄 유지 |
 | **11** | **LLM Gateway (A안 + B안 — registry/alias + 3-provider + cross-validation)** | **done** (A안 2026-06-01 / B안 2026-06-02) | A안: gateway 골격 + cross_validation + orchestrator gated hook(ADR-039/CC-010). **B안 확장**: Anthropic adapter + 3-provider 분기 + 3-plan 다양성 alias + 펜스 stripping + `run_planning_multi_provider_3` + orchestrator gated 분기(`multi_provider_plans_enabled` default OFF) + gemini-flash model 교정. pytest 381→**471** + behavior-preserving + ★ **라이브 3-provider 3안 입증**(openai/anthropic/google 각 1안 실생성, FALLBACK 0). B안 정식화(ADR/cost) 일부 비차단 잔여. |
-| **12** | **검증 페이즈 (Validation — MVP 품질·가치 실측)** | **active** (entry 작성 2026-06-02) | ★ 사용자 지침 "12=검증". 구조 정확성(완료)이 아닌 **출력 품질·가치** 실측. **핵심 GAP = 깊이 격차(depth gap)** — 같은 모델(gpt-4o-mini)에 확장 프롬프트만으로 compact→rich(2026-06-02 데모 입증). entry 8파일 + validation self(11th) 작성 완료. Entry+S1~S5: golden_set 15→~25 + depth/actionability 차원(CC) / 실 LLM eval baseline(실비용 승인) / 깊이 격차 정량(compact vs rich) / human review kit / 종합→Phase 13 우선순위. ★ 운영 코드 0 수정 + behavior-preserving(pytest 471). B안 잔여(cost/ADR/contract-change) 추적. |
-| 13~20 | 확장 / 안정화 / 배포 (검증 근거 기반) | future | 배포 Gate B~G + 4계층 linkage / SSE async worker / prompt A/B / 자동 promotion / B안 다중-provider UX 노출 / M3 새 GAP 3(G9/G10/G11) — ★ 검증 결과로 우선순위 결정 |
+| **12** | **검증 페이즈 (Validation — MVP 품질·가치 실측)** | **done** (2026-06-02) | ★ 사용자 지침 "12=검증". 구조 정확성(완료)이 아닌 **출력 품질·가치** 실측. **깊이 격차 4.3x 실측**(compact 0.231 vs rich 1.000, 6/6 편차 0) → 결론(단순함=모델 한계 아님, prompt/schema 설계) + golden_set 15→25 + depth_actionability 차원(CC-011) + S4 human review kit. ★ **S4 사용자 실 채점 = deferred**(사용자 실 UI 직접 확인으로 결론 확정, kit 은 optional 보정 보존). ★ 운영 코드 0 수정 + behavior-preserving(pytest 471). P-VALIDATION-DEPTH-GAP-001(신규 후보). |
+| **13** | **출력 확장 (Output Enrichment — compact→rich)** | **active** (entry 작성 2026-06-02) | ★ 이 프로젝트 **첫 의도적 출력 변경** phase. Phase 12 가 입증한 깊이 격차(0.231→잠재 1.0)를 **운영 출력에 반영** — gated 단계 롤아웃 + additive 스키마로 안전하게. 6 Slice: S1 스키마 확장(`Plan` optional 슬롯) / S2 프롬프트 확장(P-006 bump) / S3 gated wiring(`rich_output_enabled` default OFF) / S4 Critic depth 반영(88점 함정) / S5 frontend 렌더링(/generate rich) / S6 cost 재조정 + 깊이 재측정(목표 ≥0.8) + 종료. 롤아웃=gated(flag OFF→검증후 ON) / 범위=풀(backend+frontend) / 제품 경계=기획 브리프(product_boundary). |
+| 14~20 | 안정화 / 배포 (검증·확장 근거 기반) | future | 배포 Gate B~G + 4계층 linkage / SSE async worker / prompt A/B / 자동 promotion / B안 다중-provider UX 노출 / M3 새 GAP 3(G9/G10/G11) / flag default ON 전환 결정 — ★ 검증·확장 결과로 우선순위 결정 |
 | 21~30 | 고도화 | future | Spring, Expo, Custom RAG, LangGraph |
+
+## 🟢 Phase 13 active (출력 확장 — Output Enrichment, compact→rich)
+
+`phases/active/phase-13-output-enrichment/`
+
+```
+Status     : 🟢 ACTIVE (entry 작성 2026-06-02)
+유형       : 제품 phase (런타임 有 — ★ 이 프로젝트 첫 의도적 출력 변경) — gated 단계 롤아웃 + additive 스키마(flag OFF byte-identical, behavior-preserving)
+Goal       : Phase 12 가 입증한 깊이 격차(compact 0.231 → rich 잠재 1.0, 4.3x)를 운영 출력에 반영 — compact 7필드 → rich(후크 변형·타임코드·화면·대사·자막·샷·썸네일·제목·CTA·레퍼런스·길이변형·타깃·톤). 목표 depth 0.231 → ≥0.8.
+롤아웃     : ★ gated — rich_output_enabled default **False** → 검증(S6) 후 ON (default ON 즉시 전환은 별도 결정)
+범위       : ★ 풀 — backend(스키마/프롬프트/wiring/Critic) + frontend(/generate 화면 rich)
+6 Slice    : S1 스키마 확장(Plan optional 슬롯, output_schema CC + agent-io-check) / S2 프롬프트 확장(planning rich, prompt-version-review P-006 bump v1.1.0) / S3 gated wiring(rich_output_enabled default False + generate·orchestrator 분기, OFF byte-identical) / S4 Critic depth(depth_actionability 차원 additive, P-007 bump, 88점 함정 해소) / S5 frontend(PlanCard rich conditional 렌더, design-review) / S6 cost 재조정(rich 토큰 × 3안 + B-RES-1 통합) + depth 재측정(≥0.8) + flag ON 라이브 데모 + phase-complete
+제품 경계  : ★ 확장본도 "기획 브리프"(촬영·편집 가이드) — 완성 대본/영상 제작 아님 (product_boundary 영구 non-goal)
+entry      : 8파일(goals/scope/non_goals/dependencies/acceptance/assumptions/multi_slice_plan/notes) + multi-llm-validation self(12th, S1 직전/entry)
+근거       : Phase 12 깊이 격차 리포트(eval/regression_results/2026-06-02_phase-12-s2-s3-depth-gap.md) + S5 종합(phases/archive/phase-12-validation/s5_synthesis_and_phase13_proposal.md) + depth_actionability rubric(CC-011)
+승계       : B안 잔여(B-RES-1 cost 재조정 = S6 흡수 / B-RES-2 ADR / B-RES-3 contract-change) + Phase 12 S4 human review 실 채점
+acceptance : A1~A10 + MG1~MG3 — 스키마 additive(기존 회귀 0) / P-006·P-007 bump(prompt-version-review) / flag OFF byte-identical(behavior-preserving) / Critic depth 반영 / frontend rich 렌더 / depth 재측정 ≥0.8 / cost 재조정 / pytest green / P-X1 / 키 0
+신규 패턴(예정): 출력 확장 gated+additive(첫 출력 변경 안전 롤아웃)
+다음 Phase : Phase 14+ (flag default ON 전환 결정 / 모델 tier 상향 2차 레버 / staging 배포 / B안 UX 노출)
+```
 
 ## Phase 0 완료 (archive)
 
@@ -383,6 +404,28 @@ Skill      : multi-llm-validation 10th + agent-io-check(P-AUX-2) + contract-chan
 사용자 결정 : 2건 (범위 C 풀 / eval 실행 mock-deterministic 유지 → 실 LLM mode = capability·default off)
 핵심 성과  : **P-X1 60연속 + behavior-preserving + MVP end-to-end 통합 결함 0 + P-AUX-2 brand_memory_extractor(agent 5→6) + eval golden_set 11→15 + RAG eval_rubric + 배포 Gate A 통과 + PlanCard 35/component_map 45 유지**
 다음 단계  : 배포 Gate B~G (staging→알파→베타(실 LLM opt-in)→제한사용자→비용/성능→운영) / Phase 11+ (4계층 linkage / async worker / prompt A/B / 자동 promotion / 실 LLM eval default / M3 새 GAP 3) — 키·인프라 user-provided
+```
+
+## Phase 12 done (archive) — 검증 페이즈 (Validation)
+
+`phases/archive/phase-12-validation/`
+
+```
+Status     : ✅ DONE (2026-06-02)
+유형       : 검증/계획 phase (런타임 0 — 측정·문서만) — ★ behavior-preserving (운영 endpoint/agent/prompt/output_schema 0 수정, pytest 471 유지)
+Goal       : MVP 출력(영상기획안) 품질·가치 실측 (구조 정확성 X) — golden_set 실 LLM eval baseline + 깊이 격차(depth gap) 정량 + human review 로 LLM-as-judge 신뢰도 대조. 산출 = Phase 13+ 확장 우선순위 데이터 근거.
+Result     : Entry + 5 Slice + ★ 운영 코드 0 수정 + pytest 471 유지 + 키 0. 깊이 격차 실측(compact 0.231 vs rich 1.000 = 4.3x, 6/6 편차 0) + golden_set 15→25 + depth_actionability 차원(CC-011) + human review kit
+핵심 발견  : 단순함 = **모델 한계 아니라 prompt/schema 설계** (같은 모델 gpt-4o-mini 프롬프트만으로 0.231→1.000). 결핍 10/13 feature, 다수가 출력 스키마(`Plan`) 슬롯 부재 → 확장 레버 = prompt + schema. + 88점 함정(compact 가 Critic 88점 받아도 depth 미반영)
+★ S4 deferred : human review 실 채점은 deferred (kit 준비 = acceptance). 사용자 2026-06-02 실 UI(/generate)로 격차 직접 확인 → 결론 확정, kit 은 optional 보정(LLM-as-judge 신뢰도 대조) 보존
+산출물     : entry 8 + validation self(11th) + golden_set 25(`eval/golden_set.md`) + depth_actionability(`eval/video_planning_eval.md` §2.A.1) + CC-011(`docs/contract_changes/2026-06-02_phase-12-s1-golden-set-depth.md`) + 깊이격차 리포트(`eval/regression_results/2026-06-02_phase-12-s2-s3-depth-gap.md`) + human kit(`eval/human_review/2026-06-02_phase-12-s4-review-kit.md`) + S5 종합 + retrospective + closing_notes
+Sub-agent  : Entry·S1~S5 (sub-agent / main close), 충돌 0 — P-X1 PASS (운영 .py 0)
+회고       : meta/retrospectives/phase-12.md
+신규 패턴  : P-VALIDATION-DEPTH-GAP-001 (신규 후보 — 같은 모델 prompt/schema 격차 정량) + P-BEHAVIOR-PRESERVING-001 update(검증 phase) + P-CAPABILITY-DEFAULT-OFF-001 update(측정 전용 rich) + P-CONTRACT-FIRST-001 update(CC-011 누적 12) + P-X1-EFFECT-001 update
+Skill      : eval-design(golden_set 25 + depth 차원) + eval-run(깊이 격차 측정) + contract-change(CC-011 additive) + multi-llm-validation(self 11th) + meta-retrospective(S5 종합) + phase-complete
+1 CC       : CC-011 (golden_set 15→25 + depth_actionability 차원, additive)
+사용자 결정 : 2건 (깊이 = 자동 eval + human review 표본, staging S4 제외 / golden_set = 확장 후 측정 ~25) + S4 실 채점 deferred (실 UI 직접 확인으로 결론 확정)
+핵심 성과  : **깊이 격차 4.3x 정량 실측(편차 0) + 결론(prompt/schema 레버) + golden_set 25 + depth_actionability(CC-011) + human review kit + ★ 운영 코드 0 + behavior-preserving(pytest 471) + 키 0 + PlanCard 35/component_map 45 유지**
+다음 Phase : **Phase 13 (Output Enrichment — compact→rich) — active**. 깊이 격차를 운영 출력에 반영 (gated 단계 롤아웃 + additive 스키마, 첫 의도적 출력 변경). 승계: B안 잔여(B-RES-1 cost 재조정=S6 흡수) + S4 human review 실 채점
 ```
 
 ## 🟢 Next phase: pending_user_decision (2026-05-31)
