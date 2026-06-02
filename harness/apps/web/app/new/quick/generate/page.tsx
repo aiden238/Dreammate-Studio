@@ -62,7 +62,9 @@ export default function QuickStep4Page() {
     const step2 = loadQuickStep<QuickStep2State>(2);
     const directionText = step3.editedText?.trim() || step3.direction.text;
 
-    let cancelled = false;
+    // ★ cancelled 플래그 미사용: StrictMode(dev) mount→unmount→mount 시
+    //   첫 cleanup 이 유일한 run 을 취소해 navigation 을 막는 버그 방지.
+    //   startedRef 가드로 run 은 1회만 실행(중복 LLM 호출 0), cleanup 은 timer 만 정리.
     let timer: ReturnType<typeof setInterval> | undefined;
 
     async function run(): Promise<void> {
@@ -70,7 +72,7 @@ export default function QuickStep4Page() {
       setStepIdx(idx);
       timer = setInterval(() => {
         idx = Math.min(idx + 1, STEP_SEQUENCE.length - 2); // critic 까지만
-        if (!cancelled) setStepIdx(idx);
+        setStepIdx(idx);
       }, OPTIMISTIC_INTERVAL_MS);
 
       try {
@@ -86,7 +88,6 @@ export default function QuickStep4Page() {
           user_input: directionText,
         });
         const result = await generateMultiPlan(plan_id);
-        if (cancelled) return;
         if (timer) clearInterval(timer);
         if (result.ok) {
           setStepIdx(STEP_SEQUENCE.length - 1); // complete
@@ -95,7 +96,6 @@ export default function QuickStep4Page() {
           setErrorMsg(result.userMessage);
         }
       } catch (e) {
-        if (cancelled) return;
         if (timer) clearInterval(timer);
         setErrorMsg(
           e instanceof Error
@@ -108,7 +108,6 @@ export default function QuickStep4Page() {
     void run();
 
     return () => {
-      cancelled = true;
       if (timer) clearInterval(timer);
     };
   }, [router]);

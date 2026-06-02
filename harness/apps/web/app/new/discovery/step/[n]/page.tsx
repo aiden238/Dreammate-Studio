@@ -553,7 +553,8 @@ function Step7Generate() {
       'critic',
       'complete',
     ];
-    let cancelled = false;
+    // ★ cancelled 플래그 미사용 (StrictMode dev cleanup 이 유일 run 을 취소해
+    //   navigation 막는 버그 방지). startedRef 로 1회 실행, cleanup 은 timer 만 정리.
     let timer: ReturnType<typeof setInterval> | undefined;
 
     async function run(): Promise<void> {
@@ -574,7 +575,7 @@ function Step7Generate() {
       setCurrentStep(SEQ[idx]);
       timer = setInterval(() => {
         idx = Math.min(idx + 1, SEQ.length - 2); // critic 까지만
-        if (!cancelled) setCurrentStep(SEQ[idx]);
+        setCurrentStep(SEQ[idx]);
       }, 4000);
 
       try {
@@ -604,7 +605,6 @@ function Step7Generate() {
         });
         await wizardStep(plan_id, 'step6', { user_input: directionText });
         const result = await generateMultiPlan(plan_id);
-        if (cancelled) return;
         if (timer) clearInterval(timer);
         if (result.ok) {
           setCurrentStep('complete');
@@ -613,7 +613,6 @@ function Step7Generate() {
           setErrorMsg(result.userMessage);
         }
       } catch (e) {
-        if (cancelled) return;
         if (timer) clearInterval(timer);
         setErrorMsg(
           e instanceof Error
@@ -626,7 +625,6 @@ function Step7Generate() {
     void run();
 
     return () => {
-      cancelled = true;
       if (timer) clearInterval(timer);
     };
   }, [router]);
