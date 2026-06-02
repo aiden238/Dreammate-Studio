@@ -18,7 +18,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter, notFound } from 'next/navigation';
 import { CardGrid5 } from '@/components/discovery/CardGrid5';
 import type { BrandDirectionCardData } from '@/components/discovery/BrandDirectionCard';
@@ -27,6 +27,7 @@ import { DirectionApprovalCard } from '@/components/common/DirectionApprovalCard
 import ProgressStepper, {
   type StepperState,
 } from '@/components/ProgressStepper';
+import { startPlan, wizardStep, generateMultiPlan } from '@/lib/api';
 import {
   loadDiscoveryStep,
   saveDiscoveryStep,
@@ -36,7 +37,6 @@ import {
   type DiscoveryStep4State,
   type DiscoveryStep5State,
   type DiscoveryStep6State,
-  type DiscoveryStep7State,
   type DiscoveryStep6Direction,
 } from '@/lib/discovery_state';
 
@@ -527,71 +527,152 @@ function Step6Direction() {
   );
 }
 
-// ─── n=7: Generate (ProgressStepper + mock plan) ─────────────────────
+// ─── n=7: Generate (★ Phase 14 S3 — 백엔드 실연결) ───────────────────
+//
+// Phase 3 Slice 3: mock stepper(setInterval) → router.push('/plan') (랜딩, 데이터 없음).
+// Phase 14 S3: Step 1~6 수집 입력 → startPlan() → wizardStep×6(step1~step6) →
+//   generateMultiPlan() → router.push('/plan/[plan_id]') (GET /plans/{id} read, rich gated 상속).
+//   ProgressStepper 는 실 generate await(30~60s) 동안 낙관적 진행 → 완료 시 navigate.
+//   중간 카드(step2~4)·톤(step5)·방향(step6)은 입력수집 UX 유지 — per-step 실 LLM 카드 = NG1(PARKED).
 
 function Step7Generate() {
   const router = useRouter();
   const { h1, sub } = TITLE_BY_STEP[7];
   const [currentStep, setCurrentStep] = useState<StepperState>('idle');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const startedRef = useRef<boolean>(false);
 
-  // mock: Phase 4 실 API 통합 전에는 stepper 순차 진행만 표시
   useEffect(() => {
-    const sequence: StepperState[] = [
+    if (startedRef.current) return; // StrictMode 이중 실행 방지
+    startedRef.current = true;
+
+    const SEQ: StepperState[] = [
       'intent',
       'rag',
       'planning',
       'critic',
       'complete',
     ];
-    let idx = 0;
-    setCurrentStep(sequence[idx]);
-    const interval = window.setInterval(() => {
-      idx += 1;
-      if (idx >= sequence.length) {
-        window.clearInterval(interval);
-        // generated_at 만 보관 (envelope 통합은 Phase 4)
-        const state: DiscoveryStep7State = {
-          generatedAt: new Date().toISOString(),
-        };
-        saveDiscoveryStep(7, state);
+    let cancelled = false;
+    let timer: ReturnType<typeof setInterval> | undefined;
+
+    async function run(): Promise<void> {
+      const s1 = loadDiscoveryStep1();
+      const s2 = loadDiscoveryStep(2);
+      const s3 = loadDiscoveryStep(3);
+      const s4 = loadDiscoveryStep(4);
+      const s5 = loadDiscoveryStep(5);
+      const s6 = loadDiscoveryStep(6);
+      const directionText = s6?.editedText?.trim() || s6?.direction?.text;
+      if (!directionText) {
+        // Step 6(방향 승인) 없이 직접 진입 → 처음으로
+        router.replace('/new/discovery/step/1');
         return;
       }
-      setCurrentStep(sequence[idx]);
-    }, 800);
-    return () => window.clearInterval(interval);
-  }, []);
 
-  const handleViewPlan = () => {
-    // Phase 1 /plan 페이지로 이동 (실 envelope 통합은 Phase 4 — 현재는 Phase 1 entry point 도착만)
-    router.push('/plan');
-  };
+      let idx = 1;
+      setCurrentStep(SEQ[idx]);
+      timer = setInterval(() => {
+        idx = Math.min(idx + 1, SEQ.length - 2); // critic 까지만
+        if (!cancelled) setCurrentStep(SEQ[idx]);
+      }, 4000);
+
+      try {
+        const { plan_id } = await startPlan();
+        await wizardStep(plan_id, 'step1', {
+          selected_card_id: s1?.selectedCardId ?? undefined,
+          user_input: s1?.userInputText ?? undefined,
+        });
+        await wizardStep(plan_id, 'step2', {
+          selected_card_id: s2?.selectedCardId ?? undefined,
+          user_input: s2?.userInputText ?? undefined,
+        });
+        await wizardStep(plan_id, 'step3', {
+          selected_card_id: s3?.selectedCardId ?? undefined,
+          user_input: s3?.userInputText ?? undefined,
+        });
+        await wizardStep(plan_id, 'step4', {
+          selected_card_id: s4?.selectedCardId ?? undefined,
+          user_input: s4?.userInputText ?? undefined,
+        });
+        await wizardStep(plan_id, 'step5', {
+          user_input:
+            s5 && !s5.skipped && s5.selectedTones.length > 0
+              ? s5.selectedTones.join(' / ')
+              : undefined,
+          extra: s5?.skipped ? { skipped: true } : {},
+        });
+        await wizardStep(plan_id, 'step6', { user_input: directionText });
+        const result = await generateMultiPlan(plan_id);
+        if (cancelled) return;
+        if (timer) clearInterval(timer);
+        if (result.ok) {
+          setCurrentStep('complete');
+          router.push(`/plan/${encodeURIComponent(plan_id)}`);
+        } else {
+          setErrorMsg(result.userMessage);
+        }
+      } catch (e) {
+        if (cancelled) return;
+        if (timer) clearInterval(timer);
+        setErrorMsg(
+          e instanceof Error
+            ? e.message
+            : '기획안 생성 중 오류가 발생했어요. 다시 시도해주세요.',
+        );
+      }
+    }
+
+    void run();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearInterval(timer);
+    };
+  }, [router]);
 
   return (
     <main className="min-h-screen bg-bg-default flex flex-col">
       <WizardHeader n={7} onBack={() => router.back()} />
       <section className="px-4 py-6 max-w-2xl mx-auto w-full">
-        <h1 className="text-3xl font-bold text-text-default mb-2">{h1}</h1>
-        <p className="text-sm text-text-muted">{sub}</p>
+        <h1 className="text-3xl font-bold text-text-default mb-2">
+          {errorMsg ? '생성 실패' : h1}
+        </h1>
+        <p className="text-sm text-text-muted">
+          {errorMsg
+            ? '잠시 후 다시 시도하거나 처음부터 다시 만들어주세요.'
+            : sub}
+        </p>
       </section>
       <section className="flex-1 px-4 max-w-2xl mx-auto w-full">
-        <ProgressStepper currentStep={currentStep} />
-        {currentStep === 'complete' && (
-          <div className="mt-6 p-4 rounded-lg bg-bg-subtle border border-border-default">
-            <p className="text-text-default mb-3">
-              기획안 생성 단계가 완료되었어요.
-            </p>
-            <button
-              type="button"
-              onClick={handleViewPlan}
-              className="w-full py-3 rounded-md font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed transition-colors duration-fast"
-              aria-label="기획안 보기"
+        {!errorMsg && <ProgressStepper currentStep={currentStep} />}
+        {errorMsg && (
+          <>
+            <div
+              role="alert"
+              className="rounded-md border border-border-default bg-bg-subtle px-4 py-3 text-sm text-text-default"
             >
-              기획안 보기 ▶
-            </button>
-            <p className="text-xs text-text-muted mt-2">
-              (Phase 4 실 API 통합 시 envelope를 직접 표시 예정)
-            </p>
-          </div>
+              {errorMsg}
+            </div>
+            <div className="mt-4 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="w-full py-3 rounded-md font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed transition-colors duration-fast"
+                aria-label="다시 시도"
+              >
+                다시 시도 ↻
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/new/discovery/step/1')}
+                className="w-full py-3 rounded-md font-medium text-text-muted bg-bg-default border border-border-default hover:bg-bg-subtle transition-colors duration-fast"
+                aria-label="처음으로"
+              >
+                처음으로
+              </button>
+            </div>
+          </>
         )}
       </section>
     </main>
