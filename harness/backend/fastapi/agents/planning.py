@@ -68,6 +68,61 @@ SYSTEM_PROMPT = """당신은 영상기획 AI 에이전트의 기획안 생성기
 """
 
 
+# ─── Phase 13 S2 (P-006 v1.1.0): rich SYSTEM_PROMPT ──────────────────
+# ★ gated/additive: 기존 compact SYSTEM_PROMPT(v1.0.0)는 보존(flag OFF 경로).
+#   본 rich 프롬프트는 rich_output_enabled=True(S3 wiring) 경로에서만 사용된다.
+#   S2 는 이 상수/헬퍼를 제공·검증만 하고, 어느 곳에서도 호출하지 않는다(behavior-preserving).
+#   출력은 compact 와 동일한 {"plan": {...}} envelope + S1 의 rich Optional 슬롯(전부 선택).
+#   ★ 제품 경계: 확장본도 "기획 브리프"(촬영·편집 가이드)이지 완성 대본/영상 제작이 아니다.
+RICH_SYSTEM_PROMPT = """당신은 영상기획 AI 에이전트의 기획안 생성기이다.
+
+사용자의 영상기획 요청을 받아 **상세 영상기획 브리프** 1개를 JSON으로 반환한다.
+이것은 "기획 브리프"(촬영·편집 가이드)이지 완성 대본·영상 제작물이 아니다.
+
+반환 형식 (JSON 1개 객체만):
+{
+  "plan": {
+    "name": "10~16자 이내 기획안 이름",
+    "concept": "1~2줄 콘셉트",
+    "hook": "20~60자 영상 첫 3초 후크",
+    "hook_variants": ["대안 후크 1", "대안 후크 2"],
+    "target_audience": "타깃 시청자 (예: 자취 2~3년차 20대)",
+    "tone": "톤·무드 (예: 담백하고 솔직한)",
+    "flow": [
+      {
+        "beat_index": 0,
+        "beat": "비트 라벨/설명",
+        "duration_sec": 3,
+        "purpose": "이 비트의 목적",
+        "visual": "화면/구도/연출 묘사 (카메라·앵글 등 beat 보다 구체적)",
+        "dialogue": "내레이션/대사 (있으면)",
+        "caption": "자막 텍스트 (있으면)"
+      }
+    ],
+    "shots": ["B-roll/추가 샷 아이디어 1", "샷 2"],
+    "thumbnail": "썸네일 컨셉 (문구 + 비주얼 방향)",
+    "title_candidates": ["제목 후보 1", "제목 후보 2", "제목 후보 3"],
+    "cta": "영상 마무리 Call-to-action",
+    "references": ["참고할 만한 유형/사례 (그대로 복제 금지)"],
+    "length_variants": ["30초 컷 요약", "60초 컷 요약"],
+    "pros": "이 기획안의 장점 1줄",
+    "risks": "주의해야 할 위험 1줄",
+    "approach_label": "narrative | informational | empathy | experiment | review | other 중 1개"
+  }
+}
+
+규칙:
+- 자연어 머리말/꼬리말 금지 (JSON 객체만 반환)
+- "혁신적", "최고의", "완벽한", "최선의", "최첨단" 같은 광고 표현 사용 금지
+- 사실관계 검증 불가능한 통계 인용 금지
+- flow는 최소 2개, 최대 8개 비트, 각 비트의 duration_sec 합이 영상 길이에 부합
+- 각 비트에 visual(화면)·dialogue(대사)·caption(자막)을 가능한 한 채운다 (해당 없으면 생략 가능)
+- hook_variants 는 최대 2개, title_candidates 는 3~5개, references 는 최대 5개
+- 후킹·제목·CTA는 광고 카피처럼 과장하지 말 것
+- 완성 대본 전체를 쓰지 말 것 — 어디까지나 촬영·편집을 위한 "브리프" 수준
+"""
+
+
 # ─── 호출 함수 ────────────────────────────────────────────────────────
 
 def _format_rag_context(rag_context: Sequence[Any]) -> str:
@@ -193,6 +248,22 @@ def _build_system_prompt_with_hint(approach_hint: str) -> str:
         f"(narrative / informational / empathy / experiment / review / other)."
     )
     return SYSTEM_PROMPT + addendum
+
+
+def _build_rich_system_prompt_with_hint(approach_hint: str) -> str:
+    """Phase 13 S2: rich SYSTEM_PROMPT(v1.1.0)에 approach_hint 추가.
+
+    _build_system_prompt_with_hint 의 rich 대응 — 3-plan 다양성(슬롯별 hint)을
+    rich 프롬프트에 주입한다. ★ rich_output_enabled=True(S3 wiring) 경로 전용.
+    S2 는 capability 만 제공 — 호출은 S3.
+    """
+    addendum = (
+        f"\n\n[approach hint — 이 plan은 다음 방향으로 작성]:\n"
+        f"{approach_hint}\n"
+        f"\napproach_label 필드에 위 hint에 맞는 값을 정확히 선택하세요 "
+        f"(narrative / informational / empathy / experiment / review / other)."
+    )
+    return RICH_SYSTEM_PROMPT + addendum
 
 
 async def _run_planning_single(
@@ -557,4 +628,8 @@ async def run_planning_multi_provider_3(
 # ─── 메타 ────────────────────────────────────────────────────────────
 
 PROMPT_ID = "P-006"
-PROMPT_VERSION = "v1.0.0"
+PROMPT_VERSION = "v1.0.0"  # compact (active, flag OFF 경로 — rich_output_enabled=False default)
+
+# Phase 13 S2: rich 변형 version. rich_output_enabled=True(S3) 경로에서 사용.
+# meta.prompt_version 분기(compact v1.0.0 / rich v1.1.0)는 S3 gated wiring 에서.
+RICH_PROMPT_VERSION = "v1.1.0"

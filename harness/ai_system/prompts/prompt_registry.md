@@ -306,9 +306,10 @@ variant 정책: P-005q (Quick Mode 변형) 는 부모 P-005 version 을 상속�
 ## 7. P-006 · plan_candidates (Planner Agent)
 
 **Stage**: 3개 기획안 생성 (MOA Planner)
-**Version**: v1.0.0
+**Version**: **v1.0.0 (compact, active)** · **v1.1.0 (rich, gated — Phase 13 S2)** — 두 버전 flag 공존 (아래 §Semver)
 **Input variables**: `one_line_direction`, `selected_context` (brand/domain/series/target/tone), `rag_references` (RAG 검색 결과), `brand_memory`
-**Output schema**: `{ plans: [{ name, concept, hook, flow, pros, risks }, ... ×3] }`
+**Output schema (v1.0.0 compact)**: `{ plans: [{ name, concept, hook, flow, pros, risks }, ... ×3] }`
+**Output schema (v1.1.0 rich, additive)**: v1.0.0 + S1 rich 슬롯(전부 Optional) — `hook_variants[]`, `target_audience`, `tone`, `shots[]`, `thumbnail`, `title_candidates[]`, `cta`, `references[]`, `length_variants[]`, flow beat 에 `visual`/`dialogue`/`caption` (output_schema.md §8.1 v1.2.0, CC-012)
 
 ### System (추가)
 
@@ -356,14 +357,45 @@ Brand Memory:
 3개의 서로 다른 영상기획안을 만들어줘. JSON으로만.
 ```
 
+### System (v1.1.0 rich — Phase 13 S2, gated)
+
+```
+승인된 한 줄 기획 방향을 기반으로 서로 다른 3개의 "상세 영상기획 브리프"를 만든다.
+(이것은 촬영·편집 가이드인 "기획 브리프"이지 완성 대본·영상 제작물이 아니다 — product_boundary.)
+
+v1.0.0 의 6 필드(name/concept/hook/flow/pros/risks) + 다음 rich 슬롯을 추가로 채운다 (전부 선택):
+- hook_variants: 대안 후크 최대 2개
+- target_audience: 타깃 시청자 / tone: 톤·무드
+- flow[].visual(화면/구도·연출), flow[].dialogue(내레이션·대사), flow[].caption(자막)
+- shots: B-roll/추가 샷 아이디어 / thumbnail: 썸네일 컨셉
+- title_candidates: 제목 후보 3~5개 / cta: 마무리 CTA
+- references: 참고 유형/사례(복제 금지) 최대 5개 / length_variants: 길이 변형(예: 30s/60s 컷)
+
+규칙(v1.0.0 계승): 광고 표현·검증불가 통계·광고 카피톤 후킹 금지, JSON만, flow 2~8 비트, RAG 복제 금지,
+Brand Memory avoid_phrases 금지. + 완성 대본 전체 작성 금지(브리프 수준 유지).
+```
+> 구현: `agents/planning.py` `RICH_SYSTEM_PROMPT` / `_build_rich_system_prompt_with_hint()` / `RICH_PROMPT_VERSION`.
+
 #### Semver / 활성 정책
 
 ```
-v1.0.0 (2026-05-26): 최초 도입 (active). MOA Planner — 3 plan_candidates.
-변경 시: prompt-version-review (golden_set 최소 8케이스 × 3 plans — Phase 9+). 단일 출처: 본 registry SoT.
+v1.0.0 (2026-05-26): 최초 도입 (active). MOA Planner — 3 plan_candidates (compact 6필드).
+v1.1.0 (2026-06-02, Phase 13 S2 — prompt-version-review, CC-013): rich 변형 (minor — additive 슬롯,
+        output envelope 구조 동일, 신규 규칙·선택 필드 추가). 근거: Phase 12 깊이 격차(compact 0.231 / rich 1.000).
+
+★ gated 공존 (deprecate 아님): v1.0.0 와 v1.1.0 은 `rich_output_enabled` flag 로 공존한다.
+  - flag OFF (default, S3): compact 경로 = v1.0.0 (byte-identical, deactivate_at 없음 — 계속 active).
+  - flag ON  (검증 후, S3+S6): rich 경로 = v1.1.0.
+  → 표준 deprecate+deactivate(이전 버전 차단)를 적용하지 않는다. 어느 버전을 차단할지는 S6 depth 재측정 +
+    라이브 검증 후 별도 결정. meta.prompt_version 분기(compact v1.0.0 / rich v1.1.0)는 S3 gated wiring.
+
+회귀: prompt-version-review (golden_set 최소 8케이스 × 3 plans). ★ v1.1.0 rich 출력의 depth_actionability
+      재측정(0.231 → ≥0.8)은 S3 wiring 후 S6 에서 실 LLM 로 수행 (mock-deterministic eval 은 rich 미채점, CC-011).
+      S2 시점에는 rich 프롬프트가 런타임 어디에도 연결되지 않아(behavior-preserving) 기존 mock 회귀·pytest 불변.
 variant 정책: Phase 4 Slice 2 의 3-plan parallel 확장(run_planning_parallel_3,
             approach_label hint 주입)은 동일 P-006 version 을 상속한다 — 별도 version 미부여
             (output schema 동일, 호출 횟수만 1 → 3). 구현 상수 PARALLEL_3_PROMPT_(ID|VERSION) 도 P-006/v1.0.0.
+            (rich 3-plan 경로는 _build_rich_system_prompt_with_hint + RICH_PROMPT_VERSION 상속 — S3.)
 ```
 
 ---
