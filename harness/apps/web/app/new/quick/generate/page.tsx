@@ -1,78 +1,35 @@
 "use client";
 
 /**
- * Phase 3 Slice 4 — Quick Mode Step 4 (Generate) page.
+ * Quick Mode Step 4 (Generate) page.
  *
- * 흐름: ProgressStepper 4단계 (Intent → RAG → Plan → Critic) → PlanCard 표시
+ * Phase 3 Slice 4: setTimeout mock(buildMockPlan).
+ * ★ Phase 14 S2 (위저드 실연결): mock 제거 → 실 백엔드 생성.
+ *   수집 입력(step1 prompt / step2 answer / step3 direction)을
+ *   startPlan() → wizardStep×3(quick.initial/clarify/direction) → generateMultiPlan()
+ *   으로 보내고, 성공 시 /plan/{plan_id} 로 이동 (GET /plans/{id} read).
+ *   rich 출력은 백엔드 rich_output_enabled gated 를 자동 상속(별도 배선 0).
+ *   ProgressStepper 는 실 generate await(30~60s) 동안 낙관적으로 진행 표시 → 완료 시 navigate.
+ *   ★ 랜딩 `/` 경로 무관(behavior-preserving). per-step 실 LLM 카드 = NG1(PARKED PKM/RAG).
  *
  * 참조:
- *   - apps/web/quick_flow.md §4 (Discovery Step 7과 동일 컴포넌트 / endpoint)
- *   - apps/web/components/ProgressStepper.tsx (Phase 1 기존, import only)
- *   - apps/web/components/PlanCard.tsx (Phase 1 기존, import only)
- *   - docs/contracts/output_schema.md §8 P-006 plan_candidates
- *
- * Slice 4 단독: ProgressStepper의 4단계는 setTimeout으로 단계별 progress mock
- * (Phase 4+ SSE/실 endpoint 호출로 교체).
+ *   - apps/web/lib/api.ts (startPlan / wizardStep / generateMultiPlan)
+ *   - apps/web/app/plan/[plan_id]/page.tsx (목적지 — 백엔드 envelope read + rich PlanCard)
+ *   - backend/fastapi/orchestration/moa_orchestrator.py (Phase 14 S1 wizard_data 조립)
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProgressStepper, {
   type StepperState,
 } from "@/components/ProgressStepper";
-import PlanCard from "@/components/PlanCard";
-import type { Plan } from "@/lib/types";
 import {
-  saveQuickStep,
   loadQuickStep,
   type QuickStep1State,
+  type QuickStep2State,
   type QuickStep3State,
-  type QuickStep4State,
 } from "@/lib/quick_state";
-
-/**
- * Slice 4 mock PlanCard 데이터 (Phase 1 PlanCard props 호환).
- * Phase 4+ POST /api/v1/quick/generate 응답 Envelope.body.plans[0] 으로 교체.
- */
-function buildMockPlan(directionText: string, prompt: string | null): Plan {
-  return {
-    plan_id: "quick-mock-plan-001",
-    option_index: 0,
-    name: "Quick Mode Mock 기획안",
-    concept: `${directionText} 기반으로 시청자가 30초 안에 핵심 메시지를 잡을 수 있도록 구성한 정보형 영상.`,
-    hook: `${prompt?.slice(0, 30) ?? "이번 영상"}, 30초만 봐도 핵심을 잡는 법`,
-    flow: [
-      {
-        beat_index: 0,
-        beat: "오프닝 후킹",
-        duration_sec: 5,
-        purpose: "시청자 관심 즉시 확보",
-      },
-      {
-        beat_index: 1,
-        beat: "핵심 메시지 전달",
-        duration_sec: 15,
-        purpose: "한 줄 방향의 본문",
-      },
-      {
-        beat_index: 2,
-        beat: "근거 / 사례",
-        duration_sec: 8,
-        purpose: "신뢰도 보강",
-      },
-      {
-        beat_index: 3,
-        beat: "마무리 CTA",
-        duration_sec: 5,
-        purpose: "다음 행동 유도",
-      },
-    ],
-    pros: "짧고 명확. 모바일 시청자 적합.",
-    risks: "정보 밀도 높음 — 자막 필요.",
-    approach_label: "informational",
-    rag_used: [],
-  };
-}
+import { startPlan, wizardStep, generateMultiPlan } from "@/lib/api";
 
 const STEP_SEQUENCE: StepperState[] = [
   "intent",
@@ -82,55 +39,81 @@ const STEP_SEQUENCE: StepperState[] = [
   "complete",
 ];
 
-const STEP_INTERVAL_MS = 600; // mock 진행 속도 (총 ~2.4s)
+// 실 generate(30~60s) 동안 cosmetic 진행 (critic 직전까지만 — complete 는 실제 완료 시).
+const OPTIMISTIC_INTERVAL_MS = 4000;
 
 export default function QuickStep4Page() {
   const router = useRouter();
   const [stepIdx, setStepIdx] = useState<number>(0);
-  const [plan, setPlan] = useState<Plan | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const startedRef = useRef<boolean>(false);
 
   useEffect(() => {
-    // Step 3 진입 전 직접 URL 접근 차단 (mock): direction state 없으면 Step 1로 복귀
+    if (startedRef.current) return; // StrictMode 이중 실행 방지
+    startedRef.current = true;
+
     const step3 = loadQuickStep<QuickStep3State>(3);
     if (!step3?.direction?.text) {
+      // Step 3(방향 승인) 없이 직접 진입 → 처음으로
       router.replace("/new/quick");
       return;
     }
-    const directionText = step3.direction.text;
+    const step1 = loadQuickStep<QuickStep1State>(1);
+    const step2 = loadQuickStep<QuickStep2State>(2);
+    const directionText = step3.editedText?.trim() || step3.direction.text;
 
     let cancelled = false;
-    let timer: ReturnType<typeof setTimeout>;
+    let timer: ReturnType<typeof setInterval> | undefined;
 
-    function tick(idx: number) {
-      if (cancelled) return;
+    async function run(): Promise<void> {
+      let idx = 1;
       setStepIdx(idx);
-      if (idx >= STEP_SEQUENCE.length - 1) {
-        // complete — mock plan 생성 + sessionStorage 저장
-        const step1 = loadQuickStep<QuickStep1State>(1);
-        const built = buildMockPlan(
-          directionText,
-          step1?.initialPrompt ?? null,
+      timer = setInterval(() => {
+        idx = Math.min(idx + 1, STEP_SEQUENCE.length - 2); // critic 까지만
+        if (!cancelled) setStepIdx(idx);
+      }, OPTIMISTIC_INTERVAL_MS);
+
+      try {
+        const { plan_id } = await startPlan();
+        await wizardStep(plan_id, "quick.initial", {
+          user_input: step1?.initialPrompt ?? undefined,
+        });
+        await wizardStep(plan_id, "quick.clarify", {
+          user_input: step2?.followUpAnswer ?? undefined,
+          extra: step2?.skipped ? { skipped: true } : {},
+        });
+        await wizardStep(plan_id, "quick.direction", {
+          user_input: directionText,
+        });
+        const result = await generateMultiPlan(plan_id);
+        if (cancelled) return;
+        if (timer) clearInterval(timer);
+        if (result.ok) {
+          setStepIdx(STEP_SEQUENCE.length - 1); // complete
+          router.push(`/plan/${encodeURIComponent(plan_id)}`);
+        } else {
+          setErrorMsg(result.userMessage);
+        }
+      } catch (e) {
+        if (cancelled) return;
+        if (timer) clearInterval(timer);
+        setErrorMsg(
+          e instanceof Error
+            ? e.message
+            : "기획안 생성 중 오류가 발생했어요. 다시 시도해주세요.",
         );
-        setPlan(built);
-        const state: QuickStep4State = {
-          generatedAt: new Date().toISOString(),
-          envelope: { mock: true, plan: built },
-        };
-        saveQuickStep<QuickStep4State>(4, state);
-        return;
       }
-      timer = setTimeout(() => tick(idx + 1), STEP_INTERVAL_MS);
     }
 
-    timer = setTimeout(() => tick(1), STEP_INTERVAL_MS);
+    void run();
 
     return () => {
       cancelled = true;
-      if (timer) clearTimeout(timer);
+      if (timer) clearInterval(timer);
     };
   }, [router]);
 
-  const currentStep = STEP_SEQUENCE[stepIdx] ?? "idle";
+  const currentStep: StepperState = STEP_SEQUENCE[stepIdx] ?? "idle";
 
   return (
     <main className="min-h-screen bg-bg-default flex flex-col">
@@ -151,34 +134,48 @@ export default function QuickStep4Page() {
 
       <section className="px-4 py-6 max-w-2xl mx-auto w-full">
         <h1 className="text-3xl font-bold text-text-default mb-2">
-          기획안 생성 중
+          {errorMsg ? "생성 실패" : "기획안 생성 중"}
         </h1>
         <p className="text-sm text-text-muted">
-          AI가 4단계로 영상기획을 만들고 있어요. (30~60초)
+          {errorMsg
+            ? "잠시 후 다시 시도하거나 처음부터 다시 만들어주세요."
+            : "AI가 영상기획안 3개를 만들고 있어요. (30~60초)"}
         </p>
       </section>
 
-      <section className="px-4 max-w-2xl mx-auto w-full">
-        <ProgressStepper currentStep={currentStep} />
-      </section>
-
-      {plan && (
-        <section className="px-4 py-6 max-w-2xl mx-auto w-full">
-          <PlanCard plan={plan} />
+      {!errorMsg && (
+        <section className="px-4 max-w-2xl mx-auto w-full">
+          <ProgressStepper currentStep={currentStep} />
         </section>
       )}
 
-      {plan && (
-        <footer className="px-4 py-6 max-w-2xl mx-auto w-full">
-          <button
-            type="button"
-            onClick={() => router.push("/new/quick")}
-            className="w-full py-3 rounded-md font-medium text-text-muted bg-bg-default border border-border-default hover:bg-bg-subtle transition-colors duration-fast"
-            aria-label="처음으로"
+      {errorMsg && (
+        <section className="px-4 py-6 max-w-2xl mx-auto w-full">
+          <div
+            role="alert"
+            className="rounded-md border border-border-default bg-bg-subtle px-4 py-3 text-sm text-text-default"
           >
-            처음으로 ↻
-          </button>
-        </footer>
+            {errorMsg}
+          </div>
+          <div className="mt-4 flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="w-full py-3 rounded-md font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed transition-colors duration-fast"
+              aria-label="다시 시도"
+            >
+              다시 시도 ↻
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/new/quick")}
+              className="w-full py-3 rounded-md font-medium text-text-muted bg-bg-default border border-border-default hover:bg-bg-subtle transition-colors duration-fast"
+              aria-label="처음으로"
+            >
+              처음으로
+            </button>
+          </div>
+        </section>
       )}
     </main>
   );

@@ -19,6 +19,6 @@
 
 ## TODO (slice 진행하며 갱신)
 - [x] **S1 ✅ 백엔드 wizard_data 조립** (2026-06-03, commit 대기): `moa_orchestrator.py` `build_user_input_from_wizard()` 헬퍼(additive) + `_WIZARD_STEP_ORDER` + 입력 우선순위 `initial_input > wizard 조립 > "(빈 입력)"`. ★ 랜딩(initial_input) byte-identical — wizard_data 없으면 기존 동일. 신규 test 9 → **pytest 499→508 green**(기존 499 수정 0). contract 무변경(요청/응답 스키마 불변 — 내부 입력 조립만). 다음=S2.
-- [ ] S2 Quick 위저드 실연결
+- [x] **S2 ✅ Quick 위저드 실연결** (2026-06-03, commit 대기): `app/new/quick/generate/page.tsx` mock(buildMockPlan/setTimeout) 제거 → 실 배선. generate 페이지 한 곳에서 수집분(step1 prompt/step2 answer/step3 direction) → `startPlan()`→`wizardStep×3`(quick.initial/clarify/direction)→`generateMultiPlan()`→`router.push('/plan/[id]')`. ProgressStepper 실 await 낙관적 진행 + 에러/재시도 UI. rich gated 자동 상속. 중간 step1/2/3 페이지 무변경(입력수집 유지). typecheck+lint+build(12 routes) green. backend 0. 다음=S3.
 - [ ] S3 Discovery 위저드 실연결
 - [ ] S4 라이브 e2e(rich ON) + 회귀 + close
