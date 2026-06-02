@@ -31,6 +31,9 @@ import { isEnvelope } from "@/lib/types";
 const SESSION_STORAGE_KEY = "dreammate.slice6.plan";
 const SESSION_ERROR_KEY = "dreammate.slice6.plan.error";
 
+// Phase 13: 사용자 요청 — 품질 점수(Critic 배지) 화면 미표시. true 로 바꾸면 복원.
+const SHOW_QUALITY_SCORE = false;
+
 const VERDICT_LABEL: Record<CriticVerdict, string> = {
   approve: "승인",
   revise: "보완 필요",
@@ -193,8 +196,8 @@ export default function PlanPage() {
         </p>
       </header>
 
-      {/* Critic 점수 + blocking issues */}
-      {critic && (
+      {/* Critic 점수 + blocking issues — Phase 13: SHOW_QUALITY_SCORE=false 로 미표시 (사용자 요청) */}
+      {SHOW_QUALITY_SCORE && critic && (
         <section
           aria-label="품질 평가"
           className={`rounded-md border px-3 py-3 ${VERDICT_CLASS[critic.overall_verdict]}`}
