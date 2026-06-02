@@ -37,6 +37,17 @@
 | 15~20 | 안정화 / 배포 (검증·확장 근거 기반) | future | 배포 Gate B~G + 4계층 linkage / SSE async worker / prompt A/B / 자동 promotion / B안 다중-provider UX 노출 / M3 새 GAP 3(G9/G10/G11) — ★ 검증·확장 결과로 우선순위 결정 |
 | 21~30 | 고도화 | future | Spring, Expo, Custom RAG, LangGraph |
 
+### ★ PARKED 제안 (future direction — proposal-first, 선행조건 gated, 빌드 승격 X)
+
+> 메인 세션 판정(2026-06-03): GPT 기획 2건은 하네스-정합적이나 **MVP 실사용 미검증 + 위저드 mock(랜딩 / 만 실동작)** 이라 **PARKED**. 선행조건(Phase 13 rich 실사용 검증 + 위저드 실연결 + human review) 통과 전 빌드 착수 금지. 페이즈 번호는 **provisional**.
+
+| 제안 | 문서 | provisional 배치 | 선행조건 |
+|---|---|---|---|
+| **Commercial Viral Mode** (4-tier compact/rich/director/commercial_viral + 10섹션 + critic 8차원 + golden5) | `meta/proposals/2026-06-03_commercial-viral-mode-design.md` | director≈P15 → commercial_viral≈P18~19 | rich 실검증 + ★ 데이터레이어(PKM/RAG) |
+| **PKM/RAG Orchestrator** (6 scope + Trend Snapshot + retrieval orchestrator + instruction search) | `meta/proposals/2026-06-03_pkm-rag-orchestrator-design.md` | 1차≈P16~17 → 고도화≈P20~21 (= 위 21~30 Custom RAG 구체화) | 위저드 실연결 + 5단계 비충돌 |
+
+★ 둘은 **결합**: commercial_viral 의 market/trend 품질 = PKM/RAG+Trend 레이어에 의존 → 데이터레이어 선행. 둘 다 additive Optional + default OFF + 검증 게이트 후에만 ON.
+
 ## Phase 13 done (archive) — 제품 phase (출력 확장 — Output Enrichment, compact→rich)
 
 `phases/archive/phase-13-output-enrichment/`
