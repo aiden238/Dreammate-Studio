@@ -70,30 +70,36 @@ Sub-agent  : Entry·S1~S5 (sub-agent / S6 main close), 충돌 0 — P-X1 PASS (S
 다음 Phase : **Phase 14 (pending_user_decision)** — rich default 전환 결정 / 위저드(/new/*) 실연결 / 배포 Gate B~G / Phase 12 S4 human review 실 채점 + 전수 실 LLM eval / B안 정식화 잔여(B-RES-2/B-RES-3)
 ```
 
-## 🟢 Phase 14 = 위저드 ↔ 백엔드 실연결 — ★ active (entry 작성 2026-06-03)
+## Phase 14 done (archive) — 제품 phase (위저드 ↔ 백엔드 실연결, Scope A)
+
+`phases/archive/phase-14-wizard-backend-wiring/`
 
 ```
-Status     : ACTIVE (entry 작성 2026-06-03) — 사용자 결정 B (위저드 실연결) + Scope A (최소 배선)
+Status     : ✅ DONE (2026-06-03) — 사용자 결정 B + Scope A (최소 배선)
 유형       : 제품 phase (프론트 배선 + 백엔드 additive) — ★ 랜딩 `/` byte-identical(behavior-preserving)
-Goal       : mock 위저드(/new/quick 4 · /new/discovery 7)를 실 생성 경로(/plans/start→/wizard/{step}→/generate→/plan/[id])에 배선.
-             위저드도 실 기획안(rich gated 상속). per-step P-001~P-005 실 LLM 카드 = NG1(PARKED PKM/RAG 이연).
-방향 근거  : project-1(메인 세션 6f30283a) 위저드 분석 — 위저드 mock·랜딩만 실동작·실연결=한 페이즈·per-step LLM=PKM/RAG(PARKED)
-Entry+4Slice: Entry(8 + self 13th) / S1 백엔드 wizard_data additive 조립(랜딩 byte-identical) / S2 Quick 실연결 / S3 Discovery 실연결 / S4 라이브 e2e + 회귀(499) + close
-회귀 게이트: pytest 499 + 랜딩 `/` byte-identical + 키 0
-폴더       : phases/active/phase-14-wizard-backend-wiring/
-다음 Phase : (Phase 14 후 재평가) rich default 전환(A) / 배포 Gate B~G(C) / 품질·정식화(D) / PARKED(PKM-RAG→commercial_viral, 선행조건=본 위저드 실연결)
+Goal       : mock 위저드(/new/quick 4 · /new/discovery 7)를 기존 endpoint(/plans/start→/wizard/{step}→/generate→/plan/[id])에 배선 → 위저드도 실 3안 rich(gated 상속). 신규 endpoint 0.
+방향 근거  : project-1(메인 세션 6f30283a) 위저드 분석 — endpoint 이미 존재(배선만)·per-step LLM=PKM/RAG(PARKED, NG1)
+Result     : Entry + S1(백엔드 wizard_data additive 조립) + S2(Quick 실연결) + S3(Discovery 실연결) + fix(StrictMode navigation) + ★ 사용자 라이브 e2e PASS(위저드→3안 rich→/plan/[id]). pytest 499→**508**(+9, 기존 499 수정 0=랜딩 byte-identical) + 프론트 build 12 routes + scenario_simulation 36/36 + 키 0. 신규 endpoint 0.
+핵심 발견  : ★ 위저드 multi-step → 백엔드 wizard_data **additive** 조립(initial_input 우선=랜딩 byte-identical) + 최종 generate 집중 배선(중간 step UX 보존). 진단: stuck=백엔드 정상(plans=3)/프론트 StrictMode navigation 버그로 정확 분리.
+★ 발견·수정 : StrictMode 1회-실행 effect cleanup 의 cancelled 플래그가 navigation 막음(fix 7cb52e2) + dev 중 next build 로 .next 청크 오염(복구, 학습)
+후속(업그레이드): ★ **더 깊은 대본기획**(사용자 플래그) = PARKED commercial_viral/director + per-step 실 LLM(NG1) + PKM/RAG 데이터레이어 (provisional P15~21, 선행조건=본 위저드 실연결 ✅ 충족)
+회고       : meta/retrospectives/phase-14.md
+리포트     : eval/regression_results/2026-06-03_phase-14-wizard-wiring.md
+신규 패턴  : P-STRICTMODE-ONESHOT-001 + P-NEXT-DEV-BUILD-001 + P-WIZARD-WIRING-001 + P-BEHAVIOR-PRESERVING-001 update(프론트 배선)
+커밋       : entry(08b19a0)/S1(b6406b1)/S2(1d42dd1)/S3(0142233)/fix(7cb52e2)/chore(Temp untrack)
+다음 Phase : **pending_user_decision** — rich default 전환(A) / 배포 Gate B~G(C) / 품질·정식화(D) / PARKED(PKM-RAG→commercial_viral, 선행조건=위저드 실연결 충족 → 후보 활성)
 ```
 
-## 🟡 Phase 14 진입 시 보류된 후보 (B 채택, A/C/D 잔존)
+## 🟡 Next phase: pending_user_decision (Phase 14 done — A/C/D + PARKED 잔존)
 
 ```
-Phase 1~13 완료. MVP 통합(Phase 10) + LLM Gateway(Phase 11) + 검증(Phase 12) + 출력 확장(Phase 13 — compact→rich gated, 깊이 0.231→1.000, 라이브 입증). ★ Phase 14 = B(위저드 실연결) active. 잔존 후보(차기 결정):
+Phase 1~14 완료. MVP 통합(Phase 10) + LLM Gateway(Phase 11) + 검증(Phase 12) + 출력 확장(Phase 13 — compact→rich gated) + ★ 위저드 실연결(Phase 14 — 위저드→실 3안 rich, 라이브 PASS). 다음 사용자 결정:
 
 A. rich default 전환 결정
   - flag `rich_output_enabled` default ON(전 사용자 rich) 전환 여부. cost(CC-016 — 출력 토큰 3~5배 × 3안, tier 유료/opt-in 권고) + 품질(feature 존재 ≠ 콘텐츠 우수성, human review 보강) 합의 후. 현재 = gated OFF 유지.
 
-B. 위저드(/new/*) ↔ 백엔드 실연결
-  - Discovery/Quick 위저드(/new/*) 가 현재 mock — 랜딩 / 만 실 생성(/generate) 경로. rich 라이브는 / 경로로 입증됨. 위저드 실연결 = 격차 해소.
+B. ✅ 위저드(/new/*) ↔ 백엔드 실연결 — **Phase 14 done (2026-06-03)**
+  - 완료: 위저드 → startPlan→wizardStep×→generateMultiPlan → 실 3안 rich → /plan/[id]. 신규 endpoint 0, 랜딩 byte-identical, pytest 508. (더 깊은 대본기획 = PARKED 업그레이드.)
 
 C. 배포 Gate B~G (운영 진행)
   - B Staging 배포(env/secret — ★ user-provided) → C 내부 알파 → D Beta(실 LLM opt-in) → E 제한 사용자 → F 비용/성능(cost-review — rich/다중-provider 합산 §13~§14) → G Production Readiness.
