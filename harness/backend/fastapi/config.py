@@ -157,6 +157,29 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 17 다-S5 — brand_memory 추출 루프 배선 게이트 (additive, default False) ─
+    # ★ 추출(extract)과 주입(injection)은 별개 관심사 — 별도 flag 로 분리:
+    #   · injection_enabled = 읽기(load → planning user_input prepend, 가-S2)
+    #   · extract_enabled    = 쓰기(feedback/selection 신호 → brand_memory_entries 적재, 다-S5)
+    # ★ behavior-preserving / gated default-off: OFF(default) OR 익명 → feedback/selection
+    #   endpoint 가 brand_memory_extractor 를 호출하지 않아 brand_memory_entries 쓰기 0
+    #   (응답 byte-identical, 기존 582 테스트 OFF default 라 불변). ON + 신원(auth_user_id) 일
+    #   때만 feedback 저장 후 run_brand_memory_extractor(persist=True) best-effort 호출.
+    # ★ governance (ADR-031 §P-AUX-2 / agent_io §7.5): persist=True 여도 자동 INSERT 는
+    #   confidence ≥ 0.9 (명시 선호) 후보만 — 나머지(0.3/0.7)는 proposal (쓰기 0, pending UX).
+    #   blanket 자동 승격 0 (persist_min_confidence 기본 0.9 유지 — NG12 계승).
+    brand_memory_extract_enabled: bool = Field(
+        default=False,
+        description=(
+            "Phase 17 다-S5: feedback/selection 신호로부터 brand_memory_entries 를 추출·적재할지 "
+            "여부 (extraction). ★ gated default-off — False 면 추출/쓰기 0 (익명·OFF 경로 "
+            "byte-identical). True + 신원(auth_user_id) 일 때만 feedback 저장 후 "
+            "run_brand_memory_extractor(persist=True) 호출. 자동 INSERT 는 confidence ≥ 0.9 "
+            "명시 선호만 (agent_io §7.5 / ADR-031 — 나머지는 제안). injection_enabled(가-S2 읽기)와 "
+            "별개 관심사. 환경변수 BRAND_MEMORY_EXTRACT_ENABLED 로 override."
+        ),
+    )
+
     # ─── Phase 13 Slice S3 — rich 출력 게이트 (additive, default False) ─
     # ★ behavior-preserving / gated default-off: OFF=compact byte-identical
     #   (Plan.model_dump_compact() 가 rich 슬롯 제외 → Phase 13 이전 응답과 동일),

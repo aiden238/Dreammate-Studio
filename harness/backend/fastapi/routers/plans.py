@@ -23,7 +23,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
-from ..agents.brand_memory_extractor import extract_brand_memory_candidates
+from ..agents.brand_memory_extractor import run_brand_memory_extractor
 from ..agents.critic import (
     PROMPT_ID as CRITIC_PROMPT_ID,
     PROMPT_VERSION as CRITIC_PROMPT_VERSION,
@@ -44,6 +44,8 @@ from ..agents.planning import (
 from ..agents.rewriter import run_rewriter
 from ..config import get_settings
 from ..db import (
+    BrandMemoryRepo,
+    BrandRepo,
     FeedbackRepo,
     PlansRepo,
     SelectionRepo,
@@ -125,6 +127,19 @@ _feedback_repo: FeedbackRepo = FeedbackRepo(
 #   - ★ pending 까지만 — 자동 승격 X (NG12). P-AUX-2 agent 미구현 (NG1).
 #   - Supabase 사용 가능 시 candidate_knowledge INSERT, 아니면 본 in-memory list fallback.
 _candidate_store: list[dict[str, Any]] = []
+
+# Phase 17 다-S5 (브랜드 anchor + brand_memory 적재): brand get-or-create + Brand Memory CRUD.
+#   - _brand_repo: 인증 사용자의 기본 brand get-or-create (가-S3 BrandRepo, graceful).
+#   - _brand_memory_repo: 추출된 후보의 영속화 대상 (가-S2 주입이 읽는 동일 테이블).
+#   - Supabase 사용 가능 시 PostgreSQL, 아니면 각 repo 의 in-memory fallback (회귀 0).
+_brand_repo: BrandRepo = BrandRepo(
+    supabase_client=get_supabase(),
+    in_memory_store={},
+)
+_brand_memory_repo: BrandMemoryRepo = BrandMemoryRepo(
+    supabase_client=get_supabase(),
+    in_memory_store={},
+)
 
 
 # ─── helper re-export (backward-compat 별칭) ──────────────────────────
@@ -312,6 +327,86 @@ def _auth_user_id(request: Request) -> str | None:
     return None
 
 
+# ─── Phase 17 다-S5 — brand_memory 추출 루프 배선 (gated, graceful) ────
+async def _run_brand_memory_extract_hook(
+    plan_id: str,
+    auth_user_id: str | None,
+    *,
+    feedback_repo: FeedbackRepo | None = None,
+    selection_repo: SelectionRepo | None = None,
+    brand_repo: BrandRepo | None = None,
+    brand_memory_repo: BrandMemoryRepo | None = None,
+) -> None:
+    """feedback/selection 신호 → brand_memory_entries 추출·적재 (★ gated default-off, best-effort).
+
+    feedback(또는 selection) 이 영속화된 **후** 호출하는 부가 처리. settings.brand_memory_extract_enabled
+    가 켜져 있고 신원(auth_user_id)이 있을 때만:
+      1. BrandRepo.get_or_create_default(auth_user_id) 로 사용자의 기본 brand 를 해결(가-S3 anchor,
+         idempotent — 기존 있으면 그 id, 없으면 1개 생성). 미해결(None) → 적재 skip.
+      2. 누적 신호 로드 — 현재 plan 의 feedback_events(list_for_plan) + selected_plans(get).
+         ★ "list by user" repo 메서드는 본 슬라이스 범위 밖(migration/repo 확장 X) — plan 단위로
+         reasonably available 한 신호를 로드한다(graceful). 후속 슬라이스에서 user 단위 누적 확장 가능.
+      3. 기존 brand_memory(list_for_brand) 로드 — extractor 의 dedup(conflicts 분리) 입력.
+      4. run_brand_memory_extractor(..., persist=True) 호출.
+         ★ governance (ADR-031 §P-AUX-2 / agent_io §7.5): persist=True 여도 자동 INSERT 는
+         confidence ≥ 0.9 (persist_min_confidence 기본) 명시-선호 후보만 — 0.3/0.7 은 제안만(쓰기 0).
+         blanket 자동 승격 0 (NG12 계승). reason 은 feedback_repo 가 이미 마스킹 + extractor 이중 방어(T5).
+
+    ★ behavior-preserving: flag OFF(default) OR 익명(auth_user_id None) → 즉시 return,
+      brand_memory_entries 쓰기 0, BrandRepo 미호출 (no surprise write). feedback/selection 응답
+      byte-identical.
+    ★ graceful: 어떤 단계 실패도 raise 금지 — 추출 실패가 feedback/selection 기록을 차단하지 않는다
+      (호출자도 try/except 로 이중 방어). 추출 결과는 로깅만 (응답 schema 불변).
+
+    ★ DI seam: feedback_repo / selection_repo / brand_repo / brand_memory_repo 인자로 실 Supabase
+      없이(in-memory) 배선을 단위 테스트한다 (test_brand_injection / test_brand_repo 패턴).
+    """
+    settings = get_settings()
+    # ★ 게이트 — flag OFF 또는 익명이면 추출/쓰기 0 (byte-identical, no surprise write).
+    if not (settings.brand_memory_extract_enabled and auth_user_id):
+        return
+
+    feedback_repo = feedback_repo if feedback_repo is not None else _feedback_repo
+    selection_repo = selection_repo if selection_repo is not None else _selection_repo
+    brand_repo = brand_repo if brand_repo is not None else _brand_repo
+    brand_memory_repo = (
+        brand_memory_repo if brand_memory_repo is not None else _brand_memory_repo
+    )
+
+    # 1. 사용자의 기본 brand 해결 (get-or-create — brand_memory anchor). 미해결 → 적재 skip.
+    brand_id = await brand_repo.get_or_create_default(auth_user_id)
+    if not brand_id:
+        logger.info(
+            "brand_memory_extract skip — brand 미해결 plan_id=%s (graceful)", plan_id,
+        )
+        return
+
+    # 2. 누적 신호 로드 (현재 plan 단위 — reasonably available, graceful).
+    feedback_events = await feedback_repo.list_for_plan(plan_id)
+    selection = await selection_repo.get(plan_id)
+    selected_plans = [selection] if selection else None
+
+    # 3. 기존 brand_memory 로드 (extractor dedup/conflict 입력).
+    current_brand_memory = await brand_memory_repo.list_for_brand(brand_id)
+
+    # 4. 추출 + (gated 자동) 영속화 — persist=True 여도 confidence ≥ 0.9 만 INSERT (§7.5 governance).
+    extraction = await run_brand_memory_extractor(
+        feedback_events,
+        selected_plans,
+        brand_id=brand_id,
+        current_brand_memory=current_brand_memory,
+        repo=brand_memory_repo,
+        persist=True,
+    )
+    logger.info(
+        "brand_memory_extract triggered: plan_id=%s brand_id=%s proposed=%d persisted=%d",
+        plan_id,
+        brand_id,
+        len(extraction.get("proposed_entries", [])),
+        len(extraction.get("persisted", [])),
+    )
+
+
 @router.post(
     "/plans/{plan_id}/select",
     response_model=SelectPlanResponse,
@@ -396,22 +491,16 @@ async def plans_feedback(plan_id: str, req: FeedbackRequest, request: Request):
             exc.__class__.__name__,
         )
 
-    # Phase 10 S2 (P-AUX-2): feedback 저장 후 brand_memory_extractor best-effort 호출.
-    #   - ★ additive 부가 처리 — 동기 응답 경로 무영향 (proposed_entries 는 로깅만, 응답 schema 불변).
-    #   - persist=False (proposed-only): brand_memory_entries 자동 INSERT 0 — ADR-031 §7.5
-    #     자동 승격/INSERT 는 사용자 승인 경로 필요 (NG12). 본 hook 은 추출 활성화만 (heuristic, 비용 0).
-    #   - graceful: 추출 실패해도 feedback 응답 차단 0 (try/except). reason 은 repo 가 이미 마스킹 (T5).
+    # Phase 17 다-S5 (P-AUX-2 배선): feedback 저장 후 brand_memory 추출 루프 best-effort 호출.
+    #   - ★ gated default-off: settings.brand_memory_extract_enabled OFF 또는 익명이면 _run_brand_memory_
+    #     extract_hook 가 즉시 return → 추출/쓰기 0 (응답 byte-identical, no surprise write).
+    #     (Phase 10 S2 의 proposed-only 로깅 hook 을 본 gated persist hook 으로 승격 — agent_io §7.5.)
+    #   - ★ governance (ADR-031 §P-AUX-2 / agent_io §7.5): ON+신원이어도 자동 INSERT 는 confidence ≥ 0.9
+    #     명시-선호 후보만 — 0.3/0.7 은 제안만 (쓰기 0). blanket 자동 승격 0 (NG12 계승).
+    #   - graceful: 추출 실패해도 feedback 응답 차단 0 (helper 내부 + 본 try/except 이중 방어).
+    #     reason 은 feedback_repo 가 이미 마스킹 + extractor 이중 방어 (T5).
     try:
-        events = await _feedback_repo.list_for_plan(plan_id)
-        selection = await _selection_repo.get(plan_id)
-        extraction = extract_brand_memory_candidates(
-            events,
-            [selection] if selection else None,
-        )
-        logger.info(
-            "brand_memory_extract (feedback hook) plan_id=%s proposed=%d",
-            plan_id, len(extraction.get("proposed_entries", [])),
-        )
+        await _run_brand_memory_extract_hook(plan_id, _auth_user_id(request))
     except Exception as exc:  # pragma: no cover — graceful (추출 실패 시 응답 차단 0)
         logger.warning(
             "brand_memory_extract_hook_failed: %s (feedback 저장은 성공)",
