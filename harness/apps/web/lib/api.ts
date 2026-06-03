@@ -18,6 +18,9 @@
  */
 
 import type {
+  BrandingFinalizeResponse,
+  BrandingNextRequest,
+  BrandingNextResponse,
   Envelope,
   ErrorEnvelope,
   FastAPIDetailError,
@@ -485,4 +488,70 @@ export async function sendFeedback(
     throw new Error(`feedback_failed: ${resp.status}`);
   }
   return resp.json() as Promise<FeedbackResponse>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Phase 18 Slice S2/S3 — Branding (topic discovery) endpoint wrappers
+// ═══════════════════════════════════════════════════════════════════════
+//
+// 참조: harness/backend/fastapi/routers/plans.py
+//         POST /api/v1/plans/{id}/branding/next     (BrandingNextRequest → BrandingNextResponse)
+//         POST /api/v1/plans/{id}/branding/finalize  (no body → BrandingFinalizeResponse)
+//       harness/backend/fastapi/schemas/plans.py (Pydantic 정합)
+//
+// 정책:
+//   - auth-optional (익명 OK, wizard 와 동일) — 그래도 select/feedback 패턴처럼 credentials:"include"
+//     로 호출(향후 PKM 시드 S4 대비 + 동일 컨벤션). CORS allow_credentials=True.
+//   - 단순 throw on !ok (page.tsx inline UI 가 try/catch 로 처리). backend 는 agent 실패 시
+//     graceful(mode=done / 빈 candidates) 로 200 을 돌려주므로 throw 는 주로 404/네트워크.
+
+/**
+ * POST /api/v1/plans/{plan_id}/branding/next
+ * 직전 답변(카드 선택 or 자유입력)을 받아 다음 질문(mode="ask") 또는 종료(mode="done")를 반환.
+ * 첫 호출은 빈 body({}) — 첫 질문 생성.
+ */
+export async function brandingNext(
+  planId: string,
+  body: BrandingNextRequest = {},
+): Promise<BrandingNextResponse> {
+  const url = `${API_BASE_URL}/api/v1/plans/${encodeURIComponent(
+    planId,
+  )}/branding/next`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) {
+    throw new Error(`branding_next_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<BrandingNextResponse>;
+}
+
+/**
+ * POST /api/v1/plans/{plan_id}/branding/finalize
+ * 누적 Q&A 를 종합해 후보 영상 주제(보통 3개)를 합성·반환.
+ */
+export async function brandingFinalize(
+  planId: string,
+): Promise<BrandingFinalizeResponse> {
+  const url = `${API_BASE_URL}/api/v1/plans/${encodeURIComponent(
+    planId,
+  )}/branding/finalize`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+  });
+  if (!resp.ok) {
+    throw new Error(`branding_finalize_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<BrandingFinalizeResponse>;
 }

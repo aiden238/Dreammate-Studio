@@ -421,6 +421,58 @@ export interface AuthSession {
   email: string;
 }
 
+// ─── Phase 18 Slice S2/S3 — Branding (topic discovery) types ───────────
+//
+// 참조:
+//   - harness/backend/fastapi/schemas/plans.py
+//       BrandingNextRequest / BrandingNextResponse / BrandingFinalizeResponse
+//   - harness/backend/fastapi/routers/plans.py
+//       POST /plans/{id}/branding/next, POST /plans/{id}/branding/finalize
+//
+// 정책: 주제를 모르는 사용자를 LLM 동적 스무고개(Akinator식)로 좁혀 후보 주제 3개를 발굴한다.
+//   auth-optional (익명 OK). PKM 시드는 S4 범위 밖. 본 타입들은 backend Pydantic 과 1:1 정합.
+
+/**
+ * POST /plans/{plan_id}/branding/next body.
+ * 직전 질문 답변 — 카드 선택(selected_option) 또는 자유입력(answer). 첫 호출은 둘 다 미지정.
+ * 둘 다 주어지면 backend 가 selected_option 을 우선 채택.
+ */
+export interface BrandingNextRequest {
+  answer?: string;
+  selected_option?: string;
+}
+
+/**
+ * POST /plans/{plan_id}/branding/next 응답.
+ * mode="ask": question + options(2~4개) 노출. mode="done": question/options=null → finalize 진입.
+ * step = 누적 질문 수, max_questions = N고개 상한 (진행바 계산용).
+ */
+export interface BrandingNextResponse {
+  mode: "ask" | "done";
+  question: string | null;
+  options: string[] | null;
+  step: number;
+  max_questions: number;
+}
+
+/**
+ * 후보 영상 주제 1건. backend 가 5필드 보장 (topic / tone / target / format / why_fit).
+ */
+export interface BrandingCandidate {
+  topic: string;
+  tone: string;
+  target: string;
+  format: string;
+  why_fit: string;
+}
+
+/**
+ * POST /plans/{plan_id}/branding/finalize 응답 — 후보 주제(보통 3개).
+ */
+export interface BrandingFinalizeResponse {
+  candidates: BrandingCandidate[];
+}
+
 // ─── Phase 9 Slice 5 — Select / Feedback types (ADR-030) ───────────────
 //
 // 참조:
