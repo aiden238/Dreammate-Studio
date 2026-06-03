@@ -118,12 +118,22 @@ async def generate_plan(
     req: GenerateRequest,
     *,
     progress: ProgressSink = NullProgressSink(),
+    auth_user_id: str | None = None,
+    brand_id: str | None = None,
 ) -> Envelope | JSONResponse:
     """MOA orchestration — Intent → RAG → 3-plan parallel → Critic+revise → DB save → Envelope.
 
     `plans_generate()` body(line 230~632) 를 그대로 이관 (behavior-preserving).
     plan_entry 는 호출자(thin adapter)가 _plan_store 에서 조회해 전달하며,
     본 함수가 끝에서 plan_entry dict 를 mutation (status="generated" + envelope).
+
+    Phase 17 가-S1 (신원 plumbing only — 주입 X):
+        - auth_user_id / brand_id 는 라우터(auth_middleware request.state.user)에서 흘러온
+          **선택적** 신원이다. 본 슬라이스는 신원을 함수 내부에서 **관측 가능**하게만 만든다
+          (로깅 + plan_entry 에 stash) — brand_memory 로드/주입은 가-S2 영역.
+        - ★ behavior-preserving: 신원 미존재(익명, None) 경로는 기존과 byte-identical.
+          신원이 있어도 Envelope/프롬프트/LLM 호출/DB 저장 인자는 전혀 변하지 않는다
+          (로깅·stash 만 부수효과 — 응답 schema·출력 0 변경).
 
     Returns:
         성공 시 Envelope (router 가 그대로 200 응답), 에러 시 JSONResponse(ErrorEnvelope).
@@ -133,6 +143,18 @@ async def generate_plan(
     from ..routers import plans as plans_router
 
     settings = get_settings()
+
+    # Phase 17 가-S1 (신원 관측 — 주입 0): 신원이 orchestrator 까지 도달했음을 로깅하고
+    #   plan_entry 에 stash 한다 (가-S2 의 brand_memory 로드가 여기서 읽는다). 익명(None)은
+    #   "anon" 으로 로깅되며 동작/출력에 영향 0. ★ 신원→brand_memory 구속 주입 hook 지점.
+    plan_entry["auth_user_id"] = auth_user_id  # stash (가-S2 read 지점)
+    plan_entry["brand_id"] = brand_id
+    logger.info(
+        "generate_plan identity plan_id=%s auth_user_id=%s brand_id=%s",
+        plan_id,
+        auth_user_id or "anon",
+        brand_id or "none",
+    )
     # Phase 14 S1 (additive): initial_input(랜딩 `/` — byte-identical) 우선,
     #   없으면 위저드 누적 입력(wizard_data) 조립, 그래도 없으면 기존 폴백.
     user_input = (

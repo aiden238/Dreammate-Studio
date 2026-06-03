@@ -42,7 +42,7 @@ import logging
 from typing import Union
 from uuid import uuid4
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Request, Response, status
 from fastapi.responses import JSONResponse
 
 from ..agents.critic import (
@@ -94,6 +94,20 @@ _DEPRECATION_HEADER_VALUE = (
 
 # ─── Helpers ─────────────────────────────────────────────────────────
 
+def _auth_user_id(request: Request) -> str | None:
+    """request.state.user (auth_middleware 주입) 에서 user_id 추출. anon 시 None.
+
+    Phase 17 가-S1 (신원 plumbing): plans.py::_auth_user_id 와 동일 규약. 본 Phase 1
+    sync endpoint 는 orchestrator(generate_plan) 를 경유하지 않으므로 신원을 **관측(로깅)**
+    만 한다 — Intent/RAG/Planning/Critic/DB 인자·프롬프트·출력 0 변경 (anon byte-identical).
+    """
+    user = getattr(request.state, "user", None)
+    if isinstance(user, dict):
+        uid = user.get("user_id")
+        return str(uid) if uid else None
+    return None
+
+
 def _error_response(
     *,
     status_code: int,
@@ -142,14 +156,25 @@ def _error_response(
         "Intent 차단 시 INV-001 ErrorEnvelope 반환."
     ),
 )
-def generate(req: GenerateRequest, response: Response) -> Union[Envelope, JSONResponse]:
+def generate(
+    req: GenerateRequest, response: Response, request: Request,
+) -> Union[Envelope, JSONResponse]:
     """Intent → RAG → Planning(rag_context) → Critic 직렬 호출 → envelope 반환.
 
     Phase 4 Slice 1: X-API-Deprecation header 추가 (success path 동봉).
     Error path는 _error_response()가 동일 header 동봉 (ADR-014).
+
+    Phase 17 가-S1 (신원 plumbing): auth_middleware 가 주입한 request.state.user 에서
+    auth_user_id 를 추출하여 **관측(로깅)** 한다. ★ 본 endpoint 는 orchestrator 비경유
+    sync 경로 — 신원은 동작/출력에 영향 0 (anon byte-identical). 신원→brand_memory
+    구속 주입은 가-S2 (orchestrator 경로) 영역.
     """
     # Phase 4 Slice 1: deprecation 안내 — 실 동작 무변경.
     response.headers["X-API-Deprecation"] = _DEPRECATION_HEADER_VALUE
+
+    # Phase 17 가-S1: 신원 관측 (주입 0). anon 이면 "anon" — 동작/출력 무변경.
+    auth_user_id = _auth_user_id(request)
+    logger.info("generate identity auth_user_id=%s", auth_user_id or "anon")
 
     settings = get_settings()
 

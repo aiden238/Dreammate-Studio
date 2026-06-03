@@ -234,13 +234,18 @@ def plans_wizard_step(plan_id: str, step: str, req: WizardStepRequest):
         "Critic revise loop / Rewriter / SSE는 Phase 4.5+ deferred."
     ),
 )
-async def plans_generate(plan_id: str, req: GenerateRequest):
+async def plans_generate(plan_id: str, req: GenerateRequest, request: Request):
     """Phase 8 Slice 2 (ADR-027): thin adapter — orchestration/moa_orchestrator 위임.
 
     plans_generate() god-function 본문은 behavior-preserving 으로
     orchestration/moa_orchestrator.py::generate_plan() 으로 이관됨.
     router 는 HTTP 경계(plan_id 조회 + 404) 만 담당하고 orchestration 은 위임한다
     (moa_policy §2 "오케스트레이터가 항상 중개").
+
+    Phase 17 가-S1 (신원 plumbing): auth_middleware 가 주입한 request.state.user 에서
+    auth_user_id 를 추출(_auth_user_id, 없으면 None graceful)하여 generate_plan 에
+    **선택적** 인자로 전달한다. ★ 익명(None) 요청은 기존과 byte-identical (회귀 0) —
+    신원은 cookie/JWT 출처이므로 request body/schema 불변(contract 무변경).
     """
     plan_entry = _plan_store.get(plan_id)
     if not plan_entry:
@@ -248,8 +253,12 @@ async def plans_generate(plan_id: str, req: GenerateRequest):
     # Phase 8 Slice 3 (ADR-028): StoreProgressSink 주입 → generate stage 진행을
     # progress_store 에 기록 (sse.py 가 read). Slice 2 default(NullProgressSink) 대비
     # 부수효과(store 기록)만 추가 — Envelope/응답 동일 (회귀 0).
+    # Phase 17 가-S1: 신원 전달 (anon 이면 auth_user_id=None → 기존 경로 그대로).
+    #   brand_id 는 현재 request↔brand 매핑 source 부재(assumptions U2) → None 유지 (가-S2 확정).
     result = await generate_plan(
-        plan_id, plan_entry, req, progress=StoreProgressSink(plan_id),
+        plan_id, plan_entry, req,
+        progress=StoreProgressSink(plan_id),
+        auth_user_id=_auth_user_id(request),
     )
     # Phase 15 S3 (gated 직렬화 분기 — live POST):
     #   ★ 성공 Envelope 은 항상 generate_plan 이 plan_entry["envelope"] 에 저장한 **mode 별 직렬화 dict**

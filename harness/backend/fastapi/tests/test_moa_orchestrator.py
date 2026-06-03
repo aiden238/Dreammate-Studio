@@ -398,3 +398,65 @@ async def test_multi_provider_flag_off_uses_parallel_fn(
     # ★ 기존 경로만 사용 — parallel 1회, multi_provider 0회 (회귀 가드).
     assert len(parallel_calls) == 1
     assert multi_calls == []
+
+
+# ─── 10. Phase 17 가-S1: 신원(auth_user_id/brand_id) plumbing ─────────
+# generate_plan 에 optional 신원 인자가 도달·관측 가능한지 검증한다.
+#   - 신원 有 → plan_entry 에 stash + 로깅 (관측). Envelope/3-plan 동작 불변.
+#   - 신원 無(익명, default None) → 기존과 동일 (anon byte-identical, 회귀 0).
+# ★ 본 슬라이스는 plumbing only — brand_memory 로드/주입(가-S2) 없음.
+
+
+@pytest.mark.asyncio
+async def test_generate_plan_threads_auth_user_id(
+    patch_agents_ok, caplog: pytest.LogCaptureFixture,
+) -> None:
+    """auth_user_id 가 generate_plan 까지 도달 → plan_entry stash + 로깅으로 관측 가능."""
+    import logging
+
+    plan_entry = _make_plan_entry()
+    with caplog.at_level(logging.INFO, logger="backend.fastapi.orchestration.moa_orchestrator"):
+        result = await generate_plan(
+            "test-plan-id", plan_entry, GenerateRequest(),
+            auth_user_id="u-1", brand_id="b-9",
+        )
+
+    # 동작 불변 — 여전히 정상 Envelope 3-plan.
+    assert isinstance(result, Envelope)
+    assert len(result.body.plan_candidates) == 3
+    # ★ 신원이 orchestrator 까지 도달해 stash 됨 (가-S2 read 지점).
+    assert plan_entry["auth_user_id"] == "u-1"
+    assert plan_entry["brand_id"] == "b-9"
+    # ★ 관측 가능 — 로깅에 신원 노출 (anon 아님).
+    assert "auth_user_id=u-1" in caplog.text
+    assert "brand_id=b-9" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_generate_plan_anonymous_byte_identical(
+    patch_agents_ok, caplog: pytest.LogCaptureFixture,
+) -> None:
+    """신원 미지정(default None) → 익명 경로. 동작 불변 + 로깅은 anon 표기.
+
+    ★ behavior-preserving: 신원 인자 없이 호출 = 가-S1 이전과 동일 동작(회귀 0).
+    """
+    import logging
+
+    plan_entry = _make_plan_entry()
+    with caplog.at_level(logging.INFO, logger="backend.fastapi.orchestration.moa_orchestrator"):
+        # 신원 인자 미지정 → auth_user_id=None, brand_id=None (default).
+        result = await generate_plan("test-plan-id", plan_entry, GenerateRequest())
+
+    assert isinstance(result, Envelope)
+    assert len(result.body.plan_candidates) == 3
+    # validation.checks 순서 7개 보존 (Envelope 불변 — anon byte-identical).
+    check_names = [c.name for c in result.validation.checks]
+    assert check_names == [
+        "schema_envelope", "intent_filter", "rag_retrieval", "plan_count",
+        "critic_evaluation", "db_persistence", "multi_model",
+    ]
+    # stash 는 None (익명).
+    assert plan_entry["auth_user_id"] is None
+    assert plan_entry["brand_id"] is None
+    # 로깅은 anon 표기.
+    assert "auth_user_id=anon" in caplog.text
