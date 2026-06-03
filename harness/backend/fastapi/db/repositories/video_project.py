@@ -43,7 +43,20 @@ def insert_video_project(
     try:
         resp = client.table("video_projects").insert(row).execute()
     except Exception as e:
-        logger.warning("video_projects insert failed: %s", e)
+        # Phase 5(0001) video_projects 스키마에는 legacy(001) 컬럼(input_text/request_id/phase 등)이
+        # 없어 insert 가 실패한다. 본 legacy save 는 DEPRECATED(ADR-023, Phase 5.5) 이며 Phase 5
+        # 스키마에선 적용되지 않는다 → 정상적인 graceful skip 으로 간주(소음 제거: warning→info).
+        # ★ plan 영속은 _plan_store(라우터) / PlansRepo(Phase 5, plans 테이블)가 담당하므로
+        #   본 경로 실패가 사용자 흐름을 차단하지 않는다(graceful, return None).
+        #   (proper 영속 = orchestrator → PlansRepo 마이그레이션, 별도 slice — 테스트 결합으로 분리.)
+        msg = str(e)
+        if any(k in msg for k in ("input_text", "column", "schema cache", "PGRST204")):
+            logger.info(
+                "video_projects legacy insert skip — Phase 5(0001) 스키마(레거시 컬럼 부재, "
+                "deprecated ADR-023). plan 영속은 _plan_store/PlansRepo 담당."
+            )
+        else:
+            logger.warning("video_projects insert failed: %s", e)
         return None
 
     try:
