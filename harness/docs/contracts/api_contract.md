@@ -765,6 +765,18 @@ Discovery 5단계 진행. 각 호출이 1단계 카드 생성.
 
 ---
 
+### 8.6 브랜딩 세션 (Akinator 주제발굴) — Phase 18 (CC-023)
+
+주제 미정 사용자를 **LLM 동적 스무고개**로 좁혀 후보 주제 3개 + 브랜딩 방향(톤/타깃/포맷)을 제안. `/plans/start` 로 plan_id 발급 후 진행. 상태는 `wizard_data.branding`(history+candidates+selected) 누적. auth-optional(Q&A); brand_memory 시드는 authed + gated(`branding_pkm_seed_enabled`).
+
+- **POST /api/v1/plans/{plan_id}/branding/next** — body `{answer?, selected_option?}` → `{mode:"ask"|"done", question, options(2~4)|null, step, max_questions}`. 직전 답변 기록 + 다음 적응형 질문(또는 done, MAX_QUESTIONS=8 상한). agent **P-AUX-3** ask.
+- **POST /api/v1/plans/{plan_id}/branding/finalize** — → `{candidates:[{topic,tone,target,format,why_fit} ×3]}`. agent **P-AUX-3** finalize.
+- **POST /api/v1/plans/{plan_id}/branding/select** — body `{topic, tone?, target?, format?}` → `{ok, seeded}`. 택1 저장(`initial_input` 설정 → 후속 generate 연결) + (gated+authed) brand_memory 시드(tone→preferred_tone 등, conf 0.9, dedup, Phase 17 재사용).
+
+**Status:** 200, 404(INV-006). graceful — agent/seed 실패 시 500 금지(ask→done / finalize→[] / select→seeded 0). flag OFF·익명 → 시드 0(byte-identical, selected/initial_input은 저장).
+
+---
+
 ## 9. Plan 조회 endpoint
 
 ### 9.1 GET /api/v1/plans/{plan_id}
