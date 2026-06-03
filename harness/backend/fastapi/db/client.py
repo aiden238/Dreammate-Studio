@@ -49,7 +49,14 @@ def get_supabase() -> Optional[SupabaseClientLike]:
     settings = _config_module.get_settings()
 
     url = getattr(settings, "supabase_url", None) or ""
-    key = getattr(settings, "supabase_anon_key", None) or ""
+    # ★ Phase 17: server-side 는 service_role key(RLS 우회 — Supabase 표준) 우선 사용.
+    #   서버는 사용자 JWT 컨텍스트가 없어 auth.uid()=null → 본인-스코프 write(PKM/brand_memory 등)가
+    #   RLS 에 막힌다. service_key 가 있으면 그것으로 client 생성(RLS 우회), 없으면 anon_key(기존 동작).
+    #   ★ service_key 는 backend .env only — frontend 절대 노출 금지(llm_security_contract §5.2 / 0003_rls §7).
+    #   gated/behavior-preserving: service_key 미설정(테스트/기존)이면 anon_key 그대로 → 동작 불변.
+    service_key = getattr(settings, "supabase_service_key", None) or ""
+    anon_key = getattr(settings, "supabase_anon_key", None) or ""
+    key = service_key or anon_key
 
     if not url or not key:
         logger.info("supabase_unconfigured — falling back to in-memory store")
