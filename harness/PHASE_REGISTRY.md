@@ -37,8 +37,9 @@
 | 15 | director 모드 (output_mode 3rd tier) | **done** (2026-06-03) | director gated/additive + 라이브 PASS + critic 10차원 (archive) |
 | — | Intent 완화 (CC-021, focused fix) | **done** (2026-06-03) | P-001 v1.1.0 콘텐츠 토픽 기본 수용 + 차단→재작성 UX (미numbered, main merged) |
 | 16 | A/B 실험 (Baseline 래퍼 vs Agent-grade PKM/RAG) | **done** (2026-06-04) | ★ 검증/실험 페이즈(런타임 0). **판정 GO(메커니즘)**: generic Δ+0.008(flat=commodity) vs ★fit Δ+0.425(agent-grade 압도). 주입 방식 결정적(rag_context 0 / binding 큰 효과). S1+S2(pytest 537→556) + S3 blind kit(사용자 채점 deferred) + A4 종적 이월. (archive) |
-| **17** | **계정별 PKM 실빌드 (가 + 다)** | **active** (2026-06-04) | ★ Phase 16 GO 기반 production 빌드. 가=auth 신원→생성 연결 + brand_memory **구속 주입**(S2 교훈: rag_context 아님, gated/behavior-preserving) / 다=개인 PKM(pkm_entries) + 개인별 메모리 기능 + 다계정 주입. 근거: `meta/proposals/2026-06-03_pkm-rag-orchestrator-design.md` §9 1차 |
-| 18~20 | commercial_viral / 배포 (verdict 기반) | future | ★ Phase 17 결과 + S3 fit→value 봉인 후 재우선순위 + 배포 Gate B~G |
+| 17 | 계정별 PKM 실빌드 (가 + 다) | **done** (2026-06-04) | ★ Phase 16 GO 기반 첫 production 빌드. 가(신원 plumbing+brand 주입+brand foundation) + 다(개인 PKM pkm_entries CC-022 + brand·개인 추출루프 + e2e). **PKM 루프 양쪽 폐쇄** + 라이브 3중 입증(brand steer/개인 e2e/Supabase 영속) + get_supabase service-key. gated default-OFF, pytest 470→608. (archive) |
+| **18** | **브랜딩 세션 (Akinator 주제발굴)** | **next** (제안서 작성됨) | LLM 동적 스무고개(카드+자유입력) → 후보 주제 3×브랜딩 방향 → planning + brand_memory(PKM) 시드. ★ 발굴→축적→주입 루프 결합. 근거: `meta/proposals/2026-06-04_branding-session-akinator-design.md` |
+| 19~20 | 2nd brain 시각화 + commercial_viral / 배포 | future | 마이페이지 PKM 도식화(읽기 레이어 — pkm_entries/brand_memory/4계층 기반) / commercial_viral / 배포 Gate B~G. 선행=PKM 실사용 누적 |
 | 21~30 | 고도화 | future | Spring, Expo, Custom RAG, LangGraph |
 
 ### ★ PARKED 제안 (future direction — proposal-first, 선행조건 gated, 빌드 승격 X)
