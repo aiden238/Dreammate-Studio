@@ -133,6 +133,12 @@ DIRECTOR_SYSTEM_PROMPT = """당신은 영상기획 AI 에이전트의 기획안 
 사용자의 영상기획 요청을 받아 **연출·리텐션까지 설계한 상세 기획 브리프** 1개를 JSON으로 반환한다.
 이것은 "기획 브리프"(촬영·편집·연출 가이드)이지 완성 대본·영상 제작물이 아니다.
 
+★★ 이 모드(director)의 핵심은 다음 3개 필드다 — rich 필드만 채우고 끝내지 말고 **반드시 모두 구체적으로 채운다**:
+   - hook_system: 첫 후크 + 영상 중반 재후크(re-hook) 지점 (최소 2개 항목)
+   - retention_architecture: 이탈 예상 구간 + 호기심 갭/페이싱 장치 (빈 문자열 금지)
+   - scene_breakdown: 씬 2개 이상, 각 씬에 scene_intent/viewer_emotion/retention_device/why_this_works
+   이 3개가 비면 director 출력으로 무효다.
+
 반환 형식 (JSON 1개 객체만 — rich 12슬롯 + director 3슬롯):
 {
   "plan": {
@@ -271,7 +277,9 @@ def run_planning(
             ],
             response_format={"type": "json_object"},
             temperature=0.7,  # 다양성 (agent_io_contract §4.4)
-            max_tokens=1500,
+            # Phase 15 S6: director 출력(rich 12 + director 3 + scene 리스트)은 커서 1500 절단 →
+            #   director 슬롯(뒤쪽) 누락. director 만 상향(compact/rich 1500 불변 = byte-identical).
+            max_tokens=3500 if _mode == "director" else 1500,
         )
     except OpenAIError:
         logger.exception("Planning OpenAI API 호출 실패")

@@ -293,6 +293,20 @@ async def generate_plan(
                 cta=plan_raw.get("cta"),
                 references=plan_raw.get("references", []),
                 length_variants=plan_raw.get("length_variants", []),
+                # Phase 15 S6 (director read): output_mode=director 응답에만 채워짐. scene graceful.
+                hook_system=plan_raw.get("hook_system", []),
+                retention_architecture=plan_raw.get("retention_architecture"),
+                scene_breakdown=[
+                    {
+                        "scene_intent": s.get("scene_intent") or "(미상)",
+                        "viewer_emotion": s.get("viewer_emotion") or "(미상)",
+                        "retention_device": s.get("retention_device") or "(미상)",
+                        "why_this_works": s.get("why_this_works") or "(미상)",
+                        "fallback_scene": s.get("fallback_scene"),
+                    }
+                    for s in (plan_raw.get("scene_breakdown") or [])
+                    if isinstance(s, dict)
+                ],
             )
             plans_list.append(p)
         except Exception as e:
@@ -419,6 +433,10 @@ async def generate_plan(
                     cta=current_plan_dict.get("cta") or plan_model.cta,
                     references=current_plan_dict.get("references") or list(plan_model.references),
                     length_variants=current_plan_dict.get("length_variants") or list(plan_model.length_variants),
+                    # Phase 15 S6 (director 보존): rewriter dict 에 없으면 원본 plan_model director 값 fallback.
+                    hook_system=current_plan_dict.get("hook_system") or list(plan_model.hook_system),
+                    retention_architecture=current_plan_dict.get("retention_architecture") or plan_model.retention_architecture,
+                    scene_breakdown=current_plan_dict.get("scene_breakdown") or list(plan_model.scene_breakdown),
                 )
             except Exception as exc:
                 logger.warning(

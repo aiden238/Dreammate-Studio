@@ -277,6 +277,21 @@ def generate(req: GenerateRequest, response: Response) -> Union[Envelope, JSONRe
             cta=plan_raw.get("cta"),
             references=plan_raw.get("references", []),
             length_variants=plan_raw.get("length_variants", []),
+            # Phase 15 S6 (director read): director 프롬프트(output_mode=director) 응답에만 채워짐.
+            #   다른 모드는 키 부재 → default([]/None). scene 은 graceful(필수 필드 누락 시 placeholder).
+            hook_system=plan_raw.get("hook_system", []),
+            retention_architecture=plan_raw.get("retention_architecture"),
+            scene_breakdown=[
+                {
+                    "scene_intent": s.get("scene_intent") or "(미상)",
+                    "viewer_emotion": s.get("viewer_emotion") or "(미상)",
+                    "retention_device": s.get("retention_device") or "(미상)",
+                    "why_this_works": s.get("why_this_works") or "(미상)",
+                    "fallback_scene": s.get("fallback_scene"),
+                }
+                for s in plan_raw.get("scene_breakdown", [])
+                if isinstance(s, dict)
+            ],
         )
     except Exception as e:
         logger.exception("Plan 모델 검증 실패")
