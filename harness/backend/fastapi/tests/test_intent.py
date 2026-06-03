@@ -19,6 +19,7 @@ import pytest
 from backend.fastapi.agents.intent import (
     PROMPT_ID,
     PROMPT_VERSION,
+    SYSTEM_PROMPT,
     run_intent,
 )
 
@@ -41,9 +42,23 @@ def _make_fake_client(content: str) -> MagicMock:
 # ─── 메타 ─────────────────────────────────────────────────────────────
 
 def test_intent_prompt_meta() -> None:
-    """P-001 / v1.0.0 매핑 확인."""
+    """P-001 / v1.1.0 매핑 확인 (Phase 16 — Intent 완화, CC-021)."""
     assert PROMPT_ID == "P-001"
-    assert PROMPT_VERSION == "v1.0.0"
+    assert PROMPT_VERSION == "v1.1.0"
+
+
+def test_intent_prompt_leniency_framing() -> None:
+    """Phase 16: 프롬프트가 '콘텐츠 토픽 기본 수용 + 애매하면 수용' 완화 framing 을 담는다.
+
+    오반려(맨 토픽을 정보질문으로 차단) 회귀 방지 — 프롬프트 텍스트 가드.
+    (실 분류 동작은 run_intent live 검증; 단위 테스트는 client mock 이라 framing 만 가드.)
+    """
+    assert "기본 수용" in SYSTEM_PROMPT
+    assert "애매하면 수용" in SYSTEM_PROMPT
+    # 정보성 주제 거부 금지 명시 (false-positive 원인 차단)
+    assert "정보성 주제" in SYSTEM_PROMPT and "거부하지 않는다" in SYSTEM_PROMPT
+    # 도메인 밖(날씨/코딩/잡담)은 여전히 거부 framing 유지
+    assert "날씨" in SYSTEM_PROMPT and "코딩" in SYSTEM_PROMPT
 
 
 # ─── 영상기획 통과 ────────────────────────────────────────────────────

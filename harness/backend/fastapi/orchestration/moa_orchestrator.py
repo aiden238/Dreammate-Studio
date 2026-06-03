@@ -172,7 +172,11 @@ async def generate_plan(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             code="INV-001",
             message=f"Intent blocked: {reason}",
-            user_message="영상기획과 거리가 있는 내용 같아요. 다른 방식으로 도와드릴까요?",
+            # Phase 16: 재작성 가이드(구체 예시) — 하드 차단이 아니라 안내 (generate.py 와 동일).
+            user_message=(
+                "영상기획과 거리가 있는 내용 같아요. 만들 영상의 주제를 적어보세요 — "
+                "예: '대학생활 꿀팁 30초 쇼츠', '자취 요리 브이로그', '재테크 기초 정보형 영상'."
+            ),
             retry_allowed=False,
         )
 

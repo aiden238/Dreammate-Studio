@@ -38,7 +38,7 @@ from backend.fastapi.agents.rewriter import (
 # registry (단일 진실 출처)의 (id → version) 명시 매핑.
 # registry.md 텍스트 파싱은 fragile → 명시적 dict 비교 (ADR-029 권장).
 EXPECTED_REGISTRY: dict[str, str] = {
-    "P-001": "v1.0.0",  # intent (Phase 1 임시 매핑)
+    "P-001": "v1.1.0",  # intent — Phase 16 완화 bump (CC-021, Phase 1 임시 매핑)
     "P-006": "v1.0.0",  # planning
     "P-007": "v1.1.0",  # critic — Phase 8 ADR-029 adapter bump
     "P-008": "v1.1.0",  # rewriter — Phase 6 ADR-019
@@ -70,9 +70,9 @@ def test_planning_constants() -> None:
 
 
 def test_intent_constants() -> None:
-    """P-001 intent 상수 ↔ registry 정합 (Phase 1 임시 매핑)."""
+    """P-001 intent 상수 ↔ registry 정합 (Phase 16 완화 bump, Phase 1 임시 매핑)."""
     assert INTENT_ID == "P-001"
-    assert INTENT_VER == "v1.0.0"
+    assert INTENT_VER == "v1.1.0"
     assert EXPECTED_REGISTRY[INTENT_ID] == INTENT_VER
 
 
