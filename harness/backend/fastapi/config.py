@@ -141,6 +141,22 @@ class Settings(BaseSettings):
         description="B안: 3-plan 을 3-provider(GPT/Claude/Gemini) alias 로 다양화 (gated, default OFF).",
     )
 
+    # ─── Phase 17 가-S2 — brand_memory 구속 주입 게이트 (additive, default False) ─
+    # ★ behavior-preserving / gated default-off: OFF 면 orchestrator 가 brand_memory 를
+    #   로드/주입하지 않아 planning user_input 이 byte-identical (가-S1 이전과 동일).
+    #   ON + 신원(auth_user_id) + brand_memory 有 일 때만 build_brand_constraint_preamble 가
+    #   user_input 앞에 prepend 된다(Phase 16 검증 메커니즘). 신원 없음/메모리 없음 →
+    #   주입 0(byte-identical). 기존 561 테스트는 OFF default 라 불변.
+    brand_memory_injection_enabled: bool = Field(
+        default=False,
+        description=(
+            "Phase 17 가-S2: brand_memory_entries 구속 프리앰블을 planning user_input 에 "
+            "주입할지 여부. ★ gated default-off — False 면 brand_memory 로드/주입 0 "
+            "(익명/무메모리 경로 byte-identical). True 활성은 신원+brand_memory 有 일 때만 주입. "
+            "환경변수 BRAND_MEMORY_INJECTION_ENABLED 로 override."
+        ),
+    )
+
     # ─── Phase 13 Slice S3 — rich 출력 게이트 (additive, default False) ─
     # ★ behavior-preserving / gated default-off: OFF=compact byte-identical
     #   (Plan.model_dump_compact() 가 rich 슬롯 제외 → Phase 13 이전 응답과 동일),

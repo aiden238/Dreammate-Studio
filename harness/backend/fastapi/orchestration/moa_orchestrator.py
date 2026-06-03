@@ -112,6 +112,80 @@ def build_user_input_from_wizard(wizard_data: dict[str, Any] | None) -> str:
     return "\n".join(lines).strip()
 
 
+# ─── Phase 17 가-S2: brand_memory 로드 + brand 해결 (gated, graceful) ───
+async def _resolve_brand_id(
+    auth_user_id: str,
+    brand_id: str | None,
+    brands_resolver: Any | None,
+) -> str | None:
+    """user 의 brand_id 해결. 인자 brand_id 우선, 없으면 resolver/Supabase 조회 (graceful).
+
+    우선순위:
+      1. 명시 brand_id 인자(라우터/호출자가 이미 알고 있는 brand) → 그대로 사용.
+      2. brands_resolver(DI seam, async callable(auth_user_id) -> brand_id|None) → 호출.
+      3. Supabase brands 테이블 조회 — user 소유 brand 중 created_at desc 첫 행(없으면 None).
+      4. 위 모두 실패/부재 → None (호출자가 주입 skip).
+
+    ★ graceful: 어떤 실패도 raise 하지 않고 None 반환(주입 skip → byte-identical).
+    """
+    if brand_id:
+        return brand_id
+
+    if brands_resolver is not None:
+        try:
+            resolved = await brands_resolver(auth_user_id)
+            return resolved or None
+        except Exception:  # pragma: no cover — DI resolver 실패도 graceful
+            logger.warning("brands_resolver 실패 — brand 미해결(주입 skip)")
+            return None
+
+    # Supabase brands 테이블 조회 (graceful — client 없거나 실패 시 None).
+    try:
+        from ..db import get_supabase
+
+        client = get_supabase()
+        if client is None:
+            return None
+        resp = (
+            client.table("brands")
+            .select("id")
+            .eq("auth_user_id", auth_user_id)
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        data = getattr(resp, "data", None)
+        if data:
+            return str(data[0].get("id")) or None
+    except Exception:  # pragma: no cover — brands 조회 실패도 graceful
+        logger.warning("brands 조회 실패 — brand 미해결(주입 skip)")
+    return None
+
+
+async def _load_brand_memory_entries(
+    *,
+    auth_user_id: str,
+    brand_id: str | None,
+    brand_memory_repo: Any | None,
+    brands_resolver: Any | None,
+) -> list[dict[str, Any]]:
+    """resolved brand 의 brand_memory_entries 로드 (gated 경로 전용, graceful).
+
+    brand 해결 실패 → 빈 리스트(주입 skip). repo 미지정 시 get_supabase() 로 구성.
+    ★ PII/격리: 오직 resolved brand 의 entries 만 로드(RLS 격리 데이터). 교차 계정 접근 0.
+    """
+    resolved_brand_id = await _resolve_brand_id(auth_user_id, brand_id, brands_resolver)
+    if not resolved_brand_id:
+        return []
+
+    repo = brand_memory_repo
+    if repo is None:
+        from ..db import BrandMemoryRepo, get_supabase
+
+        repo = BrandMemoryRepo(supabase_client=get_supabase())
+    return await repo.list_for_brand(resolved_brand_id)
+
+
 async def generate_plan(
     plan_id: str,
     plan_entry: dict[str, Any],
@@ -120,6 +194,8 @@ async def generate_plan(
     progress: ProgressSink = NullProgressSink(),
     auth_user_id: str | None = None,
     brand_id: str | None = None,
+    brand_memory_repo: Any | None = None,
+    brands_resolver: Any | None = None,
 ) -> Envelope | JSONResponse:
     """MOA orchestration — Intent → RAG → 3-plan parallel → Critic+revise → DB save → Envelope.
 
@@ -134,6 +210,20 @@ async def generate_plan(
         - ★ behavior-preserving: 신원 미존재(익명, None) 경로는 기존과 byte-identical.
           신원이 있어도 Envelope/프롬프트/LLM 호출/DB 저장 인자는 전혀 변하지 않는다
           (로깅·stash 만 부수효과 — 응답 schema·출력 0 변경).
+
+    Phase 17 가-S2 (brand_memory 구속 주입 — ★ gated default-off):
+        - settings.brand_memory_injection_enabled AND auth_user_id 有 일 때만:
+          brand_id 해결(인자 우선, 없으면 brands_resolver/Supabase 로 user 의 brand 조회) →
+          BrandMemoryRepo.list_for_brand() 로드 → build_brand_constraint_preamble 로 구속
+          프리앰블 생성 → **user_input 앞에 prepend** (Phase 16 검증 메커니즘, rag_context X).
+        - ★★ behavior-preserving: flag OFF / 익명(auth_user_id None) / brand 없음 /
+          brand_memory 0개 → user_input **byte-identical** (주입 0). 모든 실패는 graceful
+          흡수(주입 skip) — 기존 흐름 차단 0.
+        - DI seam (테스트/라이브 검증용 — 실 Supabase 없이 brand_memory seed 가능):
+            * brand_memory_repo: BrandMemoryRepo-호환 객체(list_for_brand async). 미지정 시
+              get_supabase() 로 구성.
+            * brands_resolver: async callable(auth_user_id) -> brand_id | None. 미지정 시
+              Supabase brands 테이블 조회(graceful, 없으면 None → 주입 skip).
 
     Returns:
         성공 시 Envelope (router 가 그대로 200 응답), 에러 시 JSONResponse(ErrorEnvelope).
@@ -163,6 +253,33 @@ async def generate_plan(
         or "(빈 입력)"
     )
     locale = plan_entry.get("locale", "ko-KR")
+
+    # Phase 17 가-S2 (brand_memory 구속 주입 — ★ gated default-off): 신원이 있고 flag 가
+    #   켜져 있을 때만 brand_memory_entries 를 로드해 구속 프리앰블을 user_input 앞에 prepend
+    #   한다(Phase 16 검증 메커니즘). flag OFF / 익명 / brand 없음 / 메모리 0개 → user_input
+    #   byte-identical. 모든 단계 graceful — 실패해도 주입만 skip(기존 흐름 차단 0).
+    if settings.brand_memory_injection_enabled and auth_user_id:
+        try:
+            entries = await _load_brand_memory_entries(
+                auth_user_id=auth_user_id,
+                brand_id=brand_id,
+                brand_memory_repo=brand_memory_repo,
+                brands_resolver=brands_resolver,
+            )
+            from ..agents.brand_injection import build_brand_constraint_preamble
+
+            preamble = build_brand_constraint_preamble(entries)
+            if preamble:
+                user_input = preamble + "\n\n" + user_input
+                logger.info(
+                    "generate_plan brand_memory_injected plan_id=%s entries=%d",
+                    plan_id,
+                    len(entries),
+                )
+        except Exception:  # pragma: no cover — graceful (주입 실패는 흐름 차단 X)
+            logger.exception(
+                "brand_memory 주입 실패 (graceful — user_input 무변경) plan_id=%s", plan_id,
+            )
 
     # 1. Intent ──────────────────────────────────────────────────────
     progress.emit("intent", step=1, message="의도 분석 중...")
