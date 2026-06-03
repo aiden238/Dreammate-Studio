@@ -36,8 +36,9 @@
 | 14 | 위저드 ↔ 백엔드 실연결 (Scope A) | **done** (2026-06-03) | 위저드→실 3안 rich e2e PASS, 신규 endpoint 0, 랜딩 byte-identical (archive) |
 | 15 | director 모드 (output_mode 3rd tier) | **done** (2026-06-03) | director gated/additive + 라이브 PASS + critic 10차원 (archive) |
 | — | Intent 완화 (CC-021, focused fix) | **done** (2026-06-03) | P-001 v1.1.0 콘텐츠 토픽 기본 수용 + 차단→재작성 UX (미numbered, main merged) |
-| **16** | **A/B 실험 (Baseline 래퍼 vs Agent-grade PKM/RAG)** | **active** (2026-06-03) | ★ 검증/실험 페이즈 — moat 가설(H1 메커니즘 / H2 compounding)을 **단일변수 통제 A/B**로 측정 → go/no-go/partial → PARKED 로드맵(PKM/RAG §9) 재우선순위 GATE. 근거: `meta/proposals/2026-06-03_ab-experiment-agent-vs-baseline.md` |
-| 17~20 | PKM/RAG → commercial_viral / 배포 (verdict 기반 재우선순위) | future | ★ Phase 16 실험 결과로 우선순위·깊이 결정 (PKM/RAG provisional P17~ 재배정) + 배포 Gate B~G |
+| 16 | A/B 실험 (Baseline 래퍼 vs Agent-grade PKM/RAG) | **done** (2026-06-04) | ★ 검증/실험 페이즈(런타임 0). **판정 GO(메커니즘)**: generic Δ+0.008(flat=commodity) vs ★fit Δ+0.425(agent-grade 압도). 주입 방식 결정적(rag_context 0 / binding 큰 효과). S1+S2(pytest 537→556) + S3 blind kit(사용자 채점 deferred) + A4 종적 이월. (archive) |
+| **17** | **계정별 PKM 실빌드 (가 + 다)** | **active** (2026-06-04) | ★ Phase 16 GO 기반 production 빌드. 가=auth 신원→생성 연결 + brand_memory **구속 주입**(S2 교훈: rag_context 아님, gated/behavior-preserving) / 다=개인 PKM(pkm_entries) + 개인별 메모리 기능 + 다계정 주입. 근거: `meta/proposals/2026-06-03_pkm-rag-orchestrator-design.md` §9 1차 |
+| 18~20 | commercial_viral / 배포 (verdict 기반) | future | ★ Phase 17 결과 + S3 fit→value 봉인 후 재우선순위 + 배포 Gate B~G |
 | 21~30 | 고도화 | future | Spring, Expo, Custom RAG, LangGraph |
 
 ### ★ PARKED 제안 (future direction — proposal-first, 선행조건 gated, 빌드 승격 X)
