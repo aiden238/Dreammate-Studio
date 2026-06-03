@@ -186,12 +186,18 @@ def test_body_accepts_compact_plan() -> None:
 
 
 def test_rich_field_constants_match_model() -> None:
-    """PLAN_RICH_FIELDS / BEAT_RICH_FIELDS 가 실제 모델 필드와 정확히 일치 (drift 방지)."""
+    """PLAN_RICH_FIELDS / BEAT_RICH_FIELDS 가 실제 모델 필드와 정확히 일치 (drift 방지).
+
+    ★ Phase 15 (의도된 delta): Plan 에 director 슬롯(DIRECTOR_FIELDS)이 추가됨 →
+    rich = 전체 - legacy - director (director 는 별도 tier 슬롯). beat 필드는 director 무관(불변).
+    """
+    from backend.fastapi.schemas.output import DIRECTOR_FIELDS
+
     plan_fields = set(Plan.model_fields)
     beat_fields = set(PlanFlowBeat.model_fields)
     # 상수가 가리키는 필드는 전부 모델에 실재.
     assert PLAN_RICH_FIELDS <= plan_fields
     assert BEAT_RICH_FIELDS <= beat_fields
-    # 상수 = 모델 필드 - 기존(legacy) 필드 (rich = 신규분 전부).
-    assert PLAN_RICH_FIELDS == plan_fields - _LEGACY_PLAN_KEYS
+    # rich = 모델 필드 - legacy - director (rich/director 는 상호 배타 tier 슬롯).
+    assert PLAN_RICH_FIELDS == plan_fields - _LEGACY_PLAN_KEYS - DIRECTOR_FIELDS
     assert BEAT_RICH_FIELDS == beat_fields - _LEGACY_BEAT_KEYS

@@ -149,7 +149,21 @@ class Settings(BaseSettings):
         default=False,
         description=(
             "Phase 13: rich 출력(확장 스키마+프롬프트) 활성. "
-            "OFF=compact byte-identical, ON=rich. 환경변수 RICH_OUTPUT_ENABLED."
+            "OFF=compact byte-identical, ON=rich. 환경변수 RICH_OUTPUT_ENABLED. "
+            "★ Phase 15: output_mode(enum)와 공존 — effective_output_mode() 참조(backward-compat)."
+        ),
+    )
+
+    # ─── Phase 15 S1 — output_mode 3-tier enum (additive, default compact) ─
+    # ★ rich_output_enabled(boolean, Phase 13)를 일반화. director tier 추가.
+    #   default compact → compact/rich 경로 byte-identical. director 는 명시 활성에서만.
+    #   backward-compat: output_mode 미지정(compact) + rich_output_enabled=True → effective "rich"
+    #   (effective_output_mode()). 기존 508 테스트는 default compact + 매핑으로 불변.
+    output_mode: Literal["compact", "rich", "director"] = Field(
+        default="compact",
+        description=(
+            "Phase 15: 출력 tier (compact<rich<director). default compact. "
+            "환경변수 OUTPUT_MODE. rich_output_enabled(레거시)와 공존 — effective_output_mode() 가 종합."
         ),
     )
 
@@ -320,3 +334,17 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """싱글톤 settings."""
     return Settings()
+
+
+def effective_output_mode(settings: "Settings") -> str:
+    """Phase 15: 유효 output_mode 종합 (compact/rich/director).
+
+    backward-compat: `output_mode` 가 명시(rich/director)면 그것을 따른다. compact(default)이고
+    레거시 `rich_output_enabled=True` 면 "rich" 로 승격 → Phase 13/14 의 rich_output_enabled ON
+    동작을 100% 보존. 둘 다 미활성이면 "compact".
+
+    ★ 단일 종합 지점 — S3 wiring(generate/orchestrator/planning/critic)이 이 함수로 모드를 결정.
+    """
+    if settings.output_mode != "compact":
+        return settings.output_mode  # "rich" | "director" (명시 우선)
+    return "rich" if settings.rich_output_enabled else "compact"

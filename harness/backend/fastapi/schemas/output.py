@@ -56,6 +56,17 @@ Phase 13 Slice 1 추가 (CC-012 — output_schema rich 슬롯 additive):
     Plan.model_dump_compact() 가 rich 키를 제외 → compact 출력 byte-identical (A5-PP).
   - 깊이 격차 근거: eval/regression_results/2026-06-02_phase-12-s2-s3-depth-gap.md
     (compact depth 0.231 / rich 1.000 — 결핍 10 feature 중 7개가 스키마 슬롯 부재).
+
+Phase 15 Slice 1 추가 (director tier — output_mode 3rd tier):
+  - DirectorScene(5필드) + Plan director 3슬롯(DIRECTOR_FIELDS: hook_system / retention_architecture /
+    scene_breakdown) 추가. 전부 Optional default → compact/rich 경로 회귀 0 (additive).
+  - model_dump_compact() → model_dump_for_mode(output_mode) 로 일반화:
+      compact → rich+director 제외 (Phase 12 이전 byte-identical)
+      rich    → director 만 제외 (Phase 13 rich byte-identical) ★ director 키 누수 방지
+      director→ 전부 포함.
+    model_dump_compact() 은 model_dump_for_mode("compact") 별칭으로 보존.
+  - envelope_to_response_dict 는 output_mode 별 직렬화 (rich_enabled backward-compat 매핑).
+  - director 값은 output_mode=director(S3 wiring) 경로에서만 채워진다. 기획 브리프 경계(촬영지시 아님).
 """
 
 from datetime import datetime, timezone
@@ -170,6 +181,38 @@ PLAN_RICH_FIELDS: frozenset[str] = frozenset(
 BEAT_RICH_FIELDS: frozenset[str] = frozenset({"visual", "dialogue", "caption"})
 
 
+# ── Phase 15 S1: director tier (output_mode 3rd tier — compact<rich<director) ──
+# director = rich + 연출/리텐션 슬롯 (LLM-only, 데이터레이어 비의존). DIRECTOR_FIELDS 는
+# model_dump_for_mode 가 compact/rich 경로에서 제외 → byte-identical. 상업필드(market/
+# audience/brand/conversion 등)는 제외 = commercial_viral(NG, PKM/RAG 후속).
+class DirectorScene(BaseModel):
+    """scene_breakdown 의 한 씬 (director tier).
+
+    ★ 기획 브리프 수준 — 씬의 "기획 의도/감정/리텐션 근거"이지 촬영 지시·완성 대본 아님
+      (product_boundary, 제안서 보정2). director-subset 5필드 (상업필드 brand_signal/
+      commercial_signal 제외 = commercial_viral, 제안서 open issue #1 확정).
+    """
+
+    scene_intent: str = Field(..., min_length=1, description="director: 이 씬의 기획 의도")
+    viewer_emotion: str = Field(
+        ..., min_length=1, description="director: 시청자가 느끼길 의도하는 감정"
+    )
+    retention_device: str = Field(
+        ..., min_length=1, description="director: 이탈 방지/호기심 유지 장치"
+    )
+    why_this_works: str = Field(
+        ..., min_length=1, description="director: 작동 근거 (일반론 금지 — 패턴/맥락)"
+    )
+    fallback_scene: str | None = Field(
+        default=None, description="director: 약할 때 대안 씬 (A/B 성격)"
+    )
+
+
+DIRECTOR_FIELDS: frozenset[str] = frozenset(
+    {"hook_system", "retention_architecture", "scene_breakdown"}
+)
+
+
 class Plan(BaseModel):
     """plan_candidate 1개 (output_schema.md §8.1).
 
@@ -235,18 +278,50 @@ class Plan(BaseModel):
         description="rich(Phase 13): 길이 변형 (예: 30s/60s 컷).",
     )
 
-    def model_dump_compact(self, **kwargs: Any) -> dict[str, Any]:
-        """Phase 13 S1 (CC-012, 결정 3): rich 슬롯을 제외한 compact 직렬화.
+    # ── Phase 15 S1 director (additive, Optional — output_mode=director 경로에서만 채워짐) ──
+    hook_system: list[str] = Field(
+        default_factory=list,
+        max_length=5,
+        description="director(Phase 15): 첫 후크 + 재후크(re-hook) 지점 설계 (단발 hook_variants 위).",
+    )
+    retention_architecture: str | None = Field(
+        default=None,
+        description="director(Phase 15): 리텐션 구조 — 이탈 방지·호기심 갭·페이싱.",
+    )
+    scene_breakdown: list[DirectorScene] = Field(
+        default_factory=list,
+        description="director(Phase 15): 씬 단위 분해 (기획 브리프 수준, DirectorScene 5필드).",
+    )
 
-        S3 gated wiring 의 OFF 경로(rich_output_enabled=False)가 이 메서드로 직렬화하면
-        Phase 12 이전의 7필드(+rag_used) 출력과 byte-identical 하다 (acceptance A5-PP).
-        flow 의 beat rich 3종(visual/dialogue/caption)도 함께 제외한다.
+    def model_dump_for_mode(self, output_mode: str, **kwargs: Any) -> dict[str, Any]:
+        """Phase 15 S1: output_mode 별 직렬화 — 상위 tier 슬롯 제외 (Phase 13 model_dump_compact 일반화).
 
-        ★ S1 은 이 capability 만 제공·검증한다 — 실제 호출(OFF 경로 분기)은 S3.
+          compact  → rich + director 제외 (Phase 12 이전 7필드 byte-identical)
+          rich     → director 만 제외 (Phase 13 rich byte-identical)
+          director → 제외 0 (rich + director 전부)
+
+        ★ rich 경로도 DIRECTOR_FIELDS 를 제외해야 Phase 13 rich 와 byte-identical (director 키 None/[] 누수 방지).
+        실제 호출(output_mode 분기)은 S3.
         """
-        exclude: dict[str, Any] = {name: True for name in PLAN_RICH_FIELDS}
-        exclude["flow"] = {"__all__": {name: True for name in BEAT_RICH_FIELDS}}
+        exclude_plan: set[str] = set()
+        if output_mode == "compact":
+            exclude_plan = set(PLAN_RICH_FIELDS) | set(DIRECTOR_FIELDS)
+        elif output_mode == "rich":
+            exclude_plan = set(DIRECTOR_FIELDS)
+        # director → exclude_plan 비움 (rich + director 전부 직렬화)
+        exclude: dict[str, Any] = {name: True for name in exclude_plan}
+        if output_mode == "compact":
+            # beat rich(visual/dialogue/caption)는 compact 에서만 제외 (rich/director 는 포함)
+            exclude["flow"] = {"__all__": {name: True for name in BEAT_RICH_FIELDS}}
         return self.model_dump(exclude=exclude, **kwargs)
+
+    def model_dump_compact(self, **kwargs: Any) -> dict[str, Any]:
+        """Phase 13 호환 별칭 = model_dump_for_mode('compact').
+
+        ★ Phase 15: director 필드 추가로, compact 직렬화는 rich + director 를 모두 제외해야
+        byte-identical 유지 (model_dump_for_mode('compact') 가 PLAN_RICH_FIELDS ∪ DIRECTOR_FIELDS 제외).
+        """
+        return self.model_dump_for_mode("compact", **kwargs)
 
 
 class CriticScores(BaseModel):
@@ -516,12 +591,26 @@ class ErrorEnvelope(BaseModel):
 # ─── Phase 13 Slice S3 — gated 직렬화 헬퍼 (additive) ─────────────────
 
 def envelope_to_response_dict(
-    envelope: "Envelope", plans: list["Plan"], *, rich_enabled: bool
+    envelope: "Envelope",
+    plans: list["Plan"],
+    *,
+    rich_enabled: bool | None = None,
+    output_mode: str | None = None,
 ) -> dict:
-    """Envelope → 응답 dict. rich_enabled=False 면 plan_candidates 를 model_dump_compact()
-    로 직렬화해 rich 슬롯 제외(Phase 13 이전과 byte-identical, A5-PP). True 면 full(rich 포함).
-    plans 는 envelope.body.plan_candidates 와 동일 순서의 Plan 객체 리스트."""
+    """Envelope → 응답 dict. plan_candidates 를 output_mode 별로 직렬화 (model_dump_for_mode):
+      compact → rich+director 제외 (Phase 12 이전 byte-identical)
+      rich    → director 만 제외 (Phase 13 rich byte-identical)
+      director→ 전부 포함
+
+    ★ Phase 15: rich 경로도 plan_candidates 를 명시 직렬화(director 제외)해야 director 키 누수 0.
+    backward-compat: output_mode 미지정 시 rich_enabled→mode 매핑 (True=rich / False=compact) —
+    Phase 13/14 호출부(rich_enabled=...)는 그대로 동작.
+    plans 는 envelope.body.plan_candidates 와 동일 순서의 Plan 객체 리스트.
+    """
+    if output_mode is None:
+        output_mode = "rich" if rich_enabled else "compact"
     d = envelope.model_dump(mode="json")
-    if not rich_enabled:
-        d["body"]["plan_candidates"] = [p.model_dump_compact(mode="json") for p in plans]
+    d["body"]["plan_candidates"] = [
+        p.model_dump_for_mode(output_mode, mode="json") for p in plans
+    ]
     return d

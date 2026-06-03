@@ -367,6 +367,14 @@ Direction Summary. 한 줄 기획 방향.
 > (visual / dialogue / caption). ★ rich 값은 `rich_output_enabled` flag **ON**(S3) 경로에서만
 > 채워지고, **OFF(default)** 경로는 rich 키를 직렬화에서 제외 → 기존 7필드 출력 **byte-identical**.
 > 근거: Phase 12 깊이 격차(compact depth 0.231 / rich 1.000, 결핍 10 feature 중 7개 슬롯 부재).
+>
+> **v1.3.0 (2026-06-03 Phase 15 S1, CC-017 적용)**: `output_mode` **3-tier**(compact<rich<**director**)
+> 일반화 + `Plan` director 슬롯 3종 **additive** (전부 Optional): `hook_system`(재후크 설계) +
+> `retention_architecture`(리텐션 구조) + `scene_breakdown[]`(DirectorScene 5필드: scene_intent/
+> viewer_emotion/retention_device/why_this_works/fallback_scene). ★ director=**LLM-only**(데이터레이어
+> 비의존). 직렬화는 `Plan.model_dump_for_mode(output_mode)` — compact(rich+director 제외)/rich(director
+> 제외)/director(전부). **compact·rich 경로 byte-identical**(director 키 누수 0). 상업필드(market/
+> audience/brand/conversion 등)는 제외=commercial_viral(PKM/RAG 후속). 기획 브리프 경계(촬영지시 아님).
 
 ```json
 {
@@ -404,7 +412,19 @@ Direction Summary. 한 줄 기획 방향.
       "title_candidates": ["string"],   // rich(v1.2.0): 제목 후보 (≤5)
       "cta": "string | null              // rich(v1.2.0): Call-to-action",
       "references": ["string"],         // rich(v1.2.0): 창작 레퍼런스 (rag_used 와 구분, ≤5)
-      "length_variants": ["string"]     // rich(v1.2.0): 길이 변형 (예: 30s/60s 컷)
+      "length_variants": ["string"],    // rich(v1.2.0): 길이 변형 (예: 30s/60s 컷)
+
+      "hook_system": ["string"],        // director(v1.3.0): 첫 후크 + 재후크 지점 (≤5)
+      "retention_architecture": "string | null  // director(v1.3.0): 리텐션 구조(이탈방지·호기심갭·페이싱)",
+      "scene_breakdown": [              // director(v1.3.0): 씬 단위 분해 (기획 브리프 수준)
+        {
+          "scene_intent": "string",       // 이 씬의 기획 의도
+          "viewer_emotion": "string",     // 의도하는 시청자 감정
+          "retention_device": "string",   // 이탈 방지/호기심 장치
+          "why_this_works": "string",     // 작동 근거 (일반론 금지)
+          "fallback_scene": "string | null"  // 약할 때 대안 씬
+        }
+      ]
     }
   ]
 }
