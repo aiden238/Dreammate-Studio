@@ -61,7 +61,7 @@ from ..agents.planning import (
     PROMPT_VERSION as PLANNING_PROMPT_VERSION,
     run_planning,
 )
-from ..config import get_settings
+from ..config import effective_output_mode, get_settings
 from ..db import save_video_planning
 from ..rag import RetrievalResult, run_rag_retrieval
 from ..schemas.input import GenerateRequest
@@ -425,15 +425,14 @@ def generate(req: GenerateRequest, response: Response) -> Union[Envelope, JSONRe
         persistence.project_id,
         envelope.meta.request_id,
     )
-    # Phase 13 S3 (gated 직렬화 분기):
-    #   ON  → response_model=Envelope 가 rich 슬롯 포함 직렬화 (return envelope).
-    #   OFF → model_dump_compact() 로 rich 슬롯 제외 → Phase 13 이전과 byte-identical
-    #         (JSONResponse 로 직접 직렬화 + deprecation header 명시 보존, status 200).
-    if settings.rich_output_enabled:
-        return envelope
+    # Phase 15 S3 (gated 직렬화 분기): output_mode 별 직렬화 (compact: rich+director 제외 byte-identical /
+    #   rich: director 제외 / director: 전부). ★ 모든 모드를 envelope_to_response_dict 로 통일 →
+    #   rich 경로도 director 키 누수 0 (Phase 13 rich byte-identical). deprecation header 보존(status 200).
     from ..schemas.output import envelope_to_response_dict
 
-    payload = envelope_to_response_dict(envelope, [plan], rich_enabled=False)
+    payload = envelope_to_response_dict(
+        envelope, [plan], output_mode=effective_output_mode(settings)
+    )
     return JSONResponse(
         content=payload,
         status_code=200,

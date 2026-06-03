@@ -24,7 +24,7 @@ from typing import Any
 
 from openai import OpenAI, OpenAIError
 
-from ..config import get_settings
+from ..config import effective_output_mode, get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -281,10 +281,11 @@ def run_critic(
     _client = client or OpenAI(api_key=settings.openai_api_key)
     _model = model or settings.openai_model_critic
 
-    # Phase 13 S4 (gated): rich_output_enabled ON 이면 9차원(RICH_SYSTEM_PROMPT +
-    # DIMENSIONS_RICH) 평가, OFF(default) 면 기존 8차원 경로 byte-identical.
-    # ★ OFF 경로는 아래 변수가 전부 기존 상수/리터럴과 동일 → 동작·점수·prompt·user msg 불변.
-    if settings.rich_output_enabled:
+    # Phase 15 S3 (gated): output_mode 별 차원. compact=8 / rich=9(DIMENSIONS_RICH) / director=9(현재 rich 차원,
+    #   S4 에서 retention_design 추가해 10 으로 확장 예정). ★ compact/rich byte-identical
+    #   (effective_output_mode 가 rich_output_enabled=True→"rich" 매핑 — Phase 13 동작 보존).
+    _mode = effective_output_mode(settings)
+    if _mode in ("rich", "director"):
         _system_prompt = RICH_SYSTEM_PROMPT
         _expected: tuple[str, ...] = DIMENSIONS_RICH
         _user_intro = "다음 plan을 9차원으로 평가해줘:\n\n"

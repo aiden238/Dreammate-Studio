@@ -29,7 +29,7 @@ from typing import Any, Sequence
 
 from openai import OpenAI, OpenAIError
 
-from ..config import get_settings
+from ..config import effective_output_mode, get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -243,8 +243,16 @@ def run_planning(
     _model = model or settings.openai_model_default
 
     rag_block = _format_rag_context(rag_context or [])
-    # Phase 13 S3 (gated): rich_output_enabled ON 이면 RICH_SYSTEM_PROMPT, OFF 면 기존 compact.
-    base = RICH_SYSTEM_PROMPT if settings.rich_output_enabled else SYSTEM_PROMPT
+    # Phase 15 S3 (gated): output_mode 별 프롬프트 (compact/rich/director). ★ compact/rich byte-identical
+    #   (effective_output_mode 가 rich_output_enabled=True→"rich" 매핑 — Phase 13/14 동작 보존).
+    _mode = effective_output_mode(settings)
+    base = (
+        DIRECTOR_SYSTEM_PROMPT
+        if _mode == "director"
+        else RICH_SYSTEM_PROMPT
+        if _mode == "rich"
+        else SYSTEM_PROMPT
+    )
     system_prompt = base + (("\n" + rag_block) if rag_block else "")
 
     logger.info(
@@ -364,10 +372,13 @@ async def _run_planning_single(
     _client = client or OpenAI(api_key=settings.openai_api_key)
 
     rag_block = _format_rag_context(rag_context or [])
-    # Phase 13 S3 (gated): rich_output_enabled ON 이면 rich hint 프롬프트, OFF 면 기존 compact.
+    # Phase 15 S3 (gated): output_mode 별 hint 프롬프트 (compact/rich/director). compact/rich byte-identical.
+    _mode = effective_output_mode(settings)
     base_prompt = (
-        _build_rich_system_prompt_with_hint(approach_hint)
-        if settings.rich_output_enabled
+        _build_director_system_prompt_with_hint(approach_hint)
+        if _mode == "director"
+        else _build_rich_system_prompt_with_hint(approach_hint)
+        if _mode == "rich"
         else _build_system_prompt_with_hint(approach_hint)
     )
     system_prompt = base_prompt + (("\n" + rag_block) if rag_block else "")
@@ -577,7 +588,10 @@ async def _run_planning_single_via_gateway(
     # Phase 13 S3 (gated, 일관성): rich_output_enabled ON 이면 rich hint 프롬프트.
     #   ★ multi_provider 는 별 게이트(multi_provider_plans_enabled, default OFF)라
     #     이 함수는 통상 호출되지 않는다 — settings 는 late get_settings() 로 조회.
-    if get_settings().rich_output_enabled:
+    _mode = effective_output_mode(get_settings())
+    if _mode == "director":
+        base_prompt = _build_director_system_prompt_with_hint(approach_hint)
+    elif _mode == "rich":
         base_prompt = _build_rich_system_prompt_with_hint(approach_hint)
     else:
         base_prompt = _build_system_prompt_with_hint(approach_hint)

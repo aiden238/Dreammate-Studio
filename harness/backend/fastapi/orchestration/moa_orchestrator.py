@@ -44,7 +44,7 @@ from ..agents.planning import (
     PARALLEL_3_PROMPT_ID,
     PARALLEL_3_PROMPT_VERSION,
 )
-from ..config import get_settings
+from ..config import effective_output_mode, get_settings
 from ..rag import RetrievalResult
 from ..schemas.output import (
     Body,
@@ -618,12 +618,12 @@ async def generate_plan(
     )
 
     # plan_store 저장 (GET /plans/{plan_id} 에서 envelope 반환).
-    # Phase 13 S3 (gated 직렬화 분기): OFF=model_dump_compact(rich 제외, byte-identical) /
-    #   ON=full(rich 포함). plans_list 는 최종 plan 리스트 (Critic+revise 반영).
+    # Phase 15 S3 (gated 직렬화 분기): output_mode 별 (compact: rich+director 제외 byte-identical /
+    #   rich: director 제외 / director: 전부). plans_list 는 최종 plan 리스트 (Critic+revise 반영).
     from ..schemas.output import envelope_to_response_dict
 
     response_payload = envelope_to_response_dict(
-        envelope, plans_list, rich_enabled=settings.rich_output_enabled,
+        envelope, plans_list, output_mode=effective_output_mode(settings),
     )
     plan_entry["status"] = "generated"
     plan_entry["envelope"] = response_payload  # GET /plans/{plan_id} read 와 동일 직렬화.
