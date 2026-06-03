@@ -132,3 +132,52 @@ class FeedbackResponse(BaseModel):
 class FeedbackListResponse(BaseModel):
     plan_id: str
     events: list[dict[str, Any]]
+
+
+# ─── Phase 18 Slice S2 — Branding session (topic_discovery 배선) ──────
+# 주제를 모르는 사용자를 LLM 동적 스무고개(Akinator식)로 좁히는 세션 endpoint.
+# routers/plans.py 의 thin adapter 가 agents/topic_discovery.py 의
+#   run_topic_discovery_ask / run_topic_discovery_finalize 로 위임한다.
+# 상태(Q&A history + candidates)는 plan_entry.wizard_data.branding 에 누적 (in-memory).
+# auth-optional (익명 OK, wizard 와 동일). PKM 시드는 S4 범위 밖.
+
+
+class BrandingNextRequest(BaseModel):
+    """POST /plans/{plan_id}/branding/next body.
+
+    사용자의 **직전 질문 답변** (카드 선택 or 자유입력). 첫 호출(질문 생성 전)에는 둘 다 None.
+      - selected_option: 카드(선택지) 중 하나를 고른 경우.
+      - answer:          자유입력으로 답한 경우.
+    둘 다 주어지면 selected_option 을 우선 채택 (카드 선택이 더 명시적).
+    """
+
+    answer: str | None = Field(default=None, max_length=2000)
+    selected_option: str | None = Field(default=None, max_length=500)
+
+
+class BrandingNextResponse(BaseModel):
+    """POST /plans/{plan_id}/branding/next 응답 — topic_discovery ask 결과 + 진행도.
+
+    agent-io 매핑 (topic_discovery.run_topic_discovery_ask → 본 응답):
+      mode      ← ask 결과 mode ("ask" | "done")
+      question  ← ask 결과 question (mode="done" 시 None)
+      options   ← ask 결과 options (2~4개, mode="done" 시 None)
+      step      = 누적 history 길이 (현재까지 질문 수)
+      max_questions = N고개 상한 (topic_discovery.MAX_QUESTIONS)
+    """
+
+    mode: Literal["ask", "done"]
+    question: str | None = None
+    options: list[str] | None = None
+    step: int
+    max_questions: int
+
+
+class BrandingFinalizeResponse(BaseModel):
+    """POST /plans/{plan_id}/branding/finalize 응답 — 후보 주제 3개.
+
+    agent-io 매핑 (topic_discovery.run_topic_discovery_finalize → 본 응답):
+      candidates ← finalize 결과 candidates (각 {topic,tone,target,format,why_fit} 5필드 보장).
+    """
+
+    candidates: list[dict[str, Any]]

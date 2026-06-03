@@ -46,6 +46,11 @@ from ..agents.planning import (
     run_planning_parallel_3,
 )
 from ..agents.rewriter import run_rewriter
+from ..agents.topic_discovery import (
+    MAX_QUESTIONS as BRANDING_MAX_QUESTIONS,
+    run_topic_discovery_ask,
+    run_topic_discovery_finalize,
+)
 from ..config import get_settings
 from ..db import (
     BrandMemoryRepo,
@@ -85,6 +90,9 @@ from ..schemas.output import (
     compute_validation_warnings_phase4,
 )
 from ..schemas.plans import (
+    BrandingFinalizeResponse,
+    BrandingNextRequest,
+    BrandingNextResponse,
     FeedbackListResponse,
     FeedbackRequest,
     FeedbackResponse,
@@ -657,3 +665,144 @@ async def plans_feedback_list(plan_id: str):
 
     events = await _feedback_repo.list_for_plan(plan_id)
     return FeedbackListResponse(plan_id=plan_id, events=events)
+
+
+# ─── Phase 18 Slice S2 — Branding session (topic_discovery 배선) ──────
+# 주제를 모르는 사용자를 LLM 동적 스무고개(Akinator식)로 좁혀 후보 주제를 발굴한다.
+# thin adapter: plan_entry 존재 확인(404) → topic_discovery agent 위임 → 상태 누적 → 응답.
+#
+# 상태 누적 (in-memory, _plan_store[plan_id]["wizard_data"]["branding"]):
+#   {
+#     "history": [{"question": str, "options": [str], "answer": str|None}, ...],
+#     "candidates": [{topic,tone,target,format,why_fit}, ...]  # finalize 후 채워짐
+#   }
+#   - ask: pending 질문(answer=None)을 history 끝에 1개 둔다. 다음 next 호출에서
+#     answer/selected_option 이 오면 그 pending 항목에 채운 뒤 다음 질문을 만든다.
+#   - mode="done": 새 질문 추가 없음 (상한 도달 또는 충분히 좁혀짐).
+#
+# agent-io 매핑 (docs/contracts/agent_io_contract.md P-AUX-3 정합 — 본 파일은 runtime only):
+#   ask     → {"mode","question","options","rationale"}  ↔ BrandingNextResponse{mode,question,options,step,max_questions}
+#   finalize→ {"candidates":[{topic,tone,target,format,why_fit}×3]} ↔ BrandingFinalizeResponse{candidates}
+#
+# auth-optional (익명 OK, wizard 와 동일) — 인증 요구 X (PKM 시드는 S4).
+
+
+def _branding_state(plan_entry: dict[str, Any]) -> dict[str, Any]:
+    """plan_entry.wizard_data.branding 를 get-or-init 해서 반환 (history 보장)."""
+    wizard_data = plan_entry.setdefault("wizard_data", {})
+    branding = wizard_data.setdefault("branding", {"history": []})
+    # graceful — history 가 비정상이면 list 로 정규화.
+    if not isinstance(branding.get("history"), list):
+        branding["history"] = []
+    return branding
+
+
+@router.post(
+    "/plans/{plan_id}/branding/next",
+    response_model=BrandingNextResponse,
+    responses={404: {"model": ErrorEnvelope, "description": "plan_id 미발견 (INV-006)"}},
+    summary="브랜딩 스무고개 — 다음 질문 / 종료 (Phase 18 Slice S2)",
+    description=(
+        "직전 질문 답변(카드 선택 or 자유입력)을 받아 다음 적응형 질문 1개 + 선택지 2~4개를 "
+        "반환하거나(mode=ask), 충분히 좁혀졌으면 종료 신호(mode=done)를 반환한다. "
+        "Q&A 상태는 plan_entry.wizard_data.branding 에 누적 (in-memory). "
+        "topic_discovery.run_topic_discovery_ask 위임 (N고개 상한 강제). auth-optional."
+    ),
+)
+def plans_branding_next(plan_id: str, req: BrandingNextRequest):
+    plan_entry = _plan_store.get(plan_id)
+    if not plan_entry:
+        return _not_found_response(plan_id)
+
+    branding = _branding_state(plan_entry)
+    history: list[dict[str, Any]] = branding["history"]
+
+    # 1. 직전 질문 답변 기록 — pending(answer=None) 항목이 있고 답이 왔으면 채운다.
+    #    카드 선택(selected_option)을 자유입력(answer)보다 우선 (더 명시적).
+    answer = req.selected_option if req.selected_option else req.answer
+    if answer and history and history[-1].get("answer") is None:
+        history[-1]["answer"] = answer
+
+    # 2. 다음 질문 생성 (또는 종료) — topic_discovery ask 위임.
+    state = {"history": history, "max_questions": BRANDING_MAX_QUESTIONS}
+    try:
+        result = run_topic_discovery_ask(state)
+    except Exception as exc:  # graceful — agent 실패가 plan 흐름을 차단하지 않는다 (500 금지).
+        logger.warning(
+            "branding_next agent_failed: %s plan_id=%s (graceful done fallback)",
+            exc.__class__.__name__, plan_id,
+        )
+        plan_entry["updated_at"] = _now_iso()
+        return BrandingNextResponse(
+            mode="done",
+            question=None,
+            options=None,
+            step=len(history),
+            max_questions=BRANDING_MAX_QUESTIONS,
+        )
+
+    mode = result.get("mode")
+    plan_entry["status"] = "wizard_in_progress"
+    plan_entry["updated_at"] = _now_iso()
+
+    # 3-a. ask: pending 질문 1개를 history 에 추가하고 반환.
+    if mode == "ask":
+        question = result.get("question")
+        options = result.get("options") or None
+        history.append({"question": question, "options": options, "answer": None})
+        logger.info(
+            "branding_next ask plan_id=%s step=%d options=%d",
+            plan_id, len(history), len(options or []),
+        )
+        return BrandingNextResponse(
+            mode="ask",
+            question=question,
+            options=options,
+            step=len(history),
+            max_questions=BRANDING_MAX_QUESTIONS,
+        )
+
+    # 3-b. done: 새 질문 추가 없음 (상한 도달 또는 충분히 좁혀짐).
+    logger.info("branding_next done plan_id=%s step=%d", plan_id, len(history))
+    return BrandingNextResponse(
+        mode="done",
+        question=None,
+        options=None,
+        step=len(history),
+        max_questions=BRANDING_MAX_QUESTIONS,
+    )
+
+
+@router.post(
+    "/plans/{plan_id}/branding/finalize",
+    response_model=BrandingFinalizeResponse,
+    responses={404: {"model": ErrorEnvelope, "description": "plan_id 미발견 (INV-006)"}},
+    summary="브랜딩 스무고개 — 후보 주제 3개 합성 (Phase 18 Slice S2)",
+    description=(
+        "누적된 Q&A 히스토리를 종합해 후보 영상 주제 3개(각 {topic,tone,target,format,why_fit})를 "
+        "합성·반환하고 plan_entry.wizard_data.branding.candidates 에 저장한다. "
+        "topic_discovery.run_topic_discovery_finalize 위임. graceful (실패 시 빈 후보). auth-optional."
+    ),
+)
+def plans_branding_finalize(plan_id: str):
+    plan_entry = _plan_store.get(plan_id)
+    if not plan_entry:
+        return _not_found_response(plan_id)
+
+    branding = _branding_state(plan_entry)
+    state = {"history": branding["history"]}
+
+    try:
+        result = run_topic_discovery_finalize(state)
+        candidates = result.get("candidates", [])
+    except Exception as exc:  # graceful — finalize 실패가 plan 흐름을 차단하지 않는다 (500 금지).
+        logger.warning(
+            "branding_finalize agent_failed: %s plan_id=%s (graceful empty candidates)",
+            exc.__class__.__name__, plan_id,
+        )
+        candidates = []
+
+    branding["candidates"] = candidates
+    plan_entry["updated_at"] = _now_iso()
+    logger.info("branding_finalize plan_id=%s candidates=%d", plan_id, len(candidates))
+    return BrandingFinalizeResponse(candidates=candidates)
