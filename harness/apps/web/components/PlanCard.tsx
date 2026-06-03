@@ -307,6 +307,69 @@ export default function PlanCard({ plan }: PlanCardProps) {
         </section>
       )}
 
+      {/* director: 후크 시스템 (값 있을 때만 — Phase 15) */}
+      {plan.hook_system && plan.hook_system.length > 0 && (
+        <section aria-label="후크 시스템">
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+            후크 시스템 (첫 후크 + 재후크)
+          </h3>
+          <ul className="space-y-1.5">
+            {plan.hook_system.map((h, i) => (
+              <li
+                key={i}
+                className="text-sm text-neutral-700 leading-relaxed pl-3 border-l-2 border-neutral-200"
+              >
+                {h}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* director: 리텐션 설계 (값 있을 때만 — Phase 15) */}
+      {plan.retention_architecture && (
+        <section aria-label="리텐션 설계">
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+            리텐션 설계
+          </h3>
+          <p className="text-sm text-neutral-700 leading-relaxed">
+            {plan.retention_architecture}
+          </p>
+        </section>
+      )}
+
+      {/* director: 씬 분해 (값 있을 때만 — Phase 15, 기획 브리프 수준) */}
+      {plan.scene_breakdown && plan.scene_breakdown.length > 0 && (
+        <section aria-label="씬 분해">
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+            씬 분해
+          </h3>
+          <ol className="space-y-2">
+            {plan.scene_breakdown.map((scene, i) => (
+              <li
+                key={i}
+                className="rounded-md bg-neutral-50 px-3 py-2 text-sm leading-relaxed"
+              >
+                <p className="font-medium text-neutral-900">
+                  {i + 1}. {scene.scene_intent}
+                </p>
+                <p className="text-neutral-600 mt-0.5">
+                  감정: {scene.viewer_emotion} · 리텐션: {scene.retention_device}
+                </p>
+                <p className="text-neutral-500 text-xs mt-0.5">
+                  근거: {scene.why_this_works}
+                </p>
+                {scene.fallback_scene && (
+                  <p className="text-neutral-500 text-xs mt-0.5">
+                    대안: {scene.fallback_scene}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
       {/* Pros / Risks */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {plan.pros && (

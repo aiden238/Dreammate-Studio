@@ -70,6 +70,18 @@ export interface RagUsedEntry {
   [key: string]: unknown;
 }
 
+/**
+ * Phase 15 S1 director — scene_breakdown 요소 (기획 브리프 수준, 촬영지시 아님).
+ * 참조: backend/fastapi/schemas/output.py DirectorScene.
+ */
+export interface DirectorScene {
+  scene_intent: string; // 씬 기획 의도
+  viewer_emotion: string; // 의도하는 시청자 감정
+  retention_device: string; // 이탈 방지/호기심 장치
+  why_this_works: string; // 작동 근거
+  fallback_scene?: string | null; // 대안 씬
+}
+
 export interface Plan {
   plan_id: string; // uuid
   option_index: number; // 0..2
@@ -95,6 +107,14 @@ export interface Plan {
   cta?: string | null; // Call-to-action
   references?: string[]; // 창작 레퍼런스 (rag_used 와 구분, ≤5)
   length_variants?: string[]; // 길이 변형 (예: 30s/60s 컷)
+  /**
+   * Phase 15 S1 director 슬롯 3종 (additive, optional — backend output_mode=director 경로에서만
+   * 채워짐). compact/rich 응답은 이 키들을 제외하므로 undefined.
+   * 참조: backend/fastapi/schemas/output.py Plan / DIRECTOR_FIELDS.
+   */
+  hook_system?: string[]; // 첫 후크 + 재후크(re-hook) 설계 (≤5)
+  retention_architecture?: string | null; // 리텐션 구조 (이탈방지·호기심갭·페이싱)
+  scene_breakdown?: DirectorScene[]; // 씬 단위 분해
 }
 
 // ─── Critic Evaluation (Slice 3) ──────────────────────────────────────

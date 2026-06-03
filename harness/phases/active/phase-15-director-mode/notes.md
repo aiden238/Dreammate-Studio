@@ -15,7 +15,7 @@
 - [x] **S2 ✅ P-006 director 프롬프트** (2026-06-03, CC-018, commit 대기): `DIRECTOR_SYSTEM_PROMPT`(rich 12 + director 3슬롯 지시 + 브리프 경계 + 보장 금지) + `_build_director_system_prompt_with_hint` + `DIRECTOR_PROMPT_VERSION="v1.2.0"` + prompt_registry §7 P-006 **v1.2.0**(gated 공존) + 신규 test 5 → **pytest 522→527**. ★ compact/rich 프롬프트 보존 + director 런타임 미연결(behavior-preserving, wiring=S3). 다음=S3.
 - [x] **S3 ✅ gated wiring** (2026-06-03, commit 대기): `rich_output_enabled` boolean 분기 → `effective_output_mode` 분기로 일반화 (planning 프롬프트 3곳 + critic 차원 + moa_orchestrator 직렬화 + generate + plans 반환). ★ compact/rich byte-identical(531 그대로) + director 경로 활성(director 프롬프트+스키마+9차원). ★ generate/plans 성공 응답을 항상 mode별 stored dict(envelope_to_response_dict)로 통일 → rich도 director 키 누수 0. 신규 test 4 → **pytest 527→531**. director critic=9차원(S4에서 retention_design 추가→10). 다음=S4.
 - [x] **S4 ✅ Critic director 차원** (2026-06-03, CC-019, commit 대기): `DIMENSIONS_DIRECTOR`(rich 9 + retention_design=10) + `DIRECTOR_SYSTEM_PROMPT`(RICH 프롬프트 프로그램적 확장) + `DIRECTOR_PROMPT_VERSION=v1.3.0` + run_critic output_mode 분기(8/9/10) + prompt_registry §8 P-007 **v1.3.0**(gated) + agent-io-check PASS + 신규 test 5 → **pytest 531→536**. ★ compact/rich(8/9) byte-identical. 얕은 director=retention_design 저점(88점 함정 확장 방어). 다음=S5.
-- [ ] S5 frontend PlanCard director 조건부
+- [x] **S5 ✅ frontend PlanCard director 조건부** (2026-06-03, commit 대기): `lib/types.ts` `DirectorScene` + Plan director 3슬롯(optional) + `PlanCard.tsx` director 조건부 3섹션(후크시스템/리텐션설계/씬분해) — 값 있을 때만(compact/rich 렌더 회귀 0, additive). typecheck+lint+build green. design.md 준수(읽기전용, 제작 UI 미포함). backend 0. 다음=S6(라이브 데모 — 사용자 검증).
 - [ ] S6 cost + director depth 측정 + close
 
 ## 참조
