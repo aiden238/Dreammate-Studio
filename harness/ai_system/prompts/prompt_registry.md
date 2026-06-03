@@ -407,7 +407,7 @@ variant 정책: Phase 4 Slice 2 의 3-plan parallel 확장(run_planning_parallel
 ## 8. P-007 · critic (Critic Agent)
 
 **Stage**: 품질 평가 (생성된 기획안 1개에 대해)
-**Version**: v1.1.0 (active, OFF default 8차원) · **v1.2.0 (gated, rich 9차원 — Phase 13 S4)**
+**Version**: v1.1.0 (active, OFF default 8차원) · **v1.2.0 (gated, rich 9차원 — Phase 13 S4)** · **v1.3.0 (gated, director 10차원 +retention_design — Phase 15 S4)**
             (이전: v1.0.0 — Phase 8 ADR-029)
 **Input variables**: `target_plan`, `one_line_direction`, `selected_context`, `brand_memory`
 **Output schema** (LLM-facing — 0–5 정수, v1.1.0=8 dims / v1.2.0=9 dims):
@@ -499,10 +499,16 @@ v1.2.0 (2026-06-03, Phase 13 S4 ADR-CC-015, ★ gated): rich 9번째 차원 `dep
         ★ gated 공존 — `rich_output_enabled` ON 경로 전용(RICH_SYSTEM_PROMPT + DIMENSIONS_RICH).
         OFF(default)=v1.1.0 8차원 byte-identical(deprecate 아님). verdict 규칙 구조 동일(9 dim avg).
         output_schema CriticEvaluation.dimensions 는 자유 dict → 9번째 키 additive(스키마 위반 아님).
+v1.3.0 (2026-06-03, Phase 15 S4 CC-019, ★ gated): director 10번째 차원 `retention_design`
+        (0–5) 추가 — 재후크 지점·이탈 방지·페이싱의 구조적 설계 평가(hook_system/retention_architecture/
+        scene_breakdown.retention_device). ★ gated 공존 — `output_mode=director` 경로 전용
+        (DIRECTOR_SYSTEM_PROMPT + DIMENSIONS_DIRECTOR). compact(v1.1.0 8)/rich(v1.2.0 9)는 불변 byte-identical.
+        "88점 함정" 확장 방어 — 얕은 director 는 retention_design 저점. verdict 규칙 구조 동일(10 dim avg).
 변경 시: prompt-version-review (golden_set 최소 10케이스 — Phase 9+, NG7).
 단일 출처: 본 registry SoT. 구현 상수 critic.PROMPT_(ID|VERSION) = P-007 / v1.1.0 정합 (active/OFF).
-          rich 변형은 critic.RICH_PROMPT_VERSION = v1.2.0 (gated, ON 경로)
-          (Phase 8 Slice 4 / Phase 13 S4 test_prompt_registry_consistency).
+          rich 변형 critic.RICH_PROMPT_VERSION = v1.2.0 (gated, rich) / director 변형
+          critic.DIRECTOR_PROMPT_VERSION = v1.3.0 (gated, director)
+          (Phase 8 Slice 4 / Phase 13 S4 / Phase 15 S4 test_prompt_registry_consistency).
 ```
 
 #### 0–5 ↔ 0–1 conservative adapter (ADR-029)

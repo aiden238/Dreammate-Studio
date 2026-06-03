@@ -216,6 +216,35 @@ blocking_issues:
 """
 
 
+# ─── Phase 15 S4 (gated): director 10번째 차원 retention_design ─────
+# ★ output_mode=director 경로 전용. rich 9차원 + retention_design(재후크·이탈방지·페이싱 구조 설계).
+#   compact/rich(8/9차원) 경로는 불변 byte-identical. rubric: 제안서 §4.1 retention_design.
+#   "88점 함정" 확장 방어 — 얕은 director(hook_system/retention/scene 빈약)는 retention_design 저점 → 평균 하락.
+DIMENSIONS_DIRECTOR: tuple[str, ...] = DIMENSIONS_RICH + ("retention_design",)
+
+# director 프롬프트 = rich(9차원) 프롬프트에 retention_design(10번째) 추가 (프로그램적 구성 — 중복 최소화).
+DIRECTOR_SYSTEM_PROMPT = (
+    RICH_SYSTEM_PROMPT.replace("다음 9차원", "다음 10차원")
+    .replace("9 평가 차원", "10 평가 차원")
+    .replace(
+        "판정 규칙 (overall_verdict):",
+        "  10. retention_design   : 리텐션 설계 — 재후크 지점·이탈 방지·페이싱이 구조적으로 설계됐는가\n"
+        "                           (hook_system / retention_architecture / scene_breakdown 의 retention_device).\n"
+        "                           anchors: 0~1 없음 / 2~3 일부 / 4~5 체계적. ★ 얕은 director = 낮은 점수.\n\n"
+        "판정 규칙 (overall_verdict):",
+    )
+    .replace(
+        '"depth_actionability": 0-5',
+        '"depth_actionability": 0-5,\n    "retention_design": 0-5',
+    )
+    .replace(
+        '"depth_actionability": "..."',
+        '"depth_actionability": "...",\n    "retention_design": "..."',
+    )
+    .replace("9개 키는 반드시 모두 채운다", "10개 키는 반드시 모두 채운다")
+)
+
+
 # ─── verdict 산출 (server-side 보정) ──────────────────────────────────
 
 def _derive_verdict(
@@ -285,9 +314,13 @@ def run_critic(
     #   S4 에서 retention_design 추가해 10 으로 확장 예정). ★ compact/rich byte-identical
     #   (effective_output_mode 가 rich_output_enabled=True→"rich" 매핑 — Phase 13 동작 보존).
     _mode = effective_output_mode(settings)
-    if _mode in ("rich", "director"):
+    if _mode == "director":
+        _system_prompt = DIRECTOR_SYSTEM_PROMPT
+        _expected: tuple[str, ...] = DIMENSIONS_DIRECTOR
+        _user_intro = "다음 plan을 10차원으로 평가해줘:\n\n"
+    elif _mode == "rich":
         _system_prompt = RICH_SYSTEM_PROMPT
-        _expected: tuple[str, ...] = DIMENSIONS_RICH
+        _expected = DIMENSIONS_RICH
         _user_intro = "다음 plan을 9차원으로 평가해줘:\n\n"
     else:
         _system_prompt = SYSTEM_PROMPT
@@ -521,3 +554,6 @@ PROMPT_VERSION = "v1.1.0"
 # (additive 차원 + 신규 채점 지시, output_schema CriticEvaluation 은 additive Optional).
 # ★ rich_output_enabled=True(ON) 경로 전용. OFF 면 PROMPT_VERSION(v1.1.0) 유지 → byte-identical.
 RICH_PROMPT_VERSION = "v1.2.0"
+# Phase 15 S4 (gated, CC-019): director 10번째 차원 retention_design 추가 — semver minor.
+# ★ output_mode=director 경로 전용. compact/rich(v1.1.0/v1.2.0) 불변.
+DIRECTOR_PROMPT_VERSION = "v1.3.0"
