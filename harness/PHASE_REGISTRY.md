@@ -90,21 +90,27 @@ Result     : Entry + S1(백엔드 wizard_data additive 조립) + S2(Quick 실연
 다음 Phase : **pending_user_decision** — rich default 전환(A) / 배포 Gate B~G(C) / 품질·정식화(D) / PARKED(PKM-RAG→commercial_viral, 선행조건=위저드 실연결 충족 → 후보 활성)
 ```
 
-## 🟢 Phase 15 = director 모드 (output_mode 3rd tier) — ★ active (entry 작성 2026-06-03)
+## Phase 15 done (archive) — 제품 phase (director 모드, output_mode 3rd tier)
+
+`phases/archive/phase-15-director-mode/`
 
 ```
-Status     : ACTIVE (entry 작성 2026-06-03) — 사용자 결정(로드맵 ① director → ② 검증 보강 → ③ PKM/RAG 데이터레이어)
+Status     : ✅ DONE (2026-06-03) — 로드맵 ① director (project-1 PARKED 제안서 기반)
 유형       : 제품 phase (출력 tier 확장) — ★ compact/rich byte-identical(behavior-preserving) + additive/gated
-기반       : project-1 PARKED 제안서 meta/proposals/2026-06-03_commercial-viral-mode-design.md (§2.1 4-tier / §3 P-006 / §4 critic / §6 cost)
-Goal       : output_mode 를 compact/rich/director 3-tier 일반화 + director(rich + 연출·리텐션 슬롯) gated/additive 추가. director=LLM-only(데이터레이어 비의존).
-director슬롯: hook_system + retention_architecture + scene_breakdown[director-subset: scene_intent/viewer_emotion/retention_device/why_this_works/fallback_scene] (제안서 open issue #1 확정). 상업필드=commercial_viral(NG1).
-Entry+6Slice: Entry(8+self 14th) / S1 output_mode enum+director 스키마 additive(byte-identical) / S2 P-006 director v1.2.0 / S3 gated wiring(output_mode 분기) / S4 critic director 차원(retention_design, P-007 v1.3.0) / S5 frontend PlanCard director / S6 cost+depth+close
-회귀 게이트: pytest 508 + compact/rich byte-identical + 키 0
-폴더       : phases/active/phase-15-director-mode/
-로드맵      : ① director(본) → ② 검증 보강(human review+전수 eval) → ③ PKM/RAG 데이터레이어 → (commercial_viral)
+Goal       : output_mode 를 compact/rich/director 3-tier 일반화 + director(rich + 연출·리텐션 슬롯) gated/additive. director=LLM-only(데이터레이어 비의존).
+director슬롯: hook_system + retention_architecture + scene_breakdown[5필드] (제안서 open issue #1 확정). 상업필드=commercial_viral(NG).
+Result     : Entry + S1(스키마 v1.3.0) + S2(P-006 v1.2.0) + S3(wiring) + S4(critic retention_design v1.3.0) + S5(frontend) + S6(director Plan-read fix + 라이브 검증 + cost). pytest 508→**536**(기존 508 수정 0=compact/rich byte-identical) + 프론트 build 12 routes + scenario_simulation 36/36 + 키 0. 신규 endpoint/agent 0.
+라이브 검증 : ★ director API PASS — 슬롯 전부 채워짐(hook_system 2 / retention_architecture / scene_breakdown 2씬×5필드) + critic 10차원. 브라우저 확인.
+★ 발견·수정 : Intent 오반려(맨 토픽→INV-001, 별개 후속) + director Plan-read wiring 누락(generate/orchestrator 가 LLM dict 에서 director 미read → 빈 출력, fix ce6cf99).
+★ 사용자 피드백: director=**초안 수준**(기획 브리프 경계) — 대본 직접 쓰기엔 부족 → 품질 보강은 이후 phase(commercial_viral + PKM/RAG).
+회고       : meta/retrospectives/phase-15.md
+리포트     : eval/regression_results/2026-06-03_phase-15-director-verify.md
+4 CC       : CC-017(스키마)+CC-018(P-006)+CC-019(critic P-007)+CC-020(cost)
+신규 패턴  : P-OUTPUT-SLOT-WIRING-001(새 슬롯=6곳 wiring) + P-LIVE-VERIFY-001(자동 green≠동작) + P-GATED-OUTPUT-CHANGE-001 update
+다음 Phase : **pending_user_decision** — ★ ① Intent 오반려 개선(다음 작업) / ② 검증 보강(human review + 전수 eval) / ③ PKM/RAG 데이터레이어 → commercial_viral / rich default 전환 / 배포 Gate B~G
 ```
 
-## 🟡 잔존 후보 (Phase 15 진행 중 — A/C/D + commercial_viral/PKM-RAG 후속)
+## 🟡 잔존 후보 (Phase 15 done — A/C/D + commercial_viral/PKM-RAG 후속)
 
 ```
 Phase 1~14 완료 + Phase 15 director active. 잔존 결정 후보:

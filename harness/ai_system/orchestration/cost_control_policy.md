@@ -251,3 +251,16 @@ Phase 11 B안(3-provider 3안 다양성, `multi_provider_plans_enabled` default 
 - 두 flag 동시 활성은 **paid tier + 명시적 opt-in** 한정 권장 (free tier 차단 — §13.4 연계).
 - 동시 ON 정밀 단가는 B안 정식화(ADR + provider별 registry cost) 완료 후 별도 contract-change 로 §2/§3 상한 전면 재조정 (본 CC-016 은 합산 주의 + gated 정식화까지 — additive 범위).
 - ★ default = 둘 다 OFF → 본 합산 비용 미발생 (기존 흐름 100% 보존).
+
+## 15. director 출력 cost (Phase 15 — ★ gated, additive)
+
+> 추가: 2026-06-03 (contract-change **CC-020**, Phase 15 S6). ★ additive / behavior-preserving — §1~§14 보존. `output_mode=director` 경로만 해당. compact/rich(default 포함)는 cost 영향 0(byte-identical).
+
+### 15.1 director = rich + 연출/리텐션 슬롯 → 토큰 추가 증가
+- director(`output_mode=director`)는 rich 12슬롯 + director 3슬롯(hook_system / retention_architecture / scene_breakdown[N씬 × 5필드])을 추가 요구 → 출력 토큰이 **rich(compact 대비 3~5배)보다 추가로 증가**(scene 리스트가 주축). 대략 **compact 대비 5~8배** 추정(데모 후 정밀 실측 필요).
+- 구현: `run_planning` director max_tokens **1500 → 3500**(절단 방지, compact/rich 1500 불변). 3-plan 경로면 × 3안. Critic 도 director=10차원(입력 rich 본문 + 출력 차원 1개 추가).
+
+### 15.2 게이트 + tier (§13.4 계승)
+- ★ director 활성은 명시적 `OUTPUT_MODE=director` — default compact 불변. rich 와 동일하게 **paid/opt-in 권장**(free tier 는 compact 기본).
+- director 는 rich↔commercial_viral **중간 tier** — commercial_viral(10섹션 + 시장/트렌드, PKM/RAG 의존)보다는 낮음. commercial_viral cost 는 해당 phase 에서 별도(§미정).
+- 정밀 단가(director N씬 상한 등)는 실 LLM 측정 후 별도 contract-change.
