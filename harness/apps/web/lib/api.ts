@@ -78,6 +78,9 @@ export async function generate(
         "Content-Type": "application/json",
         Accept: "application/json",
       },
+      // Phase 17 가: auth httpOnly cookie 전송 → auth_user_id 흐름(PKM 주입 조건).
+      //   cross-origin(:3000→:8000)이라 명시 필요. CORS allow_credentials=True.
+      credentials: "include",
       body: JSON.stringify(payload),
     });
   } catch (networkErr) {
@@ -303,6 +306,9 @@ export async function generateMultiPlan(
         "Content-Type": "application/json",
         Accept: "application/json",
       },
+      // Phase 17 가: auth httpOnly cookie 전송 → auth_user_id 흐름(PKM 주입 조건).
+      //   cross-origin(:3000→:8000)이라 명시 필요. CORS allow_credentials=True.
+      credentials: "include",
       body: JSON.stringify(payload),
     });
   } catch (networkErr) {
