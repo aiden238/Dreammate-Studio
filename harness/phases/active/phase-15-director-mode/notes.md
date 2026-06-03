@@ -19,6 +19,7 @@
 - [ ] S6 cost + director depth 측정 + close
 
 ## 참조
-- 제안서 §2(스키마)/§3(P-006)/§4(critic)/§6(cost)/§7(단계화·의존성).
+- ★ **Phase 15 전체 기획안(구현 spec)**: `meta/proposals/2026-06-03_phase-15-director-mode-plan.md` — entry 통합 + 구체 설계(enum 매핑/DirectorScene/model_dump_for_mode/프롬프트 구조/critic 차원/slice 상세).
+- 기반 제안서 §2(스키마)/§3(P-006)/§4(critic)/§6(cost)/§7(단계화·의존성).
 - sibling: `2026-06-03_pkm-rag-orchestrator-design.md`(로드맵 ③).
 - 계승 패턴: P-GATED-OUTPUT-CHANGE-001(Phase 13) + P-WIZARD-WIRING-001(Phase 14).
