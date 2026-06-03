@@ -199,6 +199,30 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 17 다-S6 — 개인 PKM 추출 루프 배선 게이트 (additive, default False) ─
+    # ★ 추출(extract)과 주입(injection)은 별개 관심사 — 별도 flag 로 분리 (다-S5 brand 와 대칭):
+    #   · personal_pkm_injection_enabled = 읽기(load → planning user_input prepend, 다-S3, brand 보다 앞)
+    #   · personal_pkm_extract_enabled    = 쓰기(feedback 신호 → pkm_entries(scope=personal) 적재, 다-S6)
+    # ★ behavior-preserving / gated default-off: OFF(default) OR 익명 → feedback endpoint 가
+    #   개인 PKM 추출기를 호출하지 않아 pkm_entries 쓰기 0 (응답 byte-identical, 기존 600 테스트
+    #   OFF default 라 불변). ON + 신원(auth_user_id) 일 때만 feedback 저장 후
+    #   extract_brand_memory_candidates(...) 호출 → 고신뢰 후보를 PkmRepo.add_entry 로 적재.
+    # ★ ★ personal scope 는 brand-독립(User 계층) — brand 해결 불필요, auth_user_id 만으로 적재한다.
+    # ★ governance (ADR-031 §P-AUX-2 / agent_io §7.5): 자동 INSERT 는 confidence ≥ 0.9 (명시 선호)
+    #   후보만 — 나머지(0.3/0.7)는 proposal (쓰기 0, pending UX). blanket 자동 승격 0 (NG12 계승).
+    personal_pkm_extract_enabled: bool = Field(
+        default=False,
+        description=(
+            "Phase 17 다-S6: feedback 신호로부터 개인 PKM(pkm_entries, scope=personal) 을 추출·적재할지 "
+            "여부 (extraction, brand-독립 User 계층). ★ gated default-off — False 면 추출/쓰기 0 "
+            "(익명·OFF 경로 byte-identical). True + 신원(auth_user_id) 일 때만 feedback 저장 후 "
+            "extract_brand_memory_candidates 호출 → confidence ≥ 0.9 명시 선호 후보만 PkmRepo.add_entry "
+            "(agent_io §7.5 / ADR-031 — 나머지는 제안). personal_pkm_injection_enabled(다-S3 읽기) 및 "
+            "brand_memory_extract_enabled(다-S5 brand 쓰기)와 별개 관심사. "
+            "환경변수 PERSONAL_PKM_EXTRACT_ENABLED 로 override."
+        ),
+    )
+
     # ─── Phase 13 Slice S3 — rich 출력 게이트 (additive, default False) ─
     # ★ behavior-preserving / gated default-off: OFF=compact byte-identical
     #   (Plan.model_dump_compact() 가 rich 슬롯 제외 → Phase 13 이전 응답과 동일),

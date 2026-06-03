@@ -23,7 +23,11 @@ from uuid import uuid4
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
-from ..agents.brand_memory_extractor import run_brand_memory_extractor
+from ..agents.brand_memory_extractor import (
+    CONFIDENCE_EXPLICIT,
+    extract_brand_memory_candidates,
+    run_brand_memory_extractor,
+)
 from ..agents.critic import (
     PROMPT_ID as CRITIC_PROMPT_ID,
     PROMPT_VERSION as CRITIC_PROMPT_VERSION,
@@ -47,6 +51,7 @@ from ..db import (
     BrandMemoryRepo,
     BrandRepo,
     FeedbackRepo,
+    PkmRepo,
     PlansRepo,
     SelectionRepo,
     get_supabase,
@@ -137,6 +142,15 @@ _brand_repo: BrandRepo = BrandRepo(
     in_memory_store={},
 )
 _brand_memory_repo: BrandMemoryRepo = BrandMemoryRepo(
+    supabase_client=get_supabase(),
+    in_memory_store={},
+)
+
+# Phase 17 다-S6 (개인 PKM 추출 루프): feedback 신호 → pkm_entries(scope=personal) 적재.
+#   - 다-S3 이 만든 동일 테이블(가-S3 PkmRepo) — 가-S3 주입(읽기)이 읽는 그 테이블.
+#   - ★ brand-독립 (User 계층) — brand 해결 불필요, auth_user_id 만으로 격리/적재.
+#   - Supabase 사용 가능 시 PostgreSQL(pkm_entries), 아니면 in-memory fallback (회귀 0).
+_pkm_repo: PkmRepo = PkmRepo(
     supabase_client=get_supabase(),
     in_memory_store={},
 )
@@ -407,6 +421,99 @@ async def _run_brand_memory_extract_hook(
     )
 
 
+# ─── Phase 17 다-S6 — 개인 PKM 추출 루프 배선 (gated, graceful) ────────
+async def _run_personal_pkm_extract_hook(
+    plan_id: str,
+    auth_user_id: str | None,
+    *,
+    feedback_repo: FeedbackRepo | None = None,
+    selection_repo: SelectionRepo | None = None,
+    pkm_repo: PkmRepo | None = None,
+    feedback_events: list[dict[str, Any]] | None = None,
+    selected_plans: list[dict[str, Any]] | None = None,
+) -> None:
+    """feedback/selection 신호 → pkm_entries(scope=personal) 추출·적재 (★ gated default-off, best-effort).
+
+    다-S5 `_run_brand_memory_extract_hook` 의 **개인 scope 대칭**. feedback 이 영속화된 **후**
+    호출하는 부가 처리. settings.personal_pkm_extract_enabled 가 켜져 있고 신원(auth_user_id)이
+    있을 때만:
+      1. ★ brand 해결 불필요 — personal scope 는 brand-독립(User 계층). auth_user_id 가 곧 키다
+         (다-S5 의 get_or_create_default 단계 없음).
+      2. 누적 신호 로드 — 현재 plan 의 feedback_events(list_for_plan) + selected_plans(get).
+         ★ 호출자가 이미 로드한 feedback_events/selected_plans 를 인자로 넘기면 재로드하지 않는다
+         (brand hook 과 DB 읽기 공유 — graceful double-read 회피). 미전달 시 repo 로 로드(graceful).
+      3. 기존 personal PKM(list_for_user, scope=personal) 로드 — extractor 의 dedup(conflicts 분리)
+         입력. entry_type enum 은 brand_memory_entries 와 동일하므로 current_brand_memory 로 전달.
+      4. 순수 extract_brand_memory_candidates(...) 호출 (LLM 0, heuristic).
+         ★ run_brand_memory_extractor(persist=True) 의 add_entry 는 **brand-keyed** 시그니처라
+         PkmRepo 에 맞지 않음 → 순수 추출기만 부르고 영속화는 본 helper 가 PkmRepo 로 직접 수행.
+      5. governance (ADR-031 §P-AUX-2 / agent_io §7.5): confidence ≥ CONFIDENCE_EXPLICIT(0.9)
+         명시-선호 후보만 PkmRepo.add_entry(scope='personal') 자동 INSERT — 0.3/0.7 은 제안만(쓰기 0).
+         blanket 자동 승격 0 (NG12 계승 — 다-S5 와 거버넌스 parity).
+
+    ★ behavior-preserving: flag OFF(default) OR 익명(auth_user_id None) → 즉시 return,
+      pkm_entries 쓰기 0, 추출기 미호출 (no surprise write). feedback 응답 byte-identical.
+    ★ graceful: 어떤 단계 실패도 raise 금지 — 추출 실패가 feedback 기록을 차단하지 않는다
+      (호출자도 try/except 로 이중 방어). 추출 결과는 로깅만 (응답 schema 불변).
+
+    ★ DI seam: feedback_repo / selection_repo / pkm_repo 인자로 실 Supabase 없이(in-memory)
+      배선을 단위 테스트한다 (test_brand_memory_extract_wiring / test_pkm_repo 패턴).
+    """
+    settings = get_settings()
+    # ★ 게이트 — flag OFF 또는 익명이면 추출/쓰기 0 (byte-identical, no surprise write).
+    if not (settings.personal_pkm_extract_enabled and auth_user_id):
+        return
+
+    feedback_repo = feedback_repo if feedback_repo is not None else _feedback_repo
+    selection_repo = selection_repo if selection_repo is not None else _selection_repo
+    pkm_repo = pkm_repo if pkm_repo is not None else _pkm_repo
+
+    # 2. 누적 신호 — 호출자가 이미 로드한 값을 재사용(DB 읽기 공유), 없으면 plan 단위 로드 (graceful).
+    if feedback_events is None:
+        feedback_events = await feedback_repo.list_for_plan(plan_id)
+    if selected_plans is None:
+        selection = await selection_repo.get(plan_id)
+        selected_plans = [selection] if selection else None
+
+    # 3. 기존 personal PKM 로드 (extractor dedup/conflict 입력 — entry_type enum 호환).
+    current_pkm = await pkm_repo.list_for_user(auth_user_id, scope="personal")
+
+    # 4. 순수 추출 (LLM 0, heuristic). persist 는 PkmRepo 키 시그니처 차이로 본 helper 가 직접 수행.
+    result = extract_brand_memory_candidates(
+        feedback_events,
+        selected_plans,
+        current_brand_memory=current_pkm,
+    )
+
+    # 5. (gated 자동) 영속화 — confidence ≥ 0.9 명시 선호 후보만 INSERT (§7.5 governance parity).
+    persisted = 0
+    for entry in result.get("proposed_entries", []):
+        if float(entry.get("confidence", 0.0)) < CONFIDENCE_EXPLICIT:
+            continue  # 0.3/0.7 은 제안만 (쓰기 0, pending UX — NG12)
+        try:
+            await pkm_repo.add_entry(
+                auth_user_id,
+                entry["entry_type"],
+                entry["content"],
+                scope="personal",
+                confidence=float(entry["confidence"]),
+            )
+            persisted += 1
+        except Exception as exc:  # pragma: no cover — graceful (저장 실패 무시)
+            logger.warning(
+                "personal_pkm_persist_failed: %s entry_type=%s (graceful)",
+                exc.__class__.__name__, entry.get("entry_type"),
+            )
+
+    logger.info(
+        "personal_pkm_extract triggered: plan_id=%s auth_user_id=%s proposed=%d persisted=%d",
+        plan_id,
+        auth_user_id,
+        len(result.get("proposed_entries", [])),
+        persisted,
+    )
+
+
 @router.post(
     "/plans/{plan_id}/select",
     response_model=SelectPlanResponse,
@@ -499,11 +606,27 @@ async def plans_feedback(plan_id: str, req: FeedbackRequest, request: Request):
     #     명시-선호 후보만 — 0.3/0.7 은 제안만 (쓰기 0). blanket 자동 승격 0 (NG12 계승).
     #   - graceful: 추출 실패해도 feedback 응답 차단 0 (helper 내부 + 본 try/except 이중 방어).
     #     reason 은 feedback_repo 가 이미 마스킹 + extractor 이중 방어 (T5).
+    auth_user_id = _auth_user_id(request)
     try:
-        await _run_brand_memory_extract_hook(plan_id, _auth_user_id(request))
+        await _run_brand_memory_extract_hook(plan_id, auth_user_id)
     except Exception as exc:  # pragma: no cover — graceful (추출 실패 시 응답 차단 0)
         logger.warning(
             "brand_memory_extract_hook_failed: %s (feedback 저장은 성공)",
+            exc.__class__.__name__,
+        )
+
+    # Phase 17 다-S6 (P-AUX-2 개인 scope 배선): feedback 저장 후 개인 PKM 추출 루프 best-effort.
+    #   - ★ gated default-off: settings.personal_pkm_extract_enabled OFF 또는 익명이면
+    #     _run_personal_pkm_extract_hook 가 즉시 return → 추출/쓰기 0 (응답 byte-identical).
+    #   - ★ brand-독립 (User 계층): brand 해결 없이 auth_user_id 만으로 pkm_entries(personal) 적재.
+    #   - ★ governance (ADR-031 §7.5): 자동 INSERT 는 confidence ≥ 0.9 명시 선호만 (다-S5 parity).
+    #   - graceful: 추출 실패해도 feedback 응답 차단 0 (helper 내부 + 본 try/except 이중 방어).
+    #     brand hook 과 별개 관심사이므로 별도 try/except — 한쪽 실패가 다른 쪽을 막지 않는다.
+    try:
+        await _run_personal_pkm_extract_hook(plan_id, auth_user_id)
+    except Exception as exc:  # pragma: no cover — graceful (추출 실패 시 응답 차단 0)
+        logger.warning(
+            "personal_pkm_extract_hook_failed: %s (feedback 저장은 성공)",
             exc.__class__.__name__,
         )
 
