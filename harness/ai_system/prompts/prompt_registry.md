@@ -306,10 +306,11 @@ variant 정책: P-005q (Quick Mode 변형) 는 부모 P-005 version 을 상속�
 ## 7. P-006 · plan_candidates (Planner Agent)
 
 **Stage**: 3개 기획안 생성 (MOA Planner)
-**Version**: **v1.0.0 (compact, active)** · **v1.1.0 (rich, gated — Phase 13 S2)** — 두 버전 flag 공존 (아래 §Semver)
+**Version**: **v1.0.0 (compact, active)** · **v1.1.0 (rich, gated — Phase 13 S2)** · **v1.2.0 (director, gated — Phase 15 S2)** — 세 버전 output_mode 공존 (아래 §Semver)
 **Input variables**: `one_line_direction`, `selected_context` (brand/domain/series/target/tone), `rag_references` (RAG 검색 결과), `brand_memory`
 **Output schema (v1.0.0 compact)**: `{ plans: [{ name, concept, hook, flow, pros, risks }, ... ×3] }`
 **Output schema (v1.1.0 rich, additive)**: v1.0.0 + S1 rich 슬롯(전부 Optional) — `hook_variants[]`, `target_audience`, `tone`, `shots[]`, `thumbnail`, `title_candidates[]`, `cta`, `references[]`, `length_variants[]`, flow beat 에 `visual`/`dialogue`/`caption` (output_schema.md §8.1 v1.2.0, CC-012)
+**Output schema (v1.2.0 director, additive)**: v1.1.0 + director 슬롯(전부 Optional) — `hook_system[]`(재후크 설계), `retention_architecture`, `scene_breakdown[]`(DirectorScene: scene_intent/viewer_emotion/retention_device/why_this_works/fallback_scene) (output_schema.md §8.1 v1.3.0, CC-017). ★ LLM-only(데이터레이어 비의존). 상업필드 제외=commercial_viral.
 
 ### System (추가)
 
@@ -382,12 +383,15 @@ Brand Memory avoid_phrases 금지. + 완성 대본 전체 작성 금지(브리�
 v1.0.0 (2026-05-26): 최초 도입 (active). MOA Planner — 3 plan_candidates (compact 6필드).
 v1.1.0 (2026-06-02, Phase 13 S2 — prompt-version-review, CC-013): rich 변형 (minor — additive 슬롯,
         output envelope 구조 동일, 신규 규칙·선택 필드 추가). 근거: Phase 12 깊이 격차(compact 0.231 / rich 1.000).
+v1.2.0 (2026-06-03, Phase 15 S2 — prompt-version-review, CC-018): director 변형 (minor — rich + 연출/리텐션
+        슬롯 additive, envelope 구조 동일). LLM-only(데이터레이어 비의존). 구현: DIRECTOR_SYSTEM_PROMPT /
+        _build_director_system_prompt_with_hint / DIRECTOR_PROMPT_VERSION.
 
-★ gated 공존 (deprecate 아님): v1.0.0 와 v1.1.0 은 `rich_output_enabled` flag 로 공존한다.
-  - flag OFF (default, S3): compact 경로 = v1.0.0 (byte-identical, deactivate_at 없음 — 계속 active).
-  - flag ON  (검증 후, S3+S6): rich 경로 = v1.1.0.
-  → 표준 deprecate+deactivate(이전 버전 차단)를 적용하지 않는다. 어느 버전을 차단할지는 S6 depth 재측정 +
-    라이브 검증 후 별도 결정. meta.prompt_version 분기(compact v1.0.0 / rich v1.1.0)는 S3 gated wiring.
+★ gated 공존 (deprecate 아님): v1.0.0/v1.1.0/v1.2.0 은 `output_mode`(compact/rich/director) 로 공존한다.
+  - compact (default): v1.0.0 (byte-identical, deactivate_at 없음 — 계속 active).
+  - rich (검증 후): v1.1.0. / director (검증 후): v1.2.0.
+  → 표준 deprecate+deactivate(이전 버전 차단) 미적용. 어느 버전 차단할지는 검증 후 별도 결정.
+    meta.prompt_version 분기(compact v1.0.0 / rich v1.1.0 / director v1.2.0)는 S3 gated wiring(effective_output_mode).
 
 회귀: prompt-version-review (golden_set 최소 8케이스 × 3 plans). ★ v1.1.0 rich 출력의 depth_actionability
       재측정(0.231 → ≥0.8)은 S3 wiring 후 S6 에서 실 LLM 로 수행 (mock-deterministic eval 은 rich 미채점, CC-011).

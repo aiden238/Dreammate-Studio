@@ -123,6 +123,66 @@ RICH_SYSTEM_PROMPT = """당신은 영상기획 AI 에이전트의 기획안 생�
 """
 
 
+# ─── Phase 15 S2 (P-006 v1.2.0): director SYSTEM_PROMPT ──────────────
+# ★ gated/additive: compact(v1.0.0)·rich(v1.1.0) 프롬프트 보존. director 는
+#   output_mode=director(S3 wiring) 경로에서만 사용 — S2 는 상수/헬퍼 제공·검증만(런타임 미연결).
+#   rich 12슬롯 + director 3슬롯(hook_system/retention_architecture/scene_breakdown). LLM-only.
+#   ★ 제품 경계: scene_breakdown 은 "기획 의도/감정/리텐션 근거"이지 촬영 지시·완성 대본 아님.
+DIRECTOR_SYSTEM_PROMPT = """당신은 영상기획 AI 에이전트의 기획안 생성기이다.
+
+사용자의 영상기획 요청을 받아 **연출·리텐션까지 설계한 상세 기획 브리프** 1개를 JSON으로 반환한다.
+이것은 "기획 브리프"(촬영·편집·연출 가이드)이지 완성 대본·영상 제작물이 아니다.
+
+반환 형식 (JSON 1개 객체만 — rich 12슬롯 + director 3슬롯):
+{
+  "plan": {
+    "name": "10~16자 이내 기획안 이름",
+    "concept": "1~2줄 콘셉트",
+    "hook": "20~60자 영상 첫 3초 후크",
+    "hook_variants": ["대안 후크 1", "대안 후크 2"],
+    "target_audience": "타깃 시청자",
+    "tone": "톤·무드",
+    "flow": [
+      {"beat_index": 0, "beat": "비트 라벨", "duration_sec": 3, "purpose": "목적",
+       "visual": "화면/구도/연출", "dialogue": "내레이션/대사", "caption": "자막"}
+    ],
+    "shots": ["B-roll/추가 샷"],
+    "thumbnail": "썸네일 컨셉",
+    "title_candidates": ["제목 후보 (3~5)"],
+    "cta": "마무리 Call-to-action",
+    "references": ["참고 유형/사례 (복제 금지)"],
+    "length_variants": ["30초 컷", "60초 컷"],
+
+    "hook_system": ["첫 후크 설계", "영상 중반 재후크(re-hook) 지점 (예: @0:15)"],
+    "retention_architecture": "리텐션 구조 — 이탈 예상 구간 + 호기심 갭/페이싱 장치 (1~2문단)",
+    "scene_breakdown": [
+      {
+        "scene_intent": "이 씬의 기획 의도",
+        "viewer_emotion": "시청자가 느끼길 의도하는 감정",
+        "retention_device": "이탈 방지/호기심 유지 장치",
+        "why_this_works": "작동 근거 (일반론 금지 — 패턴/맥락 기반)",
+        "fallback_scene": "약할 때 대안 씬 (없으면 생략)"
+      }
+    ],
+
+    "pros": "장점 1줄",
+    "risks": "위험 1줄",
+    "approach_label": "narrative | informational | empathy | experiment | review | other 중 1개"
+  }
+}
+
+규칙:
+- 자연어 머리말/꼬리말 금지 (JSON 객체만 반환)
+- 광고 과장 표현("혁신적/최고의/완벽한/최선의/최첨단") + 조회수/바이럴 보장 표현 금지
+- 사실관계 검증 불가능한 통계 인용 금지
+- flow는 최소 2개~최대 8개, duration_sec 합이 영상 길이에 부합
+- hook_system: 첫 후크 + 재후크 지점 설계 (단발 hook_variants 보다 상위 — 영상 흐름상 어디서 다시 잡을지)
+- retention_architecture: 어디서 이탈이 예상되고 어떻게 막을지 구조적으로
+- scene_breakdown: 각 씬의 의도/감정/리텐션장치/근거 (why_this_works 는 막연한 일반론 금지)
+- ★ 완성 대본 전체 작성 금지 — scene_breakdown 도 "기획 의도/연출 방향"이지 대사 전문(全文)·촬영 지시가 아니다 (브리프 수준)
+"""
+
+
 # ─── 호출 함수 ────────────────────────────────────────────────────────
 
 def _format_rag_context(rag_context: Sequence[Any]) -> str:
@@ -266,6 +326,21 @@ def _build_rich_system_prompt_with_hint(approach_hint: str) -> str:
         f"(narrative / informational / empathy / experiment / review / other)."
     )
     return RICH_SYSTEM_PROMPT + addendum
+
+
+def _build_director_system_prompt_with_hint(approach_hint: str) -> str:
+    """Phase 15 S2: director SYSTEM_PROMPT(v1.2.0)에 approach_hint 추가.
+
+    _build_rich_system_prompt_with_hint 의 director 대응. ★ output_mode=director(S3) 경로 전용.
+    S2 는 capability 만 제공 — 호출은 S3.
+    """
+    addendum = (
+        f"\n\n[approach hint — 이 plan은 다음 방향으로 작성]:\n"
+        f"{approach_hint}\n"
+        f"\napproach_label 필드에 위 hint에 맞는 값을 정확히 선택하세요 "
+        f"(narrative / informational / empathy / experiment / review / other)."
+    )
+    return DIRECTOR_SYSTEM_PROMPT + addendum
 
 
 async def _run_planning_single(
@@ -646,3 +721,7 @@ PROMPT_VERSION = "v1.0.0"  # compact (active, flag OFF 경로 — rich_output_en
 # Phase 13 S2: rich 변형 version. rich_output_enabled=True(S3) 경로에서 사용.
 # meta.prompt_version 분기(compact v1.0.0 / rich v1.1.0)는 S3 gated wiring 에서.
 RICH_PROMPT_VERSION = "v1.1.0"
+
+# Phase 15 S2: director 변형 version. output_mode=director(S3) 경로에서 사용.
+# meta.prompt_version 분기(compact v1.0.0 / rich v1.1.0 / director v1.2.0)는 S3 gated wiring.
+DIRECTOR_PROMPT_VERSION = "v1.2.0"
