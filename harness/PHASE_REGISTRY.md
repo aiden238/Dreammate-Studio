@@ -90,10 +90,24 @@ Result     : Entry + S1(백엔드 wizard_data additive 조립) + S2(Quick 실연
 다음 Phase : **pending_user_decision** — rich default 전환(A) / 배포 Gate B~G(C) / 품질·정식화(D) / PARKED(PKM-RAG→commercial_viral, 선행조건=위저드 실연결 충족 → 후보 활성)
 ```
 
-## 🟡 Next phase: pending_user_decision (Phase 14 done — A/C/D + PARKED 잔존)
+## 🟢 Phase 15 = director 모드 (output_mode 3rd tier) — ★ active (entry 작성 2026-06-03)
 
 ```
-Phase 1~14 완료. MVP 통합(Phase 10) + LLM Gateway(Phase 11) + 검증(Phase 12) + 출력 확장(Phase 13 — compact→rich gated) + ★ 위저드 실연결(Phase 14 — 위저드→실 3안 rich, 라이브 PASS). 다음 사용자 결정:
+Status     : ACTIVE (entry 작성 2026-06-03) — 사용자 결정(로드맵 ① director → ② 검증 보강 → ③ PKM/RAG 데이터레이어)
+유형       : 제품 phase (출력 tier 확장) — ★ compact/rich byte-identical(behavior-preserving) + additive/gated
+기반       : project-1 PARKED 제안서 meta/proposals/2026-06-03_commercial-viral-mode-design.md (§2.1 4-tier / §3 P-006 / §4 critic / §6 cost)
+Goal       : output_mode 를 compact/rich/director 3-tier 일반화 + director(rich + 연출·리텐션 슬롯) gated/additive 추가. director=LLM-only(데이터레이어 비의존).
+director슬롯: hook_system + retention_architecture + scene_breakdown[director-subset: scene_intent/viewer_emotion/retention_device/why_this_works/fallback_scene] (제안서 open issue #1 확정). 상업필드=commercial_viral(NG1).
+Entry+6Slice: Entry(8+self 14th) / S1 output_mode enum+director 스키마 additive(byte-identical) / S2 P-006 director v1.2.0 / S3 gated wiring(output_mode 분기) / S4 critic director 차원(retention_design, P-007 v1.3.0) / S5 frontend PlanCard director / S6 cost+depth+close
+회귀 게이트: pytest 508 + compact/rich byte-identical + 키 0
+폴더       : phases/active/phase-15-director-mode/
+로드맵      : ① director(본) → ② 검증 보강(human review+전수 eval) → ③ PKM/RAG 데이터레이어 → (commercial_viral)
+```
+
+## 🟡 잔존 후보 (Phase 15 진행 중 — A/C/D + commercial_viral/PKM-RAG 후속)
+
+```
+Phase 1~14 완료 + Phase 15 director active. 잔존 결정 후보:
 
 A. rich default 전환 결정
   - flag `rich_output_enabled` default ON(전 사용자 rich) 전환 여부. cost(CC-016 — 출력 토큰 3~5배 × 3안, tier 유료/opt-in 권고) + 품질(feature 존재 ≠ 콘텐츠 우수성, human review 보강) 합의 후. 현재 = gated OFF 유지.
