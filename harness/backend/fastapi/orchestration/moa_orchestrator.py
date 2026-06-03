@@ -117,16 +117,22 @@ async def _resolve_brand_id(
     auth_user_id: str,
     brand_id: str | None,
     brands_resolver: Any | None,
+    brand_repo: Any | None = None,
 ) -> str | None:
-    """user 의 brand_id 해결. 인자 brand_id 우선, 없으면 resolver/Supabase 조회 (graceful).
+    """user 의 brand_id 해결. 인자 brand_id 우선, 없으면 resolver/Supabase 조회/get-or-create (graceful).
 
     우선순위:
       1. 명시 brand_id 인자(라우터/호출자가 이미 알고 있는 brand) → 그대로 사용.
       2. brands_resolver(DI seam, async callable(auth_user_id) -> brand_id|None) → 호출.
-      3. Supabase brands 테이블 조회 — user 소유 brand 중 created_at desc 첫 행(없으면 None).
-      4. 위 모두 실패/부재 → None (호출자가 주입 skip).
+      3. Supabase brands 테이블 조회 — user 소유 brand 중 created_at desc 첫 행.
+      4. (Phase 17 가-S3) 위로도 미해결이면 BrandRepo.get_or_create_default 로 기본 브랜드
+         get-or-create (idempotent — 기존 있으면 그 id, 없으면 1개 생성). brand_repo 미지정 시
+         BrandRepo(get_supabase()) 로 구성. ★ 이 단계는 gated 경로에서만 도달(호출자 게이트).
+      5. 위 모두 실패/부재 → None (호출자가 주입 skip).
 
     ★ graceful: 어떤 실패도 raise 하지 않고 None 반환(주입 skip → byte-identical).
+    ★ 정밀: 명시 brand_id / resolver / 기존 조회가 brand 를 주면 get-or-create 는 호출되지 않음
+      (no surprise write). brand 가 정말 없을 때만 1개 생성.
     """
     if brand_id:
         return brand_id
@@ -134,31 +140,26 @@ async def _resolve_brand_id(
     if brands_resolver is not None:
         try:
             resolved = await brands_resolver(auth_user_id)
-            return resolved or None
+            if resolved:
+                return resolved
         except Exception:  # pragma: no cover — DI resolver 실패도 graceful
-            logger.warning("brands_resolver 실패 — brand 미해결(주입 skip)")
+            logger.warning("brands_resolver 실패 — brand 미해결")
             return None
+        # resolver 가 None 반환 → 명시적 "brand 없음" 신호. get-or-create 로 넘어가지 않음
+        #   (resolver 는 호출자가 brand 해결을 완전히 위임한 seam — 결과 None 을 존중).
+        return None
 
-    # Supabase brands 테이블 조회 (graceful — client 없거나 실패 시 None).
+    # Phase 17 가-S3: brand_repo 가 주어지면 get-or-create (idempotent) — 조회+생성 일원화.
+    #   기본은 BrandRepo(get_supabase()) 이며 내부에서 query-before-insert (기존 있으면 그 id).
     try:
-        from ..db import get_supabase
+        repo = brand_repo
+        if repo is None:
+            from ..db import BrandRepo, get_supabase
 
-        client = get_supabase()
-        if client is None:
-            return None
-        resp = (
-            client.table("brands")
-            .select("id")
-            .eq("auth_user_id", auth_user_id)
-            .order("created_at", desc=True)
-            .limit(1)
-            .execute()
-        )
-        data = getattr(resp, "data", None)
-        if data:
-            return str(data[0].get("id")) or None
-    except Exception:  # pragma: no cover — brands 조회 실패도 graceful
-        logger.warning("brands 조회 실패 — brand 미해결(주입 skip)")
+            repo = BrandRepo(supabase_client=get_supabase())
+        return await repo.get_or_create_default(auth_user_id)
+    except Exception:  # pragma: no cover — get-or-create 실패도 graceful
+        logger.warning("brand get-or-create 실패 — brand 미해결(주입 skip)")
     return None
 
 
@@ -168,13 +169,17 @@ async def _load_brand_memory_entries(
     brand_id: str | None,
     brand_memory_repo: Any | None,
     brands_resolver: Any | None,
+    brand_repo: Any | None = None,
 ) -> list[dict[str, Any]]:
     """resolved brand 의 brand_memory_entries 로드 (gated 경로 전용, graceful).
 
-    brand 해결 실패 → 빈 리스트(주입 skip). repo 미지정 시 get_supabase() 로 구성.
+    brand 해결(Phase 17 가-S3: 없으면 get-or-create) 실패 → 빈 리스트(주입 skip).
+    repo 미지정 시 get_supabase() 로 구성.
     ★ PII/격리: 오직 resolved brand 의 entries 만 로드(RLS 격리 데이터). 교차 계정 접근 0.
     """
-    resolved_brand_id = await _resolve_brand_id(auth_user_id, brand_id, brands_resolver)
+    resolved_brand_id = await _resolve_brand_id(
+        auth_user_id, brand_id, brands_resolver, brand_repo,
+    )
     if not resolved_brand_id:
         return []
 
@@ -196,6 +201,7 @@ async def generate_plan(
     brand_id: str | None = None,
     brand_memory_repo: Any | None = None,
     brands_resolver: Any | None = None,
+    brand_repo: Any | None = None,
 ) -> Envelope | JSONResponse:
     """MOA orchestration — Intent → RAG → 3-plan parallel → Critic+revise → DB save → Envelope.
 
@@ -222,8 +228,20 @@ async def generate_plan(
         - DI seam (테스트/라이브 검증용 — 실 Supabase 없이 brand_memory seed 가능):
             * brand_memory_repo: BrandMemoryRepo-호환 객체(list_for_brand async). 미지정 시
               get_supabase() 로 구성.
-            * brands_resolver: async callable(auth_user_id) -> brand_id | None. 미지정 시
-              Supabase brands 테이블 조회(graceful, 없으면 None → 주입 skip).
+            * brands_resolver: async callable(auth_user_id) -> brand_id | None. 명시 시
+              brand 해결을 완전히 위임(None 반환은 "brand 없음" 으로 존중 — get-or-create 안 함).
+            * brand_repo: BrandRepo-호환 객체(get_or_create_default async). 미지정 시
+              BrandRepo(get_supabase()) 로 구성.
+
+    Phase 17 가-S3 (기본 브랜드 get-or-create — ★ 같은 gate 아래):
+        - flag ON AND auth_user_id 有 AND (명시 brand_id / resolver / 기존 조회로) brand 미해결
+          일 때만 BrandRepo.get_or_create_default(auth_user_id) 로 **기본 브랜드 1개를 생성**한다
+          (brand_memory anchor). idempotent — 반복 생성 시에도 항상 query-before-insert 라
+          2번째 default 는 생기지 않음.
+        - ★★ behavior-preserving / no surprise write: flag OFF(default) OR 익명(auth_user_id
+          None) → BrandRepo 는 **호출조차 되지 않음**(아래 게이트 밖) → brands row 0 생성,
+          DB write 0, user_input byte-identical. brand 생성은 인증+ON+미해결 교집합에서만.
+        - graceful: get-or-create 실패 → None → 주입 skip(기존 흐름 차단 0).
 
     Returns:
         성공 시 Envelope (router 가 그대로 200 응답), 에러 시 JSONResponse(ErrorEnvelope).
@@ -265,6 +283,7 @@ async def generate_plan(
                 brand_id=brand_id,
                 brand_memory_repo=brand_memory_repo,
                 brands_resolver=brands_resolver,
+                brand_repo=brand_repo,
             )
             from ..agents.brand_injection import build_brand_constraint_preamble
 

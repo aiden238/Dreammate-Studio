@@ -31,7 +31,9 @@ from typing import Any
 
 from .client import SupabaseClientLike, get_supabase
 from .repositories import (
+    DEFAULT_BRAND_NAME,
     BrandMemoryRepo,
+    BrandRepo,
     FeedbackRepo,
     PlansRepo,
     SelectionRepo,
@@ -150,6 +152,9 @@ __all__ = [
     "FeedbackRepo",
     "mask_pii",
     "BrandMemoryRepo",
+    # Phase 17 가-S3 — 기본 브랜드 get-or-create (graceful, brand_memory anchor)
+    "BrandRepo",
+    "DEFAULT_BRAND_NAME",
     # Legacy backward-compat (Phase 1 Slice 5, DEPRECATED Phase 5.5 — ADR-023)
     "get_supabase_client",
     "save_video_planning",
