@@ -31,6 +31,10 @@ from backend.fastapi.agents.rewriter import (
     PROMPT_ID as REW_ID,
     PROMPT_VERSION as REW_VER,
 )
+from backend.fastapi.agents.topic_discovery import (
+    PROMPT_ID as TOPIC_ID,
+    PROMPT_VERSION as TOPIC_VER,
+)
 
 
 # ─── 단일 출처 정합: registry SoT ↔ agent 상수 미러 (ADR-029 §3) ──────
@@ -42,6 +46,7 @@ EXPECTED_REGISTRY: dict[str, str] = {
     "P-006": "v1.0.0",  # planning
     "P-007": "v1.1.0",  # critic — Phase 8 ADR-029 adapter bump
     "P-008": "v1.1.0",  # rewriter — Phase 6 ADR-019
+    "P-AUX-3": "v1.0.0",  # topic_discovery — Phase 18 S1 신규 (additive)
 }
 
 
@@ -74,6 +79,13 @@ def test_intent_constants() -> None:
     assert INTENT_ID == "P-001"
     assert INTENT_VER == "v1.1.0"
     assert EXPECTED_REGISTRY[INTENT_ID] == INTENT_VER
+
+
+def test_topic_discovery_constants() -> None:
+    """P-AUX-3 topic_discovery 상수 ↔ registry 정합 (Phase 18 S1 신규, additive)."""
+    assert TOPIC_ID == "P-AUX-3"
+    assert TOPIC_VER == "v1.0.0"
+    assert EXPECTED_REGISTRY[TOPIC_ID] == TOPIC_VER
 
 
 def test_all_agent_constants_match_registry_map() -> None:
@@ -166,6 +178,7 @@ def test_registry_documents_all_prompts() -> None:
         "P-008",
         "P-AUX-1",
         "P-AUX-2",
+        "P-AUX-3",  # Phase 18 S1 신규 (topic_discovery, additive)
         "P-EVAL-1",
     ]:
         assert pid in content, f"{pid} 가 registry.md 에 없음"

@@ -701,6 +701,60 @@ v1.0.0 (2026-05-26): 최초 등록 (registry 명세). 세션 종료 후 백그�
 
 ---
 
+### P-AUX-3 · topic_discovery
+
+**Stage**: 브랜딩 세션 — Akinator식 주제 발굴 (LLM 동적 스무고개). ask/finalize 2모드.
+**Version**: v1.0.0
+**Model**: gpt-4o-mini (workhorse, settings.openai_model_default)
+**Input variables**: `history` (Q&A 누적: [{question, options, answer}...]), `max_questions` (선택, N고개 상한)
+**Output schema**:
+
+```
+ask:      { mode: "ask" | "done", question: string|null, options: [string](2~4)|null, rationale: string }
+finalize: { candidates: [ { topic, tone, target, format, why_fit }, ... ×3 ] }
+```
+
+#### System (ask 모드 — 추가)
+
+```
+지금까지의 Q&A 히스토리를 보고, 사용자의 영상 주제를 좁히는 다음 질문 1개 + 선택지 카드 2~4개를
+생성한다. 직전 답변에 따라 적응적으로 분기한다(아키네이터 핵심).
+
+종료 판단:
+- 주제 공간이 충분히 좁혀졌거나 질문이 많으면 mode="done" (질문/선택지 없이).
+- 아직 좁혀야 하면 mode="ask" 로 다음 질문 + 선택지 2~4개.
+
+선택지는 서로 충분히 다른 방향의 짧은 카드 라벨. 광고적 과장 표현 금지. JSON 1개 객체만.
+```
+
+#### System (finalize 모드 — 추가)
+
+```
+Q&A 히스토리를 종합해 후보 영상 주제 3개를 합성한다. 각 후보는 5필드:
+- topic:   주제 한 줄
+- tone:    톤 한 줄
+- target:  타깃 한 줄
+- format:  포맷 한 줄 (예: "정보형 30초 쇼츠")
+- why_fit: 사용자에게 맞는 이유 한 줄 (Q&A 답변 근거 반영)
+
+3개는 서로 충분히 다른 접근. 모든 필드 한국어, 빈 값 금지. 광고적 과장 금지. JSON 1개 객체만.
+```
+
+#### Semver / 활성 정책
+
+```
+v1.0.0 (2026-06-04, Phase 18 S1 — prompt-version-review): 최초 도입 (active). 브랜딩 세션 주제 발굴.
+        ask/finalize 2모드 공유 1 prompt_id. ★ N고개 상한(MAX_QUESTIONS 기본 8): ask 의 history
+        길이 ≥ 상한이면 LLM 호출 없이 강제 done (비용/루프 방어 — 제안서 §9).
+        자유입력 안전성(Intent P-001 / llm_security 재사용)은 후속 슬라이스 — S1 은 agent 코어만.
+additive: 기존 P-001~P-008 / P-AUX-1·2 / P-EVAL-1 무변경 (신규 보조 prompt 추가만).
+변경 시: prompt-version-review (golden 시나리오 회귀 — 적응형 질문 일관성, Phase 18 S5+).
+단일 출처: 본 registry SoT. 구현 상수 topic_discovery.PROMPT_(ID|VERSION) = P-AUX-3 / v1.0.0 정합
+          (Phase 18 S1 test_prompt_registry_consistency).
+```
+
+---
+
 ### P-EVAL-1 · candidate_knowledge_evaluator
 
 **Stage**: candidate_knowledge `filtered → evaluated` 단계 자동 평가 (rag_data_contract §4.2)
