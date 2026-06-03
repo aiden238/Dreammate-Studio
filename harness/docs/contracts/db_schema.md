@@ -493,6 +493,29 @@ create table brand_memory_entries (
 -- RLS: brands(id) 를 통한 user 격리 (Phase 5 domains_via_brand 패턴) — 0005.
 ```
 
+### §6.2 pkm_entries (Phase 17 다-S3 — 개인 PKM / personal PKM, CC-022)
+
+User 계층(brand-독립) 개인 메모리. `auth_user_id` 로 격리되며, 기존 `brand_memory_entries`(§6, brand_id keyed) 위에 **additive** 로 얹는다. 주입 시 우선순위 `user_locked/personal > brand` (PKM/RAG orchestrator design `meta/proposals/2026-06-03_pkm-rag-orchestrator-design.md` §6.2). migration: `0006_pkm_entries.sql`.
+
+```sql
+create table if not exists pkm_entries (
+    id              uuid primary key default gen_random_uuid(),
+    scope           text not null,                -- 'personal'(본 slice) | 'series'(후속)
+    auth_user_id    uuid,                          -- personal 격리 (RLS, anon nullable 허용)
+    content         text not null,
+    entry_type      text,                          -- preferred_tone|avoid_phrase|preferred_phrase|success_pattern|rejection_pattern (brand_memory 정합)
+    is_user_locked  boolean default false,         -- ★ user_locked 최우선(§6.2) — 자동 갱신/덮어쓰기 금지
+    confidence      real default 0.5,              -- 0–1 (자동 추출 신뢰도, 후속)
+    created_at      timestamptz not null default now(),
+    updated_at      timestamptz not null default now(),
+    check (scope in ('personal','series'))
+);
+create index if not exists idx_pkm_entries_user on pkm_entries(auth_user_id);
+-- RLS: auth_user_id = auth.uid() OR auth_user_id IS NULL (0005 selected_plans 패턴).
+```
+
+비고: full 스키마(brand_id/series_id/embedding vector(1536)/source_candidate_id, design §8.2)는 series PKM + orchestrator vector 단계 도입 시 additive 확장(별도 migration). 본 slice 는 personal scope **읽기(주입)** 경로만 — 자동 쓰기 X (NG12 계승, 적재는 운영자/추출 governance 경유).
+
 ---
 
 ## 7. AI 인프라 테이블

@@ -4,11 +4,13 @@ Phase 1 Slice 5: insert_video_project, insert_plan_candidate (legacy save_video_
 Phase 5 Slice 2: PlansRepo (graceful CRUD wrapper for _plan_store dict).
 Phase 9 Slice 2: SelectionRepo / FeedbackRepo / BrandMemoryRepo (graceful, 결과 저장 + 피드백 + Brand Memory 준비).
 Phase 17 가-S3: BrandRepo (graceful 기본 브랜드 get-or-create — brand_memory anchor).
+Phase 17 다-S3: PkmRepo (graceful 개인 PKM — auth_user_id 격리, User 계층 brand-독립).
 """
 
 from .brand_memory_repo import BrandMemoryRepo
 from .brand_repo import DEFAULT_BRAND_NAME, BrandRepo
 from .feedback_repo import FeedbackRepo, mask_pii
+from .pkm_repo import PkmRepo
 from .plan_candidate import insert_plan_candidate
 from .plans_repo import PlansRepo
 from .selection_repo import SelectionRepo
@@ -24,4 +26,5 @@ __all__ = [
     "BrandMemoryRepo",
     "BrandRepo",
     "DEFAULT_BRAND_NAME",
+    "PkmRepo",
 ]

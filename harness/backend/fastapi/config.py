@@ -180,6 +180,25 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 17 다-S3 — 개인 PKM 구속 주입 게이트 (additive, default False) ─
+    # ★ behavior-preserving / gated default-off: OFF 면 orchestrator 가 personal PKM 을
+    #   로드/주입하지 않아 planning user_input 이 brand-only 경로와 byte-identical.
+    #   ON + 신원(auth_user_id) + personal PKM 有 일 때만 build_brand_constraint_preamble 가
+    #   personal 프리앰블을 만들고, brand 프리앰블보다 **앞에** prepend 된다 (설계 §6.2
+    #   user_locked/personal > brand). 신원 없음(익명)/엔트리 없음 → 주입 0(byte-identical).
+    #   brand_memory_injection_enabled(가-S2)와 별개 관심사 — personal 은 그 위에 얹는 추가 레이어.
+    personal_pkm_injection_enabled: bool = Field(
+        default=False,
+        description=(
+            "Phase 17 다-S3: 개인 PKM(pkm_entries, scope=personal) 구속 프리앰블을 planning "
+            "user_input 에 주입할지 여부. ★ gated default-off — False 면 personal PKM 로드/주입 0 "
+            "(익명/무엔트리/brand-only 경로 byte-identical). True 활성은 신원(auth_user_id)+personal "
+            "PKM 有 일 때만 주입하며, brand 프리앰블보다 앞에 prepend (personal > brand, 설계 §6.2). "
+            "brand_memory_injection_enabled(가-S2)와 별개 관심사. "
+            "환경변수 PERSONAL_PKM_INJECTION_ENABLED 로 override."
+        ),
+    )
+
     # ─── Phase 13 Slice S3 — rich 출력 게이트 (additive, default False) ─
     # ★ behavior-preserving / gated default-off: OFF=compact byte-identical
     #   (Plan.model_dump_compact() 가 rich 슬롯 제외 → Phase 13 이전 응답과 동일),

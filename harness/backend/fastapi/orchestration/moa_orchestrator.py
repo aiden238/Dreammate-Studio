@@ -191,6 +191,25 @@ async def _load_brand_memory_entries(
     return await repo.list_for_brand(resolved_brand_id)
 
 
+async def _load_personal_pkm_entries(
+    *,
+    auth_user_id: str,
+    pkm_repo: Any | None,
+) -> list[dict[str, Any]]:
+    """요청 user 의 개인 PKM entries(scope='personal') 로드 (gated 경로 전용, graceful).
+
+    Phase 17 다-S3: brand 와 무관한 User 계층 메모리. brand 해결 불필요 — auth_user_id 만으로
+    조회한다. repo 미지정 시 PkmRepo(get_supabase()) 로 구성.
+    ★ PII/격리: 오직 요청 auth_user_id 의 personal entry 만 로드(RLS 격리 데이터). 교차 계정 접근 0.
+    """
+    repo = pkm_repo
+    if repo is None:
+        from ..db import PkmRepo, get_supabase
+
+        repo = PkmRepo(supabase_client=get_supabase())
+    return await repo.list_for_user(auth_user_id, scope="personal")
+
+
 async def generate_plan(
     plan_id: str,
     plan_entry: dict[str, Any],
@@ -202,6 +221,7 @@ async def generate_plan(
     brand_memory_repo: Any | None = None,
     brands_resolver: Any | None = None,
     brand_repo: Any | None = None,
+    pkm_repo: Any | None = None,
 ) -> Envelope | JSONResponse:
     """MOA orchestration — Intent → RAG → 3-plan parallel → Critic+revise → DB save → Envelope.
 
@@ -242,6 +262,20 @@ async def generate_plan(
           None) → BrandRepo 는 **호출조차 되지 않음**(아래 게이트 밖) → brands row 0 생성,
           DB write 0, user_input byte-identical. brand 생성은 인증+ON+미해결 교집합에서만.
         - graceful: get-or-create 실패 → None → 주입 skip(기존 흐름 차단 0).
+
+    Phase 17 다-S3 (개인 PKM 구속 주입 — ★ 같은 패턴, 별도 gate, personal > brand):
+        - settings.personal_pkm_injection_enabled AND auth_user_id 有 일 때만:
+          PkmRepo.list_for_user(auth_user_id, scope='personal') 로 개인 PKM 로드(brand 무관 —
+          User 계층) → build_brand_constraint_preamble(entry_type 호환) 로 personal 프리앰블 생성
+          → **brand 프리앰블보다 앞에** prepend. 즉 최종 user_input =
+          personal_preamble + brand_preamble + original_input (personal 이 최상단 — 설계 §6.2
+          user_locked/personal > brand). brand 블록(가-S2)은 그대로 자기 flag 아래 동작하고,
+          personal 은 그 위에 얹는 추가 gated 레이어다(독립 flag).
+        - ★★ behavior-preserving: personal flag OFF(default) / 익명(auth_user_id None) /
+          personal PKM 0개 → personal 프리앰블 0 → user_input 은 brand-only 경로와 byte-identical.
+          brand flag 까지 OFF 면 pre-Phase-17 과 완전 byte-identical. surprise write 0(읽기만).
+        - DI seam: pkm_repo (PkmRepo-호환, list_for_user async). 미지정 시 PkmRepo(get_supabase()).
+        - graceful: 모든 실패 흡수(주입만 skip) — 기존 흐름 차단 0.
 
     Returns:
         성공 시 Envelope (router 가 그대로 200 응답), 에러 시 JSONResponse(ErrorEnvelope).
@@ -298,6 +332,33 @@ async def generate_plan(
         except Exception:  # pragma: no cover — graceful (주입 실패는 흐름 차단 X)
             logger.exception(
                 "brand_memory 주입 실패 (graceful — user_input 무변경) plan_id=%s", plan_id,
+            )
+
+    # Phase 17 다-S3 (개인 PKM 구속 주입 — ★ gated default-off, personal > brand): 신원이 있고
+    #   personal flag 가 켜져 있을 때만 개인 PKM(scope='personal')을 로드해 구속 프리앰블을
+    #   **brand 프리앰블보다 앞에** prepend 한다(설계 §6.2 user_locked/personal > brand). 본 블록은
+    #   brand 블록(위) 다음에 실행되므로, 같은 prepend 패턴으로도 personal 이 최상단에 온다:
+    #   최종 user_input = personal + brand + original. flag OFF / 익명 / 엔트리 0개 → user_input
+    #   무변경(brand-only 경로와 byte-identical). 모든 단계 graceful — 실패해도 주입만 skip.
+    if settings.personal_pkm_injection_enabled and auth_user_id:
+        try:
+            pkm_entries = await _load_personal_pkm_entries(
+                auth_user_id=auth_user_id,
+                pkm_repo=pkm_repo,
+            )
+            from ..agents.brand_injection import build_brand_constraint_preamble
+
+            personal_preamble = build_brand_constraint_preamble(pkm_entries)
+            if personal_preamble:
+                user_input = personal_preamble + "\n\n" + user_input
+                logger.info(
+                    "generate_plan personal_pkm_injected plan_id=%s entries=%d",
+                    plan_id,
+                    len(pkm_entries),
+                )
+        except Exception:  # pragma: no cover — graceful (주입 실패는 흐름 차단 X)
+            logger.exception(
+                "personal PKM 주입 실패 (graceful — user_input 무변경) plan_id=%s", plan_id,
             )
 
     # 1. Intent ──────────────────────────────────────────────────────

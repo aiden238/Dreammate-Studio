@@ -35,6 +35,7 @@ from .repositories import (
     BrandMemoryRepo,
     BrandRepo,
     FeedbackRepo,
+    PkmRepo,
     PlansRepo,
     SelectionRepo,
     insert_plan_candidate,
@@ -155,6 +156,8 @@ __all__ = [
     # Phase 17 가-S3 — 기본 브랜드 get-or-create (graceful, brand_memory anchor)
     "BrandRepo",
     "DEFAULT_BRAND_NAME",
+    # Phase 17 다-S3 — 개인 PKM (graceful, auth_user_id 격리, User 계층)
+    "PkmRepo",
     # Legacy backward-compat (Phase 1 Slice 5, DEPRECATED Phase 5.5 — ADR-023)
     "get_supabase_client",
     "save_video_planning",
