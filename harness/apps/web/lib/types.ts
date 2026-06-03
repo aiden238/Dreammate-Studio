@@ -473,6 +473,27 @@ export interface BrandingFinalizeResponse {
   candidates: BrandingCandidate[];
 }
 
+/**
+ * Phase 18 Slice S4 — POST /plans/{plan_id}/branding/select body.
+ * 택1한 브랜딩 후보. topic 은 필수(후속 generate 입력), tone/target/format 은 brand_memory 시드용
+ * (backend gated+authed 일 때만 적재). 본 타입은 backend BrandingSelectRequest 와 1:1 정합.
+ */
+export interface BrandingSelectRequest {
+  topic: string;
+  tone?: string | null;
+  target?: string | null;
+  format?: string | null;
+}
+
+/**
+ * POST /plans/{plan_id}/branding/select 응답.
+ * ok = 택1 저장 성공, seeded = brand_memory 로 새로 적재된 entry 수 (gated/익명/dedup → 0).
+ */
+export interface BrandingSelectResponse {
+  ok: boolean;
+  seeded: number;
+}
+
 // ─── Phase 9 Slice 5 — Select / Feedback types (ADR-030) ───────────────
 //
 // 참조:

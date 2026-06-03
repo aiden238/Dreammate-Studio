@@ -15,8 +15,14 @@
  *     mode==="ask" 동안 반복 (진행바 step/max_questions)
  *   done:
  *     brandingFinalize(plan_id) → 후보 주제 3개 카드
- *   pick(택1):
- *     startPlan(candidate.topic) → generateMultiPlan(newPlanId) → router.push('/plan/'+newPlanId)
+ *   pick(택1) — Phase 18 S4:
+ *     brandingSelect(planId, candidate)  ★ FIRST (best-effort)
+ *       → backend 가 SAME plan 의 initial_input 을 택1 주제로 설정(planning 연결) +
+ *         gated+authed 일 때 브랜딩 방향을 brand_memory 로 시드(발굴→축적→주입 P17 루프)
+ *     → generateMultiPlan(planId)  ★ SAME plan 재사용 (startPlan 재호출 X — initial_input 이 이미 주제)
+ *     → router.push('/plan/'+planId)
+ *     ★ select 실패 → 여전히 generate 로 진행(seed 는 부가 단계, 흐름 차단 0). 단, select 가 주제를
+ *       설정하므로 select 가 네트워크로 실패하면 initial_input 미설정 → fallback 으로 그때 startPlan(topic).
  *
  * ★ StrictMode (P-STRICTMODE-ONESHOT-001, meta/retrospectives/phase-14.md):
  *   mount 1회-실행 effect 는 `startedRef` 가드로만 중복 실행을 막는다.
@@ -29,7 +35,8 @@
  *   - apps/web/components/discovery/BrandDirectionCard.tsx (선택 카드 UX 일관)
  *   - apps/web/design.md §2 (콜드스타트 / 카드 단위 / 모바일 한 손 / 제작 기능 미포함)
  *
- * 비범위: PKM brand_memory 시드 = S4. 백엔드 변경 0 (S2 endpoint 그대로). e2e = S5.
+ * Phase 18 S4: 택1 시 brandingSelect 로 planning 연결 + brand_memory 시드(gated+authed, best-effort).
+ *   e2e 라이브 = S5.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -38,6 +45,7 @@ import {
   startPlan,
   brandingNext,
   brandingFinalize,
+  brandingSelect,
   generateMultiPlan,
 } from "@/lib/api";
 import type { BrandingCandidate } from "@/lib/types";
@@ -147,17 +155,44 @@ export default function BrandingPage() {
     }
   }
 
-  // 후보 주제 택1 → 그 주제를 입력으로 새 plan 생성 → /plan/{id}.
+  // 후보 주제 택1 (Phase 18 S4):
+  //   1) brandingSelect(SAME plan, candidate) — backend 가 initial_input 을 택1 주제로 설정(planning
+  //      연결) + gated+authed 일 때 브랜딩 방향을 brand_memory 시드. ★ best-effort (실패해도 진행).
+  //   2) 성공 시 SAME plan 재사용해 generateMultiPlan (initial_input 이 이미 주제 → startPlan 불필요).
+  //   3) select 가 네트워크로 실패하면 initial_input 미설정 → fallback 으로 startPlan(topic) 후 generate.
   async function pickCandidate(candidate: BrandingCandidate): Promise<void> {
     if (busy) return;
     setBusy(true);
     setErrorMsg(null);
     setPhase("generating");
     try {
-      const { plan_id } = await startPlan(candidate.topic);
-      const result = await generateMultiPlan(plan_id);
+      // SAME branding plan 재사용 (mount 에서 보관한 planIdRef). select 가 그 plan 에 주제를 설정한다.
+      let targetPlanId = planIdRef.current;
+      let selected = false;
+      if (targetPlanId) {
+        try {
+          await brandingSelect(targetPlanId, {
+            topic: candidate.topic,
+            tone: candidate.tone,
+            target: candidate.target,
+            format: candidate.format,
+          });
+          selected = true; // initial_input 이 SAME plan 에 설정됨 → 그대로 generate.
+        } catch {
+          // ★ select 실패(네트워크/404 등) → seed 는 부가 단계이므로 흐름 차단 X.
+          //   단, initial_input 이 설정 안 됐으므로 아래 fallback 으로 새 plan 을 주제로 생성한다.
+          selected = false;
+        }
+      }
+      // fallback — select 누락/실패 시 택1 주제로 새 plan 생성 (기존 S3 경로 보존).
+      if (!targetPlanId || !selected) {
+        const started = await startPlan(candidate.topic);
+        targetPlanId = started.plan_id;
+      }
+
+      const result = await generateMultiPlan(targetPlanId);
       if (result.ok) {
-        router.push(`/plan/${encodeURIComponent(plan_id)}`);
+        router.push(`/plan/${encodeURIComponent(targetPlanId)}`);
       } else {
         setErrorMsg(result.userMessage);
         setPhase("candidates");

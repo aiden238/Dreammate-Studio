@@ -93,6 +93,8 @@ from ..schemas.plans import (
     BrandingFinalizeResponse,
     BrandingNextRequest,
     BrandingNextResponse,
+    BrandingSelectRequest,
+    BrandingSelectResponse,
     FeedbackListResponse,
     FeedbackRequest,
     FeedbackResponse,
@@ -522,6 +524,128 @@ async def _run_personal_pkm_extract_hook(
     )
 
 
+# ─── Phase 18 Slice S4 — 브랜딩 후보 택1 → brand_memory 시드 (gated, graceful) ──
+# 사용자가 발굴한 브랜딩 후보(주제/톤/타깃/포맷)를 택1 하면, 그 **브랜딩 방향**을 인증 사용자의
+# 기본 brand_memory_entries 로 시드한다 (발굴 P18 → 축적 brand_memory → 주입 P17 가-S2 루프의 축적).
+#
+# candidate → brand_memory entry_type 매핑 (brand_memory_repo._VALID_ENTRY_TYPES 정합):
+#   tone   → preferred_tone   ("<tone>")            — 선호 톤 (가장 직접적인 브랜딩 방향)
+#   target → preferred_phrase ("타깃 시청자: <target>") — 타깃을 선호 표현 노트로 적재
+#   format → preferred_phrase ("선호 포맷: <format>")    — 포맷을 선호 표현 노트로 적재
+# ★ target/format 은 전용 enum 이 없어 preferred_phrase 로 노트화한다(접두어로 구분).
+#   브랜딩 방향 = 명시 택1 = 고신뢰 → confidence 0.9 (P17 ≥0.9 auto-persist 선례).
+
+
+# tone 외 필드는 전용 enum 부재 → preferred_phrase 노트로 적재 (접두어로 의미 구분).
+_BRANDING_SEED_PREFIX = {
+    "target": "타깃 시청자: ",
+    "format": "선호 포맷: ",
+}
+# 브랜딩 방향 시드 신뢰도 — 명시 택1 = 사용자 선택 = 고신뢰 (P17 ≥0.9 auto-persist 선례).
+_BRANDING_SEED_CONFIDENCE = 0.9
+
+
+def _branding_seed_entries(req: BrandingSelectRequest) -> list[tuple[str, str]]:
+    """택1 후보 → 시드할 (entry_type, content) 튜플 리스트 (결정적, 빈 값은 skip).
+
+    tone → preferred_tone, target/format → preferred_phrase(접두어 노트).
+    """
+    entries: list[tuple[str, str]] = []
+    tone = (req.tone or "").strip()
+    if tone:
+        entries.append(("preferred_tone", tone))
+    for field in ("target", "format"):
+        value = (getattr(req, field) or "").strip()
+        if value:
+            entries.append(("preferred_phrase", _BRANDING_SEED_PREFIX[field] + value))
+    return entries
+
+
+async def _seed_branding_pkm(
+    plan_id: str,
+    auth_user_id: str | None,
+    req: BrandingSelectRequest,
+    *,
+    brand_repo: BrandRepo | None = None,
+    brand_memory_repo: BrandMemoryRepo | None = None,
+) -> int:
+    """택1한 브랜딩 방향을 brand_memory 로 시드 (★ gated default-off, authed, best-effort).
+
+    settings.branding_pkm_seed_enabled 가 켜져 있고 신원(auth_user_id)이 있을 때만:
+      1. BrandRepo.get_or_create_default(auth_user_id) 로 기본 brand 해결(anchor, idempotent).
+         미해결(None) → 시드 skip (0 반환).
+      2. 기존 brand_memory(list_for_brand) 로드 → (entry_type, content) 동일 행은 dedup skip.
+      3. 남은 항목을 BrandMemoryRepo.add_entry(..., confidence=0.9) 로 적재 (명시 택1=고신뢰).
+
+    ★ behavior-preserving: flag OFF(default) OR 익명(auth_user_id None) → 즉시 0 반환,
+      brand_memory 쓰기 0, BrandRepo 미호출 (no surprise write).
+    ★ graceful: 어떤 단계 실패도 raise 금지 — 시드 실패가 select 응답을 차단하지 않는다
+      (호출자도 try/except 로 이중 방어). 부분 실패 시 성공한 개수만 반환.
+
+    ★ DI seam: brand_repo / brand_memory_repo 인자로 실 Supabase 없이(in-memory) 단위 테스트
+      (다-S5 _run_brand_memory_extract_hook 패턴).
+
+    Returns:
+        새로 적재된 entry 수 (gated/익명/미해결/전부 dedup → 0).
+    """
+    settings = get_settings()
+    # ★ 게이트 — flag OFF 또는 익명이면 시드/쓰기 0 (byte-identical, no surprise write).
+    if not (settings.branding_pkm_seed_enabled and auth_user_id):
+        return 0
+
+    seed_entries = _branding_seed_entries(req)
+    if not seed_entries:
+        return 0
+
+    brand_repo = brand_repo if brand_repo is not None else _brand_repo
+    brand_memory_repo = (
+        brand_memory_repo if brand_memory_repo is not None else _brand_memory_repo
+    )
+
+    # 1. 기본 brand 해결 (get-or-create — anchor). 미해결 → 시드 skip.
+    brand_id = await brand_repo.get_or_create_default(auth_user_id)
+    if not brand_id:
+        logger.info(
+            "branding_pkm_seed skip — brand 미해결 plan_id=%s (graceful)", plan_id,
+        )
+        return 0
+
+    # 2. 기존 brand_memory 로드 → dedup 키 집합 (entry_type, content) 구성.
+    existing = await brand_memory_repo.list_for_brand(brand_id)
+    existing_keys = {
+        (str(e.get("entry_type")), str(e.get("content")))
+        for e in existing
+        if isinstance(e, dict)
+    }
+
+    # 3. 신규 항목만 confidence 0.9 로 적재 (명시 택1 = 고신뢰 — agent_io §7.5 / P17 선례).
+    seeded = 0
+    for entry_type, content in seed_entries:
+        if (entry_type, content) in existing_keys:
+            continue  # dedup — 동일 행 재적재 0 (re-select 멱등)
+        try:
+            await brand_memory_repo.add_entry(
+                brand_id,
+                entry_type,
+                content,
+                source_plan_id=plan_id,
+                confidence=_BRANDING_SEED_CONFIDENCE,
+            )
+            existing_keys.add((entry_type, content))  # 동일 호출 내 중복도 방지
+            seeded += 1
+        except Exception as exc:  # pragma: no cover — graceful (저장 실패 무시)
+            logger.warning(
+                "branding_pkm_seed_persist_failed: %s entry_type=%s (graceful)",
+                exc.__class__.__name__, entry_type,
+            )
+
+    logger.info(
+        "branding_pkm_seed plan_id=%s brand_id=%s seeded=%d/%d",
+        plan_id, brand_id, seeded, len(seed_entries),
+    )
+    return seeded
+
+
 @router.post(
     "/plans/{plan_id}/select",
     response_model=SelectPlanResponse,
@@ -806,3 +930,54 @@ def plans_branding_finalize(plan_id: str):
     plan_entry["updated_at"] = _now_iso()
     logger.info("branding_finalize plan_id=%s candidates=%d", plan_id, len(candidates))
     return BrandingFinalizeResponse(candidates=candidates)
+
+
+@router.post(
+    "/plans/{plan_id}/branding/select",
+    response_model=BrandingSelectResponse,
+    responses={404: {"model": ErrorEnvelope, "description": "plan_id 미발견 (INV-006)"}},
+    summary="브랜딩 후보 택1 — planning 연결 + brand_memory 시드 (Phase 18 Slice S4)",
+    description=(
+        "발굴한 후보 주제 1개를 택1 한다. (1) 택1 후보를 plan_entry.wizard_data.branding.selected 에 "
+        "저장하고 plan_entry.initial_input 을 그 주제로 설정해 후속 generate 가 그대로 받게 한다 "
+        "(planning 연결). (2) ★ gated+authed: settings.branding_pkm_seed_enabled 가 켜져 있고 신원이 "
+        "있으면 그 브랜딩 방향(tone→preferred_tone, target/format→preferred_phrase)을 사용자의 기본 "
+        "brand_memory 로 confidence 0.9 시드한다 (발굴→축적→주입 루프, P17 주입이 다음 generate 부터 읽음). "
+        "★ flag OFF / 익명 → brand_memory 쓰기 0 (selected/initial_input 은 항상 저장 — byte-identical). "
+        "graceful (시드 실패해도 200). auth-optional."
+    ),
+)
+async def plans_branding_select(
+    plan_id: str, req: BrandingSelectRequest, request: Request,
+):
+    plan_entry = _plan_store.get(plan_id)
+    if not plan_entry:
+        return _not_found_response(plan_id)
+
+    # 1. planning 연결 — 택1 후보 저장 + initial_input 을 택1 주제로 설정 (시드 유무와 무관, 항상).
+    #    후속 generate(plans_generate → generate_plan)가 plan_entry["initial_input"] 을 입력으로 받는다.
+    branding = _branding_state(plan_entry)
+    branding["selected"] = {
+        "topic": req.topic,
+        "tone": req.tone,
+        "target": req.target,
+        "format": req.format,
+    }
+    plan_entry["initial_input"] = req.topic
+    plan_entry["status"] = "wizard_in_progress"
+    plan_entry["updated_at"] = _now_iso()
+
+    # 2. ★ gated+authed brand_memory 시드 (best-effort) — 발굴→축적→주입 루프의 축적 단계.
+    #    flag OFF / 익명이면 _seed_branding_pkm 가 즉시 0 반환 (쓰기 0, BrandRepo 미호출).
+    #    graceful: 시드 실패해도 select 응답 차단 0 (helper 내부 + 본 try/except 이중 방어).
+    seeded = 0
+    try:
+        seeded = await _seed_branding_pkm(plan_id, _auth_user_id(request), req)
+    except Exception as exc:  # pragma: no cover — graceful (시드 실패 시 응답 차단 0)
+        logger.warning(
+            "branding_pkm_seed_hook_failed: %s (select 저장은 성공)",
+            exc.__class__.__name__,
+        )
+
+    logger.info("branding_select plan_id=%s seeded=%d", plan_id, seeded)
+    return BrandingSelectResponse(ok=True, seeded=seeded)

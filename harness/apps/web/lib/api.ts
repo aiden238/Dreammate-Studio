@@ -21,6 +21,8 @@ import type {
   BrandingFinalizeResponse,
   BrandingNextRequest,
   BrandingNextResponse,
+  BrandingSelectRequest,
+  BrandingSelectResponse,
   Envelope,
   ErrorEnvelope,
   FastAPIDetailError,
@@ -554,4 +556,33 @@ export async function brandingFinalize(
     throw new Error(`branding_finalize_failed: ${resp.status}`);
   }
   return resp.json() as Promise<BrandingFinalizeResponse>;
+}
+
+/**
+ * POST /api/v1/plans/{plan_id}/branding/select
+ * 발굴한 후보 주제 1개를 택1 → backend 가 plan_entry.initial_input 을 그 주제로 설정(planning 연결)하고,
+ * gated+authed 일 때 그 브랜딩 방향(tone/target/format)을 사용자 brand_memory 로 시드한다 (P18 축적 단계).
+ * ★ best-effort: 시드는 backend 가 graceful 처리(flag OFF/익명 → seeded:0). credentials:"include"
+ *   (auth httpOnly cookie 전송 → seed 조건). 호출 실패해도 호출측은 generate 로 진행(seed 는 부가 단계).
+ */
+export async function brandingSelect(
+  planId: string,
+  body: BrandingSelectRequest,
+): Promise<BrandingSelectResponse> {
+  const url = `${API_BASE_URL}/api/v1/plans/${encodeURIComponent(
+    planId,
+  )}/branding/select`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) {
+    throw new Error(`branding_select_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<BrandingSelectResponse>;
 }

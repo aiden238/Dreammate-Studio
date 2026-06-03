@@ -223,6 +223,28 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 18 Slice S4 — 브랜딩 후보 택1 → brand_memory 시드 게이트 (additive, default False) ─
+    # ★ 발굴(P18 branding) → 축적(brand_memory) → 주입(P17 가-S2) 루프의 "축적" 단계 배선.
+    #   사용자가 브랜딩 후보(주제/톤/타깃/포맷)를 **택1** 하면, 그 브랜딩 방향을 인증 사용자의
+    #   기본 brand_memory_entries 로 시드한다 (다음 generate 부터 P17 주입 루프가 읽음).
+    # ★ behavior-preserving / gated default-off: OFF(default) OR 익명 → /branding/select 가
+    #   brand_memory 를 쓰지 않고 BrandRepo 도 호출하지 않는다 (no surprise write). 그래도
+    #   selected/initial_input 은 항상 저장 → 후속 generate 가 택1 주제를 그대로 받는다
+    #   (시드 유무와 무관하게 byte-identical). ON + 신원(auth_user_id) 일 때만 시드.
+    # ★ governance (ADR-031 §P-AUX-2 / agent_io §7.5): 명시 택1 = 사용자 선택 = 고신뢰
+    #   → confidence 0.9 로 적재 (P17 ≥0.9 auto-persist 선례 계승). blanket 자동 승격 0.
+    #   extract_enabled(다-S5 feedback 추출)와 별개 관심사 — 이쪽은 명시 택1 신호.
+    branding_pkm_seed_enabled: bool = Field(
+        default=False,
+        description=(
+            "Phase 18 S4: 브랜딩 후보 택1(/branding/select) 시 그 브랜딩 방향(tone/target/format)을 "
+            "인증 사용자의 brand_memory_entries 로 시드할지 여부. ★ gated default-off — False 면 "
+            "brand_memory 쓰기 0, BrandRepo 미호출 (익명·OFF 경로 byte-identical, selected/initial_input "
+            "은 항상 저장). True + 신원(auth_user_id) 일 때만 confidence 0.9 (명시 택1=고신뢰)로 시드 "
+            "(발굴→축적→주입 루프의 축적 단계). 환경변수 BRANDING_PKM_SEED_ENABLED 로 override."
+        ),
+    )
+
     # ─── Phase 13 Slice S3 — rich 출력 게이트 (additive, default False) ─
     # ★ behavior-preserving / gated default-off: OFF=compact byte-identical
     #   (Plan.model_dump_compact() 가 rich 슬롯 제외 → Phase 13 이전 응답과 동일),

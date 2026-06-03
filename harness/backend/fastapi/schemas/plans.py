@@ -181,3 +181,33 @@ class BrandingFinalizeResponse(BaseModel):
     """
 
     candidates: list[dict[str, Any]]
+
+
+# ─── Phase 18 Slice S4 — 브랜딩 후보 택1 (planning 연결 + brand_memory 시드) ──
+# 사용자가 후보 주제 1개를 택1 하면 (1) 그 주제/방향을 plan_entry 에 저장해 후속 generate 가
+# 받게 하고, (2) gated+authed 일 때 그 브랜딩 방향을 brand_memory 로 시드한다
+# (발굴→축적→주입 루프의 "축적" 단계 — P17 가-S2 주입이 다음 generate 부터 읽음).
+
+
+class BrandingSelectRequest(BaseModel):
+    """POST /plans/{plan_id}/branding/select body — 택1한 브랜딩 후보.
+
+    topic 은 필수(후속 generate 의 입력). tone/target/format 은 brand_memory 시드용
+    (gated+authed 일 때만 적재). why_fit 등 다른 필드는 시드에 불필요하므로 받지 않는다.
+    """
+
+    topic: str = Field(..., min_length=1, max_length=500)
+    tone: str | None = Field(default=None, max_length=500)
+    target: str | None = Field(default=None, max_length=500)
+    format: str | None = Field(default=None, max_length=500)
+
+
+class BrandingSelectResponse(BaseModel):
+    """POST /plans/{plan_id}/branding/select 응답.
+
+    ok       — 택1 저장 성공 여부 (plan 존재 시 항상 True; 404 는 ErrorEnvelope 로 분기).
+    seeded   — brand_memory 로 새로 적재된 entry 수 (gated+authed 아니면 0, dedup skip 도 0).
+    """
+
+    ok: bool
+    seeded: int
