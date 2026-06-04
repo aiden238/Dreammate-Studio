@@ -334,11 +334,14 @@ def run_planning(
     _model = model or settings.openai_model_default
 
     rag_block = _format_rag_context(rag_context or [])
-    # Phase 15 S3 (gated): output_mode 별 프롬프트 (compact/rich/director). ★ compact/rich byte-identical
-    #   (effective_output_mode 가 rich_output_enabled=True→"rich" 매핑 — Phase 13/14 동작 보존).
+    # Phase 15/20 S3 (gated): output_mode 별 프롬프트 (compact/rich/director/commercial_viral).
+    #   ★ compact/rich/director byte-identical (effective_output_mode 가 rich_output_enabled=True→"rich"
+    #   매핑 — Phase 13/14 동작 보존). commercial_viral 은 명시 활성에서만 (default compact 불변).
     _mode = effective_output_mode(settings)
     base = (
-        DIRECTOR_SYSTEM_PROMPT
+        COMMERCIAL_SYSTEM_PROMPT
+        if _mode == "commercial_viral"
+        else DIRECTOR_SYSTEM_PROMPT
         if _mode == "director"
         else RICH_SYSTEM_PROMPT
         if _mode == "rich"
@@ -362,9 +365,13 @@ def run_planning(
             ],
             response_format={"type": "json_object"},
             temperature=0.7,  # 다양성 (agent_io_contract §4.4)
-            # Phase 15 S6: director 출력(rich 12 + director 3 + scene 리스트)은 커서 1500 절단 →
-            #   director 슬롯(뒤쪽) 누락. director 만 상향(compact/rich 1500 불변 = byte-identical).
-            max_tokens=3500 if _mode == "director" else 1500,
+            # Phase 15 S6 / 20 S3: 상위 tier 출력이 길어 커서 절단 시 뒤쪽 슬롯 누락 → tier 별 상향.
+            #   commercial_viral(10슬롯+7필드 scene)은 director 보다 더 상향. compact/rich 1500 불변(byte-identical).
+            max_tokens=(
+                4500 if _mode == "commercial_viral"
+                else 3500 if _mode == "director"
+                else 1500
+            ),
         )
     except OpenAIError:
         logger.exception("Planning OpenAI API 호출 실패")
@@ -480,10 +487,13 @@ async def _run_planning_single(
     _client = client or OpenAI(api_key=settings.openai_api_key)
 
     rag_block = _format_rag_context(rag_context or [])
-    # Phase 15 S3 (gated): output_mode 별 hint 프롬프트 (compact/rich/director). compact/rich byte-identical.
+    # Phase 15/20 S3 (gated): output_mode 별 hint 프롬프트 (compact/rich/director/commercial_viral).
+    #   compact/rich/director byte-identical. commercial_viral 은 명시 활성에서만.
     _mode = effective_output_mode(settings)
     base_prompt = (
-        _build_director_system_prompt_with_hint(approach_hint)
+        _build_commercial_system_prompt_with_hint(approach_hint)
+        if _mode == "commercial_viral"
+        else _build_director_system_prompt_with_hint(approach_hint)
         if _mode == "director"
         else _build_rich_system_prompt_with_hint(approach_hint)
         if _mode == "rich"
@@ -508,7 +518,13 @@ async def _run_planning_single(
             ],
             response_format={"type": "json_object"},
             temperature=0.8,  # 약간 높여 다양성 확보 (3 parallel)
-            max_tokens=1500,
+            # Phase 20 S3: 상위 tier 출력이 길어 절단 시 뒤쪽 슬롯 누락 → tier 별 상향.
+            #   compact/rich 1500 불변(byte-identical). director/commercial 만 상향.
+            max_tokens=(
+                4500 if _mode == "commercial_viral"
+                else 3500 if _mode == "director"
+                else 1500
+            ),
         )
         raw = response.choices[0].message.content or "{}"
         parsed = json.loads(raw)
@@ -697,7 +713,9 @@ async def _run_planning_single_via_gateway(
     #   ★ multi_provider 는 별 게이트(multi_provider_plans_enabled, default OFF)라
     #     이 함수는 통상 호출되지 않는다 — settings 는 late get_settings() 로 조회.
     _mode = effective_output_mode(get_settings())
-    if _mode == "director":
+    if _mode == "commercial_viral":
+        base_prompt = _build_commercial_system_prompt_with_hint(approach_hint)
+    elif _mode == "director":
         base_prompt = _build_director_system_prompt_with_hint(approach_hint)
     elif _mode == "rich":
         base_prompt = _build_rich_system_prompt_with_hint(approach_hint)
@@ -723,7 +741,12 @@ async def _run_planning_single_via_gateway(
             alias,
             messages,
             temperature=0.8,  # 다양성 (3 슬롯 — run_planning_parallel_3 와 동일 기조)
-            max_tokens=1500,
+            # Phase 20 S3: tier 별 상향 (compact/rich 1500 불변 = byte-identical).
+            max_tokens=(
+                4500 if _mode == "commercial_viral"
+                else 3500 if _mode == "director"
+                else 1500
+            ),
             json_mode=True,
         )
 
