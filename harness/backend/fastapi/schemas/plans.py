@@ -205,9 +205,14 @@ class BrandingSelectRequest(BaseModel):
 class BrandingSelectResponse(BaseModel):
     """POST /plans/{plan_id}/branding/select 응답.
 
-    ok       — 택1 저장 성공 여부 (plan 존재 시 항상 True; 404 는 ErrorEnvelope 로 분기).
-    seeded   — brand_memory 로 새로 적재된 entry 수 (gated+authed 아니면 0, dedup skip 도 0).
+    ok        — 택1 저장 성공 여부 (plan 존재 시 항상 True; 404 는 ErrorEnvelope 로 분기).
+    seeded    — brand_memory 로 새로 적재된 entry 수 (gated+authed 아니면 0, dedup skip 도 0).
+    domain_id — ★ Phase 25 S1 (wizard↔4계층 link): 택1 주제로 auto-seed/재사용된 domain id.
+                gated+authed 일 때만 채워짐. flag OFF / 익명 / 실패 → None (additive, byte-identical).
+    series_id — ★ Phase 25 S1: 택1 포맷으로 auto-seed/재사용된 series id (domain 아래). 위와 동일 게이트.
     """
 
     ok: bool
     seeded: int
+    domain_id: str | None = None
+    series_id: str | None = None

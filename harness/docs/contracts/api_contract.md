@@ -771,7 +771,7 @@ Discovery 5단계 진행. 각 호출이 1단계 카드 생성.
 
 - **POST /api/v1/plans/{plan_id}/branding/next** — body `{answer?, selected_option?}` → `{mode:"ask"|"done", question, options(2~4)|null, step, max_questions}`. 직전 답변 기록 + 다음 적응형 질문(또는 done, MAX_QUESTIONS=8 상한). agent **P-AUX-3** ask.
 - **POST /api/v1/plans/{plan_id}/branding/finalize** — → `{candidates:[{topic,tone,target,format,why_fit} ×3]}`. agent **P-AUX-3** finalize.
-- **POST /api/v1/plans/{plan_id}/branding/select** — body `{topic, tone?, target?, format?}` → `{ok, seeded}`. 택1 저장(`initial_input` 설정 → 후속 generate 연결) + (gated+authed) brand_memory 시드(tone→preferred_tone 등, conf 0.9, dedup, Phase 17 재사용).
+- **POST /api/v1/plans/{plan_id}/branding/select** — body `{topic, tone?, target?, format?}` → `{ok, seeded, domain_id?, series_id?}`. 택1 저장(`initial_input` 설정 → 후속 generate 연결) + (gated+authed) brand_memory 시드(tone→preferred_tone 등, conf 0.9, dedup, Phase 17 재사용). ★ **Phase 25(CC-032)**: 같은 gate(`branding_pkm_seed_enabled`)+authed 에서 topic→**domain**, format→**series** 를 brand 하위에 **자동 시드**(멱등 get_or_create, graceful) → 위저드 거치면 /me/pkm-graph 4계층 자동 채움. 응답 `domain_id`/`series_id` **additive**(미생성/익명/flag OFF 시 null, 기존 키 불변).
 
 **Status:** 200, 404(INV-006). graceful — agent/seed 실패 시 500 금지(ask→done / finalize→[] / select→seeded 0). flag OFF·익명 → 시드 0(byte-identical, selected/initial_input은 저장).
 
@@ -1324,4 +1324,5 @@ CC-024 (2026-06-04): §8.7 마이페이지 2nd brain — /me/pkm-graph + /me/pkm
 CC-029 (2026-06-04): §8.7 /me/pkm-graph 4계층 깊이(domain/series 노드 + has_domain/has_series) + 브랜드 PKM 출처(source 노드 + sourced_from) 확장 — Phase 21. additive/graceful.
 CC-030 (2026-06-04): §8.7 POST /me/domains + /me/series — 4계층 domain/series 생성(소유검증 RLS) — Phase 22. additive.
 CC-031 (2026-06-04): §8.7 PATCH/DELETE /me/domains/{id} + /me/series/{id} — domain/series 편집·삭제(소유검증, domain 삭제 시 series cascade) — Phase 24. additive.
+CC-032 (2026-06-04): §8.6 branding/select 응답 +domain_id/series_id — topic→domain·format→series 자동 시드(멱등·gated·graceful) — Phase 25. additive.
 ```

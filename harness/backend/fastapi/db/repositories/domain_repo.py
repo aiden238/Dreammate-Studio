@@ -127,6 +127,29 @@ class DomainRepo:
         self.store.setdefault(brand_id, []).append(row)
         return dict(row)
 
+    async def get_or_create(
+        self, brand_id: str, name: str,
+    ) -> Optional[dict[str, Any]]:
+        """brand 아래 name 일치 domain 이 있으면 그 row 를, 없으면 새로 생성해 반환 (idempotent).
+
+        ★ Phase 25 S1 (wizard↔4계층 link): 브랜딩 택1 주제 → domain auto-seed 용 멱등 anchor.
+          동일 주제 재택1 → 기존 domain 재사용(중복 0). list_for_brand → name 비교 → 없으면 create.
+        ★ graceful: 어떤 실패도 raise 금지 → None (호출자 hook 이 graceful 매핑).
+        ★ RLS/격리: 호출자(라우터)가 이미 소유 검증한 brand_id 만 넘긴다 (domains→brands 체인).
+        """
+        try:
+            existing = await self.list_for_brand(brand_id)
+            for row in existing:
+                if isinstance(row, dict) and str(row.get("name")) == str(name):
+                    return dict(row)  # 동일 name domain 재사용 (멱등)
+            return await self.create(brand_id, name)
+        except Exception as exc:  # pragma: no cover — graceful (어떤 실패도 None)
+            logger.warning(
+                "domain_get_or_create_failed: %s — graceful None",
+                exc.__class__.__name__,
+            )
+            return None
+
     # ─── operations (edit/delete — Phase 24 S1) ──────────────────────
     #
     # ★ 소유(domain→brand→user) 검증은 endpoint 책임 — 본 repo 는 brand_id keyed 라

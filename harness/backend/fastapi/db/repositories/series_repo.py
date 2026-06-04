@@ -126,6 +126,29 @@ class SeriesRepo:
         self.store.setdefault(domain_id, []).append(row)
         return dict(row)
 
+    async def get_or_create(
+        self, domain_id: str, name: str,
+    ) -> Optional[dict[str, Any]]:
+        """domain 아래 name 일치 series 가 있으면 그 row 를, 없으면 새로 생성해 반환 (idempotent).
+
+        ★ Phase 25 S1 (wizard↔4계층 link): 브랜딩 택1 포맷 → series auto-seed 용 멱등 anchor.
+          동일 (domain, name) 재택1 → 기존 series 재사용(중복 0). list_for_domain → name 비교 → 없으면 create.
+        ★ graceful: 어떤 실패도 raise 금지 → None (호출자 hook 이 graceful 매핑).
+        ★ RLS/격리: 호출자(라우터)가 이미 소유 검증한 domain_id 만 넘긴다 (series→domains→brands 체인).
+        """
+        try:
+            existing = await self.list_for_domain(domain_id)
+            for row in existing:
+                if isinstance(row, dict) and str(row.get("name")) == str(name):
+                    return dict(row)  # 동일 name series 재사용 (멱등)
+            return await self.create(domain_id, name)
+        except Exception as exc:  # pragma: no cover — graceful (어떤 실패도 None)
+            logger.warning(
+                "series_get_or_create_failed: %s — graceful None",
+                exc.__class__.__name__,
+            )
+            return None
+
     # ─── operations (edit/delete — Phase 24 S1) ──────────────────────
     #
     # ★ 소유(series→domain→brand→user) 검증은 endpoint 책임 — 본 repo 는 domain_id keyed 라

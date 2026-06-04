@@ -45,7 +45,8 @@
 | 22 | domains/series 생성 기능 (4계층 데이터 풍부화) | **done** (2026-06-04) | DomainRepo/SeriesRepo **create** + POST /me/domains·/me/series(소유검증 RLS) + /brain "지식 구조" 추가 UI → Phase 21 그래프가 실데이터 4계층으로. S1(backend)+S2(frontend+라이브). ★ **라이브 데모 PASS**(생성 API→4계층 그래프 반영→/brain 트리 렌더, 미소유 404). additive(기존 /brain·그래프 builder 무변경). CC-030. hermetic pytest 698→714. (archive) |
 | 23 | 품질 정식화 (실 LLM 전수 eval baseline + human review 정비) | **done** (2026-06-04) | golden_set 25 실 LLM(rich planning + 9차원 critic) 전수 baseline: overall **4.41**(4.0~4.78)/depth **4.22**/18 approve/P0 7/7/광고 1·차단 0. + human kit compact↔rich LLM-judge 대조 + 사용자 채점 시트(실채점=사용자 deferred). ★ 정직: critic 낙관 편향(88점 함정) → 회귀 기준선이지 절대품질 아님; 8차원은 compact↔rich 무차별, depth(9차원)만 우위. ★ 운영 코드 0(behavior-preserving, pytest 714 불변). S1+S2. (archive) |
 | 24 | domain/series 편집·삭제 (/brain 4계층 CRUD 완성) | **done** (2026-06-04) | domain/series PATCH/DELETE(소유검증 RLS, _owns_series 3-hop) + /brain ✏️편집·🗑삭제 UI → 4계층 CRUD 완성(생성·큐레이션·편집·삭제). domain 삭제 시 series cascade(Supabase FK / in-memory). ★ **라이브 데모 PASS**(rename 200/미소유 404/DELETE cascade + /brain ✏️🗑 렌더). additive(그래프 builder 무변경). CC-031. hermetic pytest 714→735. 🅑 기능마감 1차. (archive) |
-| 25~30 | 고도화 / 배포 | future | 🅑 나머지(위저드↔4계층 연결 / video 노드 / 개인 PKM 출처 migration) / 배포 Gate B~G / Custom RAG, LangGraph |
+| **25** | **위저드(브랜딩 세션) ↔ 4계층 자동 연결** | **active** (entry 2026-06-04) | 브랜딩 세션 택1(`/branding/select`)에서 topic→domain, format→series 자동 시드(brand 하위, 멱등·gated `branding_pkm_seed_enabled`·graceful) → 위저드 거치면 /brain 4계층 자동 채움. 응답 additive(domain_id/series_id). ★ 라이브 데모. (범용 step 위저드 재설계는 별건.) S1(backend 훅)→S2(라이브+close). 🅑 2차. |
+| 26~30 | 고도화 / 배포 | future | 🅑 나머지(video 노드 / 개인 PKM 출처 migration) / 배포 Gate B~G / Custom RAG, LangGraph |
 
 ### ★ PARKED 제안 (future direction — proposal-first, 선행조건 gated, 빌드 승격 X)
 

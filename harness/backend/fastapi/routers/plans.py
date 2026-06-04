@@ -55,10 +55,12 @@ from ..config import get_settings
 from ..db import (
     BrandMemoryRepo,
     BrandRepo,
+    DomainRepo,
     FeedbackRepo,
     PkmRepo,
     PlansRepo,
     SelectionRepo,
+    SeriesRepo,
     get_supabase,
     save_video_planning,
 )
@@ -164,6 +166,14 @@ _pkm_repo: PkmRepo = PkmRepo(
     supabase_client=get_supabase(),
     in_memory_store={},
 )
+
+# Phase 25 Slice S1 (wizard↔4계층 link): 브랜딩 택1 → domain/series auto-seed.
+#   - 택1 주제 → DomainRepo.get_or_create(brand_id, topic), 포맷 → SeriesRepo.get_or_create(domain_id, format).
+#   - Phase 21/22 graph 가 그대로 렌더 (additive). me.py 의 동일 repo 와 별개 in-memory store —
+#     hermetic 단위 테스트는 DI seam(아래 _auto_create_domain_series 인자)으로 격리.
+#   - Supabase 사용 가능 시 PostgreSQL(domains/series), 아니면 in-memory fallback (회귀 0).
+_domain_repo: DomainRepo = DomainRepo(supabase_client=get_supabase(), in_memory_store={})
+_series_repo: SeriesRepo = SeriesRepo(supabase_client=get_supabase(), in_memory_store={})
 
 
 # ─── helper re-export (backward-compat 별칭) ──────────────────────────
@@ -646,6 +656,91 @@ async def _seed_branding_pkm(
     return seeded
 
 
+# ─── Phase 25 Slice S1 — 브랜딩 택1 → domain/series auto-seed (wizard↔4계층 link) ──
+# 사용자가 브랜딩 세션을 완료하고 후보를 택1 하면, 그 주제→domain / 포맷→series 를 사용자의
+# 기본 brand 아래 auto-create 한다. 그러면 브랜딩 흐름만으로 /brain 4계층(Phase 21/22 graph)이
+# 자동으로 채워진다. ★ _seed_branding_pkm 와 동일 게이트(branding_pkm_seed_enabled)/신원/graceful.
+
+# format 미지정 시 series 기본 이름 (택1 주제 domain 아래 anchor series).
+_DEFAULT_SERIES_NAME = "기본 시리즈"
+
+
+async def _auto_create_domain_series(
+    plan_id: str,
+    auth_user_id: str | None,
+    req: BrandingSelectRequest,
+    *,
+    brand_repo: BrandRepo | None = None,
+    domain_repo: DomainRepo | None = None,
+    series_repo: SeriesRepo | None = None,
+) -> tuple[str | None, str | None]:
+    """택1한 브랜딩 후보로 domain(주제)+series(포맷)를 사용자 brand 아래 auto-seed (★ gated/authed/멱등/graceful).
+
+    settings.branding_pkm_seed_enabled 가 켜져 있고 신원(auth_user_id)이 있을 때만:
+      1. BrandRepo.get_or_create_default(auth_user_id) 로 기본 brand 해결(anchor, idempotent).
+         미해결(None) → skip ((None, None) 반환).
+      2. DomainRepo.get_or_create(brand_id, req.topic) — 택1 주제 → domain (동일 주제 재택1 → 재사용, 중복 0).
+      3. SeriesRepo.get_or_create(domain_id, req.format or 기본) — 포맷 → series.
+
+    ★ behavior-preserving: flag OFF(default) OR 익명 → 즉시 (None, None) (no surprise write, BrandRepo 미호출).
+      _seed_branding_pkm 와 동일 게이트 — 새 flag 없음.
+    ★ idempotent: get_or_create 가 name 일치 row 를 재사용 → 동일 주제 재택1 시 domain/series 중복 0.
+    ★ graceful: 어떤 단계 실패도 raise 금지 — 확보한 것까지만 반환 (호출자도 try/except 이중 방어).
+    ★ DI seam: brand_repo/domain_repo/series_repo 인자로 실 Supabase 없이(in-memory) 단위 테스트.
+
+    Returns:
+        (domain_id, series_id). skip/실패 단계는 None (둘 다 None = gated/익명/brand 미해결).
+    """
+    settings = get_settings()
+    # ★ 게이트 — flag OFF 또는 익명이면 생성 0 (byte-identical, no surprise write).
+    if not (settings.branding_pkm_seed_enabled and auth_user_id):
+        return (None, None)
+
+    brand_repo = brand_repo if brand_repo is not None else _brand_repo
+    domain_repo = domain_repo if domain_repo is not None else _domain_repo
+    series_repo = series_repo if series_repo is not None else _series_repo
+
+    domain_id: str | None = None
+    series_id: str | None = None
+    try:
+        # 1. 기본 brand 해결 (get-or-create — anchor, _seed_branding_pkm 와 동일).
+        brand_id = await brand_repo.get_or_create_default(auth_user_id)
+        if not brand_id:
+            logger.info(
+                "branding_4layer skip — brand 미해결 plan_id=%s (graceful)", plan_id,
+            )
+            return (None, None)
+
+        # 2. 택1 주제 → domain (멱등 — 동일 주제 재택1 시 기존 domain 재사용).
+        domain_name = (req.topic or "").strip()
+        if not domain_name:
+            return (None, None)
+        domain = await domain_repo.get_or_create(brand_id, domain_name)
+        if not domain or not domain.get("id"):
+            logger.info(
+                "branding_4layer skip — domain 미생성 plan_id=%s (graceful)", plan_id,
+            )
+            return (None, None)
+        domain_id = str(domain["id"])
+
+        # 3. 택1 포맷 → series (포맷 비면 기본 시리즈 이름, 멱등).
+        series_name = (req.format or "").strip() or _DEFAULT_SERIES_NAME
+        series = await series_repo.get_or_create(domain_id, series_name)
+        if series and series.get("id"):
+            series_id = str(series["id"])
+    except Exception as exc:  # pragma: no cover — graceful (생성 실패해도 raise 0)
+        logger.warning(
+            "branding_4layer_auto_create_failed: %s (graceful, 확보분 반환)",
+            exc.__class__.__name__,
+        )
+
+    logger.info(
+        "branding_4layer plan_id=%s domain_id=%s series_id=%s",
+        plan_id, domain_id, series_id,
+    )
+    return (domain_id, series_id)
+
+
 @router.post(
     "/plans/{plan_id}/select",
     response_model=SelectPlanResponse,
@@ -970,14 +1065,33 @@ async def plans_branding_select(
     # 2. ★ gated+authed brand_memory 시드 (best-effort) — 발굴→축적→주입 루프의 축적 단계.
     #    flag OFF / 익명이면 _seed_branding_pkm 가 즉시 0 반환 (쓰기 0, BrandRepo 미호출).
     #    graceful: 시드 실패해도 select 응답 차단 0 (helper 내부 + 본 try/except 이중 방어).
+    auth_user_id = _auth_user_id(request)
     seeded = 0
     try:
-        seeded = await _seed_branding_pkm(plan_id, _auth_user_id(request), req)
+        seeded = await _seed_branding_pkm(plan_id, auth_user_id, req)
     except Exception as exc:  # pragma: no cover — graceful (시드 실패 시 응답 차단 0)
         logger.warning(
             "branding_pkm_seed_hook_failed: %s (select 저장은 성공)",
             exc.__class__.__name__,
         )
 
-    logger.info("branding_select plan_id=%s seeded=%d", plan_id, seeded)
-    return BrandingSelectResponse(ok=True, seeded=seeded)
+    # 3. ★ gated+authed domain/series auto-seed (Phase 25 S1, best-effort) — wizard↔4계층 link.
+    #    flag OFF / 익명이면 _auto_create_domain_series 가 즉시 (None, None) (생성 0, BrandRepo 미호출).
+    #    graceful: 생성 실패해도 select 응답 차단 0 (helper 내부 + 본 try/except 이중 방어).
+    domain_id: str | None = None
+    series_id: str | None = None
+    try:
+        domain_id, series_id = await _auto_create_domain_series(plan_id, auth_user_id, req)
+    except Exception as exc:  # pragma: no cover — graceful (생성 실패 시 응답 차단 0)
+        logger.warning(
+            "branding_4layer_hook_failed: %s (select 저장은 성공)",
+            exc.__class__.__name__,
+        )
+
+    logger.info(
+        "branding_select plan_id=%s seeded=%d domain_id=%s series_id=%s",
+        plan_id, seeded, domain_id, series_id,
+    )
+    return BrandingSelectResponse(
+        ok=True, seeded=seeded, domain_id=domain_id, series_id=series_id,
+    )
