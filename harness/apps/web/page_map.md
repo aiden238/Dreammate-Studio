@@ -36,6 +36,21 @@
   - (Phase 4+) Plan 선택 → save → workspace
 - **Phase 4 migration**: `PlanComparisonCard` 활성화 → 3-plan 가로 비교 + 1 선택 화면으로 전환 (component_map.md PlanComparisonCard placeholder 참조)
 
+### 1.3 `/new/branding` (브랜딩 세션 — Akinator 주제발굴, Phase 18)
+
+- **진입 조건**: `/new`에서 "주제 추천받기" 카드 클릭 (주제 미정 사용자)
+- **동작**: LLM 동적 스무고개(질문 카드 + 자유입력 + 진행바) → 후보 주제 3개(톤/타깃/포맷) → 택1 → generate 연결
+- **API**: `POST /plans/{id}/branding/{next,finalize,select}` (api_contract §8.6, CC-023)
+- **다음**: 택1 후 `/plan/[id]` (생성 결과)
+
+### 1.4 `/brain` (마이페이지 2nd brain — PKM 도식화·큐레이션, Phase 19)
+
+- **진입 조건**: 홈("🧠 내 brain" 링크) / 인증 사용자. AuthGuard.
+- **표시**: 모바일=scope 카드/리스트(개인/브랜드 PKM 칩 + 🔒) / 데스크톱=react-flow 그래프(lazy-load, ssr:false, ≥1024px) + 카드↔그래프 토글. 무데이터 → empty state(→ `/new/branding` 유도).
+- **컴포넌트**: `components/brain/PkmGraph.tsx`(데스크톱 그래프) + `/brain/page.tsx`(카드/리스트 + 큐레이션) + `lib/use_media_query.ts`
+- **API**: `GET /api/v1/me/pkm-graph` + `PATCH/DELETE /api/v1/me/pkm/{node_id}` (api_contract §8.7, CC-024)
+- **큐레이션**: 잠금(locked) 토글 / 편집(content) / 삭제 — 본인 데이터(RLS + 소유 검증)
+
 ---
 
 ## 2. Spec Routes (Phase 2 spec, Phase 3 구현 예정)
@@ -289,5 +304,8 @@ Phase 4 (MOA Lite + 3-plan)
   - Phase 2 spec routes 추가 (`/new`, `/new/discovery/step/{1..7}`, `/new/quick*`)
   - 각 route → 사용 컴포넌트 명시
   - Route ↔ Mode Branching 매핑 표 추가
+- 2026-06-04: Phase 18/19 active routes 추가
+  - §1.3 `/new/branding` (Akinator 주제발굴, CC-023)
+  - §1.4 `/brain` (2nd brain PKM 도식화·큐레이션, CC-024) — 모바일 카드 / 데스크톱 react-flow 하이브리드
   - Future Phase routes placeholder 정리
   - cross-reference 정합 checklist 추가

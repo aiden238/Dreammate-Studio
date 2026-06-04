@@ -777,6 +777,18 @@ Discovery 5단계 진행. 각 호출이 1단계 카드 생성.
 
 ---
 
+### 8.7 마이페이지 2nd brain — PKM 그래프·큐레이션 — Phase 19 (CC-024)
+
+축적된 PKM(개인 pkm_entries + 소유 brands + 브랜드 brand_memory)을 `/brain`에서 도식화·큐레이션. 전부 **인증 사용자 본인 데이터**(RLS 격리, service key backend-only). 모바일=카드/리스트, 데스크톱=그래프(react-flow lazy-load). 신규 데이터모델 0(읽기+CRUD 재사용).
+
+- **GET /api/v1/me/pkm-graph** (authed) → `{nodes:[{id,type:"user"|"brand"|"pkm",label,scope?,entry_type?,locked?}], edges:[{source,target,kind:"owns"|"has_personal"|"has_brand_pkm"}], summary:{personal,brand,brands}}`. id namespace: `user:` / `brand:<id>` / `pkm:<id>`(개인) / `bm:<id>`(브랜드). 익명/무데이터 → 빈 그래프(graceful).
+- **PATCH /api/v1/me/pkm/{node_id}** (authed) — body `{content?, locked?}` → `{ok, node}`. node_id prefix 라우팅: `pkm:`→pkm_entries(개인, auth_user_id), `bm:`→brand_memory(브랜드 소유=brand→user 검증). user_locked 보호.
+- **DELETE /api/v1/me/pkm/{node_id}** (authed) → `{ok, deleted}`. 동일 prefix 라우팅 + 소유 검증.
+
+**Status:** 200. **401**(익명), **404**(미소유·부재). graceful — 집계/조회 실패 시 500 금지(빈 그래프). PATCH/DELETE 교차 사용자 변경·삭제 0(RLS + 소유 검증).
+
+---
+
 ## 9. Plan 조회 endpoint
 
 ### 9.1 GET /api/v1/plans/{plan_id}
@@ -1303,4 +1315,6 @@ POST endpoint 중 다음은 `X-Idempotency-Key` 헤더 지원:
 ```
 v1.0.0 (2026-05-26): Sprint S3-2 초안. 9 MVP endpoint 명세, SSE progress channel,
                       4계층 검증, HTTP status 매핑, CORS, idempotency, latency 목표.
+CC-023 (2026-06-04): §8.6 브랜딩 세션(Akinator) endpoint 3종(branding/next·finalize·select) — Phase 18.
+CC-024 (2026-06-04): §8.7 마이페이지 2nd brain — /me/pkm-graph + /me/pkm{PATCH,DELETE} 큐레이션 — Phase 19.
 ```
