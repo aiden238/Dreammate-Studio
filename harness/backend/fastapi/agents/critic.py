@@ -245,6 +245,54 @@ DIRECTOR_SYSTEM_PROMPT = (
 )
 
 
+# ─── Phase 20 S4 (gated): commercial_viral 17차원 (director 10 + 상업 7) ─────
+# ★ output_mode=commercial_viral 경로 전용. director 10차원 + 상업 7차원
+#   (viral_potential/brand_memory/commercial_conversion/non_genericity/execution_feasibility/
+#    platform_fit/shareability). compact/rich/director(8/9/10차원)는 불변 byte-identical.
+#   rubric: 제안서 §4.1. "88점 함정" 확장 방어 — 얕은 상업 브리프(슬롯 빈약)는 non_genericity/
+#   commercial_conversion 저점 → 17차원 평균 하락. ★ retention_design 은 director 에 이미 있어 중복 제외.
+DIMENSIONS_COMMERCIAL: tuple[str, ...] = DIMENSIONS_DIRECTOR + (
+    "viral_potential",
+    "brand_memory",
+    "commercial_conversion",
+    "non_genericity",
+    "execution_feasibility",
+    "platform_fit",
+    "shareability",
+)
+
+# commercial 프롬프트 = director(10차원) 프롬프트에 상업 7차원(11~17) 추가 (프로그램적 구성 — 중복 최소화).
+COMMERCIAL_SYSTEM_PROMPT = (
+    DIRECTOR_SYSTEM_PROMPT.replace("다음 10차원", "다음 17차원")
+    .replace("10 평가 차원", "17 평가 차원")
+    .replace(
+        "판정 규칙 (overall_verdict):",
+        "  11. viral_potential       : 공유·확산 유발 요소(놀라움·공감·유용성)가 설계됐는가 (★ 보장 아닌 잠재력)\n"
+        "  12. brand_memory          : 시청 후 브랜드가 기억에 남는 신호(brand_signal)가 일관되게 박혀 있는가\n"
+        "  13. commercial_conversion : 시청→행동(구매/구독/방문) 전환 경로가 자연스럽게 설계됐는가\n"
+        "  14. non_genericity        : 일반론·뻔한 패턴이 아닌 이 맥락 특화 전략인가 (★ 얕은 일반론 = 저점)\n"
+        "  15. execution_feasibility : 1인/저예산으로 이 전략 브리프를 실제 실행 가능한가 (제작 실현성)\n"
+        "  16. platform_fit          : 타깃 플랫폼(쇼츠/릴스/유튜브) 특성에 패키징이 맞는가\n"
+        "  17. shareability          : 시청자가 '남에게 보내고 싶은' 트리거가 있는가\n"
+        "                              anchors(11~17): 0~1 없음 / 2~3 일부 / 4~5 체계적. ★ 얕은 상업 브리프 = 낮은 점수.\n\n"
+        "판정 규칙 (overall_verdict):",
+    )
+    .replace(
+        '"retention_design": 0-5',
+        '"retention_design": 0-5,\n    "viral_potential": 0-5,\n    "brand_memory": 0-5,'
+        '\n    "commercial_conversion": 0-5,\n    "non_genericity": 0-5,'
+        '\n    "execution_feasibility": 0-5,\n    "platform_fit": 0-5,\n    "shareability": 0-5',
+    )
+    .replace(
+        '"retention_design": "..."',
+        '"retention_design": "...",\n    "viral_potential": "...",\n    "brand_memory": "...",'
+        '\n    "commercial_conversion": "...",\n    "non_genericity": "...",'
+        '\n    "execution_feasibility": "...",\n    "platform_fit": "...",\n    "shareability": "..."',
+    )
+    .replace("10개 키는 반드시 모두 채운다", "17개 키는 반드시 모두 채운다")
+)
+
+
 # ─── verdict 산출 (server-side 보정) ──────────────────────────────────
 
 def _derive_verdict(
@@ -314,9 +362,13 @@ def run_critic(
     #   S4 에서 retention_design 추가해 10 으로 확장 예정). ★ compact/rich byte-identical
     #   (effective_output_mode 가 rich_output_enabled=True→"rich" 매핑 — Phase 13 동작 보존).
     _mode = effective_output_mode(settings)
-    if _mode == "director":
+    if _mode == "commercial_viral":
+        _system_prompt = COMMERCIAL_SYSTEM_PROMPT
+        _expected: tuple[str, ...] = DIMENSIONS_COMMERCIAL
+        _user_intro = "다음 plan을 17차원으로 평가해줘:\n\n"
+    elif _mode == "director":
         _system_prompt = DIRECTOR_SYSTEM_PROMPT
-        _expected: tuple[str, ...] = DIMENSIONS_DIRECTOR
+        _expected = DIMENSIONS_DIRECTOR
         _user_intro = "다음 plan을 10차원으로 평가해줘:\n\n"
     elif _mode == "rich":
         _system_prompt = RICH_SYSTEM_PROMPT
@@ -344,7 +396,9 @@ def run_critic(
             ],
             response_format={"type": "json_object"},
             temperature=0.2,  # 평가 일관성 (agent_io_contract §5.4)
-            max_tokens=1500,
+            # Phase 20 S4: commercial_viral 은 17차원(scores+reasons+suggestions)이라 1500 절단 →
+            #   상향. compact/rich/director(8/9/10차원)는 1500 불변 = byte-identical.
+            max_tokens=2800 if _mode == "commercial_viral" else 1500,
         )
     except OpenAIError:
         logger.exception("Critic OpenAI API 호출 실패")
@@ -557,3 +611,6 @@ RICH_PROMPT_VERSION = "v1.2.0"
 # Phase 15 S4 (gated, CC-019): director 10번째 차원 retention_design 추가 — semver minor.
 # ★ output_mode=director 경로 전용. compact/rich(v1.1.0/v1.2.0) 불변.
 DIRECTOR_PROMPT_VERSION = "v1.3.0"
+# Phase 20 S4 (gated, CC-027): commercial_viral 17차원(director 10 + 상업 7) — semver minor.
+# ★ output_mode=commercial_viral 경로 전용. compact/rich/director(v1.1.0/v1.2.0/v1.3.0) 불변.
+COMMERCIAL_PROMPT_VERSION = "v1.4.0"

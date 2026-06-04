@@ -433,7 +433,7 @@ variant 정책: Phase 4 Slice 2 의 3-plan parallel 확장(run_planning_parallel
 ## 8. P-007 · critic (Critic Agent)
 
 **Stage**: 품질 평가 (생성된 기획안 1개에 대해)
-**Version**: v1.1.0 (active, OFF default 8차원) · **v1.2.0 (gated, rich 9차원 — Phase 13 S4)** · **v1.3.0 (gated, director 10차원 +retention_design — Phase 15 S4)**
+**Version**: v1.1.0 (active, OFF default 8차원) · **v1.2.0 (gated, rich 9차원 — Phase 13 S4)** · **v1.3.0 (gated, director 10차원 +retention_design — Phase 15 S4)** · **v1.4.0 (gated, commercial_viral 17차원 +상업 7 — Phase 20 S4)**
             (이전: v1.0.0 — Phase 8 ADR-029)
 **Input variables**: `target_plan`, `one_line_direction`, `selected_context`, `brand_memory`
 **Output schema** (LLM-facing — 0–5 정수, v1.1.0=8 dims / v1.2.0=9 dims):
@@ -530,11 +530,18 @@ v1.3.0 (2026-06-03, Phase 15 S4 CC-019, ★ gated): director 10번째 차원 `re
         scene_breakdown.retention_device). ★ gated 공존 — `output_mode=director` 경로 전용
         (DIRECTOR_SYSTEM_PROMPT + DIMENSIONS_DIRECTOR). compact(v1.1.0 8)/rich(v1.2.0 9)는 불변 byte-identical.
         "88점 함정" 확장 방어 — 얕은 director 는 retention_design 저점. verdict 규칙 구조 동일(10 dim avg).
+v1.4.0 (2026-06-04, Phase 20 S4 CC-027, ★ gated): commercial_viral 17차원 — director 10차원 + 상업 7차원
+        (`viral_potential`/`brand_memory`/`commercial_conversion`/`non_genericity`/`execution_feasibility`/
+        `platform_fit`/`shareability`). ★ retention_design 은 director 에 이미 있어 중복 제외(10+7=17).
+        gated 공존 — `output_mode=commercial_viral` 경로 전용(COMMERCIAL_SYSTEM_PROMPT + DIMENSIONS_COMMERCIAL).
+        compact(8)/rich(9)/director(10)는 불변 byte-identical. "88점 함정" 확장 방어 — 얕은 상업 브리프는
+        non_genericity/commercial_conversion 저점. verdict 규칙 구조 동일(17 dim avg).
 변경 시: prompt-version-review (golden_set 최소 10케이스 — Phase 9+, NG7).
 단일 출처: 본 registry SoT. 구현 상수 critic.PROMPT_(ID|VERSION) = P-007 / v1.1.0 정합 (active/OFF).
           rich 변형 critic.RICH_PROMPT_VERSION = v1.2.0 (gated, rich) / director 변형
-          critic.DIRECTOR_PROMPT_VERSION = v1.3.0 (gated, director)
-          (Phase 8 Slice 4 / Phase 13 S4 / Phase 15 S4 test_prompt_registry_consistency).
+          critic.DIRECTOR_PROMPT_VERSION = v1.3.0 (gated, director) / commercial 변형
+          critic.COMMERCIAL_PROMPT_VERSION = v1.4.0 (gated, commercial_viral)
+          (Phase 8 Slice 4 / Phase 13 S4 / Phase 15 S4 / Phase 20 S4 test_prompt_registry_consistency).
 ```
 
 #### 0–5 ↔ 0–1 conservative adapter (ADR-029)

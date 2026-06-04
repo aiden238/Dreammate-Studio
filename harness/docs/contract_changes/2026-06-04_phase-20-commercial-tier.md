@@ -24,6 +24,13 @@
 ## Rollback
 문서 항목 제거(additive). 코드 revert. compact/rich/director byte-identical(회귀 0).
 
+## CC-027 — prompt_registry.md §8 P-007 (v1.4.0, Phase 20 S4)
+- P-007 v1.4.0 commercial_viral 17차원 — director 10차원 + 상업 7(viral_potential/brand_memory/
+  commercial_conversion/non_genericity/execution_feasibility/platform_fit/shareability). retention_design 은
+  director(v1.3.0)에 이미 있어 중복 제외(10+7=17). gated 공존, compact/rich/director(8/9/10) byte-identical.
+- 구현: critic.py DIMENSIONS_COMMERCIAL(17) + COMMERCIAL_SYSTEM_PROMPT(director 프롬프트 프로그램적 +7) +
+  COMMERCIAL_PROMPT_VERSION=v1.4.0 + run_critic mode 분기 + max_tokens 2800(commercial만).
+- 정합: test_critic_commercial + test_prompt_registry_consistency green.
+
 ## 비고
-- 후속: P-007 commercial critic 차원은 **v1.4.0** (P-007 v1.3.0 은 이미 director retention_design — S4 에서 처리).
 - cost_control §15 commercial cost = S6.
