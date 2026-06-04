@@ -62,6 +62,12 @@ const COL_PERSONAL_X = -320; // 개인 pkm leaf 컬럼 (user 좌측)
 const ROW_GAP = 90; // 세로 간격
 const LEAF_ROW_GAP = 72; // leaf 세로 간격
 
+// 노드 고정 치수 — ★ react-flow v12 는 ResizeObserver 로 노드를 비동기 측정해야 엣지/fitView 가
+// 그려진다. headless/preview/SSR 등 ResizeObserver 가 안 도는 환경에선 노드만 뜨고 엣지·fitView 가
+// 누락된다. width/height 를 명시하면 측정 의존 없이 결정적으로 엣지+fitView 동작(실 브라우저 동일).
+const NODE_W = 200;
+const NODE_H = 44;
+
 interface PkmGraphProps {
   nodes: PkmGraphNode[];
   edges: PkmGraphEdge[];
@@ -173,6 +179,9 @@ function toFlow(
       id: n.id,
       position: pos,
       data: { label: nodeLabel(n) },
+      // ★ 명시적 측정값 — react-flow v12 가 비동기 측정을 기다리지 않고 즉시 엣지/fitView 계산.
+      width: NODE_W,
+      height: NODE_H,
       style: nodeStyle(n),
       // 좌→우 흐름: user(중심) 기준 brand/leaf 는 우측, personal 은 좌측.
       // 핸들 방향을 수평으로 두면 엣지가 자연스럽게 가로로 흐른다.
@@ -212,7 +221,16 @@ function nodeStyle(n: PkmGraphNode): React.CSSProperties {
     fontSize: 12,
     fontWeight: 600,
     textAlign: "center",
-    maxWidth: 200,
+    // 고정 치수(NODE_W/H 와 일치) + 1줄 말줄임 — 측정 비의존 + 가독성.
+    width: NODE_W,
+    height: NODE_H,
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   };
   if (n.type === "user") {
     return {

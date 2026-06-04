@@ -96,7 +96,10 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,
         allow_credentials=True,
-        allow_methods=["GET", "POST"],
+        # PATCH/DELETE = Phase 19 /me/pkm 큐레이션(cross-origin :3000→:8000 preflight 필요).
+        # ★ 라이브 검증으로 발견: GET/POST 만 허용 시 브라우저 큐레이션이 CORS preflight 에서 차단됨
+        #   (유닛 테스트는 TestClient 라 CORS 미경유 → 누락 미검출).
+        allow_methods=["GET", "POST", "PATCH", "DELETE"],
         allow_headers=["*"],
     )
 

@@ -37,5 +37,14 @@
 - tests +27(641→668). 회고/closing.
 
 ## 6. 다음
-- 이월: /brain 그래프 시각 e2e(프론트 재기동) / 데스크톱 그래프 데이터 풍부화(실사용) / 4계층 깊이(domains/series) + 출처 엣지(feedback→PKM).
+- 이월: 데스크톱 그래프 **실 브라우저** 엣지/fitView 육안 확인(프리뷰 RO 한계로 미확인 — 아래 §7) / 데스크톱 그래프 데이터 풍부화(실사용) / 4계층 깊이(domains/series) + 출처 엣지(feedback→PKM).
 - 로드맵: Phase 20 commercial_viral / 배포 Gate B~G. (PKM 루프 4단계 완성 — 발굴·축적·주입·가시화.)
+
+## 7. 라이브 검증 결과 (사후 "가" — 2026-06-04)
+
+mock 백엔드(Phase 19 코드) + 프론트 재기동 후 브라우저 e2e 실행. ★ **라이브 검증이 유닛이 못 잡은 실버그 2건을 잡음**:
+
+- ★ **CORS allow_methods 버그 (실버그, 수정)**: `main.py` CORS 가 `["GET","POST"]` 만 허용 → PATCH/DELETE preflight(OPTIONS) **400** → 브라우저 큐레이션이 cross-origin(:3000→:8000)에서 차단. 유닛 668은 TestClient 라 CORS 미경유 → 누락 미검출. → `["GET","POST","PATCH","DELETE"]` 로 수정, preflight 400→200 확인 + 큐레이션 전 경로 라이브 PASS(잠금 false→true / 편집 / 미소유 404 / 삭제 7→6).
+- **데스크톱 그래프 — 프리뷰 환경 한계(코드 버그 아님)**: 헤드리스 프리뷰 브라우저에서 **ResizeObserver 가 미동작**(테스트 확인: 신규 sized 엘리먼트도 콜백 미발화). react-flow v12 는 RO 로 노드/핸들을 측정해야 엣지·fitView 를 그림 → 헤드리스에선 **노드(7개)+레이아웃+라벨은 정상**이나 엣지 SVG/fitView 누락. 스크린샷도 동일 원인으로 타임아웃. 실 데스크톱 브라우저에선 RO 동작 → 정상 예상이나 **육안 미확인(이월)**. 방어적 개선: PkmGraph 노드에 **명시적 width/height(200×44)+말줄임** 부여(측정 비의존 결정성↑, 균일 노드).
+
+검증된 것(라이브): /me/pkm-graph API(7노드/6엣지/summary/RLS) · /brain 로그인+카드/리스트 렌더(개인 3 + 브랜드 2, 🔒, scope 섹션) · 큐레이션 PATCH/DELETE 전 경로 · 404 격리. 미확인(이월): 데스크톱 그래프 엣지/fitView 육안(실 브라우저 필요).
