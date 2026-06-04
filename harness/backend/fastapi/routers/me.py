@@ -126,6 +126,40 @@ def _pkm_node(
     )
 
 
+def _append_source_provenance(
+    row: dict[str, Any],
+    pkm_node: PkmGraphNode,
+    *,
+    nodes: list[PkmGraphNode],
+    edges: list[PkmGraphEdge],
+    source_ids: set[str],
+) -> None:
+    """PKM row(개인/브랜드)의 source_plan_id → 출처(source) 노드 + sourced_from 엣지 (provenance).
+
+    ★ Phase 21 브랜드 PKM provenance 로직 — 개인/브랜드 PKM 양쪽이 공유 (Phase 26 S2 개인 대칭).
+    source_plan_id 가 없거나 빈 값이면 노드/엣지 0 추가 = byte-identical (출처 없는 entry).
+    plan_id 로 dedup(공유 source_ids 집합) — 개인+브랜드 PKM 이 같은 plan 출처면 source 노드 1개
+    (summary.sources 가 개인·브랜드 출처를 함께 카운트).
+    """
+    plan_id = row.get("source_plan_id")
+    if not plan_id:
+        return
+    plan_id_str = str(plan_id)
+    source_node_id = f"source:{plan_id_str}"
+    if plan_id_str not in source_ids:
+        source_ids.add(plan_id_str)
+        nodes.append(
+            PkmGraphNode(
+                id=source_node_id,
+                type="source",
+                label=f"{_SOURCE_LABEL_PREFIX} {plan_id_str[:8]}".strip(),
+            )
+        )
+    edges.append(
+        PkmGraphEdge(source=pkm_node.id, target=source_node_id, kind="sourced_from")
+    )
+
+
 # ─── GET /api/v1/me/pkm-graph ─────────────────────────────────────────
 
 
@@ -209,6 +243,14 @@ async def _aggregate_pkm_graph(
         nodes.append(node)
         edges.append(PkmGraphEdge(source=user_node_id, target=node.id, kind="has_personal"))
         personal_count += 1
+
+        # (Phase 26 S2 additive) provenance — 개인 PKM 에 source_plan_id 가 있으면
+        # 출처(source) 노드 + pkm → source (sourced_from) 엣지. 브랜드 PKM(2c)과 동일 로직·
+        # 공유 dedup(source_ids) — 같은 plan 출처면 source 노드 1개로 합쳐짐.
+        # ★ byte-identical: source_plan_id 없음/빈 값 → 노드/엣지 0 (이전과 동일).
+        _append_source_provenance(
+            row, node, nodes=nodes, edges=edges, source_ids=source_ids,
+        )
 
     # 2. 소유 brands — user → brand (owns) + 각 brand 의 브랜드 PKM.
     brand_count = 0
@@ -348,22 +390,9 @@ async def _aggregate_pkm_graph(
             # 2c. (Phase 21 additive) provenance — 브랜드 PKM 에 source_plan_id 가 있으면
             # 출처(source) 노드 + bm → source (sourced_from) 엣지. plan_id 로 dedup.
             # ★ byte-identical: source_plan_id 없음/빈 값 → 노드/엣지 0 (Phase 19 동일).
-            plan_id = row.get("source_plan_id")
-            if plan_id:
-                plan_id_str = str(plan_id)
-                source_node_id = f"source:{plan_id_str}"
-                if plan_id_str not in source_ids:
-                    source_ids.add(plan_id_str)
-                    nodes.append(
-                        PkmGraphNode(
-                            id=source_node_id,
-                            type="source",
-                            label=f"{_SOURCE_LABEL_PREFIX} {plan_id_str[:8]}".strip(),
-                        )
-                    )
-                edges.append(
-                    PkmGraphEdge(source=node.id, target=source_node_id, kind="sourced_from")
-                )
+            _append_source_provenance(
+                row, node, nodes=nodes, edges=edges, source_ids=source_ids,
+            )
 
     logger.info(
         "pkm_graph aggregated auth_user_id=%s personal=%d brands=%d brand_pkm=%d "

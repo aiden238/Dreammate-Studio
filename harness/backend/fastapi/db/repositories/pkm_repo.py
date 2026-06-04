@@ -73,6 +73,7 @@ class PkmRepo:
         scope: str = "personal",
         confidence: float = 0.5,
         is_user_locked: bool = False,
+        source_plan_id: Optional[str] = None,
     ) -> dict[str, Any]:
         """Add 개인 PKM entry. Supabase 실패 시 in-memory fallback (graceful).
 
@@ -83,6 +84,9 @@ class PkmRepo:
             scope: 'personal' (this slice) | 'series' (후속). 기본 'personal'.
             confidence: 0–1 신뢰도 (수동 시 기본 0.5).
             is_user_locked: ★ user_locked 최우선 (설계 §6.2). 기본 False.
+            source_plan_id: 출처 plan (→ plans.id, 선택 — Phase 26 S2 provenance).
+                기본 None → 미전달(기존 호출자) 시 출처 미기록 = byte-identical
+                (brand_memory_repo.add_entry source_plan_id 미러).
 
         Returns:
             저장된 entry row dict.
@@ -94,6 +98,7 @@ class PkmRepo:
             "content": content,
             "confidence": confidence,
             "is_user_locked": is_user_locked,
+            "source_plan_id": source_plan_id,
         }
 
         if self._use_supabase():

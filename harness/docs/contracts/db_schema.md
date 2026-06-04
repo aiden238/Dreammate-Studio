@@ -506,12 +506,15 @@ create table if not exists pkm_entries (
     entry_type      text,                          -- preferred_tone|avoid_phrase|preferred_phrase|success_pattern|rejection_pattern (brand_memory 정합)
     is_user_locked  boolean default false,         -- ★ user_locked 최우선(§6.2) — 자동 갱신/덮어쓰기 금지
     confidence      real default 0.5,              -- 0–1 (자동 추출 신뢰도, 후속)
+    source_plan_id  uuid references plans(id) on delete set null,  -- ★ Phase 26 (0007, CC-034): 출처 plan(brand_memory 정합) — 개인 PKM 도 provenance 추적
     created_at      timestamptz not null default now(),
     updated_at      timestamptz not null default now(),
     check (scope in ('personal','series'))
 );
 create index if not exists idx_pkm_entries_user on pkm_entries(auth_user_id);
+create index if not exists idx_pkm_entries_source on pkm_entries(source_plan_id);  -- Phase 26 (0007)
 -- RLS: auth_user_id = auth.uid() OR auth_user_id IS NULL (0005 selected_plans 패턴).
+-- ★ Phase 26 (migration 0007_personal_pkm_source.sql): source_plan_id additive(ADD COLUMN IF NOT EXISTS). 추출 훅(_run_personal_pkm_extract_hook)이 출처 기록 → /me/pkm-graph 개인 PKM sourced_from 엣지(Phase 21 재사용).
 ```
 
 비고: full 스키마(brand_id/series_id/embedding vector(1536)/source_candidate_id, design §8.2)는 series PKM + orchestrator vector 단계 도입 시 additive 확장(별도 migration). 본 slice 는 personal scope **읽기(주입)** 경로만 — 자동 쓰기 X (NG12 계승, 적재는 운영자/추출 governance 경유).

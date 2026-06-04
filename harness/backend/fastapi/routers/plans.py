@@ -517,6 +517,7 @@ async def _run_personal_pkm_extract_hook(
                 entry["content"],
                 scope="personal",
                 confidence=float(entry["confidence"]),
+                source_plan_id=plan_id,  # Phase 26 S2 — provenance (어떤 plan 피드백에서 나왔는지).
             )
             persisted += 1
         except Exception as exc:  # pragma: no cover — graceful (저장 실패 무시)
