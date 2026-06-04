@@ -1,7 +1,7 @@
 # positioning.md — 시장 포지셔닝
 
 > 위치: `product/positioning.md`
-> 상태: Phase 0 Sprint S5 deep 작성 (placeholder 해소)
+> 상태: Phase 0 Sprint S5 작성 + **2026-06-05 재정의(§0.5, Phase 16~26 검증 반영)**
 > 참조: `product/vision.md`, `product/mvp_scope.md`, `product/target_users.md`
 > 참조: `docs/contracts/product_boundary.md`, `docs/contracts/mvp_non_goals.md`
 
@@ -10,8 +10,31 @@
 ## 0. 한 줄 포지셔닝
 
 > **영상 제작 도구가 아니라, 영상기획 전용 AI 에이전트.**
+> **(재정의 2026-06-05)** 범용 LLM보다 "잘 쓰는" 도구가 아니라 — **쓸수록 내 브랜드에 맞춰지는, 영상기획 2nd brain 에이전트.**
 
-영상을 "만들기 전"에 필요한 모든 기획 판단을 도와주는 한국어 특화 AI 파트너.
+영상을 "만들기 전"에 필요한 모든 기획 판단을, **누적된 내 지식 구조(Brand→Domain→Series→Video) + 개인 선호(PKM) 위에서** 도와주는 한국어 특화 AI 파트너.
+
+---
+
+## 0.5 ★ 포지셔닝 재정의 (2026-06-05 — Phase 16~26 검증 반영)
+
+> Phase 0 포지셔닝(아래 §1~)은 유효. 본 절은 그 사이 **검증·구축된 차별점**을 반영해 핵심을 다시 못박는다.
+
+### 검증된 moat — "품질"이 아니라 "맞춤·누적" (Phase 16 A/B 실험)
+- ★ **generic 품질은 commodity**: A/B 실험에서 PKM 주입이 generic critic 점수를 거의 못 올림(Δ+0.008, flat). 즉 "범용 LLM 래퍼보다 출력이 더 좋다"는 약한 주장 — 복제 쉬움.
+- ★ **moat = 개인화 fit**: 같은 입력에 **fit(브랜드 적합/일관성) 측정 시 Δ+0.425**(압도). → 차별점은 "잘 만든다"가 아니라 **"당신 브랜드에 맞게, 쓸수록 더 맞게"**(개인화·일관성·누적 = 복제 어려움).
+
+### 제품 형태 진화 — 단발 생성기 → 2nd brain 에이전트
+- **개인 지식 구조(4계층)**: User→Brand→Domain→Series→Video 를 사용자가 `/brain`에서 쌓고 편집(생성·수정·삭제·자동연결). 기획이 **누적 구조 안에서** 이뤄짐.
+- **개인 메모리(PKM)**: 선호 톤/금지 표현/성공·거절 패턴이 피드백에서 추출·축적되어 다음 기획에 **구속 주입**(개인 > 브랜드 우선). → "쓸수록 맞춰지는" 루프(발굴→축적→주입→가시화).
+- **깊이 스펙트럼(output tier)**: compact(빠른 초안) → rich(촬영 착수) → director(연출 브리프) → commercial_viral(전략 브리프). 필요 깊이를 사용자가 선택.
+
+### 정직한 경계 (과대약속 금지)
+- ★ **"기획 브리프"이지 완성 대본·영상 제작·조회수 보장이 아니다**(product_boundary). 품질 검증(2026-06-05 second-opinion): rich/director는 compact보다 **확실히 쓸만**하나(would_use ↑), 일부 문구는 **사람 손질 필요**(filler 존재) — 자동 점수(critic)는 회귀 기준선이지 절대 품질 아님.
+- commercial tier의 시장/시청자 맥락은 현재 **LLM 추측(데이터레이어 enrichment 후속)** — 추정 표기로 정직.
+
+### 한 줄 (대외용 후보)
+> "쓸수록 내 브랜드를 학습하는 영상기획 AI — 매번 처음부터가 아니라, 내 2nd brain 위에서 기획한다."
 
 ---
 

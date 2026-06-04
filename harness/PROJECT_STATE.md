@@ -6,10 +6,28 @@
 Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /auth/* + /sse/* + /plans/{id}/select + /plans/{id}/feedback 신규) + 3-plan parallel + multi-model 인터페이스 + Critic canonical (overall_score + dimensions, **normalize wiring live**) + revise loop (max 2) + Rewriter v1.1.0 + recommended_plan_index + **Supabase 영속화 + JWT httpOnly cookie + RLS 정책 + SSE Progress 4단계 (실 stage 연동)** + **RAG Lite (candidate_knowledge 5단계 MVP 전부 + pgvector retrieval + LLM Wiki 보조)** + **MOA Orchestrator 추출 (orchestration/moa_orchestrator + ProgressSink + progress_store 브릿지) + prompt_registry semver 정식화 + Critic v1.1.0 conservative adapter** + **결과 저장(selected_plans) + 피드백(feedback_events) 영속화 graceful + PII 마스킹 + 피드백 UI inline + Brand Memory 준비(feedback→candidate pending 적재)** 모두 동작.
 **Phase 9 ✅ done (2026-05-31)** — 결과 저장 + 피드백 (selected_plans/feedback_events 영속화 graceful + normalize_to_canonical wiring + Brand Memory 준비 + 피드백 UI wrapper, ADR-030/031/032, CC-004, large phase 6 Slice 실측 ~10~13h).
 **🟢 최신 = Phase 26 4계층 video 노드 + 개인 PKM 출처 (기능마감 완결) ✅ done (2026-06-04, archive)** — 🅑 잔여 완결. ① **video 노드**: VideoProjectRepo 신규 + /me/videos CRUD(4-hop 소유검증) + 그래프 has_video → **User→Brand→Domain→Series→Video 전 계층** ② **개인 PKM 출처**: migration 0007(pkm_entries +source_plan_id) + 추출 훅 plan_id 기록 + 그래프 개인 PKM sourced_from(`_append_source_provenance` 공유 헬퍼, Phase 21 브랜드 PKM 재사용). S1(video)+S2(pkm source)+S3(frontend). ★ **video 라이브 PASS**(CRUD+has_video+summary.videos+미소유 404), 개인 출처=유닛 6 + 공유 헬퍼. additive/graceful(video 0/출처 없음 byte-identical). hermetic pytest 749→**779**(+30) + scenario_sim 36/36 + audit 0 + typecheck/lint. CC-033/034. **branch `phase-26-video-pkm-source` (main 머지 진행).** ★ **🅑 기능마감 완결** — /brain 4계층이 완전한 지식 구조(생성·편집·삭제·자동연결·출처추적·video). 이월: generate→video 자동연결 / 0007 운영 적용(NG11). **다음 = pending_user_decision.**
-> (과거 최신: Phase 25 브랜딩→4계층 자동연결 / Phase 24 domain·series 편집삭제 / Phase 23 품질 baseline / Phase 22 생성.)
-> (과거 최신: Phase 24 domain/series 편집·삭제 / Phase 23 품질 baseline / Phase 22 생성 / Phase 21 4계층 깊이.)
-> (과거 최신: Phase 23 품질 baseline / Phase 22 domains·series 생성 / Phase 21 4계층 깊이 / Phase 20 commercial_viral.)
-> (과거 최신: Phase 22 domains/series 생성 done / Phase 21 4계층 깊이+출처 / Phase 20 commercial_viral / Phase 19 2nd brain.)
+> (과거 최신 경로: Phase 19 2nd brain → 20 commercial_viral → 21 4계층 깊이/출처 → 22 생성 → 23 품질 baseline → 24 편집·삭제 → 25 브랜딩 자동연결 → 26 video/개인출처. 전부 archive.)
+
+## 🔎 실사용 준비도 / 운영·검증 갭 (★ 정직, 2026-06-05 종합 갱신)
+
+> 3영역 정밀 조사(배포·영속 / 기능완성도 / 품질·이월) 결과. **"코드 완성도 高(Phase 0~26 done, pytest 779) — 실사용·운영 준비 中 — 품질 검증 弱"**. 상세 backlog = `meta/backlog.md`.
+
+### A. ★ 가장 큰 갭 — "만들었지만 안 보인다"
+- **핵심 기능 전부 flag default OFF**(config.py): rich/director/commercial(output_mode=compact, rich_output_enabled=False) · PKM 주입·추출(brand/personal_*_enabled=False) · 브랜딩→4계층 자동 시드(branding_pkm_seed_enabled=False) · 멀티프로바이더/교차검증. → 일반 사용자는 **compact 1 tier + PKM 루프 미작동**만 경험(env 켜면 즉시 동작·회귀 0, 검증됨).
+- **홈/네비 미완**: 홈(`/`)은 Phase 1 단일 textarea — `/new`(위저드)·`/new/branding` 진입 링크 없음. **AppShell(네비) component_map 정의만, 코드 미구현**. → 위저드·브랜딩·4계층을 사용자가 발견 못 함.
+
+### B. 데이터 영속 / 운영 반영 (Phase 26 포함, NG11 = 운영 단계)
+- **migration 0001~0007 Supabase 미적용**(수동/운영자). **`match_approved_knowledge` SQL function 미정의** → RAG retrieval 운영 graceful-empty(동작 안 함). **RLS 실 DB 미검증**(코드/문서만).
+- **PlansRepo plan 영속 미완**(2회 이월): 생성 plan이 `_plan_store`(in-memory)만 → 서버 재시작 시 휘발. video_projects 저장 경로 deprecated.
+
+### C. 배포 미준비 (Gate B~G)
+- **rate_limit 문서 487줄 / 구현 0** → free tier 비용 무제한·brute force 미방어. 배포 스크립트 0 · env_contract placeholder · secret 절차 없음. SSE in-process 동기(async worker 없음, timeout 리스크). dev_auth_mock → 실 Supabase Auth 전환 갭.
+
+### D. 품질 검증 약함
+- **human 실채점 0건**(3회 이월): critic 낙관 편향(전수 approve)이라 자동 gate만으론 절대 품질 보증 불가. 프론트 시각 e2e 미확인(headless 한계, 4회 이월). commercial market/audience = LLM 추측(데이터레이어 없음). 실 LLM 회귀가 CI에 없음(mock + 1회 baseline).
+
+### 다음 (pending_user_decision)
+🅐 실사용 경험 잇기(홈 진입+네비+flag) / 🅑 영속 마감(PlansRepo+match func) / 🅒 품질 검증 실행(human 채점) / 🅓 배포 Gate B~G. → 우선 추천 🅐.
 > (과거 최신: Phase 21 /brain 4계층 깊이+출처 done / Phase 20 commercial_viral done / Phase 19 2nd brain done.)
 > (과거 최신: Phase 20 commercial_viral done 2026-06-04 — output_mode 4-tier 완성, 라이브 PASS, CC-025~028. / Phase 19 2nd brain done.)
 > (과거 최신: Phase 19 2nd brain done 2026-06-04 — /brain PKM 도식화·큐레이션, CC-024. / Phase 13 rich 깊이 0.231→1.000.)
