@@ -1,0 +1,228 @@
+"""Phase 19 Slice S1 — /me/* 네임스페이스 라우터 (2nd-brain 집계).
+
+`GET /api/v1/me/pkm-graph` — 인증 사용자의 **개인 PKM + 브랜드 PKM + 4계층(user/brand)** 을
+read-only 로 집계해 {nodes, edges, summary} 그래프로 반환한다. S2(모바일 카드) / S3(데스크톱
+react-flow 그래프) 시각화가 이 한 API 를 공유한다.
+
+★ 신규 테이블 0 (읽기 전용 집계) — 기존 pkm_entries / brand_memory_entries / brands 를
+  PkmRepo / BrandMemoryRepo / BrandRepo 로 읽어 그래프 구조로 변환만 한다.
+★ RLS/격리: 오직 요청 auth_user_id(및 그가 소유한 brand)의 데이터만. 교차 사용자 노출 0
+  (service-key repo 를 쓰더라도 항상 authed user id 로 필터). 익명(None) → 빈 그래프 graceful.
+★ graceful: 어떤 repo 실패도 raise 금지 — 그 부분만 비고 절대 500 내지 않는다 (부분 집계).
+★ DI seam: pkm_repo / brand_repo / brand_memory_repo 를 주입 가능 (default 는 get_supabase()
+  로 구성된 모듈 싱글톤). 실 Supabase 없이 in-memory repo 로 단위 테스트한다.
+
+참조:
+  - meta/proposals/2026-06-04_2nd-brain-visualization-design.md §1 (도식화 대상)
+  - backend/fastapi/routers/plans.py (_auth_user_id 패턴 + repo 싱글톤 패턴)
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any, Optional
+
+from fastapi import APIRouter, Request
+
+from ..db import (
+    BrandMemoryRepo,
+    BrandRepo,
+    PkmRepo,
+    get_supabase,
+)
+from ..schemas.graph import (
+    PkmGraphEdge,
+    PkmGraphNode,
+    PkmGraphResponse,
+    PkmGraphSummary,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api/v1/me", tags=["me"])
+
+
+# ─── 모듈 repo 싱글톤 (plans.py 패턴 — graceful Supabase or in-memory) ──
+# Supabase 사용 가능 시 PostgreSQL(서비스 키 → RLS 우회), 아니면 각 repo 의 in-memory fallback.
+# 본 엔드포인트는 read-only — 항상 authed user id 로 필터하므로 service-key 여도 교차 노출 0.
+_pkm_repo: PkmRepo = PkmRepo(supabase_client=get_supabase(), in_memory_store={})
+_brand_repo: BrandRepo = BrandRepo(supabase_client=get_supabase(), in_memory_store={})
+_brand_memory_repo: BrandMemoryRepo = BrandMemoryRepo(
+    supabase_client=get_supabase(), in_memory_store={},
+)
+
+# PKM 노드 라벨 요약 상한 (content 가 길면 잘라 표시 — 노드 가독성).
+_LABEL_MAX = 60
+
+
+# ─── helpers ──────────────────────────────────────────────────────────
+
+
+def _auth_user_id(request: Request) -> Optional[str]:
+    """request.state.user (auth_middleware 주입) 에서 user_id 추출. anon 시 None.
+
+    plans.py::_auth_user_id 와 동일 규약 (단일 source-of-truth 는 cookie/JWT).
+    """
+    user = getattr(request.state, "user", None)
+    if isinstance(user, dict):
+        uid = user.get("user_id")
+        return str(uid) if uid else None
+    return None
+
+
+def _summarize(content: Any) -> str:
+    """PKM content 를 노드 라벨용으로 요약 (None/긴 문자열 graceful 처리)."""
+    text = str(content or "").strip()
+    if len(text) > _LABEL_MAX:
+        return text[: _LABEL_MAX - 1] + "…"
+    return text
+
+
+def _pkm_node(
+    row: dict[str, Any], *, id_prefix: str, scope: str,
+) -> PkmGraphNode:
+    """pkm_entries / brand_memory_entries row → PkmGraphNode 변환 (공통).
+
+    id 는 row 의 'id'(영속) 우선, 없으면(in-memory fallback row) entry_type+content 로
+    결정적 대체 — 동일 row 는 동일 id (그래프 안정성).
+    """
+    raw_id = row.get("id")
+    node_id = str(raw_id) if raw_id else f"{row.get('entry_type')}:{row.get('content')}"
+    return PkmGraphNode(
+        id=f"{id_prefix}:{node_id}",
+        type="pkm",
+        scope=scope,  # type: ignore[arg-type]
+        entry_type=row.get("entry_type"),
+        label=_summarize(row.get("content")),
+        locked=bool(row.get("is_user_locked", False)),
+    )
+
+
+# ─── GET /api/v1/me/pkm-graph ─────────────────────────────────────────
+
+
+@router.get(
+    "/pkm-graph",
+    response_model=PkmGraphResponse,
+    summary="2nd-brain PKM 그래프 집계 (Phase 19 Slice S1)",
+    description=(
+        "인증 사용자의 개인 PKM(pkm_entries, scope=personal) + 소유 브랜드(brands) + "
+        "브랜드 PKM(brand_memory_entries)을 {nodes, edges, summary} 그래프로 집계 반환한다 "
+        "(read-only, 신규 테이블 0). 루트 user 노드 아래 개인 PKM(has_personal) 과 "
+        "brand(owns) → 브랜드 PKM(has_brand_pkm) 을 펼친다. is_user_locked → node.locked(🔒). "
+        "★ RLS/격리: 본인 auth_user_id/소유 brand 의 데이터만 (교차 노출 0). "
+        "익명/무데이터 → 빈 그래프 graceful(200). 어떤 repo 실패도 그 부분만 비고 500 없음."
+    ),
+)
+async def get_pkm_graph(request: Request) -> PkmGraphResponse:
+    """HTTP route — request 에서 신원 추출 후 집계 함수에 위임 (thin handler).
+
+    ★ DI seam 은 _aggregate_pkm_graph 에 둔다 (FastAPI 가 repo 인자를 request/response 필드로
+      해석하지 않도록 route 시그니처는 request only).
+    """
+    return await _aggregate_pkm_graph(_auth_user_id(request))
+
+
+async def _aggregate_pkm_graph(
+    auth_user_id: Optional[str],
+    *,
+    pkm_repo: Optional[PkmRepo] = None,
+    brand_repo: Optional[BrandRepo] = None,
+    brand_memory_repo: Optional[BrandMemoryRepo] = None,
+) -> PkmGraphResponse:
+    """auth_user_id 기준으로 PKM 그래프를 집계한다 (graceful, RLS 격리).
+
+    ★ DI seam: repo 인자 미전달 시 모듈 싱글톤 사용 (default 운영 경로). 테스트는 in-memory repo 주입.
+    """
+    # 익명 → 빈 그래프 (graceful 200, 노출 0).
+    if not auth_user_id:
+        return PkmGraphResponse()
+
+    pkm_repo = pkm_repo if pkm_repo is not None else _pkm_repo
+    brand_repo = brand_repo if brand_repo is not None else _brand_repo
+    brand_memory_repo = (
+        brand_memory_repo if brand_memory_repo is not None else _brand_memory_repo
+    )
+
+    nodes: list[PkmGraphNode] = []
+    edges: list[PkmGraphEdge] = []
+
+    # 0. 루트 user 노드 (4계층의 정점 — domains/series 깊이는 S5).
+    user_node_id = f"user:{auth_user_id}"
+    nodes.append(PkmGraphNode(id=user_node_id, type="user", label="나"))
+
+    # 1. 개인 PKM (scope=personal) — user → pkm (has_personal).
+    personal_count = 0
+    try:
+        personal_entries = await pkm_repo.list_for_user(auth_user_id, scope="personal")
+    except Exception as exc:  # graceful — 이 부분만 비우고 진행 (500 금지).
+        logger.warning("pkm_graph personal_list_failed: %s (graceful)", exc.__class__.__name__)
+        personal_entries = []
+    for row in personal_entries:
+        if not isinstance(row, dict):
+            continue
+        node = _pkm_node(row, id_prefix="pkm", scope="personal")
+        nodes.append(node)
+        edges.append(PkmGraphEdge(source=user_node_id, target=node.id, kind="has_personal"))
+        personal_count += 1
+
+    # 2. 소유 brands — user → brand (owns) + 각 brand 의 브랜드 PKM.
+    brand_count = 0
+    brand_pkm_count = 0
+    try:
+        brands = await brand_repo.list_for_user(auth_user_id)
+    except Exception as exc:  # graceful — brand 집계 실패 시 brand/브랜드 PKM 전체 skip.
+        logger.warning("pkm_graph brand_list_failed: %s (graceful)", exc.__class__.__name__)
+        brands = []
+    for brand in brands:
+        if not isinstance(brand, dict):
+            continue
+        brand_id = brand.get("id")
+        if not brand_id:
+            continue  # id 없는 row(비정상) → skip.
+        brand_node_id = f"brand:{brand_id}"
+        nodes.append(
+            PkmGraphNode(
+                id=brand_node_id,
+                type="brand",
+                label=_summarize(brand.get("name")) or "브랜드",
+            )
+        )
+        edges.append(PkmGraphEdge(source=user_node_id, target=brand_node_id, kind="owns"))
+        brand_count += 1
+
+        # 2b. 브랜드 PKM — brand → bm (has_brand_pkm). brand 단위로 graceful.
+        try:
+            bm_entries = await brand_memory_repo.list_for_brand(str(brand_id))
+        except Exception as exc:  # graceful — 해당 brand 의 PKM 만 비우고 다음 brand 진행.
+            logger.warning(
+                "pkm_graph brand_memory_list_failed: %s brand_id=%s (graceful)",
+                exc.__class__.__name__, brand_id,
+            )
+            bm_entries = []
+        for row in bm_entries:
+            if not isinstance(row, dict):
+                continue
+            node = _pkm_node(row, id_prefix="bm", scope="brand")
+            nodes.append(node)
+            edges.append(
+                PkmGraphEdge(source=brand_node_id, target=node.id, kind="has_brand_pkm")
+            )
+            brand_pkm_count += 1
+
+    logger.info(
+        "pkm_graph aggregated auth_user_id=%s personal=%d brands=%d brand_pkm=%d",
+        auth_user_id, personal_count, brand_count, brand_pkm_count,
+    )
+    return PkmGraphResponse(
+        nodes=nodes,
+        edges=edges,
+        summary=PkmGraphSummary(
+            personal=personal_count,
+            brand=brand_pkm_count,
+            brands=brand_count,
+        ),
+    )
+
+
+__all__ = ["router", "get_pkm_graph"]

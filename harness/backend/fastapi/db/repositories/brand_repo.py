@@ -88,6 +88,33 @@ class BrandRepo:
             return str(bid) if bid else None
         return None
 
+    async def list_for_user(self, auth_user_id: str) -> list[dict[str, Any]]:
+        """user 소유 brand row 전체 반환(최근 순). 없거나 실패하면 빈 리스트 (graceful).
+
+        ★ Phase 19 S1 (pkm-graph 집계): 2nd-brain 도식화가 사용자의 모든 brand 를
+          노드로 펼치기 위해 필요. get_default_brand_id(1개만) 의 다대상 버전.
+        ★ PII/격리: 오직 요청 auth_user_id 의 brand 만 반환(RLS 격리 데이터). 교차 계정 접근 0.
+        """
+        if self._use_supabase():
+            try:
+                resp = (
+                    self.client.table("brands")  # type: ignore[union-attr]
+                    .select("*")
+                    .eq("auth_user_id", auth_user_id)
+                    .order("created_at", desc=True)
+                    .execute()
+                )
+                data = getattr(resp, "data", None)
+                if data is not None:
+                    return list(data)
+            except Exception as exc:
+                logger.warning(
+                    "brand_list_for_user_failed: %s — falling back to in-memory",
+                    exc.__class__.__name__,
+                )
+        # graceful in-memory fallback — 본인 user 의 brand 만 (최근 순 = append 역순).
+        return list(reversed(self.store.get(auth_user_id, [])))
+
     async def get_or_create_default(
         self,
         auth_user_id: str,

@@ -28,7 +28,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .middleware import auth_middleware
-from .routers import generate_router, plans_router
+from .routers import generate_router, me_router, plans_router
 from .routers.auth import router as auth_router
 from .routers.sse import router as sse_router
 
@@ -110,6 +110,7 @@ def create_app() -> FastAPI:
     app.include_router(plans_router)  # Phase 4 contract endpoints
     app.include_router(auth_router)  # Phase 5 Slice 3 — /api/v1/auth/{login,me,logout}
     app.include_router(sse_router)   # Phase 5 Slice 4 — SSE /api/v1/plans/{id}/progress (ADR-022)
+    app.include_router(me_router)    # Phase 19 Slice S1 — /api/v1/me/pkm-graph (2nd-brain 집계)
 
     # Health check (Slice 1 부수적 — uvicorn 부트 확인용).
     # Phase 1 baseline 보존: phase/slice 값은 Phase 1 베이스라인 유지 (회귀 0).
