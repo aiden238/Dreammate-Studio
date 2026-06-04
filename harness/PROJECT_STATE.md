@@ -66,7 +66,7 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 
 ## 현재 Active Phase
 
-**🟢 active 없음 — 다음 = Phase 19~20(provisional) 2nd brain 시각화** (마이페이지 PKM 도식화 — 개인 pkm_entries + 브랜드 brand_memory + 4계층). Phase 18 done+archive 후. (commercial_viral / 배포 Gate B~G 도 future.)
+**🟢 Phase 19 = 2nd brain 시각화 (마이페이지 PKM 도식화) — ★ active (entry 2026-06-04)** — 개인 PKM(pkm_entries) + 브랜드 PKM(brand_memory) + 4계층을 `/brain`에서 **하이브리드**(모바일 카드/리스트 + 데스크톱 react-flow 그래프 lazy-load)로 도식화 + **큐레이션**(잠금/편집/삭제). 읽기 레이어(신규 데이터모델 0). ★ 발굴(18)→축적(brand_memory)→주입(17)→**가시화(19)** 루프 완성. 사용자 결정: 하이브리드/​/brain/​큐레이션 전부(검토 반영 — design.md 모바일 우선). 슬라이스 S1(GET /me/pkm-graph)→S2(모바일 카드)→S3(데스크톱 그래프)→S4(큐레이션)→S5(엣지/e2e). branch `phase-19-2nd-brain`. entry 6파일 + audit 0. 근거 `meta/proposals/2026-06-04_2nd-brain-visualization-design.md`. 다음=S1. baseline pytest 641.
 
 **🟢 Phase 18 = 브랜딩 세션 (Akinator 주제발굴) — ✅ done (2026-06-04, archive)** — 주제 모르는 사용자를 **LLM 동적 스무고개**(카드+자유입력)로 좁혀 **후보 주제 3개 × 브랜딩 방향** → 택1 → planning + brand_memory(PKM) 시드. Quick/Discovery에 더한 3번째 진입(gated/additive). ★ **발굴→축적(brand_memory)→주입(Phase 17) 루프 닫힘**. S1(topic_discovery P-AUX-3)·S2(endpoint+상태)·S3(frontend /new/branding+진입카드)·S4(/branding/select 택1→PKM 시드). ★ **라이브 e2e(브라우저)**: /new/branding → 8 적응형 질문(정보→…→김치 조리법) → 후보 3×방향 → 택1 → 생성 성공. pytest 608→**641** + scenario_sim 36/36 + audit 0 + CC-023(api_contract). 이월: 결과 view auth-gate UX / authed seed 라이브 e2e. 회고 `meta/retrospectives/phase-18.md`.
 

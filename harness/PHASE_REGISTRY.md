@@ -39,7 +39,8 @@
 | 16 | A/B 실험 (Baseline 래퍼 vs Agent-grade PKM/RAG) | **done** (2026-06-04) | ★ 검증/실험 페이즈(런타임 0). **판정 GO(메커니즘)**: generic Δ+0.008(flat=commodity) vs ★fit Δ+0.425(agent-grade 압도). 주입 방식 결정적(rag_context 0 / binding 큰 효과). S1+S2(pytest 537→556) + S3 blind kit(사용자 채점 deferred) + A4 종적 이월. (archive) |
 | 17 | 계정별 PKM 실빌드 (가 + 다) | **done** (2026-06-04) | ★ Phase 16 GO 기반 첫 production 빌드. 가(신원 plumbing+brand 주입+brand foundation) + 다(개인 PKM pkm_entries CC-022 + brand·개인 추출루프 + e2e). **PKM 루프 양쪽 폐쇄** + 라이브 3중 입증(brand steer/개인 e2e/Supabase 영속) + get_supabase service-key. gated default-OFF, pytest 470→608. (archive) |
 | 18 | 브랜딩 세션 (Akinator 주제발굴) | **done** (2026-06-04) | LLM 동적 스무고개(카드+자유입력) → 후보 주제 3×브랜딩 방향 → planning + brand_memory(PKM) 시드. S1(P-AUX-3 agent)+S2(endpoint+상태)+S3(frontend /new/branding)+S4(택1→PKM 시드). ★ 발굴→축적→주입 루프 닫힘 + ★라이브 e2e(브라우저: 8질문→후보3→택1→생성). CC-023. gated/additive, pytest 608→641. (archive) |
-| 19~20 | 2nd brain 시각화 + commercial_viral / 배포 | future | 마이페이지 PKM 도식화(읽기 레이어 — pkm_entries/brand_memory/4계층 기반) / commercial_viral / 배포 Gate B~G. 선행=PKM 실사용 누적 |
+| **19** | **2nd brain 시각화 (마이페이지 PKM 도식화)** | **active** (entry 2026-06-04) | `/brain` — 개인 PKM+브랜드 PKM+4계층을 모바일 카드/리스트 + 데스크톱 그래프(react-flow lazy-load) 하이브리드로 도식화 + 큐레이션(잠금/편집/삭제). 읽기 레이어(신규 데이터모델 0). ★ 발굴→축적→주입→**가시화** 루프. 근거 `meta/proposals/2026-06-04_2nd-brain-visualization-design.md` |
+| 20 | commercial_viral / 배포 | future | commercial_viral 모드 / 배포 Gate B~G. 선행=품질·PKM 실사용 누적 |
 | 21~30 | 고도화 | future | Spring, Expo, Custom RAG, LangGraph |
 
 ### ★ PARKED 제안 (future direction — proposal-first, 선행조건 gated, 빌드 승격 X)
