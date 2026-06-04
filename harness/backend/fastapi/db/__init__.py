@@ -34,10 +34,12 @@ from .repositories import (
     DEFAULT_BRAND_NAME,
     BrandMemoryRepo,
     BrandRepo,
+    DomainRepo,
     FeedbackRepo,
     PkmRepo,
     PlansRepo,
     SelectionRepo,
+    SeriesRepo,
     insert_plan_candidate,
     insert_video_project,
     mask_pii,
@@ -158,6 +160,9 @@ __all__ = [
     "DEFAULT_BRAND_NAME",
     # Phase 17 다-S3 — 개인 PKM (graceful, auth_user_id 격리, User 계층)
     "PkmRepo",
+    # Phase 21 S1 — pkm-graph 4계층 depth (graceful read-only, Domain/Series 계층)
+    "DomainRepo",
+    "SeriesRepo",
     # Legacy backward-compat (Phase 1 Slice 5, DEPRECATED Phase 5.5 — ADR-023)
     "get_supabase_client",
     "save_video_planning",

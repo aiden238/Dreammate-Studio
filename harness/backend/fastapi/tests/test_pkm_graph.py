@@ -144,7 +144,10 @@ def test_pkm_graph_anonymous_returns_empty() -> None:
     data = r.json()
     assert data["nodes"] == []
     assert data["edges"] == []
-    assert data["summary"] == {"personal": 0, "brand": 0, "brands": 0}
+    assert data["summary"] == {
+        "personal": 0, "brand": 0, "brands": 0,
+        "domains": 0, "series": 0, "sources": 0,  # Phase 21 additive (graceful 0)
+    }
 
 
 @pytest.mark.asyncio
@@ -276,7 +279,10 @@ def test_pkm_graph_http_authed_path(monkeypatch: pytest.MonkeyPatch) -> None:
     r = client.get("/api/v1/me/pkm-graph")
     assert r.status_code == 200
     data = r.json()
-    assert data["summary"] == {"personal": 2, "brand": 2, "brands": 1}
+    assert data["summary"] == {
+        "personal": 2, "brand": 2, "brands": 1,
+        "domains": 0, "series": 0, "sources": 0,  # Phase 21 additive (graceful 0 — no depth seeded)
+    }
     assert len(data["nodes"]) == 6
     assert any(n["type"] == "user" and n["id"] == "user:mock-user-1" for n in data["nodes"])
 

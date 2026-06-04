@@ -22,12 +22,17 @@ class PkmGraphNode(BaseModel):
     id 는 type 접두어로 네임스페이스를 구분한다 (충돌 0):
       - "user:<auth_user_id>"  (type=user, 루트 1개)
       - "brand:<brand_id>"     (type=brand)
+      - "domain:<domain_id>"   (type=domain, Phase 21 4계층 depth)
+      - "series:<series_id>"   (type=series, Phase 21 4계층 depth)
       - "pkm:<entry_id>"       (type=pkm, scope=personal)
       - "bm:<entry_id>"        (type=pkm, scope=brand)
+      - "source:<plan_id>"     (type=source, Phase 21 provenance — 브랜드 PKM 출처)
     """
 
     id: str = Field(description="네임스페이스 접두어 포함 노드 id (예: 'pkm:<uuid>').")
-    type: Literal["user", "brand", "pkm"] = Field(description="노드 종류.")
+    type: Literal["user", "brand", "domain", "series", "pkm", "source"] = Field(
+        description="노드 종류.",
+    )
     label: str = Field(description="화면 표시용 라벨 (PKM 은 content 요약).")
     scope: Optional[Literal["personal", "brand"]] = Field(
         default=None, description="PKM 노드의 scope (개인/브랜드). 비-PKM 은 None.",
@@ -45,12 +50,20 @@ class PkmGraphNode(BaseModel):
 class PkmGraphEdge(BaseModel):
     """그래프 엣지 1개 — source 노드 → target 노드 관계.
 
-    kind: owns(user→brand) / has_personal(user→개인 pkm) / has_brand_pkm(brand→브랜드 pkm).
+    kind: owns(user→brand) / has_personal(user→개인 pkm) / has_brand_pkm(brand→브랜드 pkm) /
+          has_domain(brand→domain) / has_series(domain→series) / sourced_from(브랜드 pkm→출처).
     """
 
     source: str = Field(description="출발 노드 id.")
     target: str = Field(description="도착 노드 id.")
-    kind: Literal["owns", "has_personal", "has_brand_pkm"] = Field(
+    kind: Literal[
+        "owns",
+        "has_personal",
+        "has_brand_pkm",
+        "has_domain",
+        "has_series",
+        "sourced_from",
+    ] = Field(
         description="관계 종류.",
     )
 
@@ -61,6 +74,13 @@ class PkmGraphSummary(BaseModel):
     personal: int = Field(default=0, description="개인 PKM entry 수.")
     brand: int = Field(default=0, description="브랜드 PKM entry 수 (전 brand 합).")
     brands: int = Field(default=0, description="사용자 소유 brand 수.")
+    # Phase 21 S1 — 4계층 depth + provenance (default 0 → graceful/backward-compat:
+    # domain/series/source 가 없으면 Phase 19 와 동일한 0 카운트).
+    domains: int = Field(default=0, description="domain 노드 수 (전 brand 합, Phase 21).")
+    series: int = Field(default=0, description="series 노드 수 (전 domain 합, Phase 21).")
+    sources: int = Field(
+        default=0, description="고유 출처(plan) 노드 수 — 브랜드 PKM provenance (Phase 21).",
+    )
 
 
 class PkmGraphResponse(BaseModel):

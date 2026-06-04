@@ -27,7 +27,9 @@ from fastapi import APIRouter, HTTPException, Request
 from ..db import (
     BrandMemoryRepo,
     BrandRepo,
+    DomainRepo,
     PkmRepo,
+    SeriesRepo,
     get_supabase,
 )
 from ..schemas.graph import (
@@ -52,9 +54,15 @@ _brand_repo: BrandRepo = BrandRepo(supabase_client=get_supabase(), in_memory_sto
 _brand_memory_repo: BrandMemoryRepo = BrandMemoryRepo(
     supabase_client=get_supabase(), in_memory_store={},
 )
+# Phase 21 S1 — 4계층 depth (Domain/Series) repo 싱글톤 (graceful, 동일 DI seam).
+_domain_repo: DomainRepo = DomainRepo(supabase_client=get_supabase(), in_memory_store={})
+_series_repo: SeriesRepo = SeriesRepo(supabase_client=get_supabase(), in_memory_store={})
 
 # PKM 노드 라벨 요약 상한 (content 가 길면 잘라 표시 — 노드 가독성).
 _LABEL_MAX = 60
+
+# 브랜드 PKM 출처(source) 노드 라벨 접두 (Phase 21 provenance — 짧은 plan id 동봉).
+_SOURCE_LABEL_PREFIX = "기획안 출처"
 
 
 # ─── helpers ──────────────────────────────────────────────────────────
@@ -131,10 +139,15 @@ async def _aggregate_pkm_graph(
     pkm_repo: Optional[PkmRepo] = None,
     brand_repo: Optional[BrandRepo] = None,
     brand_memory_repo: Optional[BrandMemoryRepo] = None,
+    domain_repo: Optional[DomainRepo] = None,
+    series_repo: Optional[SeriesRepo] = None,
 ) -> PkmGraphResponse:
     """auth_user_id 기준으로 PKM 그래프를 집계한다 (graceful, RLS 격리).
 
     ★ DI seam: repo 인자 미전달 시 모듈 싱글톤 사용 (default 운영 경로). 테스트는 in-memory repo 주입.
+    ★ Phase 21 S1 (additive): brand 아래로 Domain→Series 깊이(domain_repo/series_repo) +
+      브랜드 PKM 출처(source_plan_id) provenance 를 펼친다. domain/series/source 가 없으면
+      Phase 19 와 byte-identical (깊이/출처 노드·엣지 0, summary 신규 카운트 0).
     """
     # 익명 → 빈 그래프 (graceful 200, 노출 0).
     if not auth_user_id:
@@ -145,9 +158,15 @@ async def _aggregate_pkm_graph(
     brand_memory_repo = (
         brand_memory_repo if brand_memory_repo is not None else _brand_memory_repo
     )
+    domain_repo = domain_repo if domain_repo is not None else _domain_repo
+    series_repo = series_repo if series_repo is not None else _series_repo
 
     nodes: list[PkmGraphNode] = []
     edges: list[PkmGraphEdge] = []
+    # Phase 21 — 깊이/출처 카운트 (graceful: 데이터 없으면 0 유지 = Phase 19 동일).
+    domain_count = 0
+    series_count = 0
+    source_ids: set[str] = set()  # 출처(plan) 노드 dedup — bm 여럿이 같은 plan 출처일 수 있음.
 
     # 0. 루트 user 노드 (4계층의 정점 — domains/series 깊이는 S5).
     user_node_id = f"user:{auth_user_id}"
@@ -193,6 +212,66 @@ async def _aggregate_pkm_graph(
         edges.append(PkmGraphEdge(source=user_node_id, target=brand_node_id, kind="owns"))
         brand_count += 1
 
+        # 2a. (Phase 21 additive) 4계층 depth — brand → domain (has_domain) → series (has_series).
+        # ★ graceful: domain/series repo 실패 → 그 brand 의 깊이만 비우고 진행 (500 금지).
+        # ★ byte-identical: domain 0 → 이 블록은 노드/엣지 0 추가 (Phase 19 동일).
+        try:
+            domains = await domain_repo.list_for_brand(str(brand_id))
+        except Exception as exc:
+            logger.warning(
+                "pkm_graph domain_list_failed: %s brand_id=%s (graceful)",
+                exc.__class__.__name__, brand_id,
+            )
+            domains = []
+        for domain in domains:
+            if not isinstance(domain, dict):
+                continue
+            domain_id = domain.get("id")
+            if not domain_id:
+                continue  # id 없는 row(비정상) → skip.
+            domain_node_id = f"domain:{domain_id}"
+            nodes.append(
+                PkmGraphNode(
+                    id=domain_node_id,
+                    type="domain",
+                    label=_summarize(domain.get("name")) or "도메인",
+                )
+            )
+            edges.append(
+                PkmGraphEdge(source=brand_node_id, target=domain_node_id, kind="has_domain")
+            )
+            domain_count += 1
+
+            # domain → series (has_series). domain 단위로 graceful.
+            try:
+                series_rows = await series_repo.list_for_domain(str(domain_id))
+            except Exception as exc:
+                logger.warning(
+                    "pkm_graph series_list_failed: %s domain_id=%s (graceful)",
+                    exc.__class__.__name__, domain_id,
+                )
+                series_rows = []
+            for series_row in series_rows:
+                if not isinstance(series_row, dict):
+                    continue
+                series_id = series_row.get("id")
+                if not series_id:
+                    continue
+                series_node_id = f"series:{series_id}"
+                nodes.append(
+                    PkmGraphNode(
+                        id=series_node_id,
+                        type="series",
+                        label=_summarize(series_row.get("name")) or "시리즈",
+                    )
+                )
+                edges.append(
+                    PkmGraphEdge(
+                        source=domain_node_id, target=series_node_id, kind="has_series",
+                    )
+                )
+                series_count += 1
+
         # 2b. 브랜드 PKM — brand → bm (has_brand_pkm). brand 단위로 graceful.
         try:
             bm_entries = await brand_memory_repo.list_for_brand(str(brand_id))
@@ -212,9 +291,31 @@ async def _aggregate_pkm_graph(
             )
             brand_pkm_count += 1
 
+            # 2c. (Phase 21 additive) provenance — 브랜드 PKM 에 source_plan_id 가 있으면
+            # 출처(source) 노드 + bm → source (sourced_from) 엣지. plan_id 로 dedup.
+            # ★ byte-identical: source_plan_id 없음/빈 값 → 노드/엣지 0 (Phase 19 동일).
+            plan_id = row.get("source_plan_id")
+            if plan_id:
+                plan_id_str = str(plan_id)
+                source_node_id = f"source:{plan_id_str}"
+                if plan_id_str not in source_ids:
+                    source_ids.add(plan_id_str)
+                    nodes.append(
+                        PkmGraphNode(
+                            id=source_node_id,
+                            type="source",
+                            label=f"{_SOURCE_LABEL_PREFIX} {plan_id_str[:8]}".strip(),
+                        )
+                    )
+                edges.append(
+                    PkmGraphEdge(source=node.id, target=source_node_id, kind="sourced_from")
+                )
+
     logger.info(
-        "pkm_graph aggregated auth_user_id=%s personal=%d brands=%d brand_pkm=%d",
+        "pkm_graph aggregated auth_user_id=%s personal=%d brands=%d brand_pkm=%d "
+        "domains=%d series=%d sources=%d",
         auth_user_id, personal_count, brand_count, brand_pkm_count,
+        domain_count, series_count, len(source_ids),
     )
     return PkmGraphResponse(
         nodes=nodes,
@@ -223,6 +324,9 @@ async def _aggregate_pkm_graph(
             personal=personal_count,
             brand=brand_pkm_count,
             brands=brand_count,
+            domains=domain_count,
+            series=series_count,
+            sources=len(source_ids),
         ),
     )
 
