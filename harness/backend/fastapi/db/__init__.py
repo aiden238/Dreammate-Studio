@@ -40,6 +40,7 @@ from .repositories import (
     PlansRepo,
     SelectionRepo,
     SeriesRepo,
+    VideoProjectRepo,
     insert_plan_candidate,
     insert_video_project,
     mask_pii,
@@ -163,6 +164,8 @@ __all__ = [
     # Phase 21 S1 — pkm-graph 4계층 depth (graceful read-only, Domain/Series 계층)
     "DomainRepo",
     "SeriesRepo",
+    # Phase 26 S1 — 4계층 최하단 Video 계층 (graceful CRUD, video_projects 테이블)
+    "VideoProjectRepo",
     # Legacy backward-compat (Phase 1 Slice 5, DEPRECATED Phase 5.5 — ADR-023)
     "get_supabase_client",
     "save_video_planning",

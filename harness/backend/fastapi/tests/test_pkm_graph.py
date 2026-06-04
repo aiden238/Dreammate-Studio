@@ -147,6 +147,7 @@ def test_pkm_graph_anonymous_returns_empty() -> None:
     assert data["summary"] == {
         "personal": 0, "brand": 0, "brands": 0,
         "domains": 0, "series": 0, "sources": 0,  # Phase 21 additive (graceful 0)
+        "videos": 0,  # Phase 26 additive (graceful 0)
     }
 
 
@@ -282,6 +283,7 @@ def test_pkm_graph_http_authed_path(monkeypatch: pytest.MonkeyPatch) -> None:
     assert data["summary"] == {
         "personal": 2, "brand": 2, "brands": 1,
         "domains": 0, "series": 0, "sources": 0,  # Phase 21 additive (graceful 0 — no depth seeded)
+        "videos": 0,  # Phase 26 additive (graceful 0 — no video seeded)
     }
     assert len(data["nodes"]) == 6
     assert any(n["type"] == "user" and n["id"] == "user:mock-user-1" for n in data["nodes"])

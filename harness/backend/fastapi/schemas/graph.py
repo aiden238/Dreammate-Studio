@@ -24,13 +24,14 @@ class PkmGraphNode(BaseModel):
       - "brand:<brand_id>"     (type=brand)
       - "domain:<domain_id>"   (type=domain, Phase 21 4계층 depth)
       - "series:<series_id>"   (type=series, Phase 21 4계층 depth)
+      - "video:<video_id>"     (type=video, Phase 26 4계층 최하단)
       - "pkm:<entry_id>"       (type=pkm, scope=personal)
       - "bm:<entry_id>"        (type=pkm, scope=brand)
       - "source:<plan_id>"     (type=source, Phase 21 provenance — 브랜드 PKM 출처)
     """
 
     id: str = Field(description="네임스페이스 접두어 포함 노드 id (예: 'pkm:<uuid>').")
-    type: Literal["user", "brand", "domain", "series", "pkm", "source"] = Field(
+    type: Literal["user", "brand", "domain", "series", "video", "pkm", "source"] = Field(
         description="노드 종류.",
     )
     label: str = Field(description="화면 표시용 라벨 (PKM 은 content 요약).")
@@ -51,7 +52,8 @@ class PkmGraphEdge(BaseModel):
     """그래프 엣지 1개 — source 노드 → target 노드 관계.
 
     kind: owns(user→brand) / has_personal(user→개인 pkm) / has_brand_pkm(brand→브랜드 pkm) /
-          has_domain(brand→domain) / has_series(domain→series) / sourced_from(브랜드 pkm→출처).
+          has_domain(brand→domain) / has_series(domain→series) / has_video(series→video) /
+          sourced_from(브랜드 pkm→출처).
     """
 
     source: str = Field(description="출발 노드 id.")
@@ -62,6 +64,7 @@ class PkmGraphEdge(BaseModel):
         "has_brand_pkm",
         "has_domain",
         "has_series",
+        "has_video",
         "sourced_from",
     ] = Field(
         description="관계 종류.",
@@ -81,6 +84,9 @@ class PkmGraphSummary(BaseModel):
     sources: int = Field(
         default=0, description="고유 출처(plan) 노드 수 — 브랜드 PKM provenance (Phase 21).",
     )
+    # Phase 26 S1 — 4계층 최하단 video (default 0 → graceful/backward-compat:
+    # video 가 없으면 Phase 24 와 동일한 0 카운트).
+    videos: int = Field(default=0, description="video 노드 수 (전 series 합, Phase 26).")
 
 
 class PkmGraphResponse(BaseModel):
@@ -213,13 +219,58 @@ class MeSeriesUpdateRequest(BaseModel):
 
 
 class MeMutationResponse(BaseModel):
-    """DELETE /api/v1/me/domains|series/{id} 응답 — {ok, deleted}.
+    """DELETE /api/v1/me/domains|series|videos/{id} 응답 — {ok, deleted}.
 
     소유/존재 검증 실패는 endpoint 가 404 로 응답 (이 모델 미반환).
     """
 
     ok: bool = Field(description="동작 성공 여부.")
     deleted: bool = Field(default=True, description="대상 삭제 완료 여부.")
+
+
+# ─── Phase 26 Slice S1 — Video CRUD (4계층 최하단 Video 계층) 스키마 ─────
+#
+# 4계층(User→Brand→Domain→Series→Video) 의 최하단 Video 를 사용자가 직접 CRUD 한다.
+# 생성/편집/삭제된 행은 Phase 21 /me/pkm-graph 집계가 series→video 깊이 노드로 자동 반영.
+# ★ 소유: video 는 본인 series(→domain→brand) 아래만 — 라우터가 검증(교차 → 404).
+# ★ name 필드가 `title` (video_projects 스키마 — Domain/Series 의 `name` 과 다름).
+
+
+class MeVideoCreateRequest(BaseModel):
+    """POST /api/v1/me/videos 요청 — 소유 series 아래 video 1개 생성.
+
+    title 은 비어 있으면 안 됨(min_length=1) → 빈 title 은 422 (Pydantic 검증).
+    """
+
+    series_id: str = Field(description="video 를 붙일 소유 series id.")
+    title: str = Field(min_length=1, description="video 제목 (비어 있으면 422).")
+
+
+class MeVideoUpdateRequest(BaseModel):
+    """PATCH /api/v1/me/videos/{video_id} 요청 — video 제목 변경.
+
+    title 은 비어 있으면 안 됨(min_length=1) → 빈 title 은 422 (Pydantic 검증).
+    """
+
+    title: str = Field(min_length=1, description="새 video 제목 (비어 있으면 422).")
+
+
+class MeVideoNode(BaseModel):
+    """생성/편집된 video 의 식별 필드 (응답 동봉)."""
+
+    id: str = Field(description="생성된 video id.")
+    series_id: str = Field(description="소속 series id.")
+    title: str = Field(description="video 제목.")
+
+
+class MeVideoCreateResponse(BaseModel):
+    """POST / PATCH /api/v1/me/videos 응답 — {ok, video}.
+
+    소유/검증 실패는 endpoint 가 401/404/422 로 응답 (이 모델 미반환).
+    """
+
+    ok: bool = Field(description="동작 성공 여부.")
+    video: MeVideoNode = Field(description="생성/편집된 video.")
 
 
 __all__ = [
@@ -238,4 +289,8 @@ __all__ = [
     "MeDomainUpdateRequest",
     "MeSeriesUpdateRequest",
     "MeMutationResponse",
+    "MeVideoCreateRequest",
+    "MeVideoUpdateRequest",
+    "MeVideoNode",
+    "MeVideoCreateResponse",
 ]

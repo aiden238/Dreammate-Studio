@@ -781,13 +781,14 @@ Discovery 5단계 진행. 각 호출이 1단계 카드 생성.
 
 축적된 PKM(개인 pkm_entries + 소유 brands + 브랜드 brand_memory)을 `/brain`에서 도식화·큐레이션. 전부 **인증 사용자 본인 데이터**(RLS 격리, service key backend-only). 모바일=카드/리스트, 데스크톱=그래프(react-flow lazy-load). 신규 데이터모델 0(읽기+CRUD 재사용).
 
-- **GET /api/v1/me/pkm-graph** (authed) → `{nodes:[{id,type:"user"|"brand"|"pkm"|"domain"|"series"|"source",label,scope?,entry_type?,locked?}], edges:[{source,target,kind:"owns"|"has_personal"|"has_brand_pkm"|"has_domain"|"has_series"|"sourced_from"}], summary:{personal,brand,brands,domains,series,sources}}`. id namespace: `user:` / `brand:<id>` / `pkm:<id>`(개인) / `bm:<id>`(브랜드) / **`domain:<id>` / `series:<id>` / `source:<plan_id>`(Phase 21)**. 익명/무데이터 → 빈 그래프(graceful). ★ **Phase 21(CC-029) 확장**: 4계층 깊이(brand→domain `has_domain`→series `has_series`) + 브랜드 PKM 출처(bm `sourced_from`→source, brand_memory.source_plan_id). 전부 **additive/graceful** — domains/series/source 0 이면 노드·엣지 불변(summary 만 0키 additive). 개인 PKM 출처는 source_plan_id 부재로 미포함(이월).
+- **GET /api/v1/me/pkm-graph** (authed) → `{nodes:[{id,type:"user"|"brand"|"pkm"|"domain"|"series"|"video"|"source",label,scope?,entry_type?,locked?}], edges:[{source,target,kind:"owns"|"has_personal"|"has_brand_pkm"|"has_domain"|"has_series"|"has_video"|"sourced_from"}], summary:{personal,brand,brands,domains,series,videos,sources}}`. ★ Phase 26(CC-033): `video` 노드 + `has_video`(series→video) + summary.videos additive. ★ Phase 26(CC-034): 개인 PKM 도 source_plan_id 있으면 `sourced_from`→source(브랜드 PKM 과 동일). id namespace: `user:` / `brand:<id>` / `pkm:<id>`(개인) / `bm:<id>`(브랜드) / **`domain:<id>` / `series:<id>` / `source:<plan_id>`(Phase 21)**. 익명/무데이터 → 빈 그래프(graceful). ★ **Phase 21(CC-029) 확장**: 4계층 깊이(brand→domain `has_domain`→series `has_series`) + 브랜드 PKM 출처(bm `sourced_from`→source, brand_memory.source_plan_id). 전부 **additive/graceful** — domains/series/source 0 이면 노드·엣지 불변(summary 만 0키 additive). 개인 PKM 출처는 source_plan_id 부재로 미포함(이월).
 - **PATCH /api/v1/me/pkm/{node_id}** (authed) — body `{content?, locked?}` → `{ok, node}`. node_id prefix 라우팅: `pkm:`→pkm_entries(개인, auth_user_id), `bm:`→brand_memory(브랜드 소유=brand→user 검증). user_locked 보호.
 - **DELETE /api/v1/me/pkm/{node_id}** (authed) → `{ok, deleted}`. 동일 prefix 라우팅 + 소유 검증.
 - **POST /api/v1/me/domains** (authed, **Phase 22 CC-030**) — body `{brand_id, name}` → `{ok, domain:{id, brand_id, name}}`. 소유검증: brand 가 본인 소유(BrandRepo.list_for_user). 4계층 Domain 생성 → /me/pkm-graph 자동 반영.
 - **POST /api/v1/me/series** (authed, **Phase 22 CC-030**) — body `{domain_id, name}` → `{ok, series:{id, domain_id, name}}`. 소유검증: domain 이 본인 brand 하위(domain→brand→user 2-hop).
 - **PATCH/DELETE /api/v1/me/domains/{domain_id}** (authed, **Phase 24 CC-031**) — PATCH body `{name}` → `{ok, domain}` / DELETE → `{ok, deleted}`. 소유검증 domain→brand→user. ★ DELETE 시 하위 series **cascade**(Supabase FK ON DELETE CASCADE / in-memory 명시 삭제).
 - **PATCH/DELETE /api/v1/me/series/{series_id}** (authed, **Phase 24 CC-031**) — PATCH `{name}` → `{ok, series}` / DELETE → `{ok, deleted}`. 소유검증 series→domain→brand→user(3-hop).
+- **POST /api/v1/me/videos** + **PATCH/DELETE /api/v1/me/videos/{video_id}** (authed, **Phase 26 CC-033**) — POST `{series_id, title}` → `{ok, video:{id,series_id,title}}` / PATCH `{title}` → `{ok, video}` / DELETE → `{ok, deleted}`. 소유검증 video→series→domain→brand→user(4-hop). 4계층 마지막(Video) → /me/pkm-graph 에 `video` 노드 + `has_video` 엣지(graceful, video 0=불변).
 
 **Status:** 200. **401**(익명), **404**(미소유·부재), **422**(빈 name). graceful — 집계/조회 실패 시 500 금지(빈 그래프); 생성 repo 실패는 **503**(controlled, unhandled 500 금지). PATCH/DELETE/POST 교차 사용자 변경·생성 0(RLS + 소유 검증).
 
@@ -1325,4 +1326,5 @@ CC-029 (2026-06-04): §8.7 /me/pkm-graph 4계층 깊이(domain/series 노드 + h
 CC-030 (2026-06-04): §8.7 POST /me/domains + /me/series — 4계층 domain/series 생성(소유검증 RLS) — Phase 22. additive.
 CC-031 (2026-06-04): §8.7 PATCH/DELETE /me/domains/{id} + /me/series/{id} — domain/series 편집·삭제(소유검증, domain 삭제 시 series cascade) — Phase 24. additive.
 CC-032 (2026-06-04): §8.6 branding/select 응답 +domain_id/series_id — topic→domain·format→series 자동 시드(멱등·gated·graceful) — Phase 25. additive.
+CC-033 (2026-06-04): §8.7 POST/PATCH/DELETE /me/videos + pkm-graph video 노드/has_video — 4계층 마지막 Video — Phase 26 S1. additive.
 ```

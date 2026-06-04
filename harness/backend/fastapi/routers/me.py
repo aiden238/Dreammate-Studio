@@ -30,6 +30,7 @@ from ..db import (
     DomainRepo,
     PkmRepo,
     SeriesRepo,
+    VideoProjectRepo,
     get_supabase,
 )
 from ..schemas.graph import (
@@ -44,6 +45,10 @@ from ..schemas.graph import (
     MeSeriesCreateResponse,
     MeSeriesNode,
     MeSeriesUpdateRequest,
+    MeVideoCreateRequest,
+    MeVideoCreateResponse,
+    MeVideoNode,
+    MeVideoUpdateRequest,
     PkmGraphEdge,
     PkmGraphNode,
     PkmGraphResponse,
@@ -66,6 +71,10 @@ _brand_memory_repo: BrandMemoryRepo = BrandMemoryRepo(
 # Phase 21 S1 — 4계층 depth (Domain/Series) repo 싱글톤 (graceful, 동일 DI seam).
 _domain_repo: DomainRepo = DomainRepo(supabase_client=get_supabase(), in_memory_store={})
 _series_repo: SeriesRepo = SeriesRepo(supabase_client=get_supabase(), in_memory_store={})
+# Phase 26 S1 — 4계층 최하단 (Video) repo 싱글톤 (graceful, 동일 DI seam).
+_video_repo: VideoProjectRepo = VideoProjectRepo(
+    supabase_client=get_supabase(), in_memory_store={},
+)
 
 # PKM 노드 라벨 요약 상한 (content 가 길면 잘라 표시 — 노드 가독성).
 _LABEL_MAX = 60
@@ -150,6 +159,7 @@ async def _aggregate_pkm_graph(
     brand_memory_repo: Optional[BrandMemoryRepo] = None,
     domain_repo: Optional[DomainRepo] = None,
     series_repo: Optional[SeriesRepo] = None,
+    video_repo: Optional[VideoProjectRepo] = None,
 ) -> PkmGraphResponse:
     """auth_user_id 기준으로 PKM 그래프를 집계한다 (graceful, RLS 격리).
 
@@ -157,6 +167,8 @@ async def _aggregate_pkm_graph(
     ★ Phase 21 S1 (additive): brand 아래로 Domain→Series 깊이(domain_repo/series_repo) +
       브랜드 PKM 출처(source_plan_id) provenance 를 펼친다. domain/series/source 가 없으면
       Phase 19 와 byte-identical (깊이/출처 노드·엣지 0, summary 신규 카운트 0).
+    ★ Phase 26 S1 (additive): series 아래로 Video(video_repo) 깊이를 한 단계 더 펼친다.
+      video 가 없으면 Phase 24 와 byte-identical (video 노드·엣지 0, summary.videos 0).
     """
     # 익명 → 빈 그래프 (graceful 200, 노출 0).
     if not auth_user_id:
@@ -169,12 +181,14 @@ async def _aggregate_pkm_graph(
     )
     domain_repo = domain_repo if domain_repo is not None else _domain_repo
     series_repo = series_repo if series_repo is not None else _series_repo
+    video_repo = video_repo if video_repo is not None else _video_repo
 
     nodes: list[PkmGraphNode] = []
     edges: list[PkmGraphEdge] = []
     # Phase 21 — 깊이/출처 카운트 (graceful: 데이터 없으면 0 유지 = Phase 19 동일).
     domain_count = 0
     series_count = 0
+    video_count = 0  # Phase 26 — video 노드 수 (graceful: 데이터 없으면 0 = Phase 24 동일).
     source_ids: set[str] = set()  # 출처(plan) 노드 dedup — bm 여럿이 같은 plan 출처일 수 있음.
 
     # 0. 루트 user 노드 (4계층의 정점 — domains/series 깊이는 S5).
@@ -281,6 +295,37 @@ async def _aggregate_pkm_graph(
                 )
                 series_count += 1
 
+                # (Phase 26 additive) series → video (has_video). series 단위로 graceful.
+                # ★ byte-identical: video 0 → 이 블록은 노드/엣지 0 추가 (Phase 24 동일).
+                try:
+                    video_rows = await video_repo.list_for_series(str(series_id))
+                except Exception as exc:
+                    logger.warning(
+                        "pkm_graph video_list_failed: %s series_id=%s (graceful)",
+                        exc.__class__.__name__, series_id,
+                    )
+                    video_rows = []
+                for video_row in video_rows:
+                    if not isinstance(video_row, dict):
+                        continue
+                    video_id = video_row.get("id")
+                    if not video_id:
+                        continue
+                    video_node_id = f"video:{video_id}"
+                    nodes.append(
+                        PkmGraphNode(
+                            id=video_node_id,
+                            type="video",
+                            label=_summarize(video_row.get("title")) or "영상",
+                        )
+                    )
+                    edges.append(
+                        PkmGraphEdge(
+                            source=series_node_id, target=video_node_id, kind="has_video",
+                        )
+                    )
+                    video_count += 1
+
         # 2b. 브랜드 PKM — brand → bm (has_brand_pkm). brand 단위로 graceful.
         try:
             bm_entries = await brand_memory_repo.list_for_brand(str(brand_id))
@@ -322,9 +367,9 @@ async def _aggregate_pkm_graph(
 
     logger.info(
         "pkm_graph aggregated auth_user_id=%s personal=%d brands=%d brand_pkm=%d "
-        "domains=%d series=%d sources=%d",
+        "domains=%d series=%d videos=%d sources=%d",
         auth_user_id, personal_count, brand_count, brand_pkm_count,
-        domain_count, series_count, len(source_ids),
+        domain_count, series_count, video_count, len(source_ids),
     )
     return PkmGraphResponse(
         nodes=nodes,
@@ -335,6 +380,7 @@ async def _aggregate_pkm_graph(
             brands=brand_count,
             domains=domain_count,
             series=series_count,
+            videos=video_count,
             sources=len(source_ids),
         ),
     )
@@ -1036,6 +1082,266 @@ async def _delete_series(
     return MeMutationResponse(ok=True, deleted=True)
 
 
+# ─── Video CRUD (Phase 26 Slice S1 — 4계층 최하단 Video CREATE+EDIT+DELETE) ──
+#
+# Phase 22/24 의 Domain/Series CRUD 를 한 단계 아래(series→video)로 그대로 복제한다.
+# 생성/편집/삭제 즉시 Phase 21 /me/pkm-graph 가 series→video 깊이 노드로 자동 반영(graph builder 불변).
+#   POST   /api/v1/me/videos               {series_id, title} → 본인 series 아래 video 생성.
+#   PATCH  /api/v1/me/videos/{video_id}     {title}           → 본인 video 제목 변경.
+#   DELETE /api/v1/me/videos/{video_id}                       → video 삭제.
+# 익명 → 401. 빈 title → 422 (Pydantic). 미소유 series/video → 404 (curation/create 와 동일 의미론).
+# 어떤 repo 실패도 안전 — create None → 503(일시 실패) / update None·delete False → 404 (controlled).
+# unhandled 500 / 교차 사용자 생성·변경·삭제 0.
+
+
+async def _owns_video(
+    video_id: str,
+    *,
+    auth_user_id: str,
+    brand_repo: BrandRepo,
+    domain_repo: DomainRepo,
+    series_repo: SeriesRepo,
+    video_repo: VideoProjectRepo,
+) -> bool:
+    """video_id 가 uid 소유 brand→domain→series 아래 video 에 속하는지 검증 (RLS, 4-hop).
+
+    uid 의 brand 나열 → 각 brand 의 domain → 각 domain 의 series → 각 series 의 video 나열 →
+    video_id 있으면 True. 어떤 repo 실패도 graceful — 미소유 처리(False), 500 금지.
+    """
+    try:
+        brands = await brand_repo.list_for_user(auth_user_id)
+    except Exception as exc:
+        logger.warning("structure brand_list_failed: %s (graceful)", exc.__class__.__name__)
+        return False
+    for brand in brands:
+        if not isinstance(brand, dict):
+            continue
+        brand_id = brand.get("id")
+        if not brand_id:
+            continue
+        try:
+            domains = await domain_repo.list_for_brand(str(brand_id))
+        except Exception as exc:
+            logger.warning(
+                "structure domain_list_failed: %s (graceful)", exc.__class__.__name__,
+            )
+            continue
+        for domain in domains:
+            if not isinstance(domain, dict):
+                continue
+            domain_id = domain.get("id")
+            if not domain_id:
+                continue
+            try:
+                series_rows = await series_repo.list_for_domain(str(domain_id))
+            except Exception as exc:
+                logger.warning(
+                    "structure series_list_failed: %s (graceful)", exc.__class__.__name__,
+                )
+                continue
+            for series_row in series_rows:
+                if not isinstance(series_row, dict):
+                    continue
+                series_id = series_row.get("id")
+                if not series_id:
+                    continue
+                try:
+                    video_rows = await video_repo.list_for_series(str(series_id))
+                except Exception as exc:
+                    logger.warning(
+                        "structure video_list_failed: %s (graceful)", exc.__class__.__name__,
+                    )
+                    continue
+                for video_row in video_rows:
+                    if isinstance(video_row, dict) and str(video_row.get("id")) == str(video_id):
+                        return True
+    return False
+
+
+@router.post(
+    "/videos",
+    response_model=MeVideoCreateResponse,
+    summary="구조 생성 — 소유 series 아래 video 생성 (Phase 26 Slice S1)",
+    description=(
+        "본인 소유 series(series_id) 아래 video 1개를 생성한다. 생성 즉시 /me/pkm-graph 가 "
+        "series→video 깊이 노드로 자동 반영(집계 변경 0). 익명 → 401. 빈 title → 422. "
+        "미소유 series → 404 (교차 사용자 생성 0). repo 일시 실패 → 503 (unhandled 500 없음)."
+    ),
+)
+async def create_video(
+    body: MeVideoCreateRequest, request: Request,
+) -> MeVideoCreateResponse:
+    """video 1개 생성 (thin handler — 신원 추출 후 위임)."""
+    uid = _require_auth_user_id(request)
+    return await _create_video(body, uid)
+
+
+@router.patch(
+    "/videos/{video_id}",
+    response_model=MeVideoCreateResponse,
+    summary="구조 편집 — 소유 video 제목 변경 (Phase 26 Slice S1)",
+    description=(
+        "본인 소유 video(video_id)의 title 을 변경한다. 변경 즉시 /me/pkm-graph 가 자동 반영. "
+        "익명 → 401. 빈 title → 422. 미소유/미존재 video → 404 (교차 사용자 변경 0). "
+        "repo 일시 실패(None) → 404 (controlled, unhandled 500 없음)."
+    ),
+)
+async def update_video(
+    video_id: str, body: MeVideoUpdateRequest, request: Request,
+) -> MeVideoCreateResponse:
+    """video 1개 제목 변경 (thin handler — 신원 추출 후 위임)."""
+    uid = _require_auth_user_id(request)
+    return await _update_video(video_id, body, uid)
+
+
+@router.delete(
+    "/videos/{video_id}",
+    response_model=MeMutationResponse,
+    summary="구조 삭제 — 소유 video 삭제 (Phase 26 Slice S1)",
+    description=(
+        "본인 소유 video(video_id)를 삭제한다. 삭제 즉시 /me/pkm-graph 가 자동 반영. "
+        "익명 → 401. 미소유/미존재 video → 404 (교차 사용자 삭제 0)."
+    ),
+)
+async def delete_video(video_id: str, request: Request) -> MeMutationResponse:
+    """video 1개 삭제 (thin handler — 신원 추출 후 위임)."""
+    uid = _require_auth_user_id(request)
+    return await _delete_video(video_id, uid)
+
+
+async def _create_video(
+    body: MeVideoCreateRequest,
+    auth_user_id: str,
+    *,
+    brand_repo: Optional[BrandRepo] = None,
+    domain_repo: Optional[DomainRepo] = None,
+    series_repo: Optional[SeriesRepo] = None,
+    video_repo: Optional[VideoProjectRepo] = None,
+) -> MeVideoCreateResponse:
+    """POST /me/videos 구현 — 소유 검증 + 생성 (DI seam for tests).
+
+    소유 series 아니면 404. 생성 None(일시 repo 실패) → 503 (graceful, unhandled 500 금지).
+    ★ video_projects.auth_user_id NOT NULL → 인증 사용자 id 를 create 에 넘긴다.
+    """
+    brand_repo = brand_repo if brand_repo is not None else _brand_repo
+    domain_repo = domain_repo if domain_repo is not None else _domain_repo
+    series_repo = series_repo if series_repo is not None else _series_repo
+    video_repo = video_repo if video_repo is not None else _video_repo
+
+    # 소유 series 검증 (uid brand → domain → series 체인) — 미소유/미존재 → 404.
+    if not await _owns_series(
+        body.series_id,
+        auth_user_id=auth_user_id,
+        brand_repo=brand_repo,
+        domain_repo=domain_repo,
+        series_repo=series_repo,
+    ):
+        raise HTTPException(status_code=404, detail="series_not_found")
+
+    try:
+        row = await video_repo.create(body.series_id, body.title, auth_user_id)
+    except Exception as exc:
+        logger.warning("video_create_failed: %s (graceful 503)", exc.__class__.__name__)
+        row = None
+    if not row or not row.get("id"):
+        raise HTTPException(status_code=503, detail="video_create_unavailable")
+
+    return MeVideoCreateResponse(
+        ok=True,
+        video=MeVideoNode(
+            id=str(row["id"]),
+            series_id=str(row.get("series_id", body.series_id)),
+            title=str(row.get("title", body.title)),
+        ),
+    )
+
+
+async def _update_video(
+    video_id: str,
+    body: MeVideoUpdateRequest,
+    auth_user_id: str,
+    *,
+    brand_repo: Optional[BrandRepo] = None,
+    domain_repo: Optional[DomainRepo] = None,
+    series_repo: Optional[SeriesRepo] = None,
+    video_repo: Optional[VideoProjectRepo] = None,
+) -> MeVideoCreateResponse:
+    """PATCH /me/videos/{id} 구현 — 소유 검증 + 제목 변경 (DI seam for tests).
+
+    소유 video 아니면 404. update None(미존재/일시 실패) → 404 (graceful, unhandled 500 금지).
+    """
+    brand_repo = brand_repo if brand_repo is not None else _brand_repo
+    domain_repo = domain_repo if domain_repo is not None else _domain_repo
+    series_repo = series_repo if series_repo is not None else _series_repo
+    video_repo = video_repo if video_repo is not None else _video_repo
+
+    if not await _owns_video(
+        video_id,
+        auth_user_id=auth_user_id,
+        brand_repo=brand_repo,
+        domain_repo=domain_repo,
+        series_repo=series_repo,
+        video_repo=video_repo,
+    ):
+        raise HTTPException(status_code=404, detail="video_not_found")
+
+    try:
+        row = await video_repo.update_title(video_id, body.title)
+    except Exception as exc:
+        logger.warning("video_update_failed: %s (graceful 404)", exc.__class__.__name__)
+        row = None
+    if not row or not row.get("id"):
+        raise HTTPException(status_code=404, detail="video_not_found")
+
+    return MeVideoCreateResponse(
+        ok=True,
+        video=MeVideoNode(
+            id=str(row["id"]),
+            series_id=str(row.get("series_id", "")),
+            title=str(row.get("title", body.title)),
+        ),
+    )
+
+
+async def _delete_video(
+    video_id: str,
+    auth_user_id: str,
+    *,
+    brand_repo: Optional[BrandRepo] = None,
+    domain_repo: Optional[DomainRepo] = None,
+    series_repo: Optional[SeriesRepo] = None,
+    video_repo: Optional[VideoProjectRepo] = None,
+) -> MeMutationResponse:
+    """DELETE /me/videos/{id} 구현 — 소유 검증 + 삭제 (DI seam for tests).
+
+    소유 video 아니면 404. delete False(미존재/일시 실패) → 404 (graceful, unhandled 500 금지).
+    """
+    brand_repo = brand_repo if brand_repo is not None else _brand_repo
+    domain_repo = domain_repo if domain_repo is not None else _domain_repo
+    series_repo = series_repo if series_repo is not None else _series_repo
+    video_repo = video_repo if video_repo is not None else _video_repo
+
+    if not await _owns_video(
+        video_id,
+        auth_user_id=auth_user_id,
+        brand_repo=brand_repo,
+        domain_repo=domain_repo,
+        series_repo=series_repo,
+        video_repo=video_repo,
+    ):
+        raise HTTPException(status_code=404, detail="video_not_found")
+
+    try:
+        ok = await video_repo.delete(video_id)
+    except Exception as exc:
+        logger.warning("video_delete_failed: %s (graceful 404)", exc.__class__.__name__)
+        ok = False
+    if not ok:
+        raise HTTPException(status_code=404, detail="video_not_found")
+
+    return MeMutationResponse(ok=True, deleted=True)
+
+
 __all__ = [
     "router",
     "get_pkm_graph",
@@ -1047,4 +1353,7 @@ __all__ = [
     "delete_domain",
     "update_series",
     "delete_series",
+    "create_video",
+    "update_video",
+    "delete_video",
 ]
