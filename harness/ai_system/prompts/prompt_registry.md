@@ -306,11 +306,12 @@ variant 정책: P-005q (Quick Mode 변형) 는 부모 P-005 version 을 상속�
 ## 7. P-006 · plan_candidates (Planner Agent)
 
 **Stage**: 3개 기획안 생성 (MOA Planner)
-**Version**: **v1.0.0 (compact, active)** · **v1.1.0 (rich, gated — Phase 13 S2)** · **v1.2.0 (director, gated — Phase 15 S2)** — 세 버전 output_mode 공존 (아래 §Semver)
+**Version**: **v1.0.0 (compact, active)** · **v1.1.0 (rich, gated — Phase 13 S2)** · **v1.2.0 (director, gated — Phase 15 S2)** · **v1.3.0 (commercial_viral, gated — Phase 20 S2)** — 네 버전 output_mode 공존 (아래 §Semver)
 **Input variables**: `one_line_direction`, `selected_context` (brand/domain/series/target/tone), `rag_references` (RAG 검색 결과), `brand_memory`
 **Output schema (v1.0.0 compact)**: `{ plans: [{ name, concept, hook, flow, pros, risks }, ... ×3] }`
 **Output schema (v1.1.0 rich, additive)**: v1.0.0 + S1 rich 슬롯(전부 Optional) — `hook_variants[]`, `target_audience`, `tone`, `shots[]`, `thumbnail`, `title_candidates[]`, `cta`, `references[]`, `length_variants[]`, flow beat 에 `visual`/`dialogue`/`caption` (output_schema.md §8.1 v1.2.0, CC-012)
 **Output schema (v1.2.0 director, additive)**: v1.1.0 + director 슬롯(전부 Optional) — `hook_system[]`(재후크 설계), `retention_architecture`, `scene_breakdown[]`(DirectorScene: scene_intent/viewer_emotion/retention_device/why_this_works/fallback_scene) (output_schema.md §8.1 v1.3.0, CC-017). ★ LLM-only(데이터레이어 비의존). 상업필드 제외=commercial_viral.
+**Output schema (v1.3.0 commercial_viral, additive)**: v1.2.0 + commercial 슬롯(전부 Optional) — Plan 7슬롯 `market_context`/`audience_psychology`/`brand_positioning`/`commercial_conversion`/`platform_packaging`/`production_feasibility`/`measurement_plan` + scene 2필드 `brand_signal`/`commercial_signal`(CommercialScene 7필드) (output_schema.md §8.1 commercial 슬롯, CC-026 예정). ★ v1 LLM-only(market/audience 는 추측 표기). 보정1(보장 금지)·보정2(기획 브리프 경계)·보정3(추측 표기).
 
 ### System (추가)
 
@@ -377,6 +378,27 @@ Brand Memory avoid_phrases 금지. + 완성 대본 전체 작성 금지(브리�
 ```
 > 구현: `agents/planning.py` `RICH_SYSTEM_PROMPT` / `_build_rich_system_prompt_with_hint()` / `RICH_PROMPT_VERSION`.
 
+### System (v1.3.0 commercial_viral — Phase 20 S2, gated)
+
+```
+승인된 한 줄 기획 방향을 기반으로 "상업·전략급 기획 브리프"를 만든다.
+(시장 맥락·시청자 심리·브랜드 포지셔닝·전환 설계까지 — 단 "전략 기획 브리프"이지 완성 대본·
+ 영상 제작물·조회수 보장 도구가 아니다. product_boundary.)
+
+v1.2.0(director) 슬롯 + 다음 commercial 슬롯을 추가로 채운다 (전부 선택, 10섹션):
+- market_context, audience_psychology, brand_positioning, commercial_conversion,
+  platform_packaging, production_feasibility, measurement_plan
+- scene_breakdown[].brand_signal / commercial_signal (씬의 브랜드/상업 신호)
+
+규칙(§3.3 제약):
+- ★ 보정1: 조회수/바이럴 보장 표현 금지("100만 조회"/"무조건 viral"). 결과 보장 아님.
+- ★ 보정2: 기획 브리프 경계 — scene/production/platform 은 기획 수준만, 편집/TTS/업로드 등 제작 미포함.
+- ★ 보정3: market_context/audience_psychology 등은 실데이터(RAG/PKM) 없으면 "추정:" 으로 표기(LLM 추측).
+- 일반론 금지: 모든 전략 주장에 "왜 작동하는가" 근거(패턴/맥락). 광고 과장·검증불가 통계 금지.
+- v1.0.0~v1.2.0 계승: JSON만, flow 2~8, RAG 복제 금지, Brand Memory avoid_phrases 금지.
+```
+> 구현: `agents/planning.py` `COMMERCIAL_SYSTEM_PROMPT` / `_build_commercial_system_prompt_with_hint()` / `COMMERCIAL_PROMPT_VERSION`.
+
 #### Semver / 활성 정책
 
 ```
@@ -386,12 +408,16 @@ v1.1.0 (2026-06-02, Phase 13 S2 — prompt-version-review, CC-013): rich 변형 
 v1.2.0 (2026-06-03, Phase 15 S2 — prompt-version-review, CC-018): director 변형 (minor — rich + 연출/리텐션
         슬롯 additive, envelope 구조 동일). LLM-only(데이터레이어 비의존). 구현: DIRECTOR_SYSTEM_PROMPT /
         _build_director_system_prompt_with_hint / DIRECTOR_PROMPT_VERSION.
+v1.3.0 (2026-06-04, Phase 20 S2 — prompt-version-review, CC-025): commercial_viral 변형 (minor — director +
+        상업 7슬롯 + scene 2필드 additive, envelope 구조 동일). 10섹션 + §3.3 제약(보장 금지/기획 경계/추측 표기/
+        일반론 금지). v1 LLM-only. 구현: COMMERCIAL_SYSTEM_PROMPT / _build_commercial_system_prompt_with_hint /
+        COMMERCIAL_PROMPT_VERSION. ★ S2 시점 런타임 미연결(behavior-preserving) — wiring 은 S3.
 
-★ gated 공존 (deprecate 아님): v1.0.0/v1.1.0/v1.2.0 은 `output_mode`(compact/rich/director) 로 공존한다.
+★ gated 공존 (deprecate 아님): v1.0.0/v1.1.0/v1.2.0/v1.3.0 은 `output_mode`(compact/rich/director/commercial_viral) 로 공존한다.
   - compact (default): v1.0.0 (byte-identical, deactivate_at 없음 — 계속 active).
-  - rich (검증 후): v1.1.0. / director (검증 후): v1.2.0.
+  - rich (검증 후): v1.1.0. / director (검증 후): v1.2.0. / commercial_viral (검증 후): v1.3.0.
   → 표준 deprecate+deactivate(이전 버전 차단) 미적용. 어느 버전 차단할지는 검증 후 별도 결정.
-    meta.prompt_version 분기(compact v1.0.0 / rich v1.1.0 / director v1.2.0)는 S3 gated wiring(effective_output_mode).
+    meta.prompt_version 분기(compact v1.0.0 / rich v1.1.0 / director v1.2.0 / commercial_viral v1.3.0)는 S3 gated wiring(effective_output_mode).
 
 회귀: prompt-version-review (golden_set 최소 8케이스 × 3 plans). ★ v1.1.0 rich 출력의 depth_actionability
       재측정(0.231 → ≥0.8)은 S3 wiring 후 S6 에서 실 LLM 로 수행 (mock-deterministic eval 은 rich 미채점, CC-011).

@@ -375,6 +375,15 @@ Direction Summary. 한 줄 기획 방향.
 > 비의존). 직렬화는 `Plan.model_dump_for_mode(output_mode)` — compact(rich+director 제외)/rich(director
 > 제외)/director(전부). **compact·rich 경로 byte-identical**(director 키 누수 0). 상업필드(market/
 > audience/brand/conversion 등)는 제외=commercial_viral(PKM/RAG 후속). 기획 브리프 경계(촬영지시 아님).
+>
+> **v1.4.0 (2026-06-04 Phase 20 S1, CC-026 적용)**: `output_mode` **4-tier**(compact<rich<director<**commercial_viral**)
+> 확장 + `Plan` commercial 슬롯 7종 **additive**(전부 Optional): `market_context` / `audience_psychology` /
+> `brand_positioning` / `commercial_conversion` / `platform_packaging` / `production_feasibility` /
+> `measurement_plan` + `scene_breakdown[]`(DirectorScene) 에 commercial 2필드 `brand_signal` / `commercial_signal`
+> (→ CommercialScene 7필드). 직렬화 `model_dump_for_mode`: compact/rich/director 는 COMMERCIAL_FIELDS 제외 +
+> director scene 은 상업 2필드 제외(5필드) → **byte-identical**(commercial 키 누수 0); commercial_viral 만 전체.
+> ★ v1 **LLM-only**(market/audience 는 추측 표기 — 보정3). 보정1(조회수/viral **보장 아님**) · 보정2(기획 브리프
+> 경계, 영상 제작 영구 제외). Pydantic = `COMMERCIAL_FIELDS`(7) + `SCENE_COMMERCIAL_FIELDS`(2).
 
 ```json
 {
@@ -422,9 +431,19 @@ Direction Summary. 한 줄 기획 방향.
           "viewer_emotion": "string",     // 의도하는 시청자 감정
           "retention_device": "string",   // 이탈 방지/호기심 장치
           "why_this_works": "string",     // 작동 근거 (일반론 금지)
-          "fallback_scene": "string | null"  // 약할 때 대안 씬
+          "fallback_scene": "string | null",  // 약할 때 대안 씬
+          "brand_signal": "string | null",     // commercial(v1.4.0): 씬의 브랜드 신호
+          "commercial_signal": "string | null" // commercial(v1.4.0): 씬의 상업 신호(전환 의도)
         }
-      ]
+      ],
+
+      "market_context": "string | null         // commercial(v1.4.0): 시장/카테고리 맥락 (실데이터 없으면 '추정:' 표기)",
+      "audience_psychology": "string | null    // commercial(v1.4.0): 타깃 시청자 심리 동인 (추정 표기)",
+      "brand_positioning": "string | null      // commercial(v1.4.0): 브랜드 포지셔닝",
+      "commercial_conversion": "string | null  // commercial(v1.4.0): 시청→행동 전환 설계",
+      "platform_packaging": "string | null     // commercial(v1.4.0): 플랫폼별 제목/썸네일/해시태그 (기획 수준)",
+      "production_feasibility": "string | null // commercial(v1.4.0): 1인/저예산 실행 가능성",
+      "measurement_plan": "string | null       // commercial(v1.4.0): 측정 계획 (★조회수 보장 아님, 학습용)"
     }
   ]
 }
