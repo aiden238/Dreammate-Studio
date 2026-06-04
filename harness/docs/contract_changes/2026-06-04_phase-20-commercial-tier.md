@@ -32,5 +32,10 @@
   COMMERCIAL_PROMPT_VERSION=v1.4.0 + run_critic mode 분기 + max_tokens 2800(commercial만).
 - 정합: test_critic_commercial + test_prompt_registry_consistency green.
 
+## CC-028 — cost_control_policy.md §16 (commercial cost, Phase 20 S6)
+- §16 commercial_viral 출력 cost (gated, premium/opt-in, additive) — director(5~8배)보다 추가 증가
+  (compact 대비 한 자릿수 후반~십수 배 추정). max_tokens planning 4500 / critic 2800(commercial만).
+- ★ paid/premium + opt-in 한정 권장 + premium 상한 분리 + 다중-provider 합산 주의. §1~§15 보존(byte-identical).
+
 ## 비고
-- cost_control §15 commercial cost = S6.
+- 라이브 검증(S6): eval/regression_results/2026-06-04_phase-20-commercial-live.md — PASS(7슬롯/scene/보장0/추정표기/critic 17, avg 4.41).

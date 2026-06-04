@@ -262,5 +262,19 @@ Phase 11 B안(3-provider 3안 다양성, `multi_provider_plans_enabled` default 
 
 ### 15.2 게이트 + tier (§13.4 계승)
 - ★ director 활성은 명시적 `OUTPUT_MODE=director` — default compact 불변. rich 와 동일하게 **paid/opt-in 권장**(free tier 는 compact 기본).
-- director 는 rich↔commercial_viral **중간 tier** — commercial_viral(10섹션 + 시장/트렌드, PKM/RAG 의존)보다는 낮음. commercial_viral cost 는 해당 phase 에서 별도(§미정).
+- director 는 rich↔commercial_viral **중간 tier** — commercial_viral(10섹션 + 시장/트렌드, PKM/RAG 의존)보다는 낮음. commercial_viral cost 는 §16.
 - 정밀 단가(director N씬 상한 등)는 실 LLM 측정 후 별도 contract-change.
+
+## 16. commercial_viral 출력 cost (Phase 20 — ★ gated, premium/opt-in, additive)
+
+> 추가: 2026-06-04 (contract-change **CC-028**, Phase 20 S6). ★ additive / behavior-preserving — §1~§15 보존. `output_mode=commercial_viral` 경로만 해당. compact/rich/director(default 포함)는 cost 영향 0(byte-identical).
+
+### 16.1 commercial_viral = director + 상업 10섹션 → 토큰 최대 증가
+- commercial_viral(`output_mode=commercial_viral`)은 director 슬롯 + Plan 상업 7슬롯 + scene 상업 2필드(10섹션 프롬프트)를 추가 요구 → 출력 토큰이 **director(compact 대비 5~8배)보다 추가 증가**. 대략 **compact 대비 한 자릿수 후반~십수 배** 추정(라이브 데모 1안 기준 — 정밀 실측은 운영 누적 후).
+- 구현: `run_planning`/`run_planning_parallel_3`/`multi_provider_3` commercial max_tokens **→ 4500**(절단 방지, compact/rich 1500·director 3500 불변). 3-plan 경로면 × 3안. **Critic 도 17차원**(director 10 + 상업 7) → critic max_tokens **1500 → 2800**(commercial 만). 입력·출력 동반 증가.
+
+### 16.2 게이트 + premium tier (§13.4/§15.2 계승)
+- ★ commercial_viral 활성은 명시적 `OUTPUT_MODE=commercial_viral` — **default compact 불변**. ★ 4-tier 중 최상위 cost → **paid/premium + opt-in 한정 권장**(free tier 는 compact 기본, 일일 $0.10 상한(§4) 보호).
+- ★ premium 상한 분리 권장: commercial_viral 호출당/세션당 상한을 §2/§3 본 상한에서 분리한 premium 상한으로 별도 관리(rich §13.3 상향 패턴 추가 상향). 초기엔 운영자 승인/베타 화이트리스트 권장.
+- ★ 다중-provider + rich + commercial 동시 ON 합산 주의(§14 계승): provider 단가 ×rich 토큰 ×commercial 슬롯 → 세션 상한 급속 도달 → 선제 차단(§7) + cost-review 필수.
+- 정밀 단가(scene N씬 상한·17차원 critic 비용)는 운영 실측 후 별도 contract-change.
