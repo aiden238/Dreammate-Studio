@@ -36,11 +36,14 @@ from ..schemas.graph import (
     MeDomainCreateRequest,
     MeDomainCreateResponse,
     MeDomainNode,
+    MeDomainUpdateRequest,
+    MeMutationResponse,
     MePkmMutationResponse,
     MePkmPatchRequest,
     MeSeriesCreateRequest,
     MeSeriesCreateResponse,
     MeSeriesNode,
+    MeSeriesUpdateRequest,
     PkmGraphEdge,
     PkmGraphNode,
     PkmGraphResponse,
@@ -728,6 +731,311 @@ async def _create_series(
     )
 
 
+# ─── 구조 편집/삭제 (Phase 24 Slice S1 — Domain/Series EDIT+DELETE) ────
+#
+# Phase 22 CREATE 와 대칭으로 4계층 Domain/Series 를 rename + 삭제한다 (/brain 4계층 CRUD 완성).
+# 편집/삭제 즉시 Phase 21 /me/pkm-graph 가 자동 반영(graph builder 불변).
+#   PATCH  /api/v1/me/domains/{domain_id}  {name}  → 본인 brand 아래 domain rename.
+#   DELETE /api/v1/me/domains/{domain_id}          → domain 삭제 + 그 아래 series 캐스케이드.
+#   PATCH  /api/v1/me/series/{series_id}   {name}  → 본인 domain 아래 series rename.
+#   DELETE /api/v1/me/series/{series_id}           → series 삭제.
+# 익명 → 401. 빈 name → 422 (Pydantic). 미소유 domain/series → 404 (curation/create 와 동일 의미론).
+# 어떤 repo 실패도 안전 — update None / delete False → 404 (controlled), unhandled 500 / 교차 변경 0.
+
+
+async def _owns_series(
+    series_id: str,
+    *,
+    auth_user_id: str,
+    brand_repo: BrandRepo,
+    domain_repo: DomainRepo,
+    series_repo: SeriesRepo,
+) -> bool:
+    """series_id 가 uid 소유 brand→domain 아래 series 에 속하는지 검증 (RLS).
+
+    uid 의 brand 나열 → 각 brand 의 domain 나열 → 각 domain 의 series 나열 → series_id 있으면 True.
+    어떤 repo 실패도 graceful — 미소유 처리(False), 500 금지.
+    """
+    try:
+        brands = await brand_repo.list_for_user(auth_user_id)
+    except Exception as exc:
+        logger.warning("structure brand_list_failed: %s (graceful)", exc.__class__.__name__)
+        return False
+    for brand in brands:
+        if not isinstance(brand, dict):
+            continue
+        brand_id = brand.get("id")
+        if not brand_id:
+            continue
+        try:
+            domains = await domain_repo.list_for_brand(str(brand_id))
+        except Exception as exc:
+            logger.warning(
+                "structure domain_list_failed: %s (graceful)", exc.__class__.__name__,
+            )
+            continue
+        for domain in domains:
+            if not isinstance(domain, dict):
+                continue
+            domain_id = domain.get("id")
+            if not domain_id:
+                continue
+            try:
+                series_rows = await series_repo.list_for_domain(str(domain_id))
+            except Exception as exc:
+                logger.warning(
+                    "structure series_list_failed: %s (graceful)", exc.__class__.__name__,
+                )
+                continue
+            for series_row in series_rows:
+                if isinstance(series_row, dict) and str(series_row.get("id")) == str(series_id):
+                    return True
+    return False
+
+
+@router.patch(
+    "/domains/{domain_id}",
+    response_model=MeDomainCreateResponse,
+    summary="구조 편집 — 소유 domain rename (Phase 24 Slice S1)",
+    description=(
+        "본인 소유 domain(domain_id)의 name 을 변경한다. 변경 즉시 /me/pkm-graph 가 자동 반영. "
+        "익명 → 401. 빈 name → 422. 미소유/미존재 domain → 404 (교차 사용자 변경 0). "
+        "repo 일시 실패(None) → 404 (controlled, unhandled 500 없음)."
+    ),
+)
+async def update_domain(
+    domain_id: str, body: MeDomainUpdateRequest, request: Request,
+) -> MeDomainCreateResponse:
+    """domain 1개 rename (thin handler — 신원 추출 후 위임)."""
+    uid = _require_auth_user_id(request)
+    return await _update_domain(domain_id, body, uid)
+
+
+@router.delete(
+    "/domains/{domain_id}",
+    response_model=MeMutationResponse,
+    summary="구조 삭제 — 소유 domain 삭제 + series 캐스케이드 (Phase 24 Slice S1)",
+    description=(
+        "본인 소유 domain(domain_id)을 삭제한다. 그 아래 series 도 함께 삭제(Supabase FK 캐스케이드 / "
+        "in-memory 라우터 캐스케이드). 삭제 즉시 /me/pkm-graph 가 자동 반영. "
+        "익명 → 401. 미소유/미존재 domain → 404 (교차 사용자 삭제 0)."
+    ),
+)
+async def delete_domain(domain_id: str, request: Request) -> MeMutationResponse:
+    """domain 1개 삭제 (thin handler — 신원 추출 후 위임)."""
+    uid = _require_auth_user_id(request)
+    return await _delete_domain(domain_id, uid)
+
+
+@router.patch(
+    "/series/{series_id}",
+    response_model=MeSeriesCreateResponse,
+    summary="구조 편집 — 소유 series rename (Phase 24 Slice S1)",
+    description=(
+        "본인 소유 series(series_id)의 name 을 변경한다. 변경 즉시 /me/pkm-graph 가 자동 반영. "
+        "익명 → 401. 빈 name → 422. 미소유/미존재 series → 404 (교차 사용자 변경 0). "
+        "repo 일시 실패(None) → 404 (controlled, unhandled 500 없음)."
+    ),
+)
+async def update_series(
+    series_id: str, body: MeSeriesUpdateRequest, request: Request,
+) -> MeSeriesCreateResponse:
+    """series 1개 rename (thin handler — 신원 추출 후 위임)."""
+    uid = _require_auth_user_id(request)
+    return await _update_series(series_id, body, uid)
+
+
+@router.delete(
+    "/series/{series_id}",
+    response_model=MeMutationResponse,
+    summary="구조 삭제 — 소유 series 삭제 (Phase 24 Slice S1)",
+    description=(
+        "본인 소유 series(series_id)를 삭제한다. 삭제 즉시 /me/pkm-graph 가 자동 반영. "
+        "익명 → 401. 미소유/미존재 series → 404 (교차 사용자 삭제 0)."
+    ),
+)
+async def delete_series(series_id: str, request: Request) -> MeMutationResponse:
+    """series 1개 삭제 (thin handler — 신원 추출 후 위임)."""
+    uid = _require_auth_user_id(request)
+    return await _delete_series(series_id, uid)
+
+
+async def _update_domain(
+    domain_id: str,
+    body: MeDomainUpdateRequest,
+    auth_user_id: str,
+    *,
+    brand_repo: Optional[BrandRepo] = None,
+    domain_repo: Optional[DomainRepo] = None,
+) -> MeDomainCreateResponse:
+    """PATCH /me/domains/{id} 구현 — 소유 검증 + rename (DI seam for tests).
+
+    소유 domain 아니면 404. update None(미존재/일시 실패) → 404 (graceful, unhandled 500 금지).
+    """
+    brand_repo = brand_repo if brand_repo is not None else _brand_repo
+    domain_repo = domain_repo if domain_repo is not None else _domain_repo
+
+    # 소유 domain 검증 (uid brand → domain 체인) — 미소유/미존재 → 404.
+    if not await _owns_domain(
+        domain_id, auth_user_id=auth_user_id, brand_repo=brand_repo, domain_repo=domain_repo,
+    ):
+        raise HTTPException(status_code=404, detail="domain_not_found")
+
+    # ★ graceful: repo.update_name 이 (예기치 못하게) raise 해도 unhandled 500 금지 → None 처리.
+    try:
+        row = await domain_repo.update_name(domain_id, body.name)
+    except Exception as exc:
+        logger.warning("domain_update_failed: %s (graceful 404)", exc.__class__.__name__)
+        row = None
+    if not row or not row.get("id"):
+        raise HTTPException(status_code=404, detail="domain_not_found")
+
+    return MeDomainCreateResponse(
+        ok=True,
+        domain=MeDomainNode(
+            id=str(row["id"]),
+            brand_id=str(row.get("brand_id", "")),
+            name=str(row.get("name", body.name)),
+        ),
+    )
+
+
+async def _delete_domain(
+    domain_id: str,
+    auth_user_id: str,
+    *,
+    brand_repo: Optional[BrandRepo] = None,
+    domain_repo: Optional[DomainRepo] = None,
+    series_repo: Optional[SeriesRepo] = None,
+) -> MeMutationResponse:
+    """DELETE /me/domains/{id} 구현 — 소유 검증 + 삭제 + series 캐스케이드 (DI seam for tests).
+
+    소유 domain 아니면 404. delete False(미존재/일시 실패) → 404 (graceful, unhandled 500 금지).
+    ★ in-memory 캐스케이드: domain 아래 series 를 list_for_domain 으로 찾아 각각 SeriesRepo.delete.
+      Supabase 는 series.domain_id ON DELETE CASCADE 가 자동 처리하지만, in-memory store 의
+      series 가 부모 없이 남지 않도록 라우터가 명시 캐스케이드한다 (graceful, 실패해도 진행).
+    """
+    brand_repo = brand_repo if brand_repo is not None else _brand_repo
+    domain_repo = domain_repo if domain_repo is not None else _domain_repo
+    series_repo = series_repo if series_repo is not None else _series_repo
+
+    if not await _owns_domain(
+        domain_id, auth_user_id=auth_user_id, brand_repo=brand_repo, domain_repo=domain_repo,
+    ):
+        raise HTTPException(status_code=404, detail="domain_not_found")
+
+    # 캐스케이드 대상 series 를 삭제 전에 수집 (domain 삭제 후엔 부모 키로 조회 불가할 수 있음).
+    try:
+        child_series = await series_repo.list_for_domain(domain_id)
+    except Exception as exc:
+        logger.warning("domain_delete_series_list_failed: %s (graceful)", exc.__class__.__name__)
+        child_series = []
+
+    try:
+        ok = await domain_repo.delete(domain_id)
+    except Exception as exc:
+        logger.warning("domain_delete_failed: %s (graceful 404)", exc.__class__.__name__)
+        ok = False
+    if not ok:
+        raise HTTPException(status_code=404, detail="domain_not_found")
+
+    # ★ in-memory 캐스케이드 — 각 자식 series 삭제 (graceful: 개별 실패는 무시하고 계속).
+    for series_row in child_series:
+        if not isinstance(series_row, dict):
+            continue
+        series_id = series_row.get("id")
+        if not series_id:
+            continue
+        try:
+            await series_repo.delete(str(series_id))
+        except Exception as exc:
+            logger.warning(
+                "domain_delete_series_cascade_failed: %s (graceful)", exc.__class__.__name__,
+            )
+
+    return MeMutationResponse(ok=True, deleted=True)
+
+
+async def _update_series(
+    series_id: str,
+    body: MeSeriesUpdateRequest,
+    auth_user_id: str,
+    *,
+    brand_repo: Optional[BrandRepo] = None,
+    domain_repo: Optional[DomainRepo] = None,
+    series_repo: Optional[SeriesRepo] = None,
+) -> MeSeriesCreateResponse:
+    """PATCH /me/series/{id} 구현 — 소유 검증 + rename (DI seam for tests).
+
+    소유 series 아니면 404. update None(미존재/일시 실패) → 404 (graceful, unhandled 500 금지).
+    """
+    brand_repo = brand_repo if brand_repo is not None else _brand_repo
+    domain_repo = domain_repo if domain_repo is not None else _domain_repo
+    series_repo = series_repo if series_repo is not None else _series_repo
+
+    if not await _owns_series(
+        series_id,
+        auth_user_id=auth_user_id,
+        brand_repo=brand_repo,
+        domain_repo=domain_repo,
+        series_repo=series_repo,
+    ):
+        raise HTTPException(status_code=404, detail="series_not_found")
+
+    try:
+        row = await series_repo.update_name(series_id, body.name)
+    except Exception as exc:
+        logger.warning("series_update_failed: %s (graceful 404)", exc.__class__.__name__)
+        row = None
+    if not row or not row.get("id"):
+        raise HTTPException(status_code=404, detail="series_not_found")
+
+    return MeSeriesCreateResponse(
+        ok=True,
+        series=MeSeriesNode(
+            id=str(row["id"]),
+            domain_id=str(row.get("domain_id", "")),
+            name=str(row.get("name", body.name)),
+        ),
+    )
+
+
+async def _delete_series(
+    series_id: str,
+    auth_user_id: str,
+    *,
+    brand_repo: Optional[BrandRepo] = None,
+    domain_repo: Optional[DomainRepo] = None,
+    series_repo: Optional[SeriesRepo] = None,
+) -> MeMutationResponse:
+    """DELETE /me/series/{id} 구현 — 소유 검증 + 삭제 (DI seam for tests).
+
+    소유 series 아니면 404. delete False(미존재/일시 실패) → 404 (graceful, unhandled 500 금지).
+    """
+    brand_repo = brand_repo if brand_repo is not None else _brand_repo
+    domain_repo = domain_repo if domain_repo is not None else _domain_repo
+    series_repo = series_repo if series_repo is not None else _series_repo
+
+    if not await _owns_series(
+        series_id,
+        auth_user_id=auth_user_id,
+        brand_repo=brand_repo,
+        domain_repo=domain_repo,
+        series_repo=series_repo,
+    ):
+        raise HTTPException(status_code=404, detail="series_not_found")
+
+    try:
+        ok = await series_repo.delete(series_id)
+    except Exception as exc:
+        logger.warning("series_delete_failed: %s (graceful 404)", exc.__class__.__name__)
+        ok = False
+    if not ok:
+        raise HTTPException(status_code=404, detail="series_not_found")
+
+    return MeMutationResponse(ok=True, deleted=True)
+
+
 __all__ = [
     "router",
     "get_pkm_graph",
@@ -735,4 +1043,8 @@ __all__ = [
     "delete_pkm_node",
     "create_domain",
     "create_series",
+    "update_domain",
+    "delete_domain",
+    "update_series",
+    "delete_series",
 ]

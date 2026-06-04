@@ -186,6 +186,42 @@ class MeSeriesCreateResponse(BaseModel):
     series: MeSeriesNode = Field(description="생성된 series.")
 
 
+# ─── Phase 24 Slice S1 — 구조 편집/삭제(Domain/Series EDIT+DELETE) 스키마 ──
+#
+# Phase 22 의 CREATE 와 대칭으로 4계층 Domain/Series 의 rename + 삭제를 제공한다.
+# 편집/삭제된 행은 Phase 21 /me/pkm-graph 집계가 자동 반영(graph builder 불변).
+# ★ 소유: domain 은 본인 brand 아래, series 는 본인 domain 아래만 — 라우터가 검증(교차 → 404).
+# ★ 응답: 편집은 Phase 22 의 {ok, domain|series} 재사용, 삭제는 {ok, deleted} (MeMutationResponse).
+
+
+class MeDomainUpdateRequest(BaseModel):
+    """PATCH /api/v1/me/domains/{domain_id} 요청 — domain rename.
+
+    name 은 비어 있으면 안 됨(min_length=1) → 빈 이름은 422 (Pydantic 검증).
+    """
+
+    name: str = Field(min_length=1, description="새 domain 이름 (비어 있으면 422).")
+
+
+class MeSeriesUpdateRequest(BaseModel):
+    """PATCH /api/v1/me/series/{series_id} 요청 — series rename.
+
+    name 은 비어 있으면 안 됨(min_length=1) → 빈 이름은 422 (Pydantic 검증).
+    """
+
+    name: str = Field(min_length=1, description="새 series 이름 (비어 있으면 422).")
+
+
+class MeMutationResponse(BaseModel):
+    """DELETE /api/v1/me/domains|series/{id} 응답 — {ok, deleted}.
+
+    소유/존재 검증 실패는 endpoint 가 404 로 응답 (이 모델 미반환).
+    """
+
+    ok: bool = Field(description="동작 성공 여부.")
+    deleted: bool = Field(default=True, description="대상 삭제 완료 여부.")
+
+
 __all__ = [
     "PkmGraphNode",
     "PkmGraphEdge",
@@ -199,4 +235,7 @@ __all__ = [
     "MeSeriesCreateRequest",
     "MeSeriesNode",
     "MeSeriesCreateResponse",
+    "MeDomainUpdateRequest",
+    "MeSeriesUpdateRequest",
+    "MeMutationResponse",
 ]

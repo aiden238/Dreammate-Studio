@@ -44,7 +44,8 @@
 | 21 | /brain 4계층 깊이 + 출처 엣지 | **done** (2026-06-04) | Phase 19 그래프 확장 — domain·series 노드(4계층 가시화, DomainRepo/SeriesRepo 신규) + 브랜드 PKM 출처 엣지(source_plan_id→`sourced_from`, dedup). S1(backend 집계+repos+graph.py 스키마)+S2(frontend 렌더+CC-029). additive/graceful(domains/series/source 0 = 기존 그래프 불변). 개인 PKM 출처는 source_plan_id 부재로 이월. hermetic pytest 691→698. (archive) |
 | 22 | domains/series 생성 기능 (4계층 데이터 풍부화) | **done** (2026-06-04) | DomainRepo/SeriesRepo **create** + POST /me/domains·/me/series(소유검증 RLS) + /brain "지식 구조" 추가 UI → Phase 21 그래프가 실데이터 4계층으로. S1(backend)+S2(frontend+라이브). ★ **라이브 데모 PASS**(생성 API→4계층 그래프 반영→/brain 트리 렌더, 미소유 404). additive(기존 /brain·그래프 builder 무변경). CC-030. hermetic pytest 698→714. (archive) |
 | 23 | 품질 정식화 (실 LLM 전수 eval baseline + human review 정비) | **done** (2026-06-04) | golden_set 25 실 LLM(rich planning + 9차원 critic) 전수 baseline: overall **4.41**(4.0~4.78)/depth **4.22**/18 approve/P0 7/7/광고 1·차단 0. + human kit compact↔rich LLM-judge 대조 + 사용자 채점 시트(실채점=사용자 deferred). ★ 정직: critic 낙관 편향(88점 함정) → 회귀 기준선이지 절대품질 아님; 8차원은 compact↔rich 무차별, depth(9차원)만 우위. ★ 운영 코드 0(behavior-preserving, pytest 714 불변). S1+S2. (archive) |
-| 24~30 | 고도화 / 배포 | future | 배포 Gate B~G / Spring, Expo, Custom RAG, LangGraph |
+| **24** | **domain/series 편집·삭제 (/brain 4계층 CRUD 완성)** | **active** (entry 2026-06-04) | Phase 22(생성)+Phase 19(PKM 큐레이션)에 이어 domain/series PATCH/DELETE(소유검증 RLS) + /brain 편집/삭제 UI → 4계층 구조 CRUD 완성. domain 삭제 시 series cascade(Supabase FK / in-memory 명시). ★ 라이브 데모. additive. S1(backend)→S2(frontend+라이브). 🅑 기능마감 1차. |
+| 25~30 | 고도화 / 배포 | future | 🅑 나머지(위저드↔4계층 연결 / video 노드 / 개인 PKM 출처 migration) / 배포 Gate B~G / Custom RAG, LangGraph |
 
 ### ★ PARKED 제안 (future direction — proposal-first, 선행조건 gated, 빌드 승격 X)
 

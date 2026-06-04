@@ -786,6 +786,8 @@ Discovery 5단계 진행. 각 호출이 1단계 카드 생성.
 - **DELETE /api/v1/me/pkm/{node_id}** (authed) → `{ok, deleted}`. 동일 prefix 라우팅 + 소유 검증.
 - **POST /api/v1/me/domains** (authed, **Phase 22 CC-030**) — body `{brand_id, name}` → `{ok, domain:{id, brand_id, name}}`. 소유검증: brand 가 본인 소유(BrandRepo.list_for_user). 4계층 Domain 생성 → /me/pkm-graph 자동 반영.
 - **POST /api/v1/me/series** (authed, **Phase 22 CC-030**) — body `{domain_id, name}` → `{ok, series:{id, domain_id, name}}`. 소유검증: domain 이 본인 brand 하위(domain→brand→user 2-hop).
+- **PATCH/DELETE /api/v1/me/domains/{domain_id}** (authed, **Phase 24 CC-031**) — PATCH body `{name}` → `{ok, domain}` / DELETE → `{ok, deleted}`. 소유검증 domain→brand→user. ★ DELETE 시 하위 series **cascade**(Supabase FK ON DELETE CASCADE / in-memory 명시 삭제).
+- **PATCH/DELETE /api/v1/me/series/{series_id}** (authed, **Phase 24 CC-031**) — PATCH `{name}` → `{ok, series}` / DELETE → `{ok, deleted}`. 소유검증 series→domain→brand→user(3-hop).
 
 **Status:** 200. **401**(익명), **404**(미소유·부재), **422**(빈 name). graceful — 집계/조회 실패 시 500 금지(빈 그래프); 생성 repo 실패는 **503**(controlled, unhandled 500 금지). PATCH/DELETE/POST 교차 사용자 변경·생성 0(RLS + 소유 검증).
 
@@ -1321,4 +1323,5 @@ CC-023 (2026-06-04): §8.6 브랜딩 세션(Akinator) endpoint 3종(branding/nex
 CC-024 (2026-06-04): §8.7 마이페이지 2nd brain — /me/pkm-graph + /me/pkm{PATCH,DELETE} 큐레이션 — Phase 19.
 CC-029 (2026-06-04): §8.7 /me/pkm-graph 4계층 깊이(domain/series 노드 + has_domain/has_series) + 브랜드 PKM 출처(source 노드 + sourced_from) 확장 — Phase 21. additive/graceful.
 CC-030 (2026-06-04): §8.7 POST /me/domains + /me/series — 4계층 domain/series 생성(소유검증 RLS) — Phase 22. additive.
+CC-031 (2026-06-04): §8.7 PATCH/DELETE /me/domains/{id} + /me/series/{id} — domain/series 편집·삭제(소유검증, domain 삭제 시 series cascade) — Phase 24. additive.
 ```

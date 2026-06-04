@@ -127,6 +127,98 @@ class DomainRepo:
         self.store.setdefault(brand_id, []).append(row)
         return dict(row)
 
+    # ─── operations (edit/delete — Phase 24 S1) ──────────────────────
+    #
+    # ★ 소유(domain→brand→user) 검증은 endpoint 책임 — 본 repo 는 brand_id keyed 라
+    #   auth_user_id 를 모른다. endpoint 가 _owns_domain 으로 소유를 확인한 뒤에만 호출한다.
+    #   (in-memory store 는 brand_id 별 list 라 domain_id 로 전 brand 를 가로질러 검색.)
+    # ★ BrandMemoryRepo.update_entry/delete_entry 패턴 계승 — Supabase update/delete + id eq +
+    #   in-memory list mutation + graceful (어떤 실패도 raise 금지 → None/False).
+
+    async def update_name(
+        self, domain_id: str, name: str,
+    ) -> Optional[dict[str, Any]]:
+        """domain 의 name 을 갱신 후 갱신된 row 반환. 미존재/실패 → None (graceful).
+
+        ★ 소유 검증은 호출 endpoint 가 선행 (domain→brand→auth_user_id).
+        ★ in-memory mirror: Supabase 성공 시에도 store 의 동일 row 를 갱신 → list_for_brand 즉시 반영.
+        """
+        patch: dict[str, Any] = {"name": name}
+
+        if self._use_supabase():
+            try:
+                resp = (
+                    self.client.table("domains")  # type: ignore[union-attr]
+                    .update(patch)
+                    .eq("id", domain_id)
+                    .execute()
+                )
+                if resp and getattr(resp, "data", None):
+                    row = resp.data[0]
+                    self._mirror_update(domain_id, patch)  # in-memory mirror
+                    return dict(row)
+                return None
+            except Exception as exc:
+                logger.warning(
+                    "domain_update_failed: %s — graceful None",
+                    exc.__class__.__name__,
+                )
+                return None
+
+        # graceful in-memory fallback — 전 brand store 에서 id 일치 domain 갱신.
+        for rows in self.store.values():
+            for row in rows:
+                if str(row.get("id")) == str(domain_id):
+                    row.update(patch)
+                    return dict(row)
+        return None
+
+    async def delete(self, domain_id: str) -> bool:
+        """domain 삭제. 성공 True, 미존재/실패 False (graceful).
+
+        ★ 소유 검증은 호출 endpoint 가 선행 (domain→brand→auth_user_id).
+        ★ series 캐스케이드: Supabase 는 series.domain_id ON DELETE CASCADE 가 자동 처리.
+          in-memory 일관성은 라우터가 SeriesRepo 로 별도 캐스케이드한다 (repo 는 자기 store 만).
+        """
+        if self._use_supabase():
+            try:
+                resp = (
+                    self.client.table("domains")  # type: ignore[union-attr]
+                    .delete()
+                    .eq("id", domain_id)
+                    .execute()
+                )
+                ok = bool(resp and getattr(resp, "data", None))
+                if ok:
+                    self._mirror_delete(domain_id)  # in-memory mirror
+                return ok
+            except Exception as exc:
+                logger.warning(
+                    "domain_delete_failed: %s — graceful False",
+                    exc.__class__.__name__,
+                )
+                return False
+
+        # graceful in-memory fallback — 전 brand store 에서 id 일치 domain 제거.
+        return self._mirror_delete(domain_id)
+
+    def _mirror_update(self, domain_id: str, patch: dict[str, Any]) -> None:
+        """in-memory store 에서 domain_id 일치 row 를 patch 로 갱신 (Supabase mirror 보조)."""
+        for rows in self.store.values():
+            for row in rows:
+                if str(row.get("id")) == str(domain_id):
+                    row.update(patch)
+                    return
+
+    def _mirror_delete(self, domain_id: str) -> bool:
+        """in-memory store 에서 domain_id 일치 row 제거. 제거했으면 True (Supabase mirror 보조)."""
+        for rows in self.store.values():
+            for i, row in enumerate(rows):
+                if str(row.get("id")) == str(domain_id):
+                    rows.pop(i)
+                    return True
+        return False
+
     def _reset_for_test(self) -> None:
         """테스트용 in-memory store 초기화 (BrandRepo._reset 패턴)."""
         self.store.clear()
