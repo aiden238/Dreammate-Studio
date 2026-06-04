@@ -258,15 +258,18 @@ class Settings(BaseSettings):
         ),
     )
 
-    # ─── Phase 15 S1 — output_mode 3-tier enum (additive, default compact) ─
+    # ─── Phase 15 S1 — output_mode enum (additive, default compact) ───────
     # ★ rich_output_enabled(boolean, Phase 13)를 일반화. director tier 추가.
     #   default compact → compact/rich 경로 byte-identical. director 는 명시 활성에서만.
     #   backward-compat: output_mode 미지정(compact) + rich_output_enabled=True → effective "rich"
     #   (effective_output_mode()). 기존 508 테스트는 default compact + 매핑으로 불변.
-    output_mode: Literal["compact", "rich", "director"] = Field(
+    # ── Phase 20 S1: 4번째 tier commercial_viral 추가 (additive, schema-only) ──
+    #   compact<rich<director<commercial_viral. commercial_viral = director 슬롯 +
+    #   Plan 상업 7슬롯(COMMERCIAL_FIELDS) + scene 상업 2필드. default compact 불변 → 회귀 0.
+    output_mode: Literal["compact", "rich", "director", "commercial_viral"] = Field(
         default="compact",
         description=(
-            "Phase 15: 출력 tier (compact<rich<director). default compact. "
+            "Phase 20: 출력 tier 4단계 (compact<rich<director<commercial_viral). default compact. "
             "환경변수 OUTPUT_MODE. rich_output_enabled(레거시)와 공존 — effective_output_mode() 가 종합."
         ),
     )
@@ -441,14 +444,15 @@ def get_settings() -> Settings:
 
 
 def effective_output_mode(settings: "Settings") -> str:
-    """Phase 15: 유효 output_mode 종합 (compact/rich/director).
+    """Phase 15/20: 유효 output_mode 종합 (compact/rich/director/commercial_viral).
 
-    backward-compat: `output_mode` 가 명시(rich/director)면 그것을 따른다. compact(default)이고
-    레거시 `rich_output_enabled=True` 면 "rich" 로 승격 → Phase 13/14 의 rich_output_enabled ON
-    동작을 100% 보존. 둘 다 미활성이면 "compact".
+    backward-compat: `output_mode` 가 명시(rich/director/commercial_viral)면 그것을 따른다.
+    compact(default)이고 레거시 `rich_output_enabled=True` 면 "rich" 로 승격 → Phase 13/14 의
+    rich_output_enabled ON 동작을 100% 보존. 둘 다 미활성이면 "compact".
 
+    ★ Phase 20: output_mode="commercial_viral" 이면 != compact 분기로 그대로 반환된다 (로직 불변).
     ★ 단일 종합 지점 — S3 wiring(generate/orchestrator/planning/critic)이 이 함수로 모드를 결정.
     """
     if settings.output_mode != "compact":
-        return settings.output_mode  # "rich" | "director" (명시 우선)
+        return settings.output_mode  # "rich" | "director" | "commercial_viral" (명시 우선)
     return "rich" if settings.rich_output_enabled else "compact"

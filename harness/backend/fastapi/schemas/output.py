@@ -186,11 +186,13 @@ BEAT_RICH_FIELDS: frozenset[str] = frozenset({"visual", "dialogue", "caption"})
 # model_dump_for_mode 가 compact/rich 경로에서 제외 → byte-identical. 상업필드(market/
 # audience/brand/conversion 등)는 제외 = commercial_viral(NG, PKM/RAG 후속).
 class DirectorScene(BaseModel):
-    """scene_breakdown 의 한 씬 (director tier).
+    """scene_breakdown 의 한 씬 (director tier — Phase 20: commercial tier 2필드 추가).
 
     ★ 기획 브리프 수준 — 씬의 "기획 의도/감정/리텐션 근거"이지 촬영 지시·완성 대본 아님
-      (product_boundary, 제안서 보정2). director-subset 5필드 (상업필드 brand_signal/
-      commercial_signal 제외 = commercial_viral, 제안서 open issue #1 확정).
+      (product_boundary, 제안서 보정2).
+    director-subset 5필드 (scene_intent/viewer_emotion/retention_device/why_this_works/
+      fallback_scene). 상업필드 brand_signal/commercial_signal(SCENE_COMMERCIAL_FIELDS)는
+      Phase 20 commercial_viral tier 에서만 직렬화 — director 경로는 제외해 5필드 byte-identical.
     """
 
     scene_intent: str = Field(..., min_length=1, description="director: 이 씬의 기획 의도")
@@ -206,10 +208,40 @@ class DirectorScene(BaseModel):
     fallback_scene: str | None = Field(
         default=None, description="director: 약할 때 대안 씬 (A/B 성격)"
     )
+    # ── Phase 20 S1 commercial (additive, Optional — commercial_viral 경로에서만 채워짐) ──
+    # ★ 기획 브리프 수준 — 씬이 전달하는 상업 신호이지 촬영/카피 완성물 아님 (product_boundary).
+    brand_signal: str | None = Field(
+        default=None, description="commercial(Phase 20): 이 씬이 전달하는 브랜드 신호"
+    )
+    commercial_signal: str | None = Field(
+        default=None, description="commercial(Phase 20): 이 씬의 상업 신호(전환 의도)"
+    )
 
 
 DIRECTOR_FIELDS: frozenset[str] = frozenset(
     {"hook_system", "retention_architecture", "scene_breakdown"}
+)
+
+# ── Phase 20 S1: DirectorScene 의 commercial-only 필드 이름 집합 ──
+# model_dump_for_mode 가 director(및 하위) 경로의 scene_breakdown[] 에서 이 필드들을 제외
+# → director scene 은 5필드 byte-identical. commercial_viral 경로에서만 7필드.
+SCENE_COMMERCIAL_FIELDS: frozenset[str] = frozenset({"brand_signal", "commercial_signal"})
+
+# ── Phase 20 S1: Plan-level commercial-only 슬롯 (DIRECTOR_FIELDS 와 비중첩) ──
+# commercial_viral = director + 아래 7슬롯 + scene 2필드. model_dump_for_mode 가
+# compact/rich/director 경로에서 전부 제외 → byte-identical (additive/gated).
+# ★ v1 LLM-only 한계: market_context/audience_psychology 는 추측 수준, measurement_plan 은
+#   조회수 보장 아님(사후 학습용). production/scene 필드는 기획 브리프 경계 (product_boundary).
+COMMERCIAL_FIELDS: frozenset[str] = frozenset(
+    {
+        "market_context",
+        "audience_psychology",
+        "brand_positioning",
+        "commercial_conversion",
+        "platform_packaging",
+        "production_feasibility",
+        "measurement_plan",
+    }
 )
 
 
@@ -290,29 +322,74 @@ class Plan(BaseModel):
     )
     scene_breakdown: list[DirectorScene] = Field(
         default_factory=list,
-        description="director(Phase 15): 씬 단위 분해 (기획 브리프 수준, DirectorScene 5필드).",
+        description="director(Phase 15): 씬 단위 분해 (기획 브리프 수준, DirectorScene 5필드 / commercial 7필드).",
+    )
+
+    # ── Phase 20 S1 commercial (additive, Optional — output_mode=commercial_viral 경로에서만 채워짐) ──
+    # ★ 기획 수준 슬롯 (촬영/카피 완성물 아님). v1 LLM-only 한계는 필드별 description 에 명시.
+    market_context: str | None = Field(
+        default=None,
+        description="commercial(Phase 20): 시장/카테고리 맥락 — ★ v1 LLM-only 추측 한계.",
+    )
+    audience_psychology: str | None = Field(
+        default=None,
+        description="commercial(Phase 20): 타깃 시청자 심리 동인 — ★ v1 LLM-only 추측 한계.",
+    )
+    brand_positioning: str | None = Field(
+        default=None,
+        description="commercial(Phase 20): 브랜드 포지셔닝.",
+    )
+    commercial_conversion: str | None = Field(
+        default=None,
+        description="commercial(Phase 20): 시청→행동 전환 설계.",
+    )
+    platform_packaging: str | None = Field(
+        default=None,
+        description="commercial(Phase 20): 플랫폼별 제목/썸네일/해시태그 (기획 수준).",
+    )
+    production_feasibility: str | None = Field(
+        default=None,
+        description="commercial(Phase 20): 1인/저예산 실행 가능성 (기획 브리프 수준).",
+    )
+    measurement_plan: str | None = Field(
+        default=None,
+        description="commercial(Phase 20): 측정 계획 — ★ 조회수 보장 아님, 사후 학습용.",
     )
 
     def model_dump_for_mode(self, output_mode: str, **kwargs: Any) -> dict[str, Any]:
-        """Phase 15 S1: output_mode 별 직렬화 — 상위 tier 슬롯 제외 (Phase 13 model_dump_compact 일반화).
+        """Phase 15/20 S1: output_mode 별 직렬화 — 상위 tier 슬롯 제외 (model_dump_compact 일반화).
 
-          compact  → rich + director 제외 (Phase 12 이전 7필드 byte-identical)
-          rich     → director 만 제외 (Phase 13 rich byte-identical)
-          director → 제외 0 (rich + director 전부)
+          compact          → rich + director + commercial 제외 (Phase 12 이전 7필드 byte-identical)
+          rich             → director + commercial 제외 (Phase 13 rich byte-identical)
+          director         → commercial 만 제외 (+ scene_breakdown[] 의 scene 상업 2필드 제외 → 5필드)
+          commercial_viral → 제외 0 (rich + director + commercial 전부, scene 7필드)
 
-        ★ rich 경로도 DIRECTOR_FIELDS 를 제외해야 Phase 13 rich 와 byte-identical (director 키 None/[] 누수 방지).
+        ★ rich 경로도 DIRECTOR_FIELDS 를 제외해야 Phase 13 rich 와 byte-identical (director 키 누수 0).
+        ★ Phase 20: compact/rich/director 전부 COMMERCIAL_FIELDS 를 제외해야 byte-identical
+          (commercial 키 누수 0). director 는 추가로 scene 상업 2필드까지 제외해 5필드 유지.
         실제 호출(output_mode 분기)은 S3.
         """
         exclude_plan: set[str] = set()
         if output_mode == "compact":
-            exclude_plan = set(PLAN_RICH_FIELDS) | set(DIRECTOR_FIELDS)
+            exclude_plan = set(PLAN_RICH_FIELDS) | set(DIRECTOR_FIELDS) | set(COMMERCIAL_FIELDS)
         elif output_mode == "rich":
-            exclude_plan = set(DIRECTOR_FIELDS)
-        # director → exclude_plan 비움 (rich + director 전부 직렬화)
+            exclude_plan = set(DIRECTOR_FIELDS) | set(COMMERCIAL_FIELDS)
+        elif output_mode == "director":
+            exclude_plan = set(COMMERCIAL_FIELDS)
+        # commercial_viral → exclude_plan 비움 (rich + director + commercial 전부 직렬화)
         exclude: dict[str, Any] = {name: True for name in exclude_plan}
         if output_mode == "compact":
-            # beat rich(visual/dialogue/caption)는 compact 에서만 제외 (rich/director 는 포함)
+            # beat rich(visual/dialogue/caption)는 compact 에서만 제외 (rich/director/commercial 은 포함)
             exclude["flow"] = {"__all__": {name: True for name in BEAT_RICH_FIELDS}}
+        if output_mode == "director":
+            # ★ director 만 scene nested-exclude. compact/rich 는 scene_breakdown 자체가
+            #   DIRECTOR_FIELDS 로 이미 전체 제외(True) → 여기서 nested dict 로 덮어쓰면 scene 가
+            #   누수되어 byte-identical 이 깨진다(버그). director 는 scene_breakdown 을 포함하므로
+            #   nested-exclude 로 scene 상업 2필드(brand_signal/commercial_signal)만 제거 → 5필드
+            #   byte-identical (flow beat nested-exclude 와 동일 패턴). commercial_viral=제외 0(7필드).
+            exclude["scene_breakdown"] = {
+                "__all__": {name: True for name in SCENE_COMMERCIAL_FIELDS}
+            }
         return self.model_dump(exclude=exclude, **kwargs)
 
     def model_dump_compact(self, **kwargs: Any) -> dict[str, Any]:

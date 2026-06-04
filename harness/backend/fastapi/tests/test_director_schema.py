@@ -175,7 +175,10 @@ def test_envelope_response_director_mode() -> None:
 
 
 def test_director_fields_constant_matches_model() -> None:
+    from backend.fastapi.schemas.output import COMMERCIAL_FIELDS
+
     plan_fields = set(Plan.model_fields)
     assert DIRECTOR_FIELDS <= plan_fields
-    # director = 전체 - legacy - rich
-    assert DIRECTOR_FIELDS == plan_fields - _LEGACY_PLAN_KEYS - PLAN_RICH_FIELDS
+    # ★ Phase 20 (의도된 delta): commercial 슬롯(COMMERCIAL_FIELDS) 추가 →
+    #   director = 전체 - legacy - rich - commercial (4-tier 상호 배타).
+    assert DIRECTOR_FIELDS == plan_fields - _LEGACY_PLAN_KEYS - PLAN_RICH_FIELDS - COMMERCIAL_FIELDS

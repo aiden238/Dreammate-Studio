@@ -190,14 +190,16 @@ def test_rich_field_constants_match_model() -> None:
 
     ★ Phase 15 (의도된 delta): Plan 에 director 슬롯(DIRECTOR_FIELDS)이 추가됨 →
     rich = 전체 - legacy - director (director 는 별도 tier 슬롯). beat 필드는 director 무관(불변).
+    ★ Phase 20 (의도된 delta): Plan 에 commercial 슬롯(COMMERCIAL_FIELDS 7종)이 추가됨 →
+    rich = 전체 - legacy - director - commercial (4-tier 상호 배타 슬롯). beat 필드는 불변.
     """
-    from backend.fastapi.schemas.output import DIRECTOR_FIELDS
+    from backend.fastapi.schemas.output import COMMERCIAL_FIELDS, DIRECTOR_FIELDS
 
     plan_fields = set(Plan.model_fields)
     beat_fields = set(PlanFlowBeat.model_fields)
     # 상수가 가리키는 필드는 전부 모델에 실재.
     assert PLAN_RICH_FIELDS <= plan_fields
     assert BEAT_RICH_FIELDS <= beat_fields
-    # rich = 모델 필드 - legacy - director (rich/director 는 상호 배타 tier 슬롯).
-    assert PLAN_RICH_FIELDS == plan_fields - _LEGACY_PLAN_KEYS - DIRECTOR_FIELDS
+    # rich = 모델 필드 - legacy - director - commercial (4-tier 상호 배타 tier 슬롯).
+    assert PLAN_RICH_FIELDS == plan_fields - _LEGACY_PLAN_KEYS - DIRECTOR_FIELDS - COMMERCIAL_FIELDS
     assert BEAT_RICH_FIELDS == beat_fields - _LEGACY_BEAT_KEYS
