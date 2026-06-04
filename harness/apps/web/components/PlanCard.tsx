@@ -364,9 +364,62 @@ export default function PlanCard({ plan }: PlanCardProps) {
                     대안: {scene.fallback_scene}
                   </p>
                 )}
+                {(scene.brand_signal || scene.commercial_signal) && (
+                  <p className="text-neutral-500 text-xs mt-0.5">
+                    {scene.brand_signal && <>브랜드: {scene.brand_signal}</>}
+                    {scene.brand_signal && scene.commercial_signal && " · "}
+                    {scene.commercial_signal && <>상업: {scene.commercial_signal}</>}
+                  </p>
+                )}
               </li>
             ))}
           </ol>
+        </section>
+      )}
+
+      {/* commercial_viral: 상업·전략 슬롯 (값 있을 때만 — Phase 20) */}
+      {(plan.market_context ||
+        plan.audience_psychology ||
+        plan.brand_positioning ||
+        plan.commercial_conversion ||
+        plan.platform_packaging ||
+        plan.production_feasibility ||
+        plan.measurement_plan) && (
+        <section aria-label="상업·전략 브리프">
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+            상업·전략 브리프
+          </h3>
+          <dl className="space-y-1.5 text-sm">
+            {(
+              [
+                ["시장 맥락", plan.market_context],
+                ["시청자 심리", plan.audience_psychology],
+                ["브랜드 포지셔닝", plan.brand_positioning],
+                ["전환 설계", plan.commercial_conversion],
+                ["플랫폼 패키징", plan.platform_packaging],
+                ["제작 실현성", plan.production_feasibility],
+                ["측정 계획", plan.measurement_plan],
+              ] as const
+            ).map(([label, value]) =>
+              value ? (
+                <div
+                  key={label}
+                  className="rounded-md bg-neutral-50 px-3 py-2"
+                >
+                  <dt className="text-xs font-medium text-neutral-500">
+                    {label}
+                  </dt>
+                  <dd className="text-neutral-700 leading-relaxed mt-0.5">
+                    {value}
+                  </dd>
+                </div>
+              ) : null,
+            )}
+          </dl>
+          <p className="text-neutral-400 text-xs mt-2">
+            ※ 전략 기획 브리프 — 조회수·성과 보장이 아닌 패턴·근거 기반 제안.
+            시장·심리는 실데이터 없으면 추정.
+          </p>
         </section>
       )}
 

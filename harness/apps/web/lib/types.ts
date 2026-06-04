@@ -80,6 +80,9 @@ export interface DirectorScene {
   retention_device: string; // 이탈 방지/호기심 장치
   why_this_works: string; // 작동 근거
   fallback_scene?: string | null; // 대안 씬
+  // Phase 20 S1 commercial (commercial_viral 경로에서만 채워짐)
+  brand_signal?: string | null; // 씬의 브랜드 신호
+  commercial_signal?: string | null; // 씬의 상업 신호(전환 의도)
 }
 
 export interface Plan {
@@ -115,6 +118,18 @@ export interface Plan {
   hook_system?: string[]; // 첫 후크 + 재후크(re-hook) 설계 (≤5)
   retention_architecture?: string | null; // 리텐션 구조 (이탈방지·호기심갭·페이싱)
   scene_breakdown?: DirectorScene[]; // 씬 단위 분해
+  /**
+   * Phase 20 S1 commercial_viral 슬롯 7종 (additive, optional — backend output_mode=commercial_viral
+   * 경로에서만 채워짐). compact/rich/director 응답은 이 키들을 제외하므로 undefined.
+   * 참조: backend/fastapi/schemas/output.py Plan / COMMERCIAL_FIELDS. ★ v1 LLM-only(추측 표기).
+   */
+  market_context?: string | null; // 시장/카테고리 맥락
+  audience_psychology?: string | null; // 타깃 시청자 심리 동인
+  brand_positioning?: string | null; // 브랜드 포지셔닝
+  commercial_conversion?: string | null; // 시청→행동 전환 설계
+  platform_packaging?: string | null; // 플랫폼별 패키징 (기획 수준)
+  production_feasibility?: string | null; // 제작 실현성 (1인/저예산)
+  measurement_plan?: string | null; // 측정 계획 (★조회수 보장 아님)
 }
 
 // ─── Critic Evaluation (Slice 3) ──────────────────────────────────────
