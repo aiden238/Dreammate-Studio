@@ -29,6 +29,7 @@ import type {
   FeedbackRequest,
   FeedbackResponse,
   MultiPlanEnvelope,
+  PkmGraphResponse,
   PlanResource,
   PlanStartResponse,
   SelectPlanRequest,
@@ -585,4 +586,37 @@ export async function brandingSelect(
     throw new Error(`branding_select_failed: ${resp.status}`);
   }
   return resp.json() as Promise<BrandingSelectResponse>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Phase 19 Slice S2 — 2nd-brain PKM graph endpoint wrapper
+// ═══════════════════════════════════════════════════════════════════════
+//
+// 참조: harness/backend/fastapi/routers/me.py
+//         GET /api/v1/me/pkm-graph (authed → {nodes, edges, summary})
+//       harness/backend/fastapi/schemas/graph.py (PkmGraphResponse 정합)
+//
+// 정책:
+//   - auth-required (RLS — 자기 데이터만). credentials:"include" 로 httpOnly cookie 전송
+//     (cross-origin :3000→:8000, CORS allow_credentials=True).
+//   - GET 이라 멱등 — 익명/무데이터는 backend 가 빈 graph(200) 로 graceful 반환.
+//   - 단순 throw on !ok (page.tsx 가 try/catch 로 친근한 에러 표시).
+
+/**
+ * GET /api/v1/me/pkm-graph
+ * 사용자의 개인 PKM + 브랜드 PKM + 4계층(user/brand)을 {nodes, edges, summary}로 집계 반환.
+ * S2 카드/리스트(모바일) · S3 그래프(데스크톱)가 동일 구조를 소비한다.
+ */
+export async function getPkmGraph(): Promise<PkmGraphResponse> {
+  const url = `${API_BASE_URL}/api/v1/me/pkm-graph`;
+  const resp = await fetch(url, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+    // RLS auth httpOnly cookie 전송 (자기 데이터만). cross-origin 명시 필요.
+    credentials: "include",
+  });
+  if (!resp.ok) {
+    throw new Error(`pkm_graph_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<PkmGraphResponse>;
 }

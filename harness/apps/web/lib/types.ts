@@ -494,6 +494,66 @@ export interface BrandingSelectResponse {
   seeded: number;
 }
 
+// ─── Phase 19 Slice S2 — 2nd-brain PKM graph types ─────────────────────
+//
+// 참조:
+//   - harness/backend/fastapi/schemas/graph.py
+//       PkmGraphNode / PkmGraphEdge / PkmGraphSummary / PkmGraphResponse
+//   - harness/backend/fastapi/routers/me.py
+//       GET /api/v1/me/pkm-graph (authed, credentials cookie → RLS 자기 데이터만)
+//
+// 정책: S1 backend 가 기존 pkm_entries / brand_memory_entries / brands 를 읽어
+//   {nodes, edges, summary} 그래프 구조로 집계(read-only). S2 카드/리스트(모바일) ·
+//   S3 그래프(데스크톱) 양쪽이 동일 구조를 소비. 본 타입들은 backend Pydantic 과 1:1 정합.
+//   익명/무데이터 → 빈 nodes/edges + summary 전부 0 (graceful, 200).
+
+/**
+ * 그래프 노드 1개 — user / brand / pkm(개인 또는 브랜드 scope).
+ * id 는 type 접두어로 네임스페이스 구분 ("user:" / "brand:" / "pkm:" / "bm:").
+ */
+export interface PkmGraphNode {
+  id: string;
+  type: "user" | "brand" | "pkm";
+  label: string;
+  /** PKM 노드의 scope (개인/브랜드). 비-PKM 은 미지정. */
+  scope?: "personal" | "brand" | null;
+  /** PKM 노드의 entry_type (preferred_tone 등). 비-PKM 은 미지정. */
+  entry_type?: string | null;
+  /** PKM 노드의 is_user_locked (🔒). 비-PKM 은 미지정. */
+  locked?: boolean | null;
+}
+
+/**
+ * 그래프 엣지 1개 — source → target 관계.
+ * kind: owns(user→brand) / has_personal(user→개인 pkm) / has_brand_pkm(brand→브랜드 pkm).
+ */
+export interface PkmGraphEdge {
+  source: string;
+  target: string;
+  kind: "owns" | "has_personal" | "has_brand_pkm";
+}
+
+/**
+ * 집계 요약 카운트 (상단 요약 + 빈 그래프 판별용).
+ */
+export interface PkmGraphSummary {
+  /** 개인 PKM entry 수. */
+  personal: number;
+  /** 브랜드 PKM entry 수 (전 brand 합). */
+  brand: number;
+  /** 사용자 소유 brand 수. */
+  brands: number;
+}
+
+/**
+ * GET /api/v1/me/pkm-graph 응답 — {nodes, edges, summary}.
+ */
+export interface PkmGraphResponse {
+  nodes: PkmGraphNode[];
+  edges: PkmGraphEdge[];
+  summary: PkmGraphSummary;
+}
+
 // ─── Phase 9 Slice 5 — Select / Feedback types (ADR-030) ───────────────
 //
 // 참조:

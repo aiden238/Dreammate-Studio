@@ -18,6 +18,7 @@
  */
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import ErrorCard from "@/components/ErrorCard";
@@ -105,9 +106,19 @@ export default function HomePage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:py-12 flex flex-col gap-6">
       <header className="flex flex-col gap-2">
-        <p className="text-xs font-semibold tracking-wider uppercase text-primary-600">
-          Dreammate Studio
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold tracking-wider uppercase text-primary-600">
+            Dreammate Studio
+          </p>
+          {/* Phase 19 S2 — 2nd brain (PKM) 진입 (additive nav entry). */}
+          <Link
+            href="/brain"
+            className="inline-flex items-center gap-1 min-h-[44px] px-3 rounded-md text-sm font-medium text-primary-600 hover:bg-primary-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
+            aria-label="내 2nd brain 열기"
+          >
+            <span aria-hidden>🧠</span> 내 brain
+          </Link>
+        </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 leading-tight">
           영상기획 AI 에이전트
         </h1>
