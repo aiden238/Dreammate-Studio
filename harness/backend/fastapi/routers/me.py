@@ -22,7 +22,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Optional
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 
 from ..db import (
     BrandMemoryRepo,
@@ -31,6 +31,8 @@ from ..db import (
     get_supabase,
 )
 from ..schemas.graph import (
+    MePkmMutationResponse,
+    MePkmPatchRequest,
     PkmGraphEdge,
     PkmGraphNode,
     PkmGraphResponse,
@@ -225,4 +227,219 @@ async def _aggregate_pkm_graph(
     )
 
 
-__all__ = ["router", "get_pkm_graph"]
+# ─── PKM 큐레이션 (Phase 19 Slice S4 — 잠금/편집/삭제) ─────────────────
+#
+# node_id 네임스페이스(S1)로 대상 분기:
+#   - "pkm:<id>" → 개인 PKM (pkm_entries, auth_user_id 격리) — PkmRepo.
+#   - "bm:<id>"  → 브랜드 PKM (brand_memory_entries) — 소유 brand 검증 후 BrandMemoryRepo.
+# 익명 → 401. 미존재/미소유 → 404. 어떤 repo 실패도 안전(None/False → 404). 교차 사용자 변경/삭제 0.
+
+
+def _require_auth_user_id(request: Request) -> str:
+    """authed uid 추출 — 익명이면 401 (큐레이션은 본인 데이터에만 허용)."""
+    uid = _auth_user_id(request)
+    if not uid:
+        raise HTTPException(status_code=401, detail="unauthenticated")
+    return uid
+
+
+def _split_node_id(node_id: str) -> tuple[str, str]:
+    """node_id 를 (prefix, raw_id) 로 분해. 'pkm:<id>' → ('pkm', '<id>').
+
+    raw_id 자체가 ':' 를 포함할 수 있어(in-memory fallback id) 첫 ':' 만 기준 분할.
+    """
+    prefix, sep, raw = node_id.partition(":")
+    if not sep:
+        return ("", node_id)
+    return (prefix, raw)
+
+
+async def _owns_brand_entry(
+    raw_id: str,
+    *,
+    auth_user_id: str,
+    brand_repo: BrandRepo,
+    brand_memory_repo: BrandMemoryRepo,
+) -> bool:
+    """브랜드 PKM entry(raw_id)가 uid 소유 brand 에 속하는지 검증 (RLS).
+
+    uid 의 brand 들을 나열 → 각 brand 의 brand_memory entry id 에 raw_id 가 있으면 True.
+    어떤 repo 실패도 graceful — 검증 실패(미소유 처리) → False (500 금지).
+    """
+    try:
+        brands = await brand_repo.list_for_user(auth_user_id)
+    except Exception as exc:
+        logger.warning("pkm_curate brand_list_failed: %s (graceful)", exc.__class__.__name__)
+        return False
+    for brand in brands:
+        if not isinstance(brand, dict):
+            continue
+        brand_id = brand.get("id")
+        if not brand_id:
+            continue
+        try:
+            entries = await brand_memory_repo.list_for_brand(str(brand_id))
+        except Exception as exc:
+            logger.warning(
+                "pkm_curate brand_memory_list_failed: %s (graceful)", exc.__class__.__name__,
+            )
+            continue
+        for row in entries:
+            if isinstance(row, dict) and str(row.get("id")) == str(raw_id):
+                return True
+    return False
+
+
+@router.patch(
+    "/pkm/{node_id}",
+    response_model=MePkmMutationResponse,
+    summary="PKM 큐레이션 — content 편집 / 잠금 토글 (Phase 19 Slice S4)",
+    description=(
+        "node_id('pkm:<id>' 개인 / 'bm:<id>' 브랜드)로 분기해 content/locked 를 부분 갱신한다. "
+        "개인은 auth_user_id 격리, 브랜드는 소유 brand 검증 후 갱신. "
+        "익명 → 401. 미존재/미소유 → 404. 교차 사용자 변경 0."
+    ),
+)
+async def patch_pkm_node(
+    node_id: str, body: MePkmPatchRequest, request: Request,
+) -> MePkmMutationResponse:
+    """PKM 노드 1개 부분 갱신 (thin handler — 신원 추출 후 위임)."""
+    uid = _require_auth_user_id(request)
+    return await _curate_pkm_patch(node_id, body, uid)
+
+
+@router.delete(
+    "/pkm/{node_id}",
+    response_model=MePkmMutationResponse,
+    summary="PKM 큐레이션 — 삭제 (Phase 19 Slice S4)",
+    description=(
+        "node_id('pkm:<id>' 개인 / 'bm:<id>' 브랜드)로 분기해 PKM entry 를 삭제한다. "
+        "개인은 auth_user_id 격리, 브랜드는 소유 brand 검증 후 삭제. "
+        "익명 → 401. 미존재/미소유 → 404. 교차 사용자 삭제 0."
+    ),
+)
+async def delete_pkm_node(node_id: str, request: Request) -> MePkmMutationResponse:
+    """PKM 노드 1개 삭제 (thin handler — 신원 추출 후 위임)."""
+    uid = _require_auth_user_id(request)
+    return await _curate_pkm_delete(node_id, uid)
+
+
+async def _curate_pkm_patch(
+    node_id: str,
+    body: MePkmPatchRequest,
+    auth_user_id: str,
+    *,
+    pkm_repo: Optional[PkmRepo] = None,
+    brand_repo: Optional[BrandRepo] = None,
+    brand_memory_repo: Optional[BrandMemoryRepo] = None,
+) -> MePkmMutationResponse:
+    """PATCH 구현 — node_id prefix 분기 + 소유 검증 + 부분 갱신 (DI seam for tests)."""
+    pkm_repo = pkm_repo if pkm_repo is not None else _pkm_repo
+    brand_repo = brand_repo if brand_repo is not None else _brand_repo
+    brand_memory_repo = (
+        brand_memory_repo if brand_memory_repo is not None else _brand_memory_repo
+    )
+
+    prefix, raw_id = _split_node_id(node_id)
+
+    if prefix == "pkm":
+        # 개인 PKM — PkmRepo 가 auth_user_id 격리로 소유 강제.
+        # ★ graceful: repo 가 (예기치 못하게) raise 해도 500 금지 → 404 안전 매핑.
+        try:
+            updated = await pkm_repo.update_entry(
+                raw_id,
+                auth_user_id=auth_user_id,
+                content=body.content,
+                is_user_locked=body.locked,
+            )
+        except Exception as exc:
+            logger.warning("pkm_patch_failed: %s (graceful 404)", exc.__class__.__name__)
+            updated = None
+        if updated is None:
+            raise HTTPException(status_code=404, detail="pkm_not_found")
+        return MePkmMutationResponse(
+            ok=True, node=_pkm_node(updated, id_prefix="pkm", scope="personal"),
+        )
+
+    if prefix == "bm":
+        # 브랜드 PKM — 먼저 소유 brand 검증 (미소유 → 404).
+        owned = await _owns_brand_entry(
+            raw_id,
+            auth_user_id=auth_user_id,
+            brand_repo=brand_repo,
+            brand_memory_repo=brand_memory_repo,
+        )
+        if not owned:
+            raise HTTPException(status_code=404, detail="brand_pkm_not_found")
+        try:
+            updated = await brand_memory_repo.update_entry(
+                raw_id, content=body.content, is_user_locked=body.locked,
+            )
+        except Exception as exc:
+            logger.warning("bm_patch_failed: %s (graceful 404)", exc.__class__.__name__)
+            updated = None
+        if updated is None:
+            raise HTTPException(status_code=404, detail="brand_pkm_not_found")
+        return MePkmMutationResponse(
+            ok=True, node=_pkm_node(updated, id_prefix="bm", scope="brand"),
+        )
+
+    # 알 수 없는 네임스페이스(user:/brand:/기타) → 큐레이션 대상 아님.
+    raise HTTPException(status_code=404, detail="not_a_pkm_node")
+
+
+async def _curate_pkm_delete(
+    node_id: str,
+    auth_user_id: str,
+    *,
+    pkm_repo: Optional[PkmRepo] = None,
+    brand_repo: Optional[BrandRepo] = None,
+    brand_memory_repo: Optional[BrandMemoryRepo] = None,
+) -> MePkmMutationResponse:
+    """DELETE 구현 — node_id prefix 분기 + 소유 검증 + 삭제 (DI seam for tests)."""
+    pkm_repo = pkm_repo if pkm_repo is not None else _pkm_repo
+    brand_repo = brand_repo if brand_repo is not None else _brand_repo
+    brand_memory_repo = (
+        brand_memory_repo if brand_memory_repo is not None else _brand_memory_repo
+    )
+
+    prefix, raw_id = _split_node_id(node_id)
+
+    if prefix == "pkm":
+        # ★ graceful: repo raise → 500 금지, 404 안전 매핑.
+        try:
+            ok = await pkm_repo.delete_entry(raw_id, auth_user_id=auth_user_id)
+        except Exception as exc:
+            logger.warning("pkm_delete_failed: %s (graceful 404)", exc.__class__.__name__)
+            ok = False
+        if not ok:
+            raise HTTPException(status_code=404, detail="pkm_not_found")
+        return MePkmMutationResponse(ok=True)
+
+    if prefix == "bm":
+        owned = await _owns_brand_entry(
+            raw_id,
+            auth_user_id=auth_user_id,
+            brand_repo=brand_repo,
+            brand_memory_repo=brand_memory_repo,
+        )
+        if not owned:
+            raise HTTPException(status_code=404, detail="brand_pkm_not_found")
+        try:
+            ok = await brand_memory_repo.delete_entry(raw_id)
+        except Exception as exc:
+            logger.warning("bm_delete_failed: %s (graceful 404)", exc.__class__.__name__)
+            ok = False
+        if not ok:
+            raise HTTPException(status_code=404, detail="brand_pkm_not_found")
+        return MePkmMutationResponse(ok=True)
+
+    raise HTTPException(status_code=404, detail="not_a_pkm_node")
+
+
+__all__ = [
+    "router",
+    "get_pkm_graph",
+    "patch_pkm_node",
+    "delete_pkm_node",
+]

@@ -150,6 +150,108 @@ class PkmRepo:
             if row.get("scope", "personal") == scope
         ]
 
+    # ─── 큐레이션 (Phase 19 Slice S4 — 수동 잠금/편집/삭제) ──────────────
+
+    async def update_entry(
+        self,
+        entry_id: str,
+        *,
+        auth_user_id: str,
+        content: Optional[str] = None,
+        is_user_locked: Optional[bool] = None,
+    ) -> Optional[dict[str, Any]]:
+        """개인 PKM entry 의 content / is_user_locked 를 부분 갱신 (RLS 격리).
+
+        ★ RLS/격리: id 일치 + **auth_user_id 일치** 행만 갱신 (교차 계정 수정 0). 미소유/미존재 →
+          None. Supabase 는 .eq("auth_user_id") 로 강제, in-memory 는 본인 store 만 순회.
+        ★ graceful: 어떤 실패도 raise 금지 → None (호출자가 404 로 매핑). 변경 필드 없으면 현재 행 반환.
+
+        Args:
+            entry_id: 대상 pkm_entries.id.
+            auth_user_id: 요청 사용자 (소유 검증 키).
+            content: 새 content (None 이면 미변경).
+            is_user_locked: 새 잠금 상태 (None 이면 미변경).
+
+        Returns:
+            갱신된 entry row dict, 미소유/미존재/실패 시 None.
+        """
+        patch: dict[str, Any] = {}
+        if content is not None:
+            patch["content"] = content
+        if is_user_locked is not None:
+            patch["is_user_locked"] = is_user_locked
+
+        # 변경 필드 없음 → 소유 검증 겸 현재 행 조회 후 반환 (no-op, 격리 유지).
+        if not patch:
+            for row in await self.list_for_user(auth_user_id):
+                if str(row.get("id")) == str(entry_id):
+                    return row
+            return None
+
+        if self._use_supabase():
+            try:
+                resp = (
+                    self.client.table("pkm_entries")  # type: ignore[union-attr]
+                    .update(patch)
+                    .eq("id", entry_id)
+                    .eq("auth_user_id", auth_user_id)  # ★ RLS 소유 강제
+                    .execute()
+                )
+                if resp and getattr(resp, "data", None):
+                    return resp.data[0]
+                # 0 rows updated → 미소유 또는 미존재.
+                return None
+            except Exception as exc:
+                logger.warning(
+                    "pkm_update_failed: %s — graceful None",
+                    exc.__class__.__name__,
+                )
+                return None
+
+        # graceful in-memory fallback — 본인 store 의 id 일치 행만 (격리).
+        for row in self.store.get(auth_user_id, []):
+            if str(row.get("id")) == str(entry_id):
+                row.update(patch)
+                return row
+        return None
+
+    async def delete_entry(
+        self,
+        entry_id: str,
+        *,
+        auth_user_id: str,
+    ) -> bool:
+        """개인 PKM entry 삭제 (RLS 격리). 성공 True, 미소유/미존재/실패 False (graceful).
+
+        ★ RLS/격리: id + auth_user_id 일치 행만 삭제 (교차 계정 삭제 0).
+        """
+        if self._use_supabase():
+            try:
+                resp = (
+                    self.client.table("pkm_entries")  # type: ignore[union-attr]
+                    .delete()
+                    .eq("id", entry_id)
+                    .eq("auth_user_id", auth_user_id)  # ★ RLS 소유 강제
+                    .execute()
+                )
+                if resp and getattr(resp, "data", None):
+                    return True
+                return False
+            except Exception as exc:
+                logger.warning(
+                    "pkm_delete_failed: %s — graceful False",
+                    exc.__class__.__name__,
+                )
+                return False
+
+        # graceful in-memory fallback — 본인 store 에서만 제거 (격리).
+        rows = self.store.get(auth_user_id, [])
+        for i, row in enumerate(rows):
+            if str(row.get("id")) == str(entry_id):
+                rows.pop(i)
+                return True
+        return False
+
     def _reset_for_test(self) -> None:
         """테스트용 in-memory store 초기화 (BrandMemoryRepo._reset 패턴)."""
         self.store.clear()

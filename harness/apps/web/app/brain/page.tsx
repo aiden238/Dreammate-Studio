@@ -4,7 +4,9 @@
  * Phase 19 Slice S2 — 내 2nd brain (PKM) 카드/리스트 페이지 (`/brain`).
  *
  * 사용자의 개인 PKM + 브랜드별 PKM 을 scope 로 묶어 보여주는 **모바일 우선 카드/리스트** 뷰.
- *   - 데스크톱 그래프 뷰는 S3, 큐레이션(편집/삭제) 액션은 S4 (본 슬라이스는 read-only 표시).
+ *   - 데스크톱 그래프 뷰는 S3.
+ *   - S4: 각 PKM 칩에 **큐레이션 컨트롤**(잠금 토글 🔒 / 편집 / 삭제) 추가 — PATCH/DELETE
+ *     /api/v1/me/pkm/{node_id} 호출 후 그래프 refetch. user/brand(non-pkm) 노드는 대상 아님.
  *   - S1 backend GET /api/v1/me/pkm-graph 가 {nodes, edges, summary} 를 반환 →
  *     본 페이지가 scope 로 그룹핑해 칩/카드로 렌더.
  *
@@ -25,12 +27,12 @@
  *   - apps/web/design.md §2 (카드 단위 / 모바일 한 손 / 제작 기능 미포함)
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import AuthGuard from "@/components/AuthGuard"; // 외부 wrapper (다른 authed page 와 동일 패턴)
-import { getPkmGraph } from "@/lib/api";
+import { deletePkmNode, getPkmGraph, updatePkmNode } from "@/lib/api";
 import type { PkmGraphNode, PkmGraphResponse } from "@/lib/types";
 
 type Phase = "loading" | "error" | "data";
@@ -53,6 +55,8 @@ function BrainPageContent() {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("loading");
   const [graph, setGraph] = useState<PkmGraphResponse | null>(null);
+  // 큐레이션 동작 중인 node_id (중복 클릭 방지 + 스피너). null = 유휴.
+  const [busyNodeId, setBusyNodeId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -71,6 +75,77 @@ function BrainPageContent() {
       mounted = false;
     };
   }, []);
+
+  // 큐레이션 동작 후 그래프 재조회 (refetch — 단일 source of truth 유지).
+  const refetch = useCallback(async () => {
+    const res = await getPkmGraph();
+    setGraph(res);
+    setPhase("data");
+  }, []);
+
+  // 잠금 토글 — PATCH {locked}. 동작 후 refetch.
+  const handleToggleLock = useCallback(
+    async (node: PkmGraphNode) => {
+      if (busyNodeId) return; // 동시 동작 방지.
+      setBusyNodeId(node.id);
+      try {
+        await updatePkmNode(node.id, { locked: !node.locked });
+        await refetch();
+      } catch {
+        // graceful — 사용자에게 알리고 현 상태 유지 (그래프 변경 없음).
+        if (typeof window !== "undefined") {
+          window.alert("변경에 실패했어요. 잠시 후 다시 시도해주세요.");
+        }
+      } finally {
+        setBusyNodeId(null);
+      }
+    },
+    [busyNodeId, refetch],
+  );
+
+  // 편집 — prompt 로 새 content 입력 후 PATCH {content}. 동작 후 refetch.
+  const handleEdit = useCallback(
+    async (node: PkmGraphNode) => {
+      if (busyNodeId) return;
+      if (typeof window === "undefined") return;
+      const next = window.prompt("내용을 수정하세요", node.label);
+      if (next === null) return; // 취소.
+      const trimmed = next.trim();
+      if (trimmed === "" || trimmed === node.label) return; // 빈 값/무변경 → no-op.
+      setBusyNodeId(node.id);
+      try {
+        await updatePkmNode(node.id, { content: trimmed });
+        await refetch();
+      } catch {
+        window.alert("수정에 실패했어요. 잠시 후 다시 시도해주세요.");
+      } finally {
+        setBusyNodeId(null);
+      }
+    },
+    [busyNodeId, refetch],
+  );
+
+  // 삭제 — 확인 후 DELETE. 잠금(보호) 항목은 확인 문구를 강조. 동작 후 refetch.
+  const handleDelete = useCallback(
+    async (node: PkmGraphNode) => {
+      if (busyNodeId) return;
+      if (typeof window === "undefined") return;
+      const msg = node.locked
+        ? "🔒 고정(보호)한 항목이에요. 정말 삭제할까요? 되돌릴 수 없어요."
+        : "이 항목을 삭제할까요? 되돌릴 수 없어요.";
+      if (!window.confirm(msg)) return;
+      setBusyNodeId(node.id);
+      try {
+        await deletePkmNode(node.id);
+        await refetch();
+      } catch {
+        window.alert("삭제에 실패했어요. 잠시 후 다시 시도해주세요.");
+      } finally {
+        setBusyNodeId(null);
+      }
+    },
+    [busyNodeId, refetch],
+  );
 
   // scope 로 그룹핑 (렌더 안정성 위해 graph 기준 memo).
   const { personal, brandGroups } = useMemo(
@@ -191,7 +266,15 @@ function BrainPageContent() {
               </h2>
               <div className="flex flex-col gap-3" aria-label="개인 PKM 목록">
                 {personal.map((node) => (
-                  <PkmChip key={node.id} node={node} />
+                  <PkmChip
+                    key={node.id}
+                    node={node}
+                    busy={busyNodeId === node.id}
+                    disabled={busyNodeId !== null && busyNodeId !== node.id}
+                    onToggleLock={handleToggleLock}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
                 ))}
               </div>
             </div>
@@ -215,7 +298,17 @@ function BrainPageContent() {
                         aria-label={`${group.brand.label} PKM 목록`}
                       >
                         {group.entries.map((node) => (
-                          <PkmChip key={node.id} node={node} />
+                          <PkmChip
+                            key={node.id}
+                            node={node}
+                            busy={busyNodeId === node.id}
+                            disabled={
+                              busyNodeId !== null && busyNodeId !== node.id
+                            }
+                            onToggleLock={handleToggleLock}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                          />
                         ))}
                       </div>
                     ) : (
@@ -234,11 +327,34 @@ function BrainPageContent() {
   );
 }
 
+/** PkmChip props — 노드 + 큐레이션 핸들러(S4) + busy/disabled 상태. */
+interface PkmChipProps {
+  node: PkmGraphNode;
+  /** 이 칩이 동작 중(스피너/비활성). */
+  busy: boolean;
+  /** 다른 칩이 동작 중이라 이 칩의 액션을 잠시 막음. */
+  disabled: boolean;
+  onToggleLock: (node: PkmGraphNode) => void;
+  onEdit: (node: PkmGraphNode) => void;
+  onDelete: (node: PkmGraphNode) => void;
+}
+
 /**
- * PKM 노드 1개 → 칩/카드. label + entry_type 배지 + 🔒(locked).
- * read-only — 큐레이션 액션은 S4 (클릭 동작 없음).
+ * PKM 노드 1개 → 칩/카드. label + entry_type 배지 + 🔒(locked) + 큐레이션 컨트롤(S4).
+ *   - 잠금 토글(🔒/🔓): PATCH {locked}.
+ *   - 편집(✏️): prompt 로 새 content → PATCH {content}.
+ *   - 삭제(🗑): 확인 후 DELETE (잠금 항목은 확인 문구 강조).
+ * 한 손 모바일 — 버튼은 충분한 탭 타깃(min 44px 높이), 우측 정렬.
  */
-function PkmChip({ node }: { node: PkmGraphNode }) {
+function PkmChip({
+  node,
+  busy,
+  disabled,
+  onToggleLock,
+  onEdit,
+  onDelete,
+}: PkmChipProps) {
+  const blocked = busy || disabled;
   return (
     <div className="w-full text-left p-4 rounded-lg border border-border-default bg-surface">
       <div className="flex items-start justify-between gap-2">
@@ -256,11 +372,55 @@ function PkmChip({ node }: { node: PkmGraphNode }) {
           </span>
         ) : null}
       </div>
-      {node.entry_type && (
-        <span className="mt-2 inline-block text-xs px-2 py-0.5 rounded-full bg-bg-subtle text-text-muted">
-          {node.entry_type}
-        </span>
-      )}
+      <div className="mt-2 flex items-center justify-between gap-2">
+        {node.entry_type ? (
+          <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-bg-subtle text-text-muted">
+            {node.entry_type}
+          </span>
+        ) : (
+          <span aria-hidden="true" />
+        )}
+        {/* 큐레이션 컨트롤 (S4) */}
+        <div className="flex items-center gap-1 shrink-0" aria-label="큐레이션">
+          {busy ? (
+            <span
+              className="w-5 h-5 border-2 border-border-default border-t-primary rounded-full animate-spin"
+              role="status"
+              aria-label="처리 중"
+            />
+          ) : null}
+          <button
+            type="button"
+            onClick={() => onToggleLock(node)}
+            disabled={blocked}
+            className="min-h-[44px] px-2 rounded-md text-base text-text-muted hover:text-text-default hover:bg-bg-subtle transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label={node.locked ? "잠금 해제" : "잠금(고정)"}
+            title={node.locked ? "잠금 해제" : "고정해서 보호"}
+          >
+            {node.locked ? "🔒" : "🔓"}
+          </button>
+          <button
+            type="button"
+            onClick={() => onEdit(node)}
+            disabled={blocked}
+            className="min-h-[44px] px-2 rounded-md text-base text-text-muted hover:text-text-default hover:bg-bg-subtle transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="편집"
+            title="내용 편집"
+          >
+            ✏️
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(node)}
+            disabled={blocked}
+            className="min-h-[44px] px-2 rounded-md text-base text-text-muted hover:text-text-danger hover:bg-bg-subtle transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="삭제"
+            title="삭제"
+          >
+            🗑
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

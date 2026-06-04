@@ -74,9 +74,43 @@ class PkmGraphResponse(BaseModel):
     summary: PkmGraphSummary = Field(default_factory=PkmGraphSummary)
 
 
+# ─── Phase 19 Slice S4 — PKM 큐레이션(잠금/편집) 요청·응답 스키마 ─────────
+
+
+class MePkmPatchRequest(BaseModel):
+    """PATCH /api/v1/me/pkm/{node_id} 요청 — content 편집 / locked 토글 (부분 갱신).
+
+    둘 다 선택(Optional) — content 만, locked 만, 혹은 둘 다 보낼 수 있다.
+    아무 필드도 없으면 변경 없음(현재 노드 반환, no-op).
+    """
+
+    content: Optional[str] = Field(
+        default=None, description="새 PKM content (None 이면 미변경).",
+    )
+    locked: Optional[bool] = Field(
+        default=None,
+        description="새 is_user_locked 상태 — 🔒 사용자 고정 토글 (None 이면 미변경).",
+    )
+
+
+class MePkmMutationResponse(BaseModel):
+    """PATCH / DELETE /api/v1/me/pkm/{node_id} 응답.
+
+    PATCH 성공 시 갱신된 node 를 동봉(프론트 즉시 반영 보조). DELETE 는 node 생략.
+    소유/존재 검증 실패는 endpoint 가 404 로 응답 (이 모델 미반환).
+    """
+
+    ok: bool = Field(description="동작 성공 여부.")
+    node: Optional[PkmGraphNode] = Field(
+        default=None, description="PATCH 시 갱신된 PKM 노드 (DELETE 는 None).",
+    )
+
+
 __all__ = [
     "PkmGraphNode",
     "PkmGraphEdge",
     "PkmGraphSummary",
     "PkmGraphResponse",
+    "MePkmPatchRequest",
+    "MePkmMutationResponse",
 ]

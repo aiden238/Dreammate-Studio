@@ -29,6 +29,7 @@ import type {
   FeedbackRequest,
   FeedbackResponse,
   MultiPlanEnvelope,
+  PkmGraphNode,
   PkmGraphResponse,
   PlanResource,
   PlanStartResponse,
@@ -619,4 +620,73 @@ export async function getPkmGraph(): Promise<PkmGraphResponse> {
     throw new Error(`pkm_graph_failed: ${resp.status}`);
   }
   return resp.json() as Promise<PkmGraphResponse>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Phase 19 Slice S4 — PKM 큐레이션 (잠금/편집/삭제) endpoint wrappers
+// ═══════════════════════════════════════════════════════════════════════
+//
+// 참조: harness/backend/fastapi/routers/me.py
+//         PATCH  /api/v1/me/pkm/{node_id}  (MePkmPatchRequest → MePkmMutationResponse)
+//         DELETE /api/v1/me/pkm/{node_id}  (no body → MePkmMutationResponse)
+//       harness/backend/fastapi/schemas/graph.py (정합)
+//
+// 정책:
+//   - auth-required (RLS — 자기 데이터만). credentials:"include" (httpOnly cookie 전송).
+//   - node_id 는 그래프 노드 id 그대로('pkm:<id>' / 'bm:<id>'). path 에 그대로 인코딩.
+//   - 단순 throw on !ok (page.tsx 가 try/catch + 그래프 refetch 로 처리).
+
+/** PATCH /api/v1/me/pkm/{node_id} 요청 본문 (둘 다 선택). */
+export interface UpdatePkmNodeBody {
+  content?: string;
+  locked?: boolean;
+}
+
+/** PATCH/DELETE 큐레이션 응답 — ok + (PATCH 시) 갱신 node. */
+export interface PkmMutationResult {
+  ok: boolean;
+  node?: PkmGraphNode;
+}
+
+/**
+ * PATCH /api/v1/me/pkm/{node_id}
+ * PKM 노드의 content 편집 또는 locked(🔒) 토글. 'pkm:<id>'(개인) / 'bm:<id>'(브랜드) 모두 지원.
+ * 미소유/미존재 → 404 throw. 익명 → 401 throw.
+ */
+export async function updatePkmNode(
+  nodeId: string,
+  body: UpdatePkmNodeBody,
+): Promise<PkmMutationResult> {
+  const url = `${API_BASE_URL}/api/v1/me/pkm/${encodeURIComponent(nodeId)}`;
+  const resp = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) {
+    throw new Error(`pkm_update_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<PkmMutationResult>;
+}
+
+/**
+ * DELETE /api/v1/me/pkm/{node_id}
+ * PKM 노드 삭제. 'pkm:<id>'(개인) / 'bm:<id>'(브랜드) 모두 지원.
+ * 미소유/미존재 → 404 throw. 익명 → 401 throw.
+ */
+export async function deletePkmNode(nodeId: string): Promise<PkmMutationResult> {
+  const url = `${API_BASE_URL}/api/v1/me/pkm/${encodeURIComponent(nodeId)}`;
+  const resp = await fetch(url, {
+    method: "DELETE",
+    headers: { Accept: "application/json" },
+    credentials: "include",
+  });
+  if (!resp.ok) {
+    throw new Error(`pkm_delete_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<PkmMutationResult>;
 }

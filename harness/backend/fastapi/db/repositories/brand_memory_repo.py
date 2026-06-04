@@ -135,6 +135,98 @@ class BrandMemoryRepo:
                 )
         return list(self.store.get(brand_id, []))
 
+    # ─── 큐레이션 (Phase 19 Slice S4 — 수동 잠금/편집/삭제) ──────────────
+    #
+    # ★ 소유(brand→user) 검증은 endpoint 책임 — 본 repo 는 brand_id keyed 라 auth_user_id 를
+    #   모른다. endpoint 가 BrandRepo 로 brand 소유를 확인한 뒤에만 아래 메서드를 호출한다.
+    #   (in-memory store 는 brand_id 가 unique 하므로 entry_id 만으로 안전하게 분기 가능.)
+
+    async def update_entry(
+        self,
+        entry_id: str,
+        *,
+        content: Optional[str] = None,
+        is_user_locked: Optional[bool] = None,
+    ) -> Optional[dict[str, Any]]:
+        """브랜드 PKM entry 의 content / is_user_locked 부분 갱신. 미존재/실패 → None (graceful).
+
+        ★ 소유 검증은 호출 endpoint 가 선행 (brand→auth_user_id). 변경 필드 없으면 현재 행 반환.
+        """
+        patch: dict[str, Any] = {}
+        if content is not None:
+            patch["content"] = content
+        if is_user_locked is not None:
+            patch["is_user_locked"] = is_user_locked
+
+        # 변경 필드 없음 → no-op, 현재 행 조회 후 반환.
+        if not patch:
+            return self._find_in_memory(entry_id)
+
+        if self._use_supabase():
+            try:
+                resp = (
+                    self.client.table("brand_memory_entries")  # type: ignore[union-attr]
+                    .update(patch)
+                    .eq("id", entry_id)
+                    .execute()
+                )
+                if resp and getattr(resp, "data", None):
+                    return resp.data[0]
+                return None
+            except Exception as exc:
+                logger.warning(
+                    "brand_memory_update_failed: %s — graceful None",
+                    exc.__class__.__name__,
+                )
+                return None
+
+        # graceful in-memory fallback — 전 brand store 에서 id 일치 행 갱신.
+        for rows in self.store.values():
+            for row in rows:
+                if str(row.get("id")) == str(entry_id):
+                    row.update(patch)
+                    return row
+        return None
+
+    async def delete_entry(self, entry_id: str) -> bool:
+        """브랜드 PKM entry 삭제. 성공 True, 미존재/실패 False (graceful).
+
+        ★ 소유 검증은 호출 endpoint 가 선행 (brand→auth_user_id).
+        """
+        if self._use_supabase():
+            try:
+                resp = (
+                    self.client.table("brand_memory_entries")  # type: ignore[union-attr]
+                    .delete()
+                    .eq("id", entry_id)
+                    .execute()
+                )
+                if resp and getattr(resp, "data", None):
+                    return True
+                return False
+            except Exception as exc:
+                logger.warning(
+                    "brand_memory_delete_failed: %s — graceful False",
+                    exc.__class__.__name__,
+                )
+                return False
+
+        # graceful in-memory fallback — 전 brand store 에서 id 일치 행 제거.
+        for rows in self.store.values():
+            for i, row in enumerate(rows):
+                if str(row.get("id")) == str(entry_id):
+                    rows.pop(i)
+                    return True
+        return False
+
+    def _find_in_memory(self, entry_id: str) -> Optional[dict[str, Any]]:
+        """in-memory store 전체에서 entry_id 일치 행 검색 (no-op update 보조)."""
+        for rows in self.store.values():
+            for row in rows:
+                if str(row.get("id")) == str(entry_id):
+                    return row
+        return None
+
     def _reset_for_test(self) -> None:
         """테스트용 in-memory store 초기화 (Phase 5 _reset 패턴)."""
         self.store.clear()
