@@ -34,12 +34,17 @@ import { useRouter } from "next/navigation";
 
 import AuthGuard from "@/components/AuthGuard"; // 외부 wrapper (다른 authed page 와 동일 패턴)
 import StructureCreateInput from "@/components/brain/StructureCreateInput";
+import StructureRenameInput from "@/components/brain/StructureRenameInput";
 import {
   createDomain,
   createSeries,
+  deleteDomain,
   deletePkmNode,
+  deleteSeries,
   getPkmGraph,
+  updateDomain,
   updatePkmNode,
+  updateSeries,
 } from "@/lib/api";
 import type { PkmGraphNode, PkmGraphResponse } from "@/lib/types";
 import { useMediaQuery } from "@/lib/use_media_query";
@@ -89,6 +94,15 @@ interface StructureBrand {
   domains: DomainNode[];
 }
 
+/**
+ * graph 노드 id("domain:<uuid>"/"series:<uuid>")에서 접두어를 벗겨 bare uuid 반환.
+ * 구조 편집/삭제 API(PATCH/DELETE /me/domains|series/{id})는 접두어 없는 id 를 받는다.
+ * 접두어가 없으면(방어적) 원본을 그대로 반환.
+ */
+function stripNodePrefix(nodeId: string, prefix: "domain:" | "series:"): string {
+  return nodeId.startsWith(prefix) ? nodeId.slice(prefix.length) : nodeId;
+}
+
 export default function BrainPage() {
   return (
     <AuthGuard>
@@ -103,6 +117,8 @@ function BrainPageContent() {
   const [graph, setGraph] = useState<PkmGraphResponse | null>(null);
   // 큐레이션 동작 중인 node_id (중복 클릭 방지 + 스피너). null = 유휴.
   const [busyNodeId, setBusyNodeId] = useState<string | null>(null);
+  // S2(Phase 24): 인라인 rename 중인 구조 노드 id(graph 접두어 그대로). null = 표시 모드.
+  const [renamingNodeId, setRenamingNodeId] = useState<string | null>(null);
 
   // S3: 데스크톱(≥1024px) 분기 + 데스크톱 뷰 모드(그래프 기본 ↔ 리스트).
   // 모바일(false)에서는 PkmGraph 가 렌더되지 않아 react-flow dynamic import 미트리거.
@@ -214,6 +230,73 @@ function BrainPageContent() {
       await refetch();
     },
     [refetch],
+  );
+
+  // ── Phase 24 S2 — 구조 편집/삭제 (domain/series rename + delete) ──────────
+  // graph 노드 id 는 "domain:<uuid>"/"series:<uuid>" 접두어 → API 는 bare uuid 를 받으므로 벗긴다.
+
+  // rename 저장 — updateDomain → refetch. 성공 시 컴포넌트가 onDone 으로 표시 모드 복귀.
+  const handleRenameDomain = useCallback(
+    async (domainNodeId: string, name: string) => {
+      await updateDomain(stripNodePrefix(domainNodeId, "domain:"), name);
+      await refetch();
+    },
+    [refetch],
+  );
+
+  const handleRenameSeries = useCallback(
+    async (seriesNodeId: string, name: string) => {
+      await updateSeries(stripNodePrefix(seriesNodeId, "series:"), name);
+      await refetch();
+    },
+    [refetch],
+  );
+
+  // 삭제 — 확인 후 DELETE. domain 삭제는 하위 series 캐스케이드를 명시 경고. 동작 후 refetch.
+  const handleDeleteDomain = useCallback(
+    async (node: PkmGraphNode) => {
+      if (busyNodeId) return;
+      if (typeof window === "undefined") return;
+      if (
+        !window.confirm(
+          "도메인 삭제 시 하위 시리즈도 함께 삭제됩니다. 정말 삭제할까요? 되돌릴 수 없어요.",
+        )
+      ) {
+        return;
+      }
+      setBusyNodeId(node.id);
+      try {
+        await deleteDomain(stripNodePrefix(node.id, "domain:"));
+        await refetch();
+      } catch {
+        window.alert("삭제에 실패했어요. 잠시 후 다시 시도해주세요.");
+      } finally {
+        setBusyNodeId(null);
+      }
+    },
+    [busyNodeId, refetch],
+  );
+
+  const handleDeleteSeries = useCallback(
+    async (node: PkmGraphNode) => {
+      if (busyNodeId) return;
+      if (typeof window === "undefined") return;
+      if (
+        !window.confirm("이 시리즈를 삭제할까요? 되돌릴 수 없어요.")
+      ) {
+        return;
+      }
+      setBusyNodeId(node.id);
+      try {
+        await deleteSeries(stripNodePrefix(node.id, "series:"));
+        await refetch();
+      } catch {
+        window.alert("삭제에 실패했어요. 잠시 후 다시 시도해주세요.");
+      } finally {
+        setBusyNodeId(null);
+      }
+    },
+    [busyNodeId, refetch],
   );
 
   // scope 로 그룹핑 (렌더 안정성 위해 graph 기준 memo).
@@ -467,6 +550,7 @@ function BrainPageContent() {
                       placeholder="새 도메인 이름"
                       buttonLabel="+ 도메인"
                       ariaLabel={`${sb.brand.label} 도메인 추가`}
+                      disabled={renamingNodeId !== null}
                       onSubmit={(name) =>
                         handleCreateDomain(sb.brand.id, name)
                       }
@@ -479,20 +563,68 @@ function BrainPageContent() {
                             key={dn.domain.id}
                             className="rounded-md border border-border-default bg-bg-subtle p-3"
                           >
-                            <div className="text-sm font-medium text-text-default">
-                              {dn.domain.label}
-                            </div>
+                            {/* 도메인 헤더 — 이름 + ✏️/🗑 (rename 중이면 인라인 입력) */}
+                            {renamingNodeId === dn.domain.id ? (
+                              <StructureRenameInput
+                                initialValue={dn.domain.label}
+                                ariaLabel={`${dn.domain.label} 도메인 이름 수정`}
+                                disabled={busyNodeId !== null}
+                                onSubmit={(name) =>
+                                  handleRenameDomain(dn.domain.id, name)
+                                }
+                                onDone={() => setRenamingNodeId(null)}
+                              />
+                            ) : (
+                              <StructureRowControls
+                                label={dn.domain.label}
+                                busy={busyNodeId === dn.domain.id}
+                                disabled={
+                                  renamingNodeId !== null ||
+                                  (busyNodeId !== null &&
+                                    busyNodeId !== dn.domain.id)
+                                }
+                                labelClassName="text-sm font-medium text-text-default"
+                                editAriaLabel="도메인 이름 수정"
+                                deleteAriaLabel="도메인 삭제"
+                                onEdit={() => setRenamingNodeId(dn.domain.id)}
+                                onDelete={() => handleDeleteDomain(dn.domain)}
+                              />
+                            )}
                             {/* 시리즈 목록 */}
                             {dn.series.length > 0 ? (
                               <ul className="mt-2 flex flex-col gap-1">
-                                {dn.series.map((s) => (
-                                  <li
-                                    key={s.id}
-                                    className="text-sm text-text-muted before:content-['•'] before:mr-2 before:text-text-placeholder"
-                                  >
-                                    {s.label}
-                                  </li>
-                                ))}
+                                {dn.series.map((s) =>
+                                  renamingNodeId === s.id ? (
+                                    <li key={s.id} className="mt-1">
+                                      <StructureRenameInput
+                                        initialValue={s.label}
+                                        ariaLabel={`${s.label} 시리즈 이름 수정`}
+                                        disabled={busyNodeId !== null}
+                                        onSubmit={(name) =>
+                                          handleRenameSeries(s.id, name)
+                                        }
+                                        onDone={() => setRenamingNodeId(null)}
+                                      />
+                                    </li>
+                                  ) : (
+                                    <li key={s.id}>
+                                      <StructureRowControls
+                                        label={s.label}
+                                        busy={busyNodeId === s.id}
+                                        disabled={
+                                          renamingNodeId !== null ||
+                                          (busyNodeId !== null &&
+                                            busyNodeId !== s.id)
+                                        }
+                                        labelClassName="text-sm text-text-muted before:content-['•'] before:mr-2 before:text-text-placeholder"
+                                        editAriaLabel="시리즈 이름 수정"
+                                        deleteAriaLabel="시리즈 삭제"
+                                        onEdit={() => setRenamingNodeId(s.id)}
+                                        onDelete={() => handleDeleteSeries(s)}
+                                      />
+                                    </li>
+                                  ),
+                                )}
                               </ul>
                             ) : null}
                             {/* 시리즈 추가 (domain 단위) */}
@@ -500,6 +632,7 @@ function BrainPageContent() {
                               placeholder="새 시리즈 이름"
                               buttonLabel="+ 시리즈"
                               ariaLabel={`${dn.domain.label} 시리즈 추가`}
+                              disabled={renamingNodeId !== null}
                               onSubmit={(name) =>
                                 handleCreateSeries(dn.domain.id, name)
                               }
@@ -620,6 +753,77 @@ function PkmChip({
             🗑
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** StructureRowControls props — 도메인/시리즈 1행의 이름 + ✏️/🗑 컨트롤. */
+interface StructureRowControlsProps {
+  /** 표시 이름. */
+  label: string;
+  /** 이 행이 동작 중(스피너/비활성). */
+  busy: boolean;
+  /** 다른 행/rename 중이라 이 행의 액션을 잠시 막음. */
+  disabled: boolean;
+  /** 이름 텍스트 className (도메인=강조 / 시리즈=• 머리표). */
+  labelClassName: string;
+  editAriaLabel: string;
+  deleteAriaLabel: string;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+/**
+ * Phase 24 S2 — 구조 트리의 도메인/시리즈 1행. 이름 + ✏️(rename)/🗑(delete) 컨트롤.
+ * PkmChip 큐레이션 컨트롤과 동일 아이콘·busy 스피너·44px 탭 타깃·disabled 처리(일관 UX).
+ * rename 동작 자체는 부모가 인라인 StructureRenameInput 으로 교체(✏️ → onEdit).
+ */
+function StructureRowControls({
+  label,
+  busy,
+  disabled,
+  labelClassName,
+  editAriaLabel,
+  deleteAriaLabel,
+  onEdit,
+  onDelete,
+}: StructureRowControlsProps) {
+  const blocked = busy || disabled;
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className={labelClassName}>{label}</span>
+      <div
+        className="flex items-center gap-1 shrink-0"
+        aria-label="구조 편집"
+      >
+        {busy ? (
+          <span
+            className="w-5 h-5 border-2 border-border-default border-t-primary rounded-full animate-spin"
+            role="status"
+            aria-label="처리 중"
+          />
+        ) : null}
+        <button
+          type="button"
+          onClick={onEdit}
+          disabled={blocked}
+          className="min-h-[44px] px-2 rounded-md text-base text-text-muted hover:text-text-default hover:bg-bg-subtle transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+          aria-label={editAriaLabel}
+          title="이름 수정"
+        >
+          ✏️
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={blocked}
+          className="min-h-[44px] px-2 rounded-md text-base text-text-muted hover:text-text-danger hover:bg-bg-subtle transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+          aria-label={deleteAriaLabel}
+          title="삭제"
+        >
+          🗑
+        </button>
       </div>
     </div>
   );

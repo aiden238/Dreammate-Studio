@@ -620,6 +620,27 @@ export interface MeSeriesCreateResponse {
   series: MeSeriesNode;
 }
 
+// ─── Phase 24 Slice S1/S2 — 구조 편집/삭제 (Domain/Series EDIT/DELETE) types ─
+//
+// 참조:
+//   - harness/backend/fastapi/schemas/graph.py
+//       MeDomainUpdateRequest / MeSeriesUpdateRequest ({name}) · MeMutationResponse ({ok, deleted})
+//   - harness/backend/fastapi/routers/me.py
+//       PATCH  /api/v1/me/domains/{domain_id} {name} → {ok, domain}  (MeDomainCreateResponse 재사용)
+//       DELETE /api/v1/me/domains/{domain_id}        → {ok, deleted}
+//       PATCH  /api/v1/me/series/{series_id}  {name} → {ok, series}  (MeSeriesCreateResponse 재사용)
+//       DELETE /api/v1/me/series/{series_id}         → {ok, deleted}
+//
+// 정책: rename 응답은 Phase 22 의 {ok, domain|series} 를 그대로 재사용. 삭제는 {ok, deleted}.
+//   domain 삭제는 그 아래 series 가 캐스케이드 삭제됨 (backend FK/라우터 캐스케이드).
+//   본 타입은 backend Pydantic 과 1:1 정합.
+
+/** DELETE /api/v1/me/domains|series/{id} 응답 — {ok, deleted}. */
+export interface MeMutationResponse {
+  ok: boolean;
+  deleted: boolean;
+}
+
 // ─── Phase 9 Slice 5 — Select / Feedback types (ADR-030) ───────────────
 //
 // 참조:

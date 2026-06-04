@@ -29,6 +29,7 @@ import type {
   FeedbackRequest,
   FeedbackResponse,
   MeDomainCreateResponse,
+  MeMutationResponse,
   MeSeriesCreateResponse,
   MultiPlanEnvelope,
   PkmGraphNode,
@@ -754,4 +755,108 @@ export async function createSeries(
     throw new Error(`series_create_failed: ${resp.status}`);
   }
   return resp.json() as Promise<MeSeriesCreateResponse>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Phase 24 Slice S1/S2 — 구조 편집/삭제 (Domain/Series EDIT/DELETE) endpoint wrappers
+// ═══════════════════════════════════════════════════════════════════════
+//
+// 참조: harness/backend/fastapi/routers/me.py
+//         PATCH  /api/v1/me/domains/{domain_id} {name} → {ok, domain}   (authed, RLS)
+//         DELETE /api/v1/me/domains/{domain_id}        → {ok, deleted}   (그 아래 series 캐스케이드)
+//         PATCH  /api/v1/me/series/{series_id}  {name} → {ok, series}    (authed, RLS)
+//         DELETE /api/v1/me/series/{series_id}         → {ok, deleted}
+//       harness/backend/fastapi/schemas/graph.py (Me{Domain,Series}UpdateRequest · MeMutationResponse 정합)
+//
+// 정책 (createDomain/deletePkmNode 패턴 미러):
+//   - auth-required (RLS — 자기 brand/domain 아래만). credentials:"include" (httpOnly cookie 전송,
+//     cross-origin :3000→:8000, CORS allow_credentials=True). 미소유/미존재 → 404, 익명 → 401,
+//     빈 name → 422. 단순 throw on !ok (page.tsx 가 try/catch + 그래프 refetch).
+//   - id 는 graph 노드 접두어("domain:"/"series:")가 아닌 **bare uuid** — 호출측이 접두어를 벗겨 넘긴다.
+//   - 편집/삭제 즉시 /me/pkm-graph 가 자동 반영 → refetch 로 트리/그래프 갱신.
+
+/**
+ * PATCH /api/v1/me/domains/{domain_id}
+ * 소유 domain(domainId)의 name 변경. 미소유/미존재 → 404, 빈 name → 422, 익명 → 401 throw.
+ */
+export async function updateDomain(
+  domainId: string,
+  name: string,
+): Promise<MeDomainCreateResponse> {
+  const url = `${API_BASE_URL}/api/v1/me/domains/${encodeURIComponent(domainId)}`;
+  const resp = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ name }),
+  });
+  if (!resp.ok) {
+    throw new Error(`domain_update_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<MeDomainCreateResponse>;
+}
+
+/**
+ * DELETE /api/v1/me/domains/{domain_id}
+ * 소유 domain(domainId) 삭제. 그 아래 series 도 함께 삭제(캐스케이드). 미소유/미존재 → 404, 익명 → 401 throw.
+ */
+export async function deleteDomain(
+  domainId: string,
+): Promise<MeMutationResponse> {
+  const url = `${API_BASE_URL}/api/v1/me/domains/${encodeURIComponent(domainId)}`;
+  const resp = await fetch(url, {
+    method: "DELETE",
+    headers: { Accept: "application/json" },
+    credentials: "include",
+  });
+  if (!resp.ok) {
+    throw new Error(`domain_delete_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<MeMutationResponse>;
+}
+
+/**
+ * PATCH /api/v1/me/series/{series_id}
+ * 소유 series(seriesId)의 name 변경. 미소유/미존재 → 404, 빈 name → 422, 익명 → 401 throw.
+ */
+export async function updateSeries(
+  seriesId: string,
+  name: string,
+): Promise<MeSeriesCreateResponse> {
+  const url = `${API_BASE_URL}/api/v1/me/series/${encodeURIComponent(seriesId)}`;
+  const resp = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ name }),
+  });
+  if (!resp.ok) {
+    throw new Error(`series_update_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<MeSeriesCreateResponse>;
+}
+
+/**
+ * DELETE /api/v1/me/series/{series_id}
+ * 소유 series(seriesId) 삭제. 미소유/미존재 → 404, 익명 → 401 throw.
+ */
+export async function deleteSeries(
+  seriesId: string,
+): Promise<MeMutationResponse> {
+  const url = `${API_BASE_URL}/api/v1/me/series/${encodeURIComponent(seriesId)}`;
+  const resp = await fetch(url, {
+    method: "DELETE",
+    headers: { Accept: "application/json" },
+    credentials: "include",
+  });
+  if (!resp.ok) {
+    throw new Error(`series_delete_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<MeMutationResponse>;
 }
