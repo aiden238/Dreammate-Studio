@@ -784,8 +784,10 @@ Discovery 5단계 진행. 각 호출이 1단계 카드 생성.
 - **GET /api/v1/me/pkm-graph** (authed) → `{nodes:[{id,type:"user"|"brand"|"pkm"|"domain"|"series"|"source",label,scope?,entry_type?,locked?}], edges:[{source,target,kind:"owns"|"has_personal"|"has_brand_pkm"|"has_domain"|"has_series"|"sourced_from"}], summary:{personal,brand,brands,domains,series,sources}}`. id namespace: `user:` / `brand:<id>` / `pkm:<id>`(개인) / `bm:<id>`(브랜드) / **`domain:<id>` / `series:<id>` / `source:<plan_id>`(Phase 21)**. 익명/무데이터 → 빈 그래프(graceful). ★ **Phase 21(CC-029) 확장**: 4계층 깊이(brand→domain `has_domain`→series `has_series`) + 브랜드 PKM 출처(bm `sourced_from`→source, brand_memory.source_plan_id). 전부 **additive/graceful** — domains/series/source 0 이면 노드·엣지 불변(summary 만 0키 additive). 개인 PKM 출처는 source_plan_id 부재로 미포함(이월).
 - **PATCH /api/v1/me/pkm/{node_id}** (authed) — body `{content?, locked?}` → `{ok, node}`. node_id prefix 라우팅: `pkm:`→pkm_entries(개인, auth_user_id), `bm:`→brand_memory(브랜드 소유=brand→user 검증). user_locked 보호.
 - **DELETE /api/v1/me/pkm/{node_id}** (authed) → `{ok, deleted}`. 동일 prefix 라우팅 + 소유 검증.
+- **POST /api/v1/me/domains** (authed, **Phase 22 CC-030**) — body `{brand_id, name}` → `{ok, domain:{id, brand_id, name}}`. 소유검증: brand 가 본인 소유(BrandRepo.list_for_user). 4계층 Domain 생성 → /me/pkm-graph 자동 반영.
+- **POST /api/v1/me/series** (authed, **Phase 22 CC-030**) — body `{domain_id, name}` → `{ok, series:{id, domain_id, name}}`. 소유검증: domain 이 본인 brand 하위(domain→brand→user 2-hop).
 
-**Status:** 200. **401**(익명), **404**(미소유·부재). graceful — 집계/조회 실패 시 500 금지(빈 그래프). PATCH/DELETE 교차 사용자 변경·삭제 0(RLS + 소유 검증).
+**Status:** 200. **401**(익명), **404**(미소유·부재), **422**(빈 name). graceful — 집계/조회 실패 시 500 금지(빈 그래프); 생성 repo 실패는 **503**(controlled, unhandled 500 금지). PATCH/DELETE/POST 교차 사용자 변경·생성 0(RLS + 소유 검증).
 
 ---
 
@@ -1318,4 +1320,5 @@ v1.0.0 (2026-05-26): Sprint S3-2 초안. 9 MVP endpoint 명세, SSE progress cha
 CC-023 (2026-06-04): §8.6 브랜딩 세션(Akinator) endpoint 3종(branding/next·finalize·select) — Phase 18.
 CC-024 (2026-06-04): §8.7 마이페이지 2nd brain — /me/pkm-graph + /me/pkm{PATCH,DELETE} 큐레이션 — Phase 19.
 CC-029 (2026-06-04): §8.7 /me/pkm-graph 4계층 깊이(domain/series 노드 + has_domain/has_series) + 브랜드 PKM 출처(source 노드 + sourced_from) 확장 — Phase 21. additive/graceful.
+CC-030 (2026-06-04): §8.7 POST /me/domains + /me/series — 4계층 domain/series 생성(소유검증 RLS) — Phase 22. additive.
 ```

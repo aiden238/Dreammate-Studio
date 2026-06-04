@@ -126,6 +126,66 @@ class MePkmMutationResponse(BaseModel):
     )
 
 
+# ─── Phase 22 Slice S1 — 구조 생성(Domain/Series) 요청·응답 스키마 ──────
+#
+# 4계층(User→Brand→Domain→Series) 의 Domain/Series 를 사용자가 직접 생성한다.
+# 생성된 행은 Phase 21 /me/pkm-graph 집계가 자동으로 깊이 노드로 펼친다 (집계 변경 0).
+# ★ 소유: domain 은 본인 brand 아래, series 는 본인 domain 아래만 — 라우터가 검증(교차 → 404).
+
+
+class MeDomainCreateRequest(BaseModel):
+    """POST /api/v1/me/domains 요청 — 소유 brand 아래 domain 1개 생성.
+
+    name 은 비어 있으면 안 됨(min_length=1) → 빈 이름은 422 (Pydantic 검증).
+    """
+
+    brand_id: str = Field(description="domain 을 붙일 소유 brand id.")
+    name: str = Field(min_length=1, description="domain 이름 (비어 있으면 422).")
+
+
+class MeDomainNode(BaseModel):
+    """생성된 domain 의 식별 필드 (응답 동봉)."""
+
+    id: str = Field(description="생성된 domain id.")
+    brand_id: str = Field(description="소속 brand id.")
+    name: str = Field(description="domain 이름.")
+
+
+class MeDomainCreateResponse(BaseModel):
+    """POST /api/v1/me/domains 응답 — {ok, domain}.
+
+    소유/검증 실패는 endpoint 가 401/404/422 로 응답 (이 모델 미반환).
+    """
+
+    ok: bool = Field(description="생성 성공 여부.")
+    domain: MeDomainNode = Field(description="생성된 domain.")
+
+
+class MeSeriesCreateRequest(BaseModel):
+    """POST /api/v1/me/series 요청 — 소유 domain 아래 series 1개 생성.
+
+    name 은 비어 있으면 안 됨(min_length=1) → 빈 이름은 422 (Pydantic 검증).
+    """
+
+    domain_id: str = Field(description="series 를 붙일 소유 domain id.")
+    name: str = Field(min_length=1, description="series 이름 (비어 있으면 422).")
+
+
+class MeSeriesNode(BaseModel):
+    """생성된 series 의 식별 필드 (응답 동봉)."""
+
+    id: str = Field(description="생성된 series id.")
+    domain_id: str = Field(description="소속 domain id.")
+    name: str = Field(description="series 이름.")
+
+
+class MeSeriesCreateResponse(BaseModel):
+    """POST /api/v1/me/series 응답 — {ok, series}."""
+
+    ok: bool = Field(description="생성 성공 여부.")
+    series: MeSeriesNode = Field(description="생성된 series.")
+
+
 __all__ = [
     "PkmGraphNode",
     "PkmGraphEdge",
@@ -133,4 +193,10 @@ __all__ = [
     "PkmGraphResponse",
     "MePkmPatchRequest",
     "MePkmMutationResponse",
+    "MeDomainCreateRequest",
+    "MeDomainNode",
+    "MeDomainCreateResponse",
+    "MeSeriesCreateRequest",
+    "MeSeriesNode",
+    "MeSeriesCreateResponse",
 ]

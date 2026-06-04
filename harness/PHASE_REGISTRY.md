@@ -42,7 +42,8 @@
 | 19 | 2nd brain 시각화 (마이페이지 PKM 도식화) | **done** (2026-06-04) | `/brain` — 개인 PKM+브랜드 PKM 모바일 카드/리스트 + 데스크톱 react-flow 그래프(@xyflow lazy-load, 모바일 미포함) 하이브리드 + 큐레이션(잠금/편집/삭제). S1(/me/pkm-graph API)+S2(모바일 카드)+S3(데스크톱 그래프)+S4(PATCH/DELETE 큐레이션). ★ 발굴→축적→주입→**가시화** 루프 완성. 읽기 레이어(신규 데이터모델 0). CC-024. gated/additive, pytest 641→668. 라이브 시각 e2e 이월(@xyflow 재기동). (archive) |
 | 20 | commercial_viral 모드 (output_mode 4th tier) | **done** (2026-06-04) | `output_mode` 4-tier(compact<rich<director<**commercial_viral**) — 상업·전략급 기획 브리프(7 Plan 슬롯 + scene 2필드 + Critic 17차원). director(P15) 패턴 직접 계승, 전부 gated/additive/OFF byte-identical. S1(schema)+S2(prompt P-006 v1.3.0)+S3(wiring)+S4(critic P-007 v1.4.0)+S5(frontend)+S6(★라이브 검증 PASS). 보정1(보장 0)·보정2(기획 브리프)·보정3(추정 표기) 실증. CC-025~028. pytest 668→691. ★ 라이브: 7슬롯 채움/보장표현0/추정표기/critic 17(approve 4.41). 시각 e2e 이월. (archive) |
 | 21 | /brain 4계층 깊이 + 출처 엣지 | **done** (2026-06-04) | Phase 19 그래프 확장 — domain·series 노드(4계층 가시화, DomainRepo/SeriesRepo 신규) + 브랜드 PKM 출처 엣지(source_plan_id→`sourced_from`, dedup). S1(backend 집계+repos+graph.py 스키마)+S2(frontend 렌더+CC-029). additive/graceful(domains/series/source 0 = 기존 그래프 불변). 개인 PKM 출처는 source_plan_id 부재로 이월. hermetic pytest 691→698. (archive) |
-| 22~30 | 고도화 / 배포 | future | 배포 Gate B~G / Spring, Expo, Custom RAG, LangGraph |
+| **22** | **domains/series 생성 기능 (4계층 데이터 풍부화)** | **active** (entry 2026-06-04) | DomainRepo/SeriesRepo **create** + POST /me/domains·/me/series(소유검증) + /brain 추가 UI → Phase 21 그래프가 실데이터 4계층으로 채워짐. ★ 라이브 데모(생성→그래프 4계층). additive(기존 /brain·그래프 무변경). S1(backend create+endpoints+CC)→S2(frontend UI+라이브+close). |
+| 23~30 | 고도화 / 배포 | future | 배포 Gate B~G / Spring, Expo, Custom RAG, LangGraph |
 
 ### ★ PARKED 제안 (future direction — proposal-first, 선행조건 gated, 빌드 승격 X)
 

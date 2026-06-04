@@ -81,6 +81,51 @@ class SeriesRepo:
         # graceful in-memory fallback — 본 domain 의 series 만.
         return list(self.store.get(domain_id, []))
 
+    # ─── operations (create — Phase 22 S1) ───────────────────────────
+
+    async def create(self, domain_id: str, name: str) -> Optional[dict[str, Any]]:
+        """domain 아래 series row 1개 생성 후 그 row(dict, id 포함) 반환. 실패 시 None (graceful).
+
+        ★ BrandRepo.get_or_create_default INSERT 패턴 계승 — Supabase insert → id /
+          없으면 in-memory uuid4 fallback. 어떤 실패도 raise 금지 → None (호출자가 안전 매핑).
+        ★ RLS/격리: 호출자(라우터)가 이미 소유 검증한 domain_id 만 넘긴다 (series→domains→brands 체인).
+          0003_rls_policy.sql 의 series owner-insert 도 교차 계정 INSERT 를 강제 차단.
+        ★ in-memory mirror: Supabase 성공 시에도 store 에 append → list_for_domain 즉시 반영.
+        """
+        payload: dict[str, Any] = {"domain_id": domain_id, "name": name}
+
+        if self._use_supabase():
+            try:
+                resp = (
+                    self.client.table("series")  # type: ignore[union-attr]
+                    .insert(payload)
+                    .execute()
+                )
+                if resp and getattr(resp, "data", None):
+                    row = resp.data[0]
+                    if row.get("id"):
+                        self.store.setdefault(domain_id, []).append(row)  # in-memory mirror
+                        return dict(row)
+                # data 없음 / id 없음 → graceful None.
+                logger.warning(
+                    "series_create_no_id domain_id=%s — graceful None", domain_id,
+                )
+                return None
+            except Exception as exc:
+                logger.warning(
+                    "series_create_failed: %s — graceful None",
+                    exc.__class__.__name__,
+                )
+                return None
+
+        # graceful in-memory fallback — uuid4 로 결정적 unique id.
+        from uuid import uuid4
+
+        row = dict(payload)
+        row["id"] = str(uuid4())
+        self.store.setdefault(domain_id, []).append(row)
+        return dict(row)
+
     def _reset_for_test(self) -> None:
         """테스트용 in-memory store 초기화 (BrandRepo._reset 패턴)."""
         self.store.clear()
