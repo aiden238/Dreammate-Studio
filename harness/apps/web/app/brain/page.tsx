@@ -33,7 +33,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import AuthGuard from "@/components/AuthGuard"; // 외부 wrapper (다른 authed page 와 동일 패턴)
-import { deletePkmNode, getPkmGraph, updatePkmNode } from "@/lib/api";
+import StructureCreateInput from "@/components/brain/StructureCreateInput";
+import {
+  createDomain,
+  createSeries,
+  deletePkmNode,
+  getPkmGraph,
+  updatePkmNode,
+} from "@/lib/api";
 import type { PkmGraphNode, PkmGraphResponse } from "@/lib/types";
 import { useMediaQuery } from "@/lib/use_media_query";
 
@@ -65,6 +72,21 @@ type DesktopView = "graph" | "list";
 interface BrandGroup {
   brand: PkmGraphNode;
   entries: PkmGraphNode[];
+}
+
+// ─── Phase 22 S2 — 4계층 구조 트리 (brand → domain → series) ────────────
+// 기존 graph(nodes/edges)에서 파생. has_domain(brand→domain)/has_series(domain→series) 엣지로 묶는다.
+
+/** domain 노드 + 그 domain 에 속한 series 노드들. */
+interface DomainNode {
+  domain: PkmGraphNode;
+  series: PkmGraphNode[];
+}
+
+/** brand 노드 + 그 brand 에 속한 domain(각자 series 포함). */
+interface StructureBrand {
+  brand: PkmGraphNode;
+  domains: DomainNode[];
 }
 
 export default function BrainPage() {
@@ -176,11 +198,32 @@ function BrainPageContent() {
     [busyNodeId, refetch],
   );
 
+  // 구조 생성(S2) — domain 생성 후 refetch (그래프에 has_domain 노드/엣지 노출).
+  const handleCreateDomain = useCallback(
+    async (brandId: string, name: string) => {
+      await createDomain(brandId, name);
+      await refetch();
+    },
+    [refetch],
+  );
+
+  // 구조 생성(S2) — series 생성 후 refetch (그래프에 has_series 노드/엣지 노출).
+  const handleCreateSeries = useCallback(
+    async (domainId: string, name: string) => {
+      await createSeries(domainId, name);
+      await refetch();
+    },
+    [refetch],
+  );
+
   // scope 로 그룹핑 (렌더 안정성 위해 graph 기준 memo).
   const { personal, brandGroups } = useMemo(
     () => groupByScope(graph),
     [graph],
   );
+
+  // S2: brand → domain → series 4계층 트리 (구조 생성 섹션용). graph 기준 memo.
+  const structureBrands = useMemo(() => buildStructureTree(graph), [graph]);
 
   const summary = graph?.summary ?? { personal: 0, brand: 0, brands: 0 };
   // user 노드만 있거나(=PKM 0) summary 가 전부 0 → empty state.
@@ -400,6 +443,84 @@ function BrainPageContent() {
               </div>
             </div>
           )}
+
+          {/* Phase 22 S2 — 지식 구조 (4계층): brand → domain → series 생성 */}
+          <div>
+            <h2 className="font-semibold text-lg text-text-default mb-1">
+              지식 구조 (4계층)
+            </h2>
+            <p className="text-sm text-text-muted mb-3">
+              브랜드 안에 도메인(주제 묶음)과 시리즈(연재)를 만들어 기획을 정리해요.
+            </p>
+            {structureBrands.length > 0 ? (
+              <div className="flex flex-col gap-6">
+                {structureBrands.map((sb) => (
+                  <div
+                    key={sb.brand.id}
+                    className="rounded-lg border border-border-default bg-surface p-4"
+                  >
+                    <h3 className="text-sm font-semibold text-text-default mb-1">
+                      {sb.brand.label}
+                    </h3>
+                    {/* 도메인 추가 (brand 단위) */}
+                    <StructureCreateInput
+                      placeholder="새 도메인 이름"
+                      buttonLabel="+ 도메인"
+                      ariaLabel={`${sb.brand.label} 도메인 추가`}
+                      onSubmit={(name) =>
+                        handleCreateDomain(sb.brand.id, name)
+                      }
+                    />
+                    {/* 도메인 목록 + 각자의 시리즈 */}
+                    {sb.domains.length > 0 ? (
+                      <div className="mt-3 flex flex-col gap-3">
+                        {sb.domains.map((dn) => (
+                          <div
+                            key={dn.domain.id}
+                            className="rounded-md border border-border-default bg-bg-subtle p-3"
+                          >
+                            <div className="text-sm font-medium text-text-default">
+                              {dn.domain.label}
+                            </div>
+                            {/* 시리즈 목록 */}
+                            {dn.series.length > 0 ? (
+                              <ul className="mt-2 flex flex-col gap-1">
+                                {dn.series.map((s) => (
+                                  <li
+                                    key={s.id}
+                                    className="text-sm text-text-muted before:content-['•'] before:mr-2 before:text-text-placeholder"
+                                  >
+                                    {s.label}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : null}
+                            {/* 시리즈 추가 (domain 단위) */}
+                            <StructureCreateInput
+                              placeholder="새 시리즈 이름"
+                              buttonLabel="+ 시리즈"
+                              ariaLabel={`${dn.domain.label} 시리즈 추가`}
+                              onSubmit={(name) =>
+                                handleCreateSeries(dn.domain.id, name)
+                              }
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-text-placeholder">
+                        아직 도메인이 없어요. 위에서 첫 도메인을 만들어 보세요.
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-text-placeholder">
+                브랜드를 먼저 만들면 그 안에 도메인·시리즈를 만들 수 있어요.
+              </p>
+            )}
+          </div>
         </section>
       )}
     </main>
@@ -541,4 +662,49 @@ function groupByScope(graph: PkmGraphResponse | null): {
   }));
 
   return { personal, brandGroups };
+}
+
+/**
+ * Phase 22 S2 — graph 응답에서 brand → domain → series 4계층 트리를 파생.
+ *   - brands: type==="brand" 노드.
+ *   - 각 brand 의 domain: has_domain 엣지(source===brand.id)의 target 중 type==="domain".
+ *   - 각 domain 의 series: has_series 엣지(source===domain.id)의 target 중 type==="series".
+ * (read-only — 생성은 createDomain/createSeries + refetch 로 그래프에 반영)
+ */
+function buildStructureTree(graph: PkmGraphResponse | null): StructureBrand[] {
+  if (!graph) return [];
+
+  const nodeById = new Map<string, PkmGraphNode>();
+  for (const n of graph.nodes) nodeById.set(n.id, n);
+
+  const brands = graph.nodes.filter((n) => n.type === "brand");
+
+  // brand id → domain 노드들 (has_domain: brand→domain).
+  const domainsByBrand = new Map<string, PkmGraphNode[]>();
+  // domain id → series 노드들 (has_series: domain→series).
+  const seriesByDomain = new Map<string, PkmGraphNode[]>();
+  for (const b of brands) domainsByBrand.set(b.id, []);
+
+  for (const e of graph.edges) {
+    if (e.kind === "has_domain") {
+      const bucket = domainsByBrand.get(e.source);
+      const child = nodeById.get(e.target);
+      if (bucket && child && child.type === "domain") bucket.push(child);
+    } else if (e.kind === "has_series") {
+      const child = nodeById.get(e.target);
+      if (child && child.type === "series") {
+        const bucket = seriesByDomain.get(e.source);
+        if (bucket) bucket.push(child);
+        else seriesByDomain.set(e.source, [child]);
+      }
+    }
+  }
+
+  return brands.map((brand) => ({
+    brand,
+    domains: (domainsByBrand.get(brand.id) ?? []).map((domain) => ({
+      domain,
+      series: seriesByDomain.get(domain.id) ?? [],
+    })),
+  }));
 }

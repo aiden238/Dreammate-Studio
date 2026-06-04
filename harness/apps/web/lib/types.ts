@@ -581,6 +581,45 @@ export interface PkmGraphResponse {
   summary: PkmGraphSummary;
 }
 
+// ─── Phase 22 Slice S1/S2 — 구조 생성 (Domain/Series CREATE) types ──────
+//
+// 참조:
+//   - harness/backend/fastapi/schemas/graph.py
+//       MeDomainCreateRequest/Response · MeSeriesCreateRequest/Response · MeDomainNode/MeSeriesNode
+//   - harness/backend/fastapi/routers/me.py
+//       POST /api/v1/me/domains {brand_id, name}  → {ok, domain}
+//       POST /api/v1/me/series  {domain_id, name} → {ok, series}
+//
+// 정책: 사용자가 4계층(User→Brand→Domain→Series) 의 Domain/Series 를 직접 만든다.
+//   authed + RLS (자기 brand/domain 아래만). 생성 즉시 /me/pkm-graph 가 노드/엣지로 노출.
+//   본 타입들은 backend Pydantic 과 1:1 정합.
+
+/** 생성된 domain 식별 필드 (POST /me/domains 응답 동봉). */
+export interface MeDomainNode {
+  id: string;
+  brand_id: string;
+  name: string;
+}
+
+/** POST /api/v1/me/domains 응답 — {ok, domain}. */
+export interface MeDomainCreateResponse {
+  ok: boolean;
+  domain: MeDomainNode;
+}
+
+/** 생성된 series 식별 필드 (POST /me/series 응답 동봉). */
+export interface MeSeriesNode {
+  id: string;
+  domain_id: string;
+  name: string;
+}
+
+/** POST /api/v1/me/series 응답 — {ok, series}. */
+export interface MeSeriesCreateResponse {
+  ok: boolean;
+  series: MeSeriesNode;
+}
+
 // ─── Phase 9 Slice 5 — Select / Feedback types (ADR-030) ───────────────
 //
 // 참조:

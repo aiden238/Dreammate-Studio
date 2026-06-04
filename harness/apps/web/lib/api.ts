@@ -28,6 +28,8 @@ import type {
   FastAPIDetailError,
   FeedbackRequest,
   FeedbackResponse,
+  MeDomainCreateResponse,
+  MeSeriesCreateResponse,
   MultiPlanEnvelope,
   PkmGraphNode,
   PkmGraphResponse,
@@ -689,4 +691,67 @@ export async function deletePkmNode(nodeId: string): Promise<PkmMutationResult> 
     throw new Error(`pkm_delete_failed: ${resp.status}`);
   }
   return resp.json() as Promise<PkmMutationResult>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Phase 22 Slice S1/S2 — 구조 생성 (Domain/Series CREATE) endpoint wrappers
+// ═══════════════════════════════════════════════════════════════════════
+//
+// 참조: harness/backend/fastapi/routers/me.py
+//         POST /api/v1/me/domains {brand_id, name}  → {ok, domain} (authed, RLS)
+//         POST /api/v1/me/series  {domain_id, name} → {ok, series} (authed, RLS)
+//       harness/backend/fastapi/schemas/graph.py (Me{Domain,Series}Create* 정합)
+//
+// 정책:
+//   - auth-required (RLS — 자기 brand/domain 아래만). credentials:"include" (httpOnly cookie 전송,
+//     cross-origin :3000→:8000, CORS allow_credentials=True). 미소유/미존재 → 404, 익명 → 401,
+//     빈 name → 422, 저장 실패 → 503. 단순 throw on !ok (page.tsx 가 try/catch + 그래프 refetch).
+//   - 생성 즉시 /me/pkm-graph 가 domain/series 노드+엣지(has_domain/has_series)로 노출 → refetch 로 반영.
+
+/**
+ * POST /api/v1/me/domains
+ * 소유 brand(brandId) 아래 domain 1개 생성. 미소유 brand → 404, 빈 name → 422 throw.
+ */
+export async function createDomain(
+  brandId: string,
+  name: string,
+): Promise<MeDomainCreateResponse> {
+  const url = `${API_BASE_URL}/api/v1/me/domains`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ brand_id: brandId, name }),
+  });
+  if (!resp.ok) {
+    throw new Error(`domain_create_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<MeDomainCreateResponse>;
+}
+
+/**
+ * POST /api/v1/me/series
+ * 소유 domain(domainId) 아래 series 1개 생성. 미소유 domain → 404, 빈 name → 422 throw.
+ */
+export async function createSeries(
+  domainId: string,
+  name: string,
+): Promise<MeSeriesCreateResponse> {
+  const url = `${API_BASE_URL}/api/v1/me/series`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ domain_id: domainId, name }),
+  });
+  if (!resp.ok) {
+    throw new Error(`series_create_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<MeSeriesCreateResponse>;
 }
