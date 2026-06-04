@@ -31,6 +31,7 @@ import type {
   MeDomainCreateResponse,
   MeMutationResponse,
   MeSeriesCreateResponse,
+  MeVideoCreateResponse,
   MultiPlanEnvelope,
   PkmGraphNode,
   PkmGraphResponse,
@@ -857,6 +858,91 @@ export async function deleteSeries(
   });
   if (!resp.ok) {
     throw new Error(`series_delete_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<MeMutationResponse>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Phase 26 Slice S1/S3 — Video CRUD (4계층 최하단 Video) endpoint wrappers
+// ═══════════════════════════════════════════════════════════════════════
+//
+// 참조: harness/backend/fastapi/routers/me.py
+//         POST   /api/v1/me/videos {series_id, title} → {ok, video}    (authed, RLS 4-hop)
+//         PATCH  /api/v1/me/videos/{video_id} {title} → {ok, video}
+//         DELETE /api/v1/me/videos/{video_id}         → {ok, deleted}
+//       harness/backend/fastapi/schemas/graph.py (MeVideoCreate/Update* · MeVideoNode 정합)
+//
+// 정책 (createSeries/updateSeries/deleteSeries 패턴 미러):
+//   - auth-required (RLS — 자기 series→domain→brand 아래만). credentials:"include" (httpOnly cookie 전송,
+//     cross-origin :3000→:8000, CORS allow_credentials=True). 미소유/미존재 → 404, 익명 → 401,
+//     빈 title → 422. 단순 throw on !ok (page.tsx 가 try/catch + 그래프 refetch).
+//   - ★ Domain/Series 는 `name`, Video 는 `title` (video_projects 스키마).
+//   - id 는 graph 노드 접두어("video:")가 아닌 **bare uuid** — 호출측이 접두어를 벗겨 넘긴다.
+//   - 생성/편집/삭제 즉시 /me/pkm-graph 가 video 노드 + has_video 엣지(series→video)로 반영 → refetch.
+
+/**
+ * POST /api/v1/me/videos
+ * 소유 series(seriesId) 아래 video 1개 생성. 미소유 series → 404, 빈 title → 422, 익명 → 401 throw.
+ */
+export async function createVideo(
+  seriesId: string,
+  title: string,
+): Promise<MeVideoCreateResponse> {
+  const url = `${API_BASE_URL}/api/v1/me/videos`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ series_id: seriesId, title }),
+  });
+  if (!resp.ok) {
+    throw new Error(`video_create_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<MeVideoCreateResponse>;
+}
+
+/**
+ * PATCH /api/v1/me/videos/{video_id}
+ * 소유 video(videoId)의 title 변경. 미소유/미존재 → 404, 빈 title → 422, 익명 → 401 throw.
+ */
+export async function updateVideo(
+  videoId: string,
+  title: string,
+): Promise<MeVideoCreateResponse> {
+  const url = `${API_BASE_URL}/api/v1/me/videos/${encodeURIComponent(videoId)}`;
+  const resp = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ title }),
+  });
+  if (!resp.ok) {
+    throw new Error(`video_update_failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<MeVideoCreateResponse>;
+}
+
+/**
+ * DELETE /api/v1/me/videos/{video_id}
+ * 소유 video(videoId) 삭제. 미소유/미존재 → 404, 익명 → 401 throw.
+ */
+export async function deleteVideo(
+  videoId: string,
+): Promise<MeMutationResponse> {
+  const url = `${API_BASE_URL}/api/v1/me/videos/${encodeURIComponent(videoId)}`;
+  const resp = await fetch(url, {
+    method: "DELETE",
+    headers: { Accept: "application/json" },
+    credentials: "include",
+  });
+  if (!resp.ok) {
+    throw new Error(`video_delete_failed: ${resp.status}`);
   }
   return resp.json() as Promise<MeMutationResponse>;
 }

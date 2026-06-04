@@ -529,7 +529,8 @@ export interface BrandingSelectResponse {
 export interface PkmGraphNode {
   id: string;
   // Phase 21: +domain/series(4계층) +source(출처). id 접두어 "domain:"/"series:"/"source:".
-  type: "user" | "brand" | "pkm" | "domain" | "series" | "source";
+  // Phase 26: +video(4계층 최하단, series→video). id 접두어 "video:".
+  type: "user" | "brand" | "pkm" | "domain" | "series" | "video" | "source";
   label: string;
   /** PKM 노드의 scope (개인/브랜드). 비-PKM 은 미지정. */
   scope?: "personal" | "brand" | null;
@@ -547,12 +548,14 @@ export interface PkmGraphEdge {
   source: string;
   target: string;
   // Phase 21: +has_domain(brand→domain) +has_series(domain→series) +sourced_from(brand pkm→출처).
+  // Phase 26: +has_video(series→video, 4계층 최하단).
   kind:
     | "owns"
     | "has_personal"
     | "has_brand_pkm"
     | "has_domain"
     | "has_series"
+    | "has_video"
     | "sourced_from";
 }
 
@@ -570,6 +573,8 @@ export interface PkmGraphSummary {
   domains?: number;
   series?: number;
   sources?: number;
+  /** Phase 26: video 노드 수 (전 series 합, additive, default 0). */
+  videos?: number;
 }
 
 /**
@@ -639,6 +644,35 @@ export interface MeSeriesCreateResponse {
 export interface MeMutationResponse {
   ok: boolean;
   deleted: boolean;
+}
+
+// ─── Phase 26 Slice S1/S3 — Video CRUD (4계층 최하단 Video) types ────────
+//
+// 참조:
+//   - harness/backend/fastapi/schemas/graph.py
+//       MeVideoCreateRequest ({series_id, title}) · MeVideoUpdateRequest ({title})
+//       MeVideoNode ({id, series_id, title}) · MeVideoCreateResponse ({ok, video})
+//   - harness/backend/fastapi/routers/me.py
+//       POST   /api/v1/me/videos {series_id, title} → {ok, video}
+//       PATCH  /api/v1/me/videos/{video_id} {title} → {ok, video}
+//       DELETE /api/v1/me/videos/{video_id}         → {ok, deleted} (MeMutationResponse 재사용)
+//
+// 정책: 사용자가 4계층(User→Brand→Domain→Series→Video) 의 최하단 Video 를 직접 CRUD.
+//   authed + RLS 4-hop (자기 series→domain→brand 아래만). 미소유/미존재 → 404, 익명 → 401,
+//   빈 title → 422. 생성/편집 즉시 /me/pkm-graph 가 video 노드 + has_video 엣지로 노출.
+//   ★ Domain/Series 는 `name`, Video 는 `title` (video_projects 스키마). 본 타입은 backend Pydantic 과 1:1 정합.
+
+/** 생성/편집된 video 식별 필드 (POST/PATCH /me/videos 응답 동봉). */
+export interface MeVideoNode {
+  id: string;
+  series_id: string;
+  title: string;
+}
+
+/** POST / PATCH /api/v1/me/videos 응답 — {ok, video}. */
+export interface MeVideoCreateResponse {
+  ok: boolean;
+  video: MeVideoNode;
 }
 
 // ─── Phase 9 Slice 5 — Select / Feedback types (ADR-030) ───────────────

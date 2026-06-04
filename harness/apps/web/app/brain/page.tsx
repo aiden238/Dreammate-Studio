@@ -38,13 +38,16 @@ import StructureRenameInput from "@/components/brain/StructureRenameInput";
 import {
   createDomain,
   createSeries,
+  createVideo,
   deleteDomain,
   deletePkmNode,
   deleteSeries,
+  deleteVideo,
   getPkmGraph,
   updateDomain,
   updatePkmNode,
   updateSeries,
+  updateVideo,
 } from "@/lib/api";
 import type { PkmGraphNode, PkmGraphResponse } from "@/lib/types";
 import { useMediaQuery } from "@/lib/use_media_query";
@@ -82,10 +85,16 @@ interface BrandGroup {
 // ─── Phase 22 S2 — 4계층 구조 트리 (brand → domain → series) ────────────
 // 기존 graph(nodes/edges)에서 파생. has_domain(brand→domain)/has_series(domain→series) 엣지로 묶는다.
 
-/** domain 노드 + 그 domain 에 속한 series 노드들. */
+/** series 노드 + 그 series 에 속한 video 노드들 (Phase 26 — 4계층 최하단). */
+interface SeriesNode {
+  series: PkmGraphNode;
+  videos: PkmGraphNode[];
+}
+
+/** domain 노드 + 그 domain 에 속한 series(각자 video 포함). */
 interface DomainNode {
   domain: PkmGraphNode;
-  series: PkmGraphNode[];
+  series: SeriesNode[];
 }
 
 /** brand 노드 + 그 brand 에 속한 domain(각자 series 포함). */
@@ -95,11 +104,14 @@ interface StructureBrand {
 }
 
 /**
- * graph 노드 id("domain:<uuid>"/"series:<uuid>")에서 접두어를 벗겨 bare uuid 반환.
- * 구조 편집/삭제 API(PATCH/DELETE /me/domains|series/{id})는 접두어 없는 id 를 받는다.
+ * graph 노드 id("domain:<uuid>"/"series:<uuid>"/"video:<uuid>")에서 접두어를 벗겨 bare uuid 반환.
+ * 구조 편집/삭제 API(PATCH/DELETE /me/domains|series|videos/{id})는 접두어 없는 id 를 받는다.
  * 접두어가 없으면(방어적) 원본을 그대로 반환.
  */
-function stripNodePrefix(nodeId: string, prefix: "domain:" | "series:"): string {
+function stripNodePrefix(
+  nodeId: string,
+  prefix: "domain:" | "series:" | "video:",
+): string {
   return nodeId.startsWith(prefix) ? nodeId.slice(prefix.length) : nodeId;
 }
 
@@ -232,6 +244,16 @@ function BrainPageContent() {
     [refetch],
   );
 
+  // 구조 생성(Phase 26 S3) — video 생성 후 refetch (그래프에 has_video 노드/엣지 노출).
+  //   ★ Video 는 name 이 아닌 title (video_projects 스키마).
+  const handleCreateVideo = useCallback(
+    async (seriesId: string, title: string) => {
+      await createVideo(stripNodePrefix(seriesId, "series:"), title);
+      await refetch();
+    },
+    [refetch],
+  );
+
   // ── Phase 24 S2 — 구조 편집/삭제 (domain/series rename + delete) ──────────
   // graph 노드 id 는 "domain:<uuid>"/"series:<uuid>" 접두어 → API 는 bare uuid 를 받으므로 벗긴다.
 
@@ -247,6 +269,15 @@ function BrainPageContent() {
   const handleRenameSeries = useCallback(
     async (seriesNodeId: string, name: string) => {
       await updateSeries(stripNodePrefix(seriesNodeId, "series:"), name);
+      await refetch();
+    },
+    [refetch],
+  );
+
+  // Phase 26 S3 — video 제목 변경. graph 노드 id "video:<uuid>" → bare uuid. ★ title.
+  const handleRenameVideo = useCallback(
+    async (videoNodeId: string, title: string) => {
+      await updateVideo(stripNodePrefix(videoNodeId, "video:"), title);
       await refetch();
     },
     [refetch],
@@ -289,6 +320,28 @@ function BrainPageContent() {
       setBusyNodeId(node.id);
       try {
         await deleteSeries(stripNodePrefix(node.id, "series:"));
+        await refetch();
+      } catch {
+        window.alert("삭제에 실패했어요. 잠시 후 다시 시도해주세요.");
+      } finally {
+        setBusyNodeId(null);
+      }
+    },
+    [busyNodeId, refetch],
+  );
+
+  const handleDeleteVideo = useCallback(
+    async (node: PkmGraphNode) => {
+      if (busyNodeId) return;
+      if (typeof window === "undefined") return;
+      if (
+        !window.confirm("이 영상을 삭제할까요? 되돌릴 수 없어요.")
+      ) {
+        return;
+      }
+      setBusyNodeId(node.id);
+      try {
+        await deleteVideo(stripNodePrefix(node.id, "video:"));
         await refetch();
       } catch {
         window.alert("삭제에 실패했어요. 잠시 후 다시 시도해주세요.");
@@ -590,41 +643,105 @@ function BrainPageContent() {
                                 onDelete={() => handleDeleteDomain(dn.domain)}
                               />
                             )}
-                            {/* 시리즈 목록 */}
+                            {/* 시리즈 목록 (각 시리즈 아래 영상 목록 + "+영상") */}
                             {dn.series.length > 0 ? (
-                              <ul className="mt-2 flex flex-col gap-1">
-                                {dn.series.map((s) =>
-                                  renamingNodeId === s.id ? (
-                                    <li key={s.id} className="mt-1">
+                              <ul className="mt-2 flex flex-col gap-2">
+                                {dn.series.map((sn) => (
+                                  <li key={sn.series.id}>
+                                    {/* 시리즈 헤더 — 이름 + ✏️/🗑 (rename 중이면 인라인 입력) */}
+                                    {renamingNodeId === sn.series.id ? (
                                       <StructureRenameInput
-                                        initialValue={s.label}
-                                        ariaLabel={`${s.label} 시리즈 이름 수정`}
+                                        initialValue={sn.series.label}
+                                        ariaLabel={`${sn.series.label} 시리즈 이름 수정`}
                                         disabled={busyNodeId !== null}
                                         onSubmit={(name) =>
-                                          handleRenameSeries(s.id, name)
+                                          handleRenameSeries(sn.series.id, name)
                                         }
                                         onDone={() => setRenamingNodeId(null)}
                                       />
-                                    </li>
-                                  ) : (
-                                    <li key={s.id}>
+                                    ) : (
                                       <StructureRowControls
-                                        label={s.label}
-                                        busy={busyNodeId === s.id}
+                                        label={sn.series.label}
+                                        busy={busyNodeId === sn.series.id}
                                         disabled={
                                           renamingNodeId !== null ||
                                           (busyNodeId !== null &&
-                                            busyNodeId !== s.id)
+                                            busyNodeId !== sn.series.id)
                                         }
                                         labelClassName="text-sm text-text-muted before:content-['•'] before:mr-2 before:text-text-placeholder"
                                         editAriaLabel="시리즈 이름 수정"
                                         deleteAriaLabel="시리즈 삭제"
-                                        onEdit={() => setRenamingNodeId(s.id)}
-                                        onDelete={() => handleDeleteSeries(s)}
+                                        onEdit={() =>
+                                          setRenamingNodeId(sn.series.id)
+                                        }
+                                        onDelete={() =>
+                                          handleDeleteSeries(sn.series)
+                                        }
                                       />
-                                    </li>
-                                  ),
-                                )}
+                                    )}
+                                    {/* 영상 목록 (시리즈보다 한 단계 더 들여쓰기) */}
+                                    <div className="ml-4 mt-1">
+                                      {sn.videos.length > 0 ? (
+                                        <ul className="flex flex-col gap-1">
+                                          {sn.videos.map((v) =>
+                                            renamingNodeId === v.id ? (
+                                              <li key={v.id} className="mt-1">
+                                                <StructureRenameInput
+                                                  initialValue={v.label}
+                                                  ariaLabel={`${v.label} 영상 제목 수정`}
+                                                  disabled={busyNodeId !== null}
+                                                  onSubmit={(title) =>
+                                                    handleRenameVideo(
+                                                      v.id,
+                                                      title,
+                                                    )
+                                                  }
+                                                  onDone={() =>
+                                                    setRenamingNodeId(null)
+                                                  }
+                                                />
+                                              </li>
+                                            ) : (
+                                              <li key={v.id}>
+                                                <StructureRowControls
+                                                  label={v.label}
+                                                  busy={busyNodeId === v.id}
+                                                  disabled={
+                                                    renamingNodeId !== null ||
+                                                    (busyNodeId !== null &&
+                                                      busyNodeId !== v.id)
+                                                  }
+                                                  labelClassName="text-sm text-text-muted before:content-['▸'] before:mr-2 before:text-text-placeholder"
+                                                  editAriaLabel="영상 제목 수정"
+                                                  deleteAriaLabel="영상 삭제"
+                                                  onEdit={() =>
+                                                    setRenamingNodeId(v.id)
+                                                  }
+                                                  onDelete={() =>
+                                                    handleDeleteVideo(v)
+                                                  }
+                                                />
+                                              </li>
+                                            ),
+                                          )}
+                                        </ul>
+                                      ) : null}
+                                      {/* 영상 추가 (series 단위) */}
+                                      <StructureCreateInput
+                                        placeholder="새 영상 제목"
+                                        buttonLabel="+ 영상"
+                                        ariaLabel={`${sn.series.label} 영상 추가`}
+                                        disabled={renamingNodeId !== null}
+                                        onSubmit={(title) =>
+                                          handleCreateVideo(
+                                            sn.series.id,
+                                            title,
+                                          )
+                                        }
+                                      />
+                                    </div>
+                                  </li>
+                                ))}
                               </ul>
                             ) : null}
                             {/* 시리즈 추가 (domain 단위) */}
@@ -869,11 +986,12 @@ function groupByScope(graph: PkmGraphResponse | null): {
 }
 
 /**
- * Phase 22 S2 — graph 응답에서 brand → domain → series 4계층 트리를 파생.
+ * Phase 22 S2 / Phase 26 S3 — graph 응답에서 brand → domain → series → video 4계층 트리를 파생.
  *   - brands: type==="brand" 노드.
  *   - 각 brand 의 domain: has_domain 엣지(source===brand.id)의 target 중 type==="domain".
  *   - 각 domain 의 series: has_series 엣지(source===domain.id)의 target 중 type==="series".
- * (read-only — 생성은 createDomain/createSeries + refetch 로 그래프에 반영)
+ *   - 각 series 의 video: has_video 엣지(source===series.id)의 target 중 type==="video".
+ * (read-only — 생성은 createDomain/createSeries/createVideo + refetch 로 그래프에 반영)
  */
 function buildStructureTree(graph: PkmGraphResponse | null): StructureBrand[] {
   if (!graph) return [];
@@ -887,6 +1005,8 @@ function buildStructureTree(graph: PkmGraphResponse | null): StructureBrand[] {
   const domainsByBrand = new Map<string, PkmGraphNode[]>();
   // domain id → series 노드들 (has_series: domain→series).
   const seriesByDomain = new Map<string, PkmGraphNode[]>();
+  // series id → video 노드들 (has_video: series→video).
+  const videosBySeries = new Map<string, PkmGraphNode[]>();
   for (const b of brands) domainsByBrand.set(b.id, []);
 
   for (const e of graph.edges) {
@@ -901,6 +1021,13 @@ function buildStructureTree(graph: PkmGraphResponse | null): StructureBrand[] {
         if (bucket) bucket.push(child);
         else seriesByDomain.set(e.source, [child]);
       }
+    } else if (e.kind === "has_video") {
+      const child = nodeById.get(e.target);
+      if (child && child.type === "video") {
+        const bucket = videosBySeries.get(e.source);
+        if (bucket) bucket.push(child);
+        else videosBySeries.set(e.source, [child]);
+      }
     }
   }
 
@@ -908,7 +1035,10 @@ function buildStructureTree(graph: PkmGraphResponse | null): StructureBrand[] {
     brand,
     domains: (domainsByBrand.get(brand.id) ?? []).map((domain) => ({
       domain,
-      series: seriesByDomain.get(domain.id) ?? [],
+      series: (seriesByDomain.get(domain.id) ?? []).map((series) => ({
+        series,
+        videos: videosBySeries.get(series.id) ?? [],
+      })),
     })),
   }));
 }
