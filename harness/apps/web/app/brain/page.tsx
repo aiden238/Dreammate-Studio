@@ -28,14 +28,38 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import AuthGuard from "@/components/AuthGuard"; // 외부 wrapper (다른 authed page 와 동일 패턴)
 import { deletePkmNode, getPkmGraph, updatePkmNode } from "@/lib/api";
 import type { PkmGraphNode, PkmGraphResponse } from "@/lib/types";
+import { useMediaQuery } from "@/lib/use_media_query";
 
 type Phase = "loading" | "error" | "data";
+
+/**
+ * S3 — 데스크톱 전용 노드 그래프(react-flow).
+ *   - ssr:false + 아래 데스크톱 분기에서만 렌더 → dynamic import 가 데스크톱에서만 트리거 =
+ *     **모바일 번들에 react-flow(@xyflow/react) 미포함**.
+ *   - loading 은 기존 페이지와 동일한 스피너 톤.
+ */
+const PkmGraph = dynamic(() => import("@/components/brain/PkmGraph"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center rounded-lg border border-border-default bg-surface">
+      <div
+        className="w-8 h-8 border-2 border-border-default border-t-primary rounded-full animate-spin"
+        aria-label="그래프 불러오는 중"
+        role="status"
+      />
+    </div>
+  ),
+});
+
+/** 데스크톱 뷰 모드 — 기본 그래프, "리스트로 보기" 로 카드 복귀. */
+type DesktopView = "graph" | "list";
 
 /** brand 노드 + 그 brand 에 속한 PKM 노드 묶음 (UI 렌더 단위). */
 interface BrandGroup {
@@ -57,6 +81,11 @@ function BrainPageContent() {
   const [graph, setGraph] = useState<PkmGraphResponse | null>(null);
   // 큐레이션 동작 중인 node_id (중복 클릭 방지 + 스피너). null = 유휴.
   const [busyNodeId, setBusyNodeId] = useState<string | null>(null);
+
+  // S3: 데스크톱(≥1024px) 분기 + 데스크톱 뷰 모드(그래프 기본 ↔ 리스트).
+  // 모바일(false)에서는 PkmGraph 가 렌더되지 않아 react-flow dynamic import 미트리거.
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const [desktopView, setDesktopView] = useState<DesktopView>("graph");
 
   useEffect(() => {
     let mounted = true;
@@ -158,6 +187,11 @@ function BrainPageContent() {
   const isEmpty =
     phase === "data" && personal.length === 0 && brandGroups.length === 0;
 
+  // S3: 데이터 있고 데스크톱이며 그래프 모드일 때만 그래프 렌더.
+  //   → 모바일/리스트 모드/empty/loading/error 에서는 기존 카드 경로 그대로(무변경).
+  const showGraph =
+    phase === "data" && !isEmpty && isDesktop && desktopView === "graph";
+
   return (
     <main className="min-h-screen bg-bg-default flex flex-col">
       {/* Header */}
@@ -195,7 +229,52 @@ function BrainPageContent() {
             </span>
           </div>
         )}
+        {/* S3: 데스크톱 전용 뷰 토글 (그래프 ↔ 리스트). 모바일은 미노출 → 카드 경로 무변경. */}
+        {phase === "data" && !isEmpty && isDesktop && (
+          <div
+            className="mt-4 inline-flex rounded-md border border-border-default overflow-hidden"
+            role="group"
+            aria-label="뷰 전환"
+          >
+            <button
+              type="button"
+              onClick={() => setDesktopView("graph")}
+              aria-pressed={desktopView === "graph"}
+              className={`px-3 py-1.5 text-sm font-medium transition-colors duration-fast ${
+                desktopView === "graph"
+                  ? "bg-primary text-text-inverse"
+                  : "bg-surface text-text-muted hover:bg-bg-subtle"
+              }`}
+            >
+              그래프
+            </button>
+            <button
+              type="button"
+              onClick={() => setDesktopView("list")}
+              aria-pressed={desktopView === "list"}
+              className={`px-3 py-1.5 text-sm font-medium transition-colors duration-fast ${
+                desktopView === "list"
+                  ? "bg-primary text-text-inverse"
+                  : "bg-surface text-text-muted hover:bg-bg-subtle"
+              }`}
+            >
+              리스트로 보기
+            </button>
+          </div>
+        )}
       </section>
+
+      {/* S3: 데스크톱 그래프 (그래프 모드일 때만). dynamic ssr:false → 데스크톱에서만 로드. */}
+      {showGraph && graph && (
+        <section className="flex-1 px-4 pb-10 w-full max-w-6xl mx-auto flex flex-col min-h-0">
+          <div className="h-[70vh] min-h-[480px]">
+            <PkmGraph nodes={graph.nodes} edges={graph.edges} />
+          </div>
+          <p className="mt-3 text-xs text-text-muted">
+            드래그로 이동 · 스크롤로 확대/축소. 항목 잠금·편집·삭제는 “리스트로 보기”에서 할 수 있어요.
+          </p>
+        </section>
+      )}
 
       {/* 로딩 스피너 */}
       {phase === "loading" && (
@@ -255,8 +334,8 @@ function BrainPageContent() {
         </section>
       )}
 
-      {/* 데이터 — scope 섹션 */}
-      {phase === "data" && !isEmpty && (
+      {/* 데이터 — scope 섹션 (모바일 항상 / 데스크톱은 리스트 모드일 때. 그래프 모드면 미렌더) */}
+      {phase === "data" && !isEmpty && !showGraph && (
         <section className="flex-1 px-4 pb-10 max-w-2xl mx-auto w-full flex flex-col gap-8">
           {/* 개인 PKM */}
           {personal.length > 0 && (
