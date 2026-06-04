@@ -163,6 +163,29 @@ function toFlow(
     placed.add(pId);
   });
 
+  // ── Phase 21: 4계층(domain/series) + 출처(source) 배치 — 있을 때만(graceful, 없으면 무변경) ──
+  //   domain(brand→domain, has_domain) / series(domain→series, has_series) / source(bm→source, sourced_from).
+  //   각 전용 컬럼에 세로 스택(데이터 희소 — 전역 스택으로 충분, 엣지가 부모와 시각 연결).
+  const COL_DOMAIN_X = 940;
+  const COL_SERIES_X = 1240;
+  const COL_SOURCE_X = 1540;
+  const depthCursor = { domain: 0, series: 0, source: 0 };
+  const depthPlan: ReadonlyArray<[PkmGraphEdge["kind"], PkmGraphNode["type"], number, keyof typeof depthCursor]> = [
+    ["has_domain", "domain", COL_DOMAIN_X, "domain"],
+    ["has_series", "series", COL_SERIES_X, "series"],
+    ["sourced_from", "source", COL_SOURCE_X, "source"],
+  ];
+  for (const [kind, type, x, cursorKey] of depthPlan) {
+    for (const e of graphEdges) {
+      if (e.kind !== kind) continue;
+      const tgt = byId.get(e.target);
+      if (!tgt || tgt.type !== type || placed.has(e.target)) continue;
+      positions.set(e.target, { x, y: depthCursor[cursorKey] });
+      depthCursor[cursorKey] += LEAF_ROW_GAP;
+      placed.add(e.target);
+    }
+  }
+
   // 방어적: 엣지 어디에도 안 걸린 잔여 노드(있으면)는 맨 아래 줄에 흘려 배치.
   let strayCursorX = COL_PERSONAL_X;
   const strayY = Math.max(brandCursorY, personalStartY + personalCount * LEAF_ROW_GAP) + ROW_GAP;
@@ -196,10 +219,16 @@ function toFlow(
     id: `${e.source}->${e.target}:${e.kind}:${i}`,
     source: e.source,
     target: e.target,
-    // owns(user→brand) 는 강조, leaf 연결은 옅게.
+    // owns(user→brand) 강조, 4계층(has_domain/has_series) accent, 출처(sourced_from) 점선, leaf 옅게.
     style: {
-      stroke: e.kind === "owns" ? TOKEN.primary : TOKEN.borderDefault,
+      stroke:
+        e.kind === "owns"
+          ? TOKEN.primary
+          : e.kind === "has_domain" || e.kind === "has_series"
+            ? TOKEN.accent
+            : TOKEN.borderDefault,
       strokeWidth: e.kind === "owns" ? 2 : 1.5,
+      strokeDasharray: e.kind === "sourced_from" ? "4 3" : undefined,
     },
     animated: false,
   }));
@@ -248,6 +277,34 @@ function nodeStyle(n: PkmGraphNode): React.CSSProperties {
       background: TOKEN.surface,
       color: TOKEN.textDefault,
       border: `2px solid ${TOKEN.primary}`,
+    };
+  }
+  // Phase 21: 4계층(domain/series) + 출처(source) 노드 스타일.
+  if (n.type === "domain") {
+    return {
+      ...common,
+      background: TOKEN.surface,
+      color: TOKEN.textDefault,
+      border: `1.5px dashed ${TOKEN.accent}`,
+      fontWeight: 600,
+    };
+  }
+  if (n.type === "series") {
+    return {
+      ...common,
+      background: TOKEN.bgSubtle,
+      color: TOKEN.textDefault,
+      border: `1.5px solid ${TOKEN.accent}`,
+    };
+  }
+  if (n.type === "source") {
+    return {
+      ...common,
+      background: TOKEN.surface,
+      color: TOKEN.textMuted,
+      border: `1.5px dotted ${TOKEN.textMuted}`,
+      fontSize: 11,
+      fontWeight: 500,
     };
   }
   // pkm leaf — scope 별 보더색으로 개인/브랜드 구분.

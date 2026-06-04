@@ -781,7 +781,7 @@ Discovery 5단계 진행. 각 호출이 1단계 카드 생성.
 
 축적된 PKM(개인 pkm_entries + 소유 brands + 브랜드 brand_memory)을 `/brain`에서 도식화·큐레이션. 전부 **인증 사용자 본인 데이터**(RLS 격리, service key backend-only). 모바일=카드/리스트, 데스크톱=그래프(react-flow lazy-load). 신규 데이터모델 0(읽기+CRUD 재사용).
 
-- **GET /api/v1/me/pkm-graph** (authed) → `{nodes:[{id,type:"user"|"brand"|"pkm",label,scope?,entry_type?,locked?}], edges:[{source,target,kind:"owns"|"has_personal"|"has_brand_pkm"}], summary:{personal,brand,brands}}`. id namespace: `user:` / `brand:<id>` / `pkm:<id>`(개인) / `bm:<id>`(브랜드). 익명/무데이터 → 빈 그래프(graceful).
+- **GET /api/v1/me/pkm-graph** (authed) → `{nodes:[{id,type:"user"|"brand"|"pkm"|"domain"|"series"|"source",label,scope?,entry_type?,locked?}], edges:[{source,target,kind:"owns"|"has_personal"|"has_brand_pkm"|"has_domain"|"has_series"|"sourced_from"}], summary:{personal,brand,brands,domains,series,sources}}`. id namespace: `user:` / `brand:<id>` / `pkm:<id>`(개인) / `bm:<id>`(브랜드) / **`domain:<id>` / `series:<id>` / `source:<plan_id>`(Phase 21)**. 익명/무데이터 → 빈 그래프(graceful). ★ **Phase 21(CC-029) 확장**: 4계층 깊이(brand→domain `has_domain`→series `has_series`) + 브랜드 PKM 출처(bm `sourced_from`→source, brand_memory.source_plan_id). 전부 **additive/graceful** — domains/series/source 0 이면 노드·엣지 불변(summary 만 0키 additive). 개인 PKM 출처는 source_plan_id 부재로 미포함(이월).
 - **PATCH /api/v1/me/pkm/{node_id}** (authed) — body `{content?, locked?}` → `{ok, node}`. node_id prefix 라우팅: `pkm:`→pkm_entries(개인, auth_user_id), `bm:`→brand_memory(브랜드 소유=brand→user 검증). user_locked 보호.
 - **DELETE /api/v1/me/pkm/{node_id}** (authed) → `{ok, deleted}`. 동일 prefix 라우팅 + 소유 검증.
 
@@ -1317,4 +1317,5 @@ v1.0.0 (2026-05-26): Sprint S3-2 초안. 9 MVP endpoint 명세, SSE progress cha
                       4계층 검증, HTTP status 매핑, CORS, idempotency, latency 목표.
 CC-023 (2026-06-04): §8.6 브랜딩 세션(Akinator) endpoint 3종(branding/next·finalize·select) — Phase 18.
 CC-024 (2026-06-04): §8.7 마이페이지 2nd brain — /me/pkm-graph + /me/pkm{PATCH,DELETE} 큐레이션 — Phase 19.
+CC-029 (2026-06-04): §8.7 /me/pkm-graph 4계층 깊이(domain/series 노드 + has_domain/has_series) + 브랜드 PKM 출처(source 노드 + sourced_from) 확장 — Phase 21. additive/graceful.
 ```

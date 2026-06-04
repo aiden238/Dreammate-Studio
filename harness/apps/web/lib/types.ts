@@ -528,7 +528,8 @@ export interface BrandingSelectResponse {
  */
 export interface PkmGraphNode {
   id: string;
-  type: "user" | "brand" | "pkm";
+  // Phase 21: +domain/series(4계층) +source(출처). id 접두어 "domain:"/"series:"/"source:".
+  type: "user" | "brand" | "pkm" | "domain" | "series" | "source";
   label: string;
   /** PKM 노드의 scope (개인/브랜드). 비-PKM 은 미지정. */
   scope?: "personal" | "brand" | null;
@@ -545,7 +546,14 @@ export interface PkmGraphNode {
 export interface PkmGraphEdge {
   source: string;
   target: string;
-  kind: "owns" | "has_personal" | "has_brand_pkm";
+  // Phase 21: +has_domain(brand→domain) +has_series(domain→series) +sourced_from(brand pkm→출처).
+  kind:
+    | "owns"
+    | "has_personal"
+    | "has_brand_pkm"
+    | "has_domain"
+    | "has_series"
+    | "sourced_from";
 }
 
 /**
@@ -558,6 +566,10 @@ export interface PkmGraphSummary {
   brand: number;
   /** 사용자 소유 brand 수. */
   brands: number;
+  /** Phase 21: domain/series 노드 수 + 출처(source) 노드 수 (additive, default 0). */
+  domains?: number;
+  series?: number;
+  sources?: number;
 }
 
 /**
