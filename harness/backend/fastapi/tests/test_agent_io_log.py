@@ -17,6 +17,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from backend.fastapi.config import Settings
 from backend.fastapi.llm.gateway import LLMGateway
 from backend.fastapi.llm.types import LLMResponse, LLMUsage
 from backend.fastapi.observability import agent_io_log as aio
@@ -101,3 +102,79 @@ def test_gateway_complete_emits_record(tmp_path, monkeypatch) -> None:
     assert rec["output_tokens"] == 8
     assert rec["latency_ms"] is not None and rec["latency_ms"] >= 0
     assert rec["success"] is True
+
+
+# ─── HIP-006 S3 — usage_tokens / DB 적재 / 기본 경로(critic) 계측 ──────
+
+def test_usage_tokens_defensive() -> None:
+    class _U:
+        prompt_tokens = 12
+        completion_tokens = 8
+
+    assert aio.usage_tokens(_U()) == (12, 8)
+    assert aio.usage_tokens(None) == (0, 0)
+    assert aio.usage_tokens(MagicMock()) == (0, 0)  # MagicMock attrs → 0 (방어적)
+
+
+def test_db_write_when_to_db_enabled(tmp_path, monkeypatch) -> None:
+    s = Settings(
+        agent_io_log_enabled=True,
+        agent_io_log_to_db=True,
+        agent_io_log_path=str(tmp_path / "a.jsonl"),
+    )
+    monkeypatch.setattr(aio, "get_settings", lambda: s)
+    mock_client = MagicMock()
+    monkeypatch.setattr("backend.fastapi.db.get_supabase", lambda: mock_client)
+    ok = aio.log_agent_io(
+        agent_name="critic", prompt_id="P-007", prompt_version="v1.1.0",
+        model="gpt-4o", input_tokens=10, output_tokens=5,
+    )
+    assert ok is True
+    mock_client.table.assert_called_with("agent_io_logs")
+    assert mock_client.table.return_value.insert.called
+
+
+def test_db_write_skipped_when_to_db_off(tmp_path, monkeypatch) -> None:
+    s = Settings(
+        agent_io_log_enabled=True,
+        agent_io_log_to_db=False,
+        agent_io_log_path=str(tmp_path / "a.jsonl"),
+    )
+    monkeypatch.setattr(aio, "get_settings", lambda: s)
+    mock_client = MagicMock()
+    monkeypatch.setattr("backend.fastapi.db.get_supabase", lambda: mock_client)
+    aio.log_agent_io(agent_name="x", model="m")
+    assert not mock_client.table.called  # to_db OFF → DB 미접근 (JSONL 만)
+
+
+def test_run_critic_emits_telemetry(tmp_path, monkeypatch) -> None:
+    """HIP-006 S3: 기본 경로(critic, gateway 미경유)도 텔레메트리 기록."""
+    from backend.fastapi.agents import critic as critic_mod
+    from backend.fastapi.agents.critic import DIMENSIONS, run_critic
+
+    s = Settings(agent_io_log_enabled=True, agent_io_log_path=str(tmp_path / "c.jsonl"))
+    monkeypatch.setattr(aio, "get_settings", lambda: s)  # 발신기 활성
+    monkeypatch.setattr(critic_mod, "get_settings", lambda: Settings())  # critic 기본(calibration off)
+    payload = json.dumps(
+        {
+            "scores": {k: 4 for k in DIMENSIONS},
+            "reasons": {},
+            "suggestions": {},
+            "overall_verdict": "approve",
+            "blocking_issues": [],
+        },
+        ensure_ascii=False,
+    )
+    client = MagicMock()
+    msg = MagicMock()
+    msg.content = payload
+    choice = MagicMock()
+    choice.message = msg
+    resp = MagicMock()
+    resp.choices = [choice]
+    client.chat.completions.create.return_value = resp
+
+    run_critic({"plan_id": "p"}, client=client)
+    rec = json.loads((tmp_path / "c.jsonl").read_text(encoding="utf-8").strip())
+    assert rec["agent_name"] == "critic"
+    assert rec["prompt_id"] == "P-007"

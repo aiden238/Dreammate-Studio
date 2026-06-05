@@ -391,6 +391,19 @@ def run_planning(
     if "plan" not in parsed:
         raise ValueError("Planning LLM 응답에 plan 필드 없음")
 
+    # ★ HIP-006 S3: 기본 경로 텔레메트리 (gated default-off + graceful).
+    _p_in, _p_out = usage_tokens(getattr(response, "usage", None))
+    log_agent_io(
+        agent_name="planning",
+        prompt_id=PROMPT_ID,
+        prompt_version=PROMPT_VERSION,
+        model=_model,
+        input_tokens=_p_in,
+        output_tokens=_p_out,
+        latency_ms=int((time.perf_counter() - _t0) * 1000),
+        success=True,
+    )
+
     return parsed
 
 
