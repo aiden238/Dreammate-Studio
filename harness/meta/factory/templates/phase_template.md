@@ -1,6 +1,6 @@
 # phase_template.md — phase scaffold 템플릿
 
-> 위치: `harness/meta_factory/templates/phase_template.md`
+> 위치: `harness/meta/factory/templates/phase_template.md`
 > 상태: Phase M0 Slice 2 — 생성 하네스의 phase 정의 scaffold
 > 결정: ADR-035
 > 정합: 기존 `phases/active/{phase}/` 8 entry files 형식, harness_blueprint_schema.md §3.1 Phase

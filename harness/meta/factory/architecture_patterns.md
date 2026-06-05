@@ -1,6 +1,6 @@
 # architecture_patterns.md — 6 아키텍처 패턴 + Dreammate 매핑
 
-> 위치: `harness/meta_factory/architecture_patterns.md`
+> 위치: `harness/meta/factory/architecture_patterns.md`
 > 상태: Phase M0 Slice 1 — agent/orchestration 구조 패턴 카탈로그
 > 결정: ADR-035
 > 참조: harness_blueprint_schema.md (architecture_pattern 필드), domain_brief_schema.md (preferred_architecture_patterns), backend/fastapi/orchestration/moa_orchestrator.py (Supervisor 실측, 읽기만)

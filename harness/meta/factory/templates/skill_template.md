@@ -1,6 +1,6 @@
 # skill_template.md — Skill scaffold 템플릿
 
-> 위치: `harness/meta_factory/templates/skill_template.md`
+> 위치: `harness/meta/factory/templates/skill_template.md`
 > 상태: Phase M0 Slice 2 — 생성 하네스의 Skill 정의 scaffold
 > 결정: ADR-035
 > 정합: `.claude/skills/INDEX.md` (Skill 충돌 규칙 + frontmatter + applies_to), harness_blueprint_schema.md §3.1 Skill, factory_contract 규칙 4/5

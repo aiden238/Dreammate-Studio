@@ -1,6 +1,6 @@
 # generation_workflow.md — 하네스 생성 11단계 절차
 
-> 위치: `harness/meta_factory/generation_workflow.md`
+> 위치: `harness/meta/factory/generation_workflow.md`
 > 상태: Phase M0 (Meta-Factory Prep, ★ meta-phase) Slice 2 — 새 하네스 생성 절차
 > 결정: ADR-035
 > 참조: domain_brief_schema.md (입력), harness_blueprint_schema.md (출력), architecture_patterns.md (6 패턴), factory_contract.md (8 규칙), validation_workflow.md (6 검증)
@@ -12,7 +12,7 @@
 
 `generation_workflow.md` 는 `domain_brief`(입력 명세)를 받아 `harness_blueprint`(출력 청사진)를 설계하는 **11단계 절차**를 정의한다. 각 단계는 무엇을 입력받아 무엇을 산출하는지, 어떤 schema/패턴을 따르는지, 어떤 제약을 받는지 명시한다.
 
-★ 핵심 — **proposal-first**: 본 절차의 산출물(blueprint / scaffold)은 **기존 프로젝트에 직접 적용하지 않는다**. `meta_factory/outputs/generated_harnesses/` 에 **먼저** 초안으로 저장하고, `validation_workflow.md` 6 검증 통과 + 사용자 승인 후에만 active 로 전환한다 (factory_contract 규칙 3/7).
+★ 핵심 — **proposal-first**: 본 절차의 산출물(blueprint / scaffold)은 **기존 프로젝트에 직접 적용하지 않는다**. `meta/factory/outputs/generated_harnesses/` 에 **먼저** 초안으로 저장하고, `validation_workflow.md` 6 검증 통과 + 사용자 승인 후에만 active 로 전환한다 (factory_contract 규칙 3/7).
 
 ---
 
@@ -121,7 +121,7 @@
 ### 단계 10 — outputs/generated_harnesses/ 에 초안 저장 (★ proposal-first)
 
 - **입력**: 검증 결과가 담긴 blueprint.
-- **산출**: `meta_factory/outputs/generated_harnesses/{harness_name}_blueprint.md` (또는 폴더) — **active 아님**.
+- **산출**: `meta/factory/outputs/generated_harnesses/{harness_name}_blueprint.md` (또는 폴더) — **active 아님**.
 - **규칙 (★ 핵심)**: 생성 결과는 **기존 프로젝트(L2 운영 경로)에 직접 적용하지 않는다**. 반드시 `generated_harnesses/` 에 **먼저** 둔다. 개선 제안은 `outputs/improvement_reports/` 또는 `meta/proposals/` 에 둔다 (factory_contract 규칙 3).
 - **게이트**: active 경로(AGENTS/CLAUDE/contracts/phases/skills 운영 위치)에 쓰기 발생 시 즉시 revert (규칙 위반).
 

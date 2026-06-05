@@ -79,7 +79,7 @@ Phase M0 (Meta-Factory Prep, ★ meta-phase) ✅ done (2026-05-31) — L3 Meta-H
 **Phase M0 핵심 성과 (★ meta-phase, 런타임 변경 0)**:
 - **P-X1 §SELF-VERIFICATION 50연속 PASS** (Phase 3 5 + ... + Phase 9.5 5 + Phase M0 3 — ★ 첫 meta-phase 0건 재발)
 - **★ FastAPI/Next.js/Supabase 런타임 변경 0줄 (A9)** — backend/fastapi 0 / apps/web 0 (PlanCard·component_map 0줄) / db/migrations 0 (git diff 게이트 PASS, smoke Step 1)
-- **L3 Meta-Harness Factory skeleton** — meta_factory/ 7 루트(README L1/L2/L3 + factory_contract 8 규칙 proposal-first + domain_brief/harness_blueprint schema + architecture_patterns 6 + Dreammate 매핑 + generation_workflow 11단계 + validation_workflow 6 검증) + templates 6 scaffold + 현재 하네스 blueprint 실측 역정리 + outputs 격리
+- **L3 Meta-Harness Factory skeleton** — meta/factory/ 7 루트(README L1/L2/L3 + factory_contract 8 규칙 proposal-first + domain_brief/harness_blueprint schema + architecture_patterns 6 + Dreammate 매핑 + generation_workflow 11단계 + validation_workflow 6 검증) + templates 6 scaffold + 현재 하네스 blueprint 실측 역정리 + outputs 격리
 - **harness-factory Skill proposal-only (21번째, 키워드 scoped 충돌 0)** — domain_brief → blueprint 초안 + scaffold 제안 + 충돌 분석. harness-audit/meta-retrospective/phase-start 와 충돌 0 (우선순위 표 편입). generated harness 자동 active 금지
 - **validation_workflow ↔ eval-run 연동** — 검증 5는 eval-run Skill §3~§6 cross-ref (별도 평가 체계 신설 X)
 - **multi-llm-validation formal 여덟 번째** (V1~V6 PASS — ★ 첫 meta-phase) + **contract-change CC-006** (INDEX harness-factory #21 등록 — Skill 도 contract 처럼 취급)

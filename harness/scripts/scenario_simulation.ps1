@@ -67,9 +67,9 @@ $scenarios = @(
     @{ Id = "S30"; Name = "generate.py canonical wiring (critic verdict normalize)"; Files = @("backend/fastapi/routers/generate.py", "backend/fastapi/agents/critic.py") },
 
     # Phase M0 신규 (3, ★ meta-phase — L3 Meta-Factory skeleton, 런타임 0)
-    @{ Id = "SM1"; Name = "meta_factory 구조 (README + factory_contract — L1/L2/L3 + 8 규칙)"; Files = @("meta_factory/README.md", "meta_factory/factory_contract.md") },
+    @{ Id = "SM1"; Name = "meta_factory 구조 (README + factory_contract — L1/L2/L3 + 8 규칙)"; Files = @("meta/factory/README.md", "meta/factory/factory_contract.md") },
     @{ Id = "SM2"; Name = "harness-factory Skill (proposal-only, 키워드 scoped) + INDEX #21"; Files = @(".claude/skills/harness-factory/SKILL.md", ".claude/skills/INDEX.md") },
-    @{ Id = "SM3"; Name = "현재 하네스 blueprint 실측 역정리 (10 섹션 + 부족점 5)"; Files = @("meta_factory/blueprints/dreammate_current_harness_blueprint.md") },
+    @{ Id = "SM3"; Name = "현재 하네스 blueprint 실측 역정리 (10 섹션 + 부족점 5)"; Files = @("meta/factory/blueprints/dreammate_current_harness_blueprint.md") },
 
     # Phase 10 신규 (3, MVP end-to-end 통합 — behavior-preserving, 신규 추가만)
     @{ Id = "S31"; Name = "MVP end-to-end 통합 test (Quick/Discovery 체인 + save/select/feedback/SSE + revise + graceful)"; Files = @("backend/fastapi/tests/test_integration_mvp.py") },
