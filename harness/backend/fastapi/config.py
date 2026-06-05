@@ -7,7 +7,7 @@ Loaded once at app startup via pydantic-settings.
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,6 +28,27 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+    )
+
+    # ─── Phase 27 S1 — 실사용 프로파일 (1차 MVP 실사용 마감, B-1) ──────────────
+    # ★ 단일 스위치: APP_PROFILE=realuse 면 "처음 온 사용자가 도움 없이 director 기획안
+    #   1개 생성 → 저장 → brain 축적 → 다음 반영" 핵심 루프 flag 묶음을 한 번에 ON.
+    # ★ behavior-preserving / byte-identical 보장:
+    #   - default = "default" → 아래 _apply_realuse_profile 검증기가 즉시 no-op return.
+    #     즉 app_profile 미설정(기존 모든 경로 + 모든 기존 테스트)은 flag 변경 0 = pre-Phase-27 동일.
+    #   - realuse 활성은 명시적으로 APP_PROFILE=realuse 를 env/`.env` 에 줄 때만 (.env.realuse.example 참조).
+    #   - 개별 flag 를 env 로 명시(예: OUTPUT_MODE=commercial_viral)하면 model_fields_set 에 잡혀
+    #     프로파일이 그 값을 덮어쓰지 않는다 (명시 env override 가 프로파일보다 우선).
+    # ★ 코드 default flag(plans_repo_enabled=False 등)는 변경하지 않는다 — 프로파일은 런타임 env 로만 ON.
+    app_profile: Literal["default", "realuse"] = Field(
+        default="default",
+        description=(
+            "Phase 27 실사용 프로파일 스위치 (환경변수 APP_PROFILE). "
+            "'default'(기본) = 기존 동작 byte-identical (검증기 no-op). "
+            "'realuse' = 1차 MVP 실사용 핵심 루프 flag 묶음 ON (output_mode=director + "
+            "rich + plans_repo + brand/personal PKM 주입·추출 + 브랜딩 시드). "
+            "개별 env 명시는 프로파일보다 우선(override). 코드 default 는 불변 — env 로만 활성."
+        ),
     )
 
     # LLM
@@ -468,6 +489,38 @@ class Settings(BaseSettings):
             "security-review §T1: mock 토큰도 httpOnly cookie 로만 노출."
         ),
     )
+
+    # ─── Phase 27 S1 — 실사용 프로파일 적용 (B-1) ────────────────────────────
+    @model_validator(mode="after")
+    def _apply_realuse_profile(self) -> "Settings":
+        """APP_PROFILE=realuse 면 1차 MVP 실사용 핵심 루프 flag 묶음을 ON.
+
+        ★ app_profile != "realuse" (default) → 즉시 no-op return = 기존 동작 byte-identical.
+          (이 검증기 추가로 인한 동작 변화는 realuse 명시 활성 시에만 발생.)
+        ★ 명시 env override 존중: 개별 flag/output_mode 를 env 로 직접 준 경우
+          (model_fields_set 에 포함) 프로파일이 덮어쓰지 않는다.
+        ★ 코드 default 는 불변 — 본 메서드는 런타임 인스턴스 값만 조정(프로파일 활성 시).
+        """
+        if self.app_profile != "realuse":
+            return self
+        # core-loop flag 묶음. 개별 env 명시 설정은 model_fields_set 에 잡혀 제외(override 존중).
+        realuse_flags = (
+            "rich_output_enabled",
+            "plans_repo_enabled",
+            "brand_memory_injection_enabled",
+            "brand_memory_extract_enabled",
+            "personal_pkm_injection_enabled",
+            "personal_pkm_extract_enabled",
+            "branding_pkm_seed_enabled",
+        )
+        explicit = self.model_fields_set
+        # output tier: 사용자 결정 director (명시 OUTPUT_MODE 가 있으면 존중).
+        if "output_mode" not in explicit:
+            self.output_mode = "director"
+        for name in realuse_flags:
+            if name not in explicit:
+                setattr(self, name, True)
+        return self
 
     @property
     def cors_origins_list(self) -> list[str]:
