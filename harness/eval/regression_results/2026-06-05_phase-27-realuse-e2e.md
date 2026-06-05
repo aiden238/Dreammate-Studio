@@ -18,6 +18,18 @@
 
 → **루프 배선 + 프로파일 활성 + 회귀 0 입증.** 실 생성 품질·실 영속·PKM 누적은 아래 실-런(키/Supabase 필요).
 
+## 1.5 ★ 실 라이브 데모 결과 (2026-06-05, 실 LLM + 실 Supabase)
+
+사용자 opt-in 으로 실제 실행 — **PASS** (P-LIVE-VERIFY-001).
+
+- DB 준비: migration 0007(개인 PKM 출처) + 0004(pgvector + RAG 테이블) + 0008(match_approved_knowledge RPC) 실 Supabase 적용·검증(REST). RAG 인프라 ON(approved_knowledge 비어있음=정상).
+- 생성: `generate_plan`(realuse, 실 gpt-4o-mini) → **director 기획안 3개**, director 슬롯(hook_system/retention_architecture/scene_breakdown) + rich 슬롯(hook_variants/shots/thumbnail/title_candidates/cta) **전부 채움**. scene_breakdown 씬별 intent/emotion/retention 구조.
+- 영속: **plans 테이블 rows=1 영속됨 ✓** (재시작해도 유지).
+
+### ★ 라이브가 잡은 버그 (자동 테스트가 못 잡음)
+- **HIP-008 `_persist_plan_envelope` 스키마 버그**: plans 에 없는 단일 `envelope` 컬럼 insert → PGRST204 → 영속 실패(graceful in-memory 폴백, 휘발). mock 테스트가 스키마 미강제라 통과.
+- **수정**: envelope→plans 구조화 컬럼(plan_candidates/critic_evaluation/recommended_plan_index/mode/auth_user_id) 분해. 회귀 테스트 추가(814). 실 Supabase 영속 재확인 PASS. → "automated green ≠ works" 재입증.
+
 ## 2. 실-런 체크리스트 (사용자 opt-in — 실 LLM + Supabase, 비용/DB 변경)
 
 > 전제: `backend/fastapi/.env` 에 OPENAI_API_KEY (+ 영속 원하면 SUPABASE_* + migration 0001~0008 적용).
