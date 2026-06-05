@@ -1,6 +1,6 @@
 # agent_template.md — agent scaffold 템플릿
 
-> 위치: `harness/meta_factory/templates/agent_template.md`
+> 위치: `harness/meta/factory/templates/agent_template.md`
 > 상태: Phase M0 Slice 2 — 생성 하네스의 agent 정의 scaffold
 > 결정: ADR-035
 > 정합: `docs/contracts/agent_io_contract.md` (agent 단위 입력/출력/실행 정책), harness_blueprint_schema.md §3.1 Agent

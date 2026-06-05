@@ -1,9 +1,10 @@
 # meta_factory — L3 Meta-Harness Factory
 
-> 위치: `harness/meta_factory/`
+> 위치: `harness/meta/factory/`
 > 상태: Phase M0 (Meta-Factory Prep, ★ meta-phase) Slice 1 도입 — skeleton + contract
 > 결정: ADR-035 (phase_M0_meta_factory.md)
 > ★ 런타임 변경 0 (A9) — FastAPI/Next.js/Supabase 0줄. 문서/skeleton/proposal 레이어.
+> ★ 이전 경로: `harness/meta_factory/` → **`harness/meta/factory/`** 병합 (2026-06-05, `meta/audits/2026-06-05.md` + HIP-010 — meta·meta_factory 단일 폴더 통합 재구축). 개념명 "meta_factory / Meta-Factory"는 유지(키워드·트리거 불변). 역사 기록(phases/archive, docs/decisions, dated 회고/검증, outputs/TEST)의 옛 경로 표기는 보존.
 
 ---
 
@@ -52,7 +53,7 @@ L2 하네스를 **설계·역정리·검증·개선 제안**하는 메타 레이
 > **Meta-Factory 는 자동 적용 도구가 아니라 proposal-first 도구다.**
 
 - 생성 결과(harness blueprint / scaffold / 개선 제안)는 **자동으로 active 하네스에 반영되지 않는다**.
-- 생성물은 `meta_factory/outputs/generated_harnesses/` 또는 `meta/proposals/` 에 **먼저** 둔다.
+- 생성물은 `meta/factory/outputs/generated_harnesses/` 또는 `meta/proposals/` 에 **먼저** 둔다.
 - 생성된 harness 는 `validation_workflow.md` 통과 전 active 로 간주하지 않는다.
 - 기존 self_improvement_loop §0/§7 "자가개선은 자동 수정이 아니다 — 항상 제안 → 검토 → 승인 → 반영" 원칙을 계승.
 - 상세 규칙은 `factory_contract.md` (8 절대 규칙).
@@ -62,7 +63,7 @@ L2 하네스를 **설계·역정리·검증·개선 제안**하는 메타 레이
 ## 3. 디렉토리 구조
 
 ```
-meta_factory/
+meta/factory/
 ├── README.md                       # 본 문서 (L1/L2/L3 + proposal-first)
 ├── factory_contract.md             # 8 절대 규칙 (런타임 미변경 + proposal-first)
 ├── domain_brief_schema.md          # 생성 입력 schema (도메인 정의)

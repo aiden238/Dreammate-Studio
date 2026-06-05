@@ -184,10 +184,43 @@ export default function HomePage() {
         <ProgressStepper currentStep={stepperState} />
       )}
 
+      {/* HIP-008 S4 — 위저드·브랜딩 진입 (도달성: 홈에서 /new·/new/branding 발견 가능하게).
+          위 textarea = 빠른 단일 생성(Phase 1). 아래 = 단계별/주제발굴 진입 (라우트는 기존 존재, 링크만 추가). */}
+      <section
+        aria-labelledby="entry-heading"
+        className="flex flex-col gap-3 border-t border-neutral-200 pt-6"
+      >
+        <h2 id="entry-heading" className="text-sm font-semibold text-neutral-900">
+          또는, 단계별로 기획하기
+        </h2>
+        <Link
+          href="/new"
+          className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-neutral-200 px-4 py-3 text-left transition-colors hover:border-primary-400 hover:bg-primary-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
+          aria-label="마법사로 단계별 기획 시작 (Quick / Discovery)"
+        >
+          <span className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium text-neutral-900">🧭 마법사로 기획하기</span>
+            <span className="text-xs text-neutral-600">Quick(짧게) · Discovery(5단계 카드)로 정리</span>
+          </span>
+          <span aria-hidden className="text-neutral-400">›</span>
+        </Link>
+        <Link
+          href="/new/branding"
+          className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-neutral-200 px-4 py-3 text-left transition-colors hover:border-primary-400 hover:bg-primary-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
+          aria-label="주제부터 찾기 (브랜딩 세션)"
+        >
+          <span className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium text-neutral-900">💡 주제부터 찾기</span>
+            <span className="text-xs text-neutral-600">뭘 만들지 모를 때 — 스무고개로 주제·방향 발굴</span>
+          </span>
+          <span aria-hidden className="text-neutral-400">›</span>
+        </Link>
+      </section>
+
       <footer className="mt-4 text-xs text-neutral-500 leading-relaxed">
         <p>
-          Phase 1 MVP — 단일 기획안 1개를 보여드려요. 카드 3개 비교, Discovery
-          Wizard, Quick Mode 는 후속 Phase 에서 추가됩니다.
+          위 입력은 빠른 단일 기획이에요. 카드 3개 비교·단계별 기획·주제
+          발굴은 위 “단계별로 기획하기”에서 시작할 수 있어요.
         </p>
       </footer>
     </main>

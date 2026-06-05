@@ -1,6 +1,6 @@
 # domain_brief_schema.md — 도메인 입력 schema
 
-> 위치: `harness/meta_factory/domain_brief_schema.md`
+> 위치: `harness/meta/factory/domain_brief_schema.md`
 > 상태: Phase M0 Slice 1 — L3 Meta-Factory 의 **생성 입력** 구조
 > 결정: ADR-035
 > 참조: harness_blueprint_schema.md (생성 출력), factory_contract.md (8 규칙), generation_workflow.md (11단계, Slice 2)

@@ -28,6 +28,9 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 
 ### 다음 (pending_user_decision)
 🅐 실사용 경험 잇기(홈 진입+네비+flag) / 🅑 영속 마감(PlansRepo+match func) / 🅒 품질 검증 실행(human 채점) / 🅓 배포 Gate B~G. → 우선 추천 🅐.
+
+> ★ **2026-06-05 하네스 메타 작업** (harness-audit 최초 완주 → `meta/audits/2026-06-05.md` + HIP-006~010): ① **meta + meta_factory 단일 폴더 병합**(`meta_factory/`→`meta/factory/`, git mv 이력 보존, scenario_sim 36/36, live 참조 갱신·역사 보존, meta_factory 정신=reflexive 승격) ② **HIP-006 텔레메트리 발신기 구현**(`backend/fastapi/observability/agent_io_log.py` — `agent_io_logs` 실기록, gated default-off + graceful, gateway 단일 chokepoint 배선, **pytest 779→784**, behavior-preserving). 하네스 후속 = HIP-006 flag ON 운영 + HIP-007 품질 접지 / HIP-009 메타-메타 루프(`meta/factory` validation_workflow reflexive).
+
 > (과거 최신: Phase 21 /brain 4계층 깊이+출처 done / Phase 20 commercial_viral done / Phase 19 2nd brain done.)
 > (과거 최신: Phase 20 commercial_viral done 2026-06-04 — output_mode 4-tier 완성, 라이브 PASS, CC-025~028. / Phase 19 2nd brain done.)
 > (과거 최신: Phase 19 2nd brain done 2026-06-04 — /brain PKM 도식화·큐레이션, CC-024. / Phase 13 rich 깊이 0.231→1.000.)

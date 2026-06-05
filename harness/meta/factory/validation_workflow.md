@@ -1,6 +1,6 @@
 # validation_workflow.md — 하네스 검증 6 절차
 
-> 위치: `harness/meta_factory/validation_workflow.md`
+> 위치: `harness/meta/factory/validation_workflow.md`
 > 상태: Phase M0 (Meta-Factory Prep, ★ meta-phase) Slice 2 — 생성 하네스 검증 기준
 > 결정: ADR-035
 > 참조: generation_workflow.md (단계 9 에서 본 절차 호출), harness_blueprint_schema.md (validation 필드), factory_contract.md (규칙 4/5/7), `.claude/skills/eval-run/SKILL.md` (★ §5 eval-run 연동 — §3~§6 cross-ref), `.claude/skills/INDEX.md` (Skill 충돌 규칙 + 우선순위 표)

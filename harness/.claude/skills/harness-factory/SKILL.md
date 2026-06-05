@@ -10,22 +10,22 @@ description: |
 applies_to: [claude]
 phase: [phase-10, ongoing]
 related_contracts:
-  - meta_factory/factory_contract.md
+  - meta/factory/factory_contract.md
 related_state:
-  - meta_factory/README.md
-  - meta_factory/generation_workflow.md
-  - meta_factory/validation_workflow.md
-  - meta_factory/domain_brief_schema.md
-  - meta_factory/harness_blueprint_schema.md
-  - meta_factory/architecture_patterns.md
-  - meta_factory/blueprints/dreammate_current_harness_blueprint.md
-  - meta_factory/outputs/
+  - meta/factory/README.md
+  - meta/factory/generation_workflow.md
+  - meta/factory/validation_workflow.md
+  - meta/factory/domain_brief_schema.md
+  - meta/factory/harness_blueprint_schema.md
+  - meta/factory/architecture_patterns.md
+  - meta/factory/blueprints/dreammate_current_harness_blueprint.md
+  - meta/factory/outputs/
 version: v1.0.0
 ---
 
 # harness-factory
 
-L3 Meta-Harness Factory(`harness/meta_factory/`)의 진입점. `domain_brief` 입력을 받아 `harness_blueprint` 초안을 설계·역정리·검증하고, 기존 하네스 충돌을 분석하여 개선을 제안한다. ★ **자동 적용 도구가 아니라 proposal-only 도구** — 생성물은 `meta_factory/outputs/` 또는 `meta/proposals/` 에 **먼저** 두고, `validation_workflow.md` 6 검증 + 사용자 승인 전까지 active 로 간주하지 않는다 (factory_contract 규칙 3/7).
+L3 Meta-Harness Factory(`harness/meta/factory/`)의 진입점. `domain_brief` 입력을 받아 `harness_blueprint` 초안을 설계·역정리·검증하고, 기존 하네스 충돌을 분석하여 개선을 제안한다. ★ **자동 적용 도구가 아니라 proposal-only 도구** — 생성물은 `meta/factory/outputs/` 또는 `meta/proposals/` 에 **먼저** 두고, `validation_workflow.md` 6 검증 + 사용자 승인 전까지 active 로 간주하지 않는다 (factory_contract 규칙 3/7).
 
 ## 트리거 조건
 
@@ -55,8 +55,8 @@ L3 Meta-Harness Factory(`harness/meta_factory/`)의 진입점. `domain_brief` �
 
 ### 4. outputs/generated_harnesses/ 초안 저장 (★ proposal-first)
 
-- 검증 결과가 담긴 blueprint 를 `meta_factory/outputs/generated_harnesses/` 에 초안으로 저장 (active 아님).
-- 개선 제안은 `meta_factory/outputs/improvement_reports/` 또는 `meta/proposals/` 에 제출.
+- 검증 결과가 담긴 blueprint 를 `meta/factory/outputs/generated_harnesses/` 에 초안으로 저장 (active 아님).
+- 개선 제안은 `meta/factory/outputs/improvement_reports/` 또는 `meta/proposals/` 에 제출.
 - active 경로(AGENTS/CLAUDE/contracts/phases/기존 skills 운영 위치)에 쓰기 발생 시 즉시 revert (규칙 위반).
 
 ### 5. 사용자 승인 게이트
@@ -71,8 +71,8 @@ L3 Meta-Harness Factory(`harness/meta_factory/`)의 진입점. `domain_brief` �
 - domain_brief 기반 harness blueprint **초안** 생성 (역정리 + 정방향 설계)
 - agent·skill·contract·eval·phase **scaffold 제안** (6 템플릿 기반)
 - 기존 하네스 충돌 분석 (Skill 키워드 충돌 / trigger 정합 / with-without 비교) — 분석·제안만
-- 생성물을 `meta_factory/outputs/generated_harnesses/` 에 저장
-- 기존 하네스 개선을 `meta_factory/outputs/improvement_reports/` 또는 `meta/proposals/` 에 제안
+- 생성물을 `meta/factory/outputs/generated_harnesses/` 에 저장
+- 기존 하네스 개선을 `meta/factory/outputs/improvement_reports/` 또는 `meta/proposals/` 에 제안
 
 ### 금지
 
@@ -110,11 +110,11 @@ meta-retrospective    ⊥ harness-factory             # 개선·회고(L2 in-pla
 
 ## 종료 조건
 
-- domain_brief → blueprint 초안이 `meta_factory/outputs/generated_harnesses/` 에 저장됨 (proposal-first)
+- domain_brief → blueprint 초안이 `meta/factory/outputs/generated_harnesses/` 에 저장됨 (proposal-first)
 - validation_workflow 6 검증 결과(pass/fail/pending)가 blueprint 와 함께 기록됨
 - active 반영이 필요한 항목은 contract-change Skill 로 라우팅됨 (사용자 승인 게이트)
 - ★ 어떤 경우에도 런타임(L1)/기존 하네스(L2) 자동 수정 0 (factory_contract 규칙 1/2)
 
 ## 변경 이력
 
-- v1.0.0 (2026-05-31 Phase M0 Slice 3): harness-factory Skill 신규 등록 (proposal-only, 키워드 scoped). L3 Meta-Harness Factory(meta_factory/) 진입점 — domain_brief → blueprint 초안 + 충돌 분석 + 개선 제안. INDEX #21 + 우선순위(harness-audit > harness-factory, contract-change > harness-factory, eval-run > harness-factory validation) + 키워드 충돌 검토 0. ADR-035 + CC-006.
+- v1.0.0 (2026-05-31 Phase M0 Slice 3): harness-factory Skill 신규 등록 (proposal-only, 키워드 scoped). L3 Meta-Harness Factory(meta/factory/) 진입점 — domain_brief → blueprint 초안 + 충돌 분석 + 개선 제안. INDEX #21 + 우선순위(harness-audit > harness-factory, contract-change > harness-factory, eval-run > harness-factory validation) + 키워드 충돌 검토 0. ADR-035 + CC-006.

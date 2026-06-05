@@ -1,6 +1,6 @@
 # project_state_template.md — PROJECT_STATE scaffold 템플릿
 
-> 위치: `harness/meta_factory/templates/project_state_template.md`
+> 위치: `harness/meta/factory/templates/project_state_template.md`
 > 상태: Phase M0 Slice 2 — 생성 하네스의 상태 문서 scaffold
 > 결정: ADR-035
 > 정합: 기존 `PROJECT_STATE.md` 형식 (migration_progress yaml + confirmed_decisions), factory_contract 규칙 6

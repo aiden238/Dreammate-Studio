@@ -177,6 +177,30 @@ Skill:    meta-retrospective (제안 생성) → harness-audit (구조 점검)
 
 ---
 
+## 5.1 메타-메타 루프 — "루프 자체의 점검" (HIP-009, 2026-06-05)
+
+> §11 Open Q5("본 루프 자체의 회고를 누가/언제") 해소. 회고(1단계)는 매 phase 살아있으나
+> **하네스 자신**의 개선(3단계 HIP)은 Phase 0 이후 동결됐었다(`meta/audits/2026-06-05.md` §4).
+> 본 절이 그 메타-메타 점검의 **주기·엔진·산출**을 고정한다.
+
+```
+주기(트리거):
+- 매 5 product phase 종료마다 (정기) + 분기 1회 + 사용자 "하네스 점검" 요청
+- staleness 신호 누적(Skill 장기 미트리거 / contract·index 미갱신) 시 즉시
+
+엔진:
+- harness-audit Skill 완주 → meta/audits/{date}.md  (★ 산출물 필수 — 부재 시 "미완주")
+- ★ meta/factory validation_workflow 6검증을 우리 하네스 living blueprint
+  (meta/factory/blueprints/dreammate_current_harness_blueprint.md)에 reflexive 실행
+  → meta/factory/outputs/improvement_reports/   (meta_factory = 폐기 아닌 자기유지 엔진 승격)
+
+산출 → 반영:
+- 발견 → HIP 변환(meta/harness_improvement_proposals.md) → 본 5단계 루프 1단계 재진입
+- 보류 HIP 60일+ → 강제 재검토 (§8 측정지표 정합)
+```
+
+---
+
 ## 6. Skill 통합
 
 본 루프는 다음 Skill을 직접 호출한다.
@@ -287,7 +311,7 @@ Phase 21+: AI 기반 자동 proposal 작성 (Claude 등으로) — 단 승인은
 2. 큰 변경의 정의 (multi-llm-validation 필수 임계) — 비용 영향 X원 이상 등 정량 기준 필요.
 3. retrospectives의 표준 형식이 너무 무거우면 작성률 떨어짐 — light template 옵션.
 4. 자동 수정 금지 원칙이 반대로 적용 지연을 일으킬 위험 — 긴급 patch 절차 별도 정의 필요.
-5. 본 루프 자체의 회고를 누가/언제 하는지 — 메타-메타 루프 정의.
+5. 본 루프 자체의 회고를 누가/언제 하는지 — 메타-메타 루프 정의. → ★ **HIP-009 해소** (2026-06-05, §5.1): harness-audit 정기 트리거 + meta/factory validation_workflow reflexive + meta/audits/.
 
 ---
 
@@ -297,4 +321,7 @@ Phase 21+: AI 기반 자동 proposal 작성 (Claude 등으로) — 단 승인은
 v1.0.0 (2026-05-26): Phase 0 Sprint S5-1. placeholder 해소 + deep 작성.
                       5단계 루프, 5 트리거, Skill 통합, 측정 지표,
                       Phase 0 시드 자료 4개.
+v1.1.0 (2026-06-05 HIP-009 S1): §5.1 메타-메타 루프(루프 자체 점검) cadence 추가 —
+                      harness-audit 정기 + meta/factory validation_workflow reflexive +
+                      meta/audits/. §11 Open Q5 해소.
 ```

@@ -1,6 +1,6 @@
 # factory_contract.md — Meta-Factory 절대 규칙
 
-> 위치: `harness/meta_factory/factory_contract.md`
+> 위치: `harness/meta/factory/factory_contract.md`
 > 상태: Phase M0 Slice 1 — L3 Meta-Factory 의 헌법 (이후 모든 meta_factory 문서의 제약 정의)
 > 결정: ADR-035
 > 참조: README.md (L1/L2/L3 + proposal-first), self_improvement_loop.md §0/§7 (자동 수정 금지), INDEX.md (Skill 충돌 규칙)
@@ -27,7 +27,7 @@ meta_factory 는 L2 Implementation Harness(AGENTS/CLAUDE/PROJECT_STATE/PHASE_REG
 
 ### 규칙 3 — 생성 결과는 outputs/ 또는 meta/proposals/ 에 먼저 둔다
 
-meta_factory 의 모든 생성 결과(harness blueprint / scaffold / 개선 리포트)는 `meta_factory/outputs/generated_harnesses/` 또는 `meta_factory/outputs/improvement_reports/` 또는 `meta/proposals/` 에 **먼저** 둔다. active 위치(L2 운영 경로)에 직접 쓰지 않는다 — proposal-first.
+meta_factory 의 모든 생성 결과(harness blueprint / scaffold / 개선 리포트)는 `meta/factory/outputs/generated_harnesses/` 또는 `meta/factory/outputs/improvement_reports/` 또는 `meta/proposals/` 에 **먼저** 둔다. active 위치(L2 운영 경로)에 직접 쓰지 않는다 — proposal-first.
 
 ### 규칙 4 — Skill 추가/변경은 .claude/skills/INDEX.md 의 충돌 규칙을 따른다
 

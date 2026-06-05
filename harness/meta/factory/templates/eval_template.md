@@ -1,6 +1,6 @@
 # eval_template.md — eval scaffold 템플릿
 
-> 위치: `harness/meta_factory/templates/eval_template.md`
+> 위치: `harness/meta/factory/templates/eval_template.md`
 > 상태: Phase M0 Slice 2 — 생성 하네스의 eval 정의 scaffold
 > 결정: ADR-035
 > 정합: `eval/golden_set.md` (케이스 형식 GS-XXX), `.claude/skills/eval-run/SKILL.md` (실행/채점/임계값), harness_blueprint_schema.md §3.1 Eval

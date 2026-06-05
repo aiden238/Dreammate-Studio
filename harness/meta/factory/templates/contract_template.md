@@ -1,6 +1,6 @@
 # contract_template.md — contract scaffold 템플릿
 
-> 위치: `harness/meta_factory/templates/contract_template.md`
+> 위치: `harness/meta/factory/templates/contract_template.md`
 > 상태: Phase M0 Slice 2 — 생성 하네스의 contract 정의 scaffold
 > 결정: ADR-035
 > 정합: 기존 `docs/contracts/*.md` 형식 (목적/필드/JSONB schema/cross-ref), harness_blueprint_schema.md §3.1 Contract, factory_contract 규칙 5

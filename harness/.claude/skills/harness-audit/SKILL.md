@@ -17,7 +17,7 @@ related_state:
   - instruction_index/
   - meta/harness_improvement_proposals.md
   - meta/skill_usage_log.md
-version: v1.1.0
+version: v1.2.0
 ---
 
 # harness-audit
@@ -51,7 +51,7 @@ version: v1.1.0
 3. migration_procedure.md (Phase 0 기간에만)
 4. instruction_index/routes.yaml
 5. instruction_index/dependency_map.yaml
-6. instruction_index/lookup_table.yaml
+6. instruction_index/catalog.yaml + instruction_index/priority_rules.md  # (구 'lookup_table.yaml' 은 미생성 — catalog 가 문서 인벤토리, HIP-010 S1 교정)
 7. meta/skill_usage_log.md (있다면)
 ```
 
@@ -82,7 +82,7 @@ version: v1.1.0
 
 - `routes.yaml`의 각 entry의 target 파일 실존
 - `dependency_map.yaml`의 노드/엣지가 PHASE_REGISTRY와 일치
-- `lookup_table.yaml`의 키워드 충돌 (Skill description과도 교차 확인)
+- `catalog.yaml`의 document 경로 실존 + role 정합 (구 'lookup_table.yaml' 은 미생성 — 키워드 충돌은 §3 Skill description 추출 + `.claude/skills/INDEX.md` 키워드 표 교차로 확인, 별도 lookup_table 불요)
 
 ### 6. Skill 사용 로그 분석
 
@@ -174,13 +174,14 @@ low (1):
 1. **stub 카운트만 보고 OK 처리**: placeholder marker 존재 여부까지 확인해야 함. 그래야 의도된 stub인지 판단 가능.
 2. **description 키워드를 frontmatter 외에서 추출**: 본문 키워드는 무시. frontmatter `description:` 블록만.
 3. **사용 로그 없다고 low 처리**: 사용 로그가 없으면 본 감사 자체의 신뢰도가 낮다. 운영 시작 제안은 항상 포함.
-4. **routes.yaml만 보고 정합 확인**: dependency_map / lookup_table도 함께. 셋 다 일치해야 함.
+4. **routes.yaml만 보고 정합 확인**: dependency_map / catalog 도 함께 확인.
 5. **audit_naming 결과 무시 (v1.1.0)**: §6.5 자동 도구가 drift를 발견하면 critical. PascalCase 클래스명과 snake_case JSON 필드명 혼동에 의한 false positive는 case-sensitive 검사 + NAMING_POLICY whitelist로 이미 회피됨.
 
 ## 변경 이력
 
 - v1.0.0 (Phase 0 S5): 7단계 (상태 / stub / Skill / contract 참조 / instruction_index / 사용 로그 / 분류)
 - v1.1.0 (2026-05-27 Phase 1 회고 P1 적용): §6.5 audit_naming 단계 + scripts/audit_naming.ps1 도구 추가 (P-DRIFT-001 대응)
+- v1.2.0 (2026-06-05 HIP-010 S1): §1/§5/자주실수4 의 부재 파일 'lookup_table.yaml' 참조 → 실재 'catalog.yaml'(+priority_rules) 로 교정. 키워드 충돌 점검은 §3 + INDEX.md 표로 일원화(별도 lookup_table 불요). meta/audits/2026-06-05.md M1 해소.
 
 ## 종료 조건
 

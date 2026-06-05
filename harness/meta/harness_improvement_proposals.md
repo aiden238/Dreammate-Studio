@@ -290,6 +290,7 @@ P1 (Phase 1 진입 시)
 ### 결정
 보류 (2026-05-26). 재검토: Phase 1 진입 시.
 사유: Phase 0 범위 외. 단 Phase 1 시작 시 즉시 작성.
+→ ★ **반려·흡수 종결 (2026-06-05, HIP-009 S3)**: naming_standard contract 별도 신설 대신 `scripts/audit_naming.ps1`(harness-audit §6.5 + qa-check cat 11)이 plan_candidates/video_projects/critic_evaluation/rag_references 명명 일관성을 매 phase 자동 강제 → 의도 충족. canonical 용어 SoT = audit_naming NAMING_POLICY. 신규 contract 불요.
 ```
 
 ### HIP-004 multi-llm-validation 트리거 정량 기준
@@ -325,6 +326,7 @@ P1 (Phase 1 진입 시)
 ### 결정
 보류 (2026-05-26). 재검토: Phase 5+ (사용자 / 비용 실데이터 후).
 사유: 사용자 수 / 비용 임계 기준은 실 데이터 없으면 무의미.
+→ ★ **승인·정의 (2026-06-05, HIP-009 S3)**: HIP-006 텔레메트리(agent_io_logs) + cost-review(006-S2)로 비용 실데이터원 확보 → multi-llm-validation 필수 임계 정량화: ① 영향 파일 ≥5 ② prompt major bump ③ 가격/보안/영구제외(mvp_non_goals) 변경 ④ cost-review 월 추정 비용 임계 초과. 1+ 해당 시 트리거. **multi-llm-validation SKILL 반영은 후속 contract-change.**
 ```
 
 ### HIP-005 Sprint 종료 자동 PROJECT_STATE 검증
@@ -355,6 +357,242 @@ P1 (Sprint S5 종료 시)
 ### 결정
 보류 (2026-05-26). 재검토: Sprint S5-3에서 적용 검토.
 사유: 본 Sprint (S5-1)는 deep 작성 우선.
+→ ★ **반려·흡수 종결 (2026-06-05, HIP-009 S3)**: Sprint 단위 운영 종료(현재 phase 단위). PROJECT_STATE 갱신 강제는 qa-check **cat 12(운영 도달성, 008-S1)** + phase-complete acceptance + `scripts/sanity_end_*.ps1` 에 흡수 → 별도 자동검증 스크립트 불요.
+```
+
+---
+
+## 6.5 신규 제안서 (2026-06-05 harness-audit 발 — HIP-006~010)
+
+> 출처: `meta/audits/2026-06-05.md` (이 하네스 최초 완주 audit). 발견 high 3 + 제품 운영 갭 → 5 제안서.
+> 핵심 진단: 하네스가 "서사/문서 척추(alive)"와 "운영/자기개선 척추(dead)"로 분리. 죽은 부분의 공통 원인 = **현실 데이터 접지선 부재**.
+> ★ 결정 상태: 전부 **검토 대기** (2026-06-05 작성, 사용자 결정 대기). 본 문서 작성 = "쓰는 것"이지 "적용"이 아님(self_improvement_loop §7 예외).
+
+### HIP-006 텔레메트리 발신기 (`agent_io_logs` 실제 기록)
+
+```
+### 배경
+self_improvement_loop §1.2가 패턴 마이닝 입력으로 'agent_io_logs'를 선언했으나,
+backend grep 결과 이를 기록하는 코드가 0건. 데이터원이 이름만 존재.
+이 단일 누락이 cost-review / cost_snapshots / patterns 자동마이닝 / skill_usage_log /
+HIP-004(정량임계)를 동시에 구조적으로 무력화.
+- 관련 audit: 2026-06-05 §3 (근본원인), high H2
+- 관련 patterns: (P-신규 후보 — "telemetry 부재로 인한 측정 machinery 동결")
+
+### 제안
+LLM 호출 1건당 1줄 텔레메트리 발신부 추가:
+{ts, request_id, prompt_id, model, input_tokens, output_tokens, cost_est, latency_ms, success, fallback}.
+- 1차: JSONL append (backend/fastapi 생성 경로 — moa_orchestrator/llm gateway 단일 지점) — 가장 작은 레버.
+- 2차: db_schema의 agent_io_logs 테이블 실제 write 연결 (RLS 포함).
+- cost-review / eval/cost_snapshots / patterns 마이닝이 이 데이터를 소비하도록 배선.
+
+### 영향 분석
+- 영향 파일: backend/fastapi/llm/gateway.py 또는 orchestration/moa_orchestrator.py(단일 지점) + config(flag)
+- 영향 절차: cost-review(데이터 확보) / meta-retrospective(patterns 입력) / harness-audit §6
+- 영향 비용: 로깅 자체 비용 무시 가능 / 오히려 비용 폭주 조기탐지 가능
+- back-compat: 없음 (additive, gated default-off 가능 — behavior-preserving 규율 정합)
+
+### 대안
+A. JSONL 발신(본 제안 1차): 최소 변경, CI/로컬에서도 작동.
+B. 곧장 DB 테이블: RLS/migration 운영 의존 → §B 갭에 막힘. (2차로 미룸)
+C. 그대로: cost/patterns/usage 영구 측정 불가. (반대)
+
+### 우선순위
+P0 — 죽은 측정 machinery 4종의 단일 해소 레버 + 비용 폭주(배포 리스크) 방어 선행조건.
+
+### 검증 / 회귀 평가
+- 측정 지표: 생성 1회당 로그 1행 생성 / cost-review가 실 토큰·비용 집계 산출
+- 측정 시점: 구현 직후 + 다음 phase 종료
+- 통과 기준: agent_io 로그 행 > 0 AND cost-review가 0 아닌 비용 리포트 산출
+
+### 결정
+승인 → S1 구현 완료 (2026-06-05, 사용자 지시 "실제 구현 착수"). 결정자: 사용자.
+
+### 적용 결과
+- 적용 일자: 2026-06-05 (S1 — 발신기 + gateway 배선)
+- 구현: `backend/fastapi/observability/agent_io_log.py`(`log_agent_io` + `estimate_cost_usd`, db_schema §7.1 정합 필드) + config `agent_io_log_enabled`(default False)/`agent_io_log_path` + `gateway.complete` 단일 chokepoint 배선(latency 측정 + success/error record) + `.gitignore`(logs/telemetry/).
+- 효과: `agent_io_logs` "이름만 존재"(audit §3) → **실 기록 가능**(flag ON 시 LLM 호출 1건 = 1 JSONL 행). cost-review/patterns 자동마이닝/HIP-004 의 데이터원 확보 — H2 부분 해소.
+- 부작용: 0 — gated default-off + graceful(로깅 실패가 생성 차단 X). pytest **779→784**(+5 신규, 기존 779 수정 0 = behavior-preserving 증거) + scenario_sim 36/36.
+- 회귀 통과: ✅ (full backend 784 passed)
+- **S2 (2026-06-05, cost-review reader)**: `backend/fastapi/observability/cost_report.py`(`load_agent_io_records`/`aggregate_agent_io`/`render_cost_markdown`/`build_cost_snapshot`) + test 5 → pytest 784→**789**. 텔레메트리 JSONL → 집계(호출/성공실패/토큰/비용/모델·agent별/latency) → `eval/cost_snapshots/{date}.md` 렌더. **cost-review Skill 데이터 소비 경로 확보**(죽었던 cost_snapshots 부활 capability — 실 스냅샷은 flag ON 운영 데이터로 생성).
+- 후속(S3+): flag ON 운영(staging) + DB write 승격(`agent_io_logs` 테이블, 운영) + prompt_id/user_id 패스스루(agent 레벨).
+```
+
+### HIP-007 품질 신호의 현실 접지 (critic 낙관편향 보정 + human N>0)
+
+```
+### 배경
+품질 게이트(Critic)가 전수 approve(낙관편향, Phase 23 자인 "88점 함정"). 즉 하네스가
+좋은 기획 vs 나쁜 기획을 구별 못 함. human 실채점 3회 이월 0건. 실 LLM 회귀는 CI에 없음
+(mock + 1회 baseline). → Phase 13~26의 모든 "품질 향상"이 미검증 가설.
+- 관련 audit: 2026-06-05 §6 (제품 §D) / PROJECT_STATE §D
+- 관련 contract: eval/human_review_rubric.md (rubric 존재), eval/human_review/ (kit 존재)
+
+### 제안
+하네스의 "원래 목적(근거 기반 품질 검증)"을 실제 작동시키는 3택 중 최소 1:
+- (a) human blind 채점 N=5 1회 실행 — kit 이미 존재, 가장 빠른 현실 접지.
+- (b) critic 보정 — adversarial/calibrated judge(결함을 일부러 찾게) + anchor 재조정.
+- (c) 실 LLM golden_set 회귀를 정기 트리거(현재 mock-only) — HIP-006 텔레메트리와 비용 연동.
+권장 순서: (a) 먼저(즉시 신호 확보) → (b)/(c)로 자동화.
+
+### 영향 분석
+- 영향 파일: eval/human_review/* / .claude/skills/eval-run·eval-design / ai_system/prompts(critic P-007)
+- 영향 절차: eval-run / eval-design / prompt-version-review(critic bump 시)
+- back-compat: (a) 코드 0 / (b) prompt bump = prompt-version-review 절차
+
+### 대안
+A. human N=5 먼저(본 제안): 측정도구 신뢰 회복의 최단경로.
+B. critic 자동보정만: 여전히 LLM이 LLM을 채점(순환) — human 1회로 calibrate 필요.
+C. 현행 자동 gate 유지: 절대 품질 보증 불가(반대).
+
+### 우선순위
+P0 — L2 제품 목적의 심장. 측정도구 불신 상태에서는 이후 모든 품질작업이 가설.
+
+### 검증 / 회귀 평가
+- 통과 기준: human 채점 N≥5 1회 완료 AND critic 점수와 human 점수의 상관/괴리 측정치 기록
+- 측정 시점: 1회 실행 직후 (eval/regression_results 또는 eval/human_review에 저장)
+
+### 결정
+승인 → S1 구현 (2026-06-05). 결정자: 사용자. (S2 real-eval 경로 진행 / S3 human N=5 = handoff)
+
+### 적용 결과
+- **S1 (2026-06-05, critic 낙관편향 보정)**: config `critic_calibration_enabled`(default False)/`critic_calibration_min_score` + `critic.py` `CALIBRATION_PREAMBLE`(anti-optimism 엄격 채점) + `CALIBRATION_KEY_DIMS`(모드별 핵심차원) + `_derive_verdict` **핵심차원 게이트**(평균이 approve 라도 핵심차원<min 이면 approve→revise) + prompt_registry **P-007 v1.5.0**(gated, 직교) + test 6 → pytest 789→**795**. ★ "88점 함정"의 평균-희석 한계(depth 가 평균에 묻힘)를 게이트로 직접 차단. gated default-off → OFF byte-identical(기존 critic 32 test 무영향, consistency 12 PASS).
+- **S2 (2026-06-05, real-eval 정식 트리거 경로)**: `backend/fastapi/eval/run_eval.py`(`run_and_report` + `build_real_llm_caller` + CLI `python -m backend.fastapi.eval.run_eval [--real]`) — golden_set eval 을 한 명령으로 실행하고 `eval/regression_results/{trigger}.md` 기록. mock 기본(CI 가능, 비용 0) + real opt-in(키 존재 시, 부재 시 graceful mock fallback — 실 호출 0). test 3 → pytest 795→**798**. "1회성 baseline → 반복 가능 정식 경로" 해소.
+- 후속: S3 human N=5(handoff, kit 존재) + real 실행(키 제공 = ops/CI 비밀) + critic 보정 효과 real 측정.
+```
+
+### HIP-008 "done"의 정의에 운영 도달성(operational reachability) 포함
+
+```
+### 배경
+현재 완료 기준 = pytest green + flag-OFF byte-identical. 너무 관대해 도달 불가능한 기능이
+26 phase째 축적: flag 전부 default False / 홈·네비 링크 없음 / RAG match_approved_knowledge
+SQL func 미정의(retrieval 실작동 0) / PlansRepo in-memory 휘발 / migration Supabase 미적용.
+- 관련 audit: 2026-06-05 §6 (제품 §A/B/C) / PROJECT_STATE §A·§B·§C
+
+### 제안
+phase acceptance 체크리스트에 1줄 추가: "실 환경에서 사용자가 도달 가능하고 실제로 동작한다".
+구체:
+- staging 1개 + 배포 스크립트(현재 0) + env_contract 실값.
+- match_approved_knowledge SQL func 정의(RAG 운영 활성).
+- PlansRepo 영속(in-memory 탈피) — 2회 이월 해소.
+- 최소 1개 flag ON 도달 경로(홈 → /new 위저드 진입 링크 + AppShell 네비 구현).
+
+### 영향 분석
+- 영향 파일: phase-complete/qa-check SKILL(acceptance 항목) + backend repos + db/migrations + apps/web(홈/네비)
+- 영향 절차: qa-check(release gate) / phase-complete(acceptance 검증)
+- back-compat: acceptance 기준 강화(향후 phase) — 과거 phase 소급 아님
+
+### 대안
+A. acceptance에 도달성 추가(본 제안): "문서상 완성" → "실제 작동" 방향 보정.
+B. 배포 phase를 따로(Gate B~G): 맞지만, 기준 자체를 안 바꾸면 도달불가 누적 재발.
+C. 현행 유지: capability가 계속 어둠 속에 쌓임(반대).
+
+### 우선순위
+P1 — PROJECT_STATE가 스스로 추천한 🅐(실사용 경험 잇기)와 정합.
+
+### 검증 / 회귀 평가
+- 통과 기준: 신규 사용자가 홈→위저드→실 3안까지 도달(flag ON 경로) AND 서버 재시작 후 plan 영속
+- 측정 시점: 적용 phase 종료 라이브 데모
+
+### 결정
+승인 → S1+S2 구현 (2026-06-05). 결정자: 사용자. (S3 PlansRepo 영속 / S4 홈·네비 진행)
+
+### 적용 결과
+- **S1 (2026-06-05, done 정의 강화)**: `qa-check` SKILL **v1.3.0** 카테고리 12 "운영 도달성(Operational Reachability)" 추가 — 사용자 진입 경로 / flag ON 경로 / 영속·운영 의존 명시 또는 명시적 이월 강제. "behavior-preserving + green 만으로 done 금지". phase-complete 가 qa-check 를 호출 → phase 종료 acceptance 에 자동 포함. audit §A/B/C 의 "동작 ≠ 도달" 게이트.
+- **S2 (2026-06-05, RAG retrieval 활성)**: `db/migrations/0008_match_approved_knowledge.sql` — retrieval 이 호출하나 미정의였던 RPC 함수 정의(approved_knowledge cosine top-k, RPC 계약 정합 + brand/auth 격리). RAG "graceful-empty(함수 미정의)" → 동작 가능. ★ Supabase 적용은 운영자(NG11) — SQL 작성 완료, pytest 영향 0(retrieval test 는 RPC mock).
+- **S3 (2026-06-05, plan 영속)**: `orchestration/moa_orchestrator.py` `_persist_plan_envelope`(gated `plans_repo_enabled` default False, PlansRepo upsert=update→없으면 create, graceful) + config flag + test 4 → pytest 798→**802**. OFF=in-memory only byte-identical(기존 798 무수정). 실영속은 Supabase 설정(ops). PlansRepo(기존)·graceful 패턴 재사용.
+- **S4 (2026-06-05, 홈 진입)**: `apps/web/app/page.tsx` 에 "단계별로 기획하기" 진입 카드(→ `/new`, `/new/branding`) + stale footer("후속 Phase 추가") 교정. typecheck+lint pass. ★ 범위=홈 진입 링크(도달성 핵심) — full AppShell(탭바/사이드바)은 deferred(component_map 주석). 시각 e2e=headless 한계.
+- ★ HIP-008 **S1~S4 완료** (done게이트 + RAG RPC + 영속 + 홈진입). 운영 적용(Supabase migration/flag ON)·full AppShell·실 e2e = ops/후속.
+```
+
+### HIP-009 메타-메타 루프 정식화 (★ meta_factory validation_workflow reflexive 적용)
+
+```
+### 배경
+회고 34건이 쌓이나 하네스 개선 제안(HIP)으로 전환되는 경로가 죽음 — 본 문서가 HIP-005(Phase 0)
+에서 26 phase 동안 동결. self_improvement_loop §11 Open Q5("루프 자체의 회고를 누가/언제")가
+미정의라 정확히 그 부분이 죽음. harness-audit는 meta/audits/ 부재 = 한 번도 완주 못 함.
+- 관련 audit: 2026-06-05 §4·§5, high H3
+- 관련 자산: meta/factory/validation_workflow.md(6검증, harness-audit/eval-run/contract-change/INDEX cross-ref 완비)
+
+### 제안
+메타-메타 루프를 손으로 만들지 말고 ★ meta_factory를 reflexive하게 승격(사용자 지침 "정신 살리기"):
+- 정기 트리거 명문화: self_improvement_loop §5가 이미 정의한 "분기별 / N phase마다" harness-audit
+  완주를 실제 발동(=본 2026-06-05 audit가 첫 발동).
+- 엔진: meta/factory/validation_workflow.md의 6검증을 "우리 하네스의 living blueprint"에 정기 실행
+  → 별도 평가체계 신설 0(이미 cross-ref). harness-factory Skill(proposal-only)로 진입.
+- 누적 회고 → 패턴(meta/patterns.md) → HIP 변환을 그 트리거에 묶기(self_improvement_loop §1.3 재가동).
+- 묶여 있던 보류 HIP-003/004/005 결착(승인/반려) — 특히 004는 HIP-006 텔레메트리 후 재평가.
+
+### 영향 분석
+- 영향 파일: meta/harness_improvement_proposals(본 문서) / meta/audits/ / self_improvement_loop §5 트리거 / harness-audit SKILL(meta/audits 운영 명문화)
+- 영향 절차: harness-audit / harness-factory(validation_workflow reflexive) / meta-retrospective
+- back-compat: 없음 (절차 활성화 + 기존 cross-ref 재사용)
+
+### 대안
+A. meta_factory를 reflexive 엔진으로 승격(본 제안): dormant 자산을 살림 + 메타-메타 루프 동시 해소.
+B. harness-audit를 손으로 정기 실행만: 자산 중복 + meta_factory 계속 dormant.
+C. 그대로: 자기개선 루프 영구 정지(반대).
+
+### 우선순위
+P1 — H3 직접 해소 + meta_factory 정신 보존(사용자 지침).
+
+### 검증 / 회귀 평가
+- 통과 기준: meta/audits/에 정기 audit 2회차 생성 AND HIP-003/004/005 결정 완료 AND
+  validation_workflow 6검증이 우리 하네스 blueprint에 1회 실행 기록
+- 측정 시점: 다음 정기 트리거 도달 시
+
+### 결정
+검토 대기 (2026-06-05 작성). 결정자: 사용자.
+
+### 적용 결과
+(적용 후 작성)
+```
+
+### HIP-010 유령/동결 정리 (★ meta_factory generation으로 self-map 파생 — 폐기 아닌 자동화)
+
+```
+### 배경
+손유지 불가가 입증된 자산이 stale/유령으로 잔존: instruction_index(Phase 1 동결, deprecated
+plan_options + P-AUX-3 누락), 빈 eval 채널(cost_snapshots/design_reviews/security_reviews/
+qa_reports + bug_reports), harness-audit의 lookup_table.yaml 부재 참조, dreammate_current_
+harness_blueprint(Phase M0 동결: pytest 339 vs 실제 779).
+- 관련 audit: 2026-06-05 §1·§2·§5, high H1 + medium M1·M2 + low L1
+
+### 제안
+"되살리기"가 아니라 ★ meta_factory generation으로 "파생/정리":
+- self-map 파생: instruction_index를 손유지 대신 meta_factory의 living blueprint에서 파생
+  (또는 routers+Skill 자동트리거가 이미 작동하므로 공식 격하). 우선 dreammate_current_harness_
+  blueprint를 Phase 26 실측으로 갱신 = living blueprint 첫 갱신.
+- 유령 채널: cost_snapshots는 HIP-006 후 실데이터로 부활 / design·security·qa_reports는
+  Skill 출력의 실제 위치(회고 §B, meta/security_reviews)로 재지정하거나 폴더 공식 폐기(contract-change).
+- 즉시 수정: harness-audit SKILL의 lookup_table.yaml → catalog.yaml.
+- 미사용 Skill(cost-review/bug-triage/phase-review): 폐기 vs 활성화를 with-without(validation 검증4) 근거로 결정.
+
+### 영향 분석
+- 영향 파일: instruction_index/* / meta/factory/blueprints/dreammate_current_harness_blueprint.md / .claude/skills/harness-audit/SKILL.md / 빈 eval 폴더 README
+- 영향 절차: harness-factory(generation/living blueprint) / contract-change(Skill·폴더 폐기 결정)
+- back-compat: 격하/폐기는 사용자 결정 게이트 통과 후 (harness-audit 금지사항 정합)
+
+### 대안
+A. living blueprint 파생(본 제안): 손유지 부담 제거 + meta_factory 정신 보존.
+B. instruction_index 수기 갱신: 또 죽음(이미 입증).
+C. 전부 폐기: meta_factory 정신·자산 손실(사용자 지침 위배).
+
+### 우선순위
+P2 — HIP-006/009 선행 후 정리가 자연스러움(텔레메트리·living blueprint 인프라 위에서).
+
+### 검증 / 회귀 평가
+- 통과 기준: dreammate blueprint가 Phase 26 실측 반영 AND lookup_table 참조 수정 AND
+  빈 채널 4종의 처분(부활/재지정/폐기) 결정 기록
+- 측정 시점: HIP-006/009 적용 후 정기 audit 2회차
+
+### 결정
+검토 대기 (2026-06-05 작성). 결정자: 사용자.
+
+### 적용 결과
+(적용 후 작성)
 ```
 
 ---
@@ -365,9 +603,14 @@ P1 (Sprint S5 종료 시)
 |---|---|---|---|---|
 | 001 | 9줄 stub placeholder marker | P0 | 승인 | 적용 완료 |
 | 002 | Skill INDEX 갱신 강제 | P0 | 승인 | 적용 완료 |
-| 003 | 네이밍 표준 contract | P1 | 보류 | Phase 1 |
-| 004 | multi-LLM 트리거 정량 기준 | P1 | 보류 | Phase 5+ |
-| 005 | Sprint 종료 자동 검증 | P1 | 보류 | Sprint S5-3 |
+| 003 | 네이밍 표준 contract | P1 | **반려·흡수** | audit_naming 으로 충족 (2026-06-05 HIP-009) |
+| 004 | multi-LLM 트리거 정량 기준 | P1 | **승인·정의** | HIP-006 데이터원 후 임계 정의 (2026-06-05) |
+| 005 | Sprint 종료 자동 검증 | P1 | **반려·흡수** | qa-check cat12+sanity 흡수 (2026-06-05) |
+| 006 | 텔레메트리 발신기 (agent_io_logs) | P0 | **승인 → S1+S2 구현** | 2026-06-05 (pytest 789, gated) |
+| 007 | 품질 신호 현실 접지 (critic+human) | P0 | **S1+S2 구현** (S3=human handoff) | 2026-06-05 (pytest 798) |
+| 008 | "done" 정의에 운영 도달성 | P1 | **S1~S4 구현** (운영적용=ops) | 2026-06-05 (pytest 802, qa-check v1.3.0) |
+| 009 | 메타-메타 루프 = meta_factory reflexive | P1 | 검토 대기 | 2026-06-05 audit 발 |
+| 010 | 유령/동결 정리 = self-map 파생 | P2 | 검토 대기 | 2026-06-05 audit 발 |
 
 ---
 
@@ -437,4 +680,8 @@ Phase 21+: AI 기반 제안서 자동 작성 (단 결정은 사람).
 v1.0.0 (2026-05-26): Phase 0 Sprint S5-1. placeholder 해소 + deep 작성.
                       제안서 8 섹션 표준, 우선순위 (P0/P1/P2), multi-LLM 권장 기준,
                       Phase 0 시드 5건 (HIP-001~005), 진행 상태 표.
+v1.1.0 (2026-06-05): harness-audit 최초 완주(meta/audits/2026-06-05.md) 발 — §6.5 신규
+                      제안서 5건 (HIP-006~010) append + §7 표 확장. 26 phase 만의 HIP 재가동.
+                      핵심: 현실 접지선(텔레메트리/품질/도달성) + meta_factory reflexive 승격.
+                      전부 검토 대기 (사용자 결정). HIP-003/004/005 결착 경로를 HIP-009/006에 연결.
 ```

@@ -1,6 +1,6 @@
 # harness_blueprint_schema.md — 하네스 청사진 출력 schema
 
-> 위치: `harness/meta_factory/harness_blueprint_schema.md`
+> 위치: `harness/meta/factory/harness_blueprint_schema.md`
 > 상태: Phase M0 Slice 1 — L3 Meta-Factory 의 **생성 출력** 구조
 > 결정: ADR-035
 > 참조: domain_brief_schema.md (생성 입력), architecture_patterns.md (6 패턴), factory_contract.md (8 규칙), validation_workflow.md (6 검증, Slice 2)

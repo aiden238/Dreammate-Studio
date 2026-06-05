@@ -20,9 +20,11 @@ gateway 가 결정한다. provider 추가 = adapter 1개 + registry 항목, agen
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 from ..config import get_settings
+from ..observability.agent_io_log import log_agent_io
 from . import aliases, registry
 from .errors import LLMError
 from .providers.anthropic_adapter import AnthropicAdapter
@@ -153,7 +155,32 @@ class LLMGateway:
             alias, tier, mode, provider, model_id,
         )
 
-        response = used_adapter.complete(req, api_key=api_key)
+        # ★ HIP-006 텔레메트리: 호출 1건 = 1 record (gated default-off + graceful).
+        #   flag OFF 면 log_agent_io 가 즉시 False 반환 → 오버헤드/파일쓰기 0 (behavior-preserving).
+        #   예외는 로깅 후 그대로 재전파 → 기존 에러 정규화 흐름 불변.
+        _t0 = time.perf_counter()
+        try:
+            response = used_adapter.complete(req, api_key=api_key)
+        except Exception as _exc:
+            log_agent_io(
+                agent_name=alias,
+                provider=provider,
+                model=model_id,
+                latency_ms=int((time.perf_counter() - _t0) * 1000),
+                success=False,
+                error=type(_exc).__name__,
+            )
+            raise
+        _usage = response.usage
+        log_agent_io(
+            agent_name=alias,
+            provider=provider,
+            model=response.model_id,
+            input_tokens=getattr(_usage, "prompt_tokens", 0),
+            output_tokens=getattr(_usage, "completion_tokens", 0),
+            latency_ms=int((time.perf_counter() - _t0) * 1000),
+            success=True,
+        )
         # adapter 는 모델만 안다 → gateway 가 alias 를 채워 반환(관측성).
         return LLMResponse(
             text=response.text,

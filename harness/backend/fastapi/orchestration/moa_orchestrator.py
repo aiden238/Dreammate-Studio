@@ -210,6 +210,45 @@ async def _load_personal_pkm_entries(
     return await repo.list_for_user(auth_user_id, scope="personal")
 
 
+async def _persist_plan_envelope(
+    plan_id: str,
+    plan_entry: dict[str, Any],
+    *,
+    settings: Any = None,
+    supabase: Any = None,
+) -> bool:
+    """HIP-008 S3 (gated): 생성된 plan envelope 를 PlansRepo 로 영속 (upsert, graceful).
+
+    OFF(`plans_repo_enabled`=False, default) → no-op(False) = in-memory `_plan_store` 만
+    사용 = pre-HIP byte-identical. ON → PlansRepo.update(행 없으면 create) 로 Supabase 영속.
+    PlansRepo 자체가 graceful(실패 시 in-memory fallback, raise 0)이며, 본 헬퍼의 try/except 는
+    import/get_supabase 등 예기치 못한 실패까지 흡수 — 영속 실패가 생성 흐름을 절대 차단하지 않는다.
+
+    Returns:
+        영속 시도 여부 (ON=True / OFF=False / 예외 흡수=False).
+    """
+    settings = settings or get_settings()
+    if not getattr(settings, "plans_repo_enabled", False):
+        return False
+    try:
+        from ..db import PlansRepo, get_supabase
+
+        client = supabase if supabase is not None else get_supabase()
+        repo = PlansRepo(supabase_client=client)
+        patch = {
+            "envelope": plan_entry.get("envelope"),
+            "status": plan_entry.get("status", "generated"),
+            "updated_at": plan_entry.get("updated_at"),
+        }
+        updated = await repo.update(plan_id, patch)
+        if updated is None:  # Supabase 에 행 없음 → 최초 생성 (upsert)
+            await repo.create(plan_id, {"id": plan_id, **patch})
+        return True
+    except Exception as exc:  # ★ graceful — 영속 실패가 생성 흐름 차단 X
+        logger.warning("plan_persist_failed: %s (graceful)", exc.__class__.__name__)
+        return False
+
+
 async def generate_plan(
     plan_id: str,
     plan_entry: dict[str, Any],
@@ -869,6 +908,9 @@ async def generate_plan(
     plan_entry["status"] = "generated"
     plan_entry["envelope"] = response_payload  # GET /plans/{plan_id} read 와 동일 직렬화.
     plan_entry["updated_at"] = now_iso()
+
+    # ★ HIP-008 S3 (gated): envelope 영속 (PlansRepo upsert, graceful). OFF=in-memory only byte-identical.
+    await _persist_plan_envelope(plan_id, plan_entry, settings=settings)
 
     logger.info(
         "plans/generate ok plan_id=%s plans=%d verdict=%s rag_refs=%d db_status=%s",

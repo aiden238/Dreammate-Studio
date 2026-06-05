@@ -1,6 +1,6 @@
 # dreammate_current_harness_blueprint.md — 현재 하네스 실측 역정리
 
-> 위치: `harness/meta_factory/blueprints/dreammate_current_harness_blueprint.md`
+> 위치: `harness/meta/factory/blueprints/dreammate_current_harness_blueprint.md`
 > 상태: Phase M0 (Meta-Factory Prep, ★ meta-phase) Slice 2 — 현재 Dreammate 하네스를 harness_blueprint 형식으로 **실측 역정리**
 > 결정: ADR-035
 > 참조: harness_blueprint_schema.md (출력 schema), architecture_patterns.md (6 패턴 + Dreammate 매핑), validation_workflow.md (6 검증)
@@ -14,6 +14,26 @@
 본 blueprint 는 현재 Dreammate 구현 하네스(L2)와 그 위 product runtime(L1)을 `harness_blueprint_schema.md` 형식으로 역정리한 **실측 청사진**이다. 신규 도메인 하네스 생성 시 참조 baseline 이자, L3 Meta-Factory 가 정확히 무엇을 확장해야 하는지(§10 부족점)를 도출하는 근거 문서다.
 
 ★ blueprint 는 proposal 이지만, 본 문서는 **현재 active 하네스의 사후 정리**이므로 validation 필드는 "현재 운영 중(live)" 로 표기한다 (신규 생성 blueprint 의 pending 과 구분).
+
+> ★ **LIVING blueprint 전환 (2026-06-05, HIP-010 S2)** — 본 청사진은 Phase M0(작성 시점) 스냅샷에서 **정기 갱신되는 self-map** 으로 전환된다. 갱신 주체 = 009-S1 cadence(harness-audit 정기 트리거) + 009-S2 meta/factory `validation_workflow` reflexive 실행. 본문 §2~§11 은 작성 시점(Phase 0~9.5) 스냅샷이며, 최신 델타는 아래 §0.1.
+
+## 0.1 LIVING UPDATE (2026-06-05)
+
+> 본문 세부(특히 §4 agent 목록)의 전수 재실측은 009-S2 reflexive 실행에서 수행. 아래는 headline 델타.
+
+| 항목 | M0 스냅샷(§본문) | 현재 (2026-06-05) |
+|---|---|---|
+| phases | 0~9.5 done + M0 active | **0~26 + M0~M3 전부 done/archive**, next=pending_user_decision |
+| pytest | 339 | **789** (Phase 26 baseline 779 + HIP-006 텔레메트리/cost 10) |
+| Skill 수 | 20→21 | **21** (harness-factory 포함) |
+| contract changes | CC-001~005 | **CC-001~034** / ADR 035+ |
+| meta 레이어 | `meta/` + `meta_factory/` (2폴더) | **`meta/` 단일** (meta_factory → `meta/factory/` 병합, 2026-06-05) |
+| agents | 5 (intent/planning/critic/rewriter/rag) | + brand_injection/brand_memory_extractor/topic_discovery/pkm 등 (PKM·브랜딩·commercial 확장) — §4 전수 재실측 = 009-S2 |
+| output_mode | compact (rich gated) | **4-tier** compact/rich/director/commercial_viral (전부 gated) |
+| 관측성 | 없음 | **agent_io 텔레메트리 발신기(HIP-006) + cost-review aggregator** (`backend/fastapi/observability/`) |
+| 자기개선 | self_improvement_loop(루프) | + **harness-audit 최초 완주**(`meta/audits/`) + HIP-006~010 로드맵(`meta/improvement_roadmap_hip006-010.md`) |
+
+★ §10 "부족점 5"(생성 자동화/.claude agents/trigger dry-run/with-without/acceptance)는 여전히 유효 — L3 reflexive 적용(HIP-009)으로 **우리 하네스 자기유지**에 재겨냥됨.
 
 ---
 

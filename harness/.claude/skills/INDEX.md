@@ -57,7 +57,7 @@
 |---|---|---|---|---|
 | 21 | harness-factory | 하네스 blueprint, meta_factory, harness scaffold, 도메인 하네스 생성 | claude | phase 10+ |
 
-> harness-factory (Phase M0 Slice 3, ADR-035 + CC-006) — `meta_factory/` (L3) 진입점. domain_brief → harness blueprint 초안 + agent·skill·contract·eval scaffold 제안 + 기존 하네스 충돌 분석. ★ **proposal-only** — 생성물은 `meta_factory/outputs/` 또는 `meta/proposals/` 에 먼저 두고, validation_workflow 6 검증 + 사용자 승인 전까지 active 아님. 기존 AGENTS/CLAUDE/PROJECT_STATE/contracts/Skill 직접 수정 금지 (contract-change 경유). 키워드 **scoped** — `하네스 개선`/`메타 개선`/`회고`(meta-retrospective) + bare `하네스 감사`/`구조 점검`/`전체 검토`(harness-audit) + `phase 생성` 단독(phase-start) 침범 0.
+> harness-factory (Phase M0 Slice 3, ADR-035 + CC-006) — `meta/factory/` (L3) 진입점. domain_brief → harness blueprint 초안 + agent·skill·contract·eval scaffold 제안 + 기존 하네스 충돌 분석. ★ **proposal-only** — 생성물은 `meta/factory/outputs/` 또는 `meta/proposals/` 에 먼저 두고, validation_workflow 6 검증 + 사용자 승인 전까지 active 아님. 기존 AGENTS/CLAUDE/PROJECT_STATE/contracts/Skill 직접 수정 금지 (contract-change 경유). 키워드 **scoped** — `하네스 개선`/`메타 개선`/`회고`(meta-retrospective) + bare `하네스 감사`/`구조 점검`/`전체 검토`(harness-audit) + `phase 생성` 단독(phase-start) 침범 0.
 
 ---
 
