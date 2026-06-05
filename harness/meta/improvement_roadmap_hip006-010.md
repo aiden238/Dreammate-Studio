@@ -108,3 +108,8 @@ Handoff(ops/사람): 006-S3 DB·staging / 007-S2 실행(키) / 007-S3 human N=5 
   - 010-S4 ✅ `instruction_index/dependency_map.yaml` → **"frozen reference, 미유지" 격하**(헤더 주석) + living blueprint=canonical self-map 명시. 자동 파생=future.
 - ★ **HIP-006~010 코드/문서 가능분 전부 집행 완료.** handoff(ops/사람): 006-S3 DB·staging / 007-S3 human N=5 / 008 Supabase 적용·full AppShell·실 e2e / HIP-004 multi-llm SKILL 반영(contract-change).
 - 다음: **Phase C** 최종 검증 + 커밋.
+- 2026-06-05 **handoff 코드/문서화 (006-S3 / 007-S3 / HIP-004)**:
+  - 006-S3 ✅ 기본 경로(critic·planning) 텔레메트리 배선 + DB 적재 경로(gated `agent_io_log_to_db`) + `usage_tokens` + test 4 → pytest 802→**806**. gateway 만 계측되던 갭 해소. ★ JSONL=인프라 0(flag만) / DB=Supabase DB만(서버 배포 불필요).
+  - 007-S3 📋 turnkey N=5 blind 채점 시트(`eval/human_review/2026-06-05_hip007-s3-blind-n5.md`) — run_eval --real 케이스 생성 + critic↔human 대조. 실 채점=사람(handoff, 시트 준비 완료).
+  - HIP-004 ✅ `multi-llm-validation` SKILL **v1.1.0** — 정량 임계 4종 반영(contract-change).
+- ★ 남은 **순수 handoff**(코드로 닫을 수 없음): Supabase migration 적용 + flag ON(006-S3/008 운영) / human N=5 실채점(007-S3, 시트 준비됨).

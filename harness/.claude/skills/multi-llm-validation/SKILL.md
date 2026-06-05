@@ -11,7 +11,7 @@ applies_to: [claude]
 phase: [all]
 related_state:
   - meta/validations/
-version: v1.0.0
+version: v1.1.0
 ---
 
 # multi-llm-validation
@@ -26,6 +26,19 @@ version: v1.0.0
 - 사용자 본인이 "다른 모델한테도 물어봐줘"
 - 회고에서 단일 모델 편향 의심
 - 보안 / 비용 critical 결정 직전
+
+### 필수 정량 임계 (HIP-004 — 2026-06-05)
+
+★ 다음 중 **1개라도** 해당하면 multi-llm-validation **필수**(주관 판단 불요). HIP-006 텔레메트리로 비용 데이터원이 확보되어 정량화됨 (`meta/harness_improvement_proposals.md` HIP-004 승인):
+
+```
+- 영향 파일 ≥ 5개 (한 변경이 5+ 파일 수정)
+- prompt major version bump (P-XXX vN.0.0 — prompt-version-review 연동)
+- 가격 / 보안 / 영구 제외(mvp_non_goals) 변경
+- cost-review(observability/cost_report, agent_io 텔레메트리 집계) 월 추정 비용 임계 초과
+```
+
+위 외에는 본 §트리거 조건의 질적 기준 + 사용자 판단.
 
 ## 사용하지 않는 경우
 

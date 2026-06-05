@@ -326,7 +326,7 @@ P1 (Phase 1 진입 시)
 ### 결정
 보류 (2026-05-26). 재검토: Phase 5+ (사용자 / 비용 실데이터 후).
 사유: 사용자 수 / 비용 임계 기준은 실 데이터 없으면 무의미.
-→ ★ **승인·정의 (2026-06-05, HIP-009 S3)**: HIP-006 텔레메트리(agent_io_logs) + cost-review(006-S2)로 비용 실데이터원 확보 → multi-llm-validation 필수 임계 정량화: ① 영향 파일 ≥5 ② prompt major bump ③ 가격/보안/영구제외(mvp_non_goals) 변경 ④ cost-review 월 추정 비용 임계 초과. 1+ 해당 시 트리거. **multi-llm-validation SKILL 반영은 후속 contract-change.**
+→ ★ **승인·정의 (2026-06-05, HIP-009 S3)**: HIP-006 텔레메트리(agent_io_logs) + cost-review(006-S2)로 비용 실데이터원 확보 → multi-llm-validation 필수 임계 정량화: ① 영향 파일 ≥5 ② prompt major bump ③ 가격/보안/영구제외(mvp_non_goals) 변경 ④ cost-review 월 추정 비용 임계 초과. 1+ 해당 시 트리거. → ★ **반영 완료 (2026-06-05)**: `multi-llm-validation` SKILL **v1.1.0** §트리거 조건에 "필수 정량 임계" 4종 추가(Skill=contract, contract-change 정합).
 ```
 
 ### HIP-005 Sprint 종료 자동 PROJECT_STATE 검증
@@ -415,7 +415,8 @@ P0 — 죽은 측정 machinery 4종의 단일 해소 레버 + 비용 폭주(배�
 - 부작용: 0 — gated default-off + graceful(로깅 실패가 생성 차단 X). pytest **779→784**(+5 신규, 기존 779 수정 0 = behavior-preserving 증거) + scenario_sim 36/36.
 - 회귀 통과: ✅ (full backend 784 passed)
 - **S2 (2026-06-05, cost-review reader)**: `backend/fastapi/observability/cost_report.py`(`load_agent_io_records`/`aggregate_agent_io`/`render_cost_markdown`/`build_cost_snapshot`) + test 5 → pytest 784→**789**. 텔레메트리 JSONL → 집계(호출/성공실패/토큰/비용/모델·agent별/latency) → `eval/cost_snapshots/{date}.md` 렌더. **cost-review Skill 데이터 소비 경로 확보**(죽었던 cost_snapshots 부활 capability — 실 스냅샷은 flag ON 운영 데이터로 생성).
-- 후속(S3+): flag ON 운영(staging) + DB write 승격(`agent_io_logs` 테이블, 운영) + prompt_id/user_id 패스스루(agent 레벨).
+- **S3 (2026-06-05, 기본 경로 계측 + DB 적재 경로)**: gateway 만 계측되던 갭 해소 — **critic·planning 직접 호출부에 텔레메트리 배선**(`usage_tokens` 방어적 추출 + prompt_id 기록) + `agent_io_log_to_db`(gated sub-flag) → Supabase `agent_io_logs` 적재 경로(graceful) + test 4 → pytest 802→**806**. ★ JSONL=인프라 0(flag만), DB 적재=Supabase DB만(서버 배포 불필요). OFF byte-identical.
+- 후속(handoff): flag ON(env) + 실 LLM(키)로 데이터 생성 + Supabase agent_io_logs 적재 활성 — 전부 ops. 추가 call site(intent/rewriter/_run_planning_single 병렬)는 동일 패턴 후속.
 ```
 
 ### HIP-007 품질 신호의 현실 접지 (critic 낙관편향 보정 + human N>0)
@@ -604,9 +605,9 @@ P2 — HIP-006/009 선행 후 정리가 자연스러움(텔레메트리·living 
 | 001 | 9줄 stub placeholder marker | P0 | 승인 | 적용 완료 |
 | 002 | Skill INDEX 갱신 강제 | P0 | 승인 | 적용 완료 |
 | 003 | 네이밍 표준 contract | P1 | **반려·흡수** | audit_naming 으로 충족 (2026-06-05 HIP-009) |
-| 004 | multi-LLM 트리거 정량 기준 | P1 | **승인·정의** | HIP-006 데이터원 후 임계 정의 (2026-06-05) |
+| 004 | multi-LLM 트리거 정량 기준 | P1 | **적용 완료** | multi-llm-validation SKILL v1.1.0 반영 (2026-06-05) |
 | 005 | Sprint 종료 자동 검증 | P1 | **반려·흡수** | qa-check cat12+sanity 흡수 (2026-06-05) |
-| 006 | 텔레메트리 발신기 (agent_io_logs) | P0 | **승인 → S1+S2 구현** | 2026-06-05 (pytest 789, gated) |
+| 006 | 텔레메트리 발신기 (agent_io_logs) | P0 | **S1~S3 구현** (운영활성=ops) | 2026-06-05 (pytest 806, gated) |
 | 007 | 품질 신호 현실 접지 (critic+human) | P0 | **S1+S2 구현** (S3=human handoff) | 2026-06-05 (pytest 798) |
 | 008 | "done" 정의에 운영 도달성 | P1 | **S1~S4 구현** (운영적용=ops) | 2026-06-05 (pytest 802, qa-check v1.3.0) |
 | 009 | 메타-메타 루프 = meta_factory reflexive | P1 | 검토 대기 | 2026-06-05 audit 발 |
