@@ -47,9 +47,15 @@
 - ✅ Intent 오반려 → CC-021(P-001 v1.1.0 콘텐츠 토픽 수용 + 차단→가이드 UX) 처리됨.
 - ✅ 위저드↔백엔드 실연결 → Phase 14. 브랜딩→4계층 자동 → Phase 25.
 - ✅ video 노드 / 개인 PKM 출처 → Phase 26.
+- ✅ **B-1 핵심 기능 default OFF → Phase 27 S1** (`APP_PROFILE=realuse` 단일 스위치 = 실사용 핵심 루프 ON, 코드 default 보존).
+- ✅ **B-2 홈/네비 → HIP-008(홈 진입 카드) + Phase 27 S2** (AppShell 지속 네비 전 페이지). 데스크톱 사이드바 full 만 잔여(낮음).
+- ✅ **B-3 PlansRepo plan 영속 → HIP-008 S3 배선 + Phase 27 S1/S4** (realuse=plans_repo ON, test 4). 실 영속 검증=실-런(U-1).
+- ✅ **B-4 match_approved_knowledge → HIP-008 S2** (0008 SQL) + Phase 27 S4(apply 스크립트/verify). 실 적용=ops.
+- ✅ **B-7 rate_limit → Phase 27 S3** (generation 신원별 fixed-window→429, gated, test 5). 분산=후속(M-6/U-2).
+- ✅ **M-1 migration 운영 적용 → Phase 27 S4** (apply_migrations.py 0001~0008 + README). 실 적용=ops.
+- 🔸 **B-5 human 실채점** — kit + 실-런 런북 준비됨, 사용자 액션(실-런 후). (3회 이월 유지)
 
-## 우선순위 제안 (영향순)
-1. **B-1 + B-2** (실사용 경험 — 만든 걸 보이게): flag 활성 정책 + 홈 진입/네비.
-2. **B-3 + B-4** (영속 마감): PlansRepo 배선 + match function.
-3. **B-5** (품질 근거): human 실채점 회수.
-4. **B-7 + M-1 + M-7** (배포 Gate B~G): rate_limit + migration 적용 + 배포 스크립트.
+## 우선순위 제안 (영향순) — Phase 27 후 갱신
+1. ~~B-1 + B-2~~ ✅ Phase 27 / ~~B-3 + B-4~~ ✅ Phase 27 / ~~B-7 + M-1~~ ✅ Phase 27.
+2. **실 라이브 데모 + B-5** (품질 근거): 사용자 opt-in 실-런(실 LLM+Supabase) → human 실채점 회수.
+3. **배포 Gate B~G** (M-7 배포 스크립트 + 실 staging): 인프라 user-provided. 잔여 B-6(commercial 데이터레이어)/M-2~M-6/L-1~L-6.
