@@ -48,6 +48,57 @@ def estimate_cost_usd(
     return round((input_tokens * in_rate + output_tokens * out_rate) / 1_000_000, 6)
 
 
+def usage_tokens(usage: Any) -> tuple[int, int]:
+    """LLM usage 객체 → (prompt_tokens, completion_tokens) 안전 추출.
+
+    provider 응답이 없거나(None) mock/비정상이면 (0, 0) — 텔레메트리 호출부가 절대
+    깨지지 않도록 방어적(int/float 만 인정, MagicMock/그 외 → 0).
+    """
+    def _i(v: Any) -> int:
+        if isinstance(v, bool):
+            return 0
+        if isinstance(v, int):
+            return v
+        if isinstance(v, float):
+            return int(v)
+        return 0
+
+    return _i(getattr(usage, "prompt_tokens", 0)), _i(getattr(usage, "completion_tokens", 0))
+
+
+def _maybe_write_db(record: dict[str, Any], settings: Any) -> None:
+    """HIP-006 S3 (gated): agent_io_logs Supabase 적재 (JSONL 과 별개 sub-flag, graceful).
+
+    `agent_io_log_to_db` ON + Supabase client 존재 시에만 적재. db_schema §7.1 컬럼 매핑.
+    실패해도 raise 0 (텔레메트리가 생성 흐름을 절대 차단하지 않음). ★ 서버 배포 불필요 —
+    로컬 백엔드 → Supabase 쓰기 가능 (Supabase DB 만 있으면 됨).
+    """
+    if not getattr(settings, "agent_io_log_to_db", False):
+        return
+    try:
+        from ..db import get_supabase
+
+        client = get_supabase()
+        if client is None:
+            return
+        row = {
+            "agent_name": record.get("agent_name") or "unknown",
+            "prompt_id": record.get("prompt_id") or "?",
+            "prompt_version": record.get("prompt_version") or "?",
+            "model": record.get("model") or "?",
+            "input_payload": {},  # NOT NULL — 텔레메트리는 payload 미보존(요약만)
+            "error": record.get("error"),
+            "latency_ms": record.get("latency_ms"),
+            "input_tokens": record.get("input_tokens"),
+            "output_tokens": record.get("output_tokens"),
+            "cost_usd": record.get("cost_usd"),
+            "user_id": record.get("user_id"),
+        }
+        client.table("agent_io_logs").insert(row).execute()
+    except Exception as exc:  # graceful — DB 적재 실패가 생성 흐름 차단 X
+        logger.debug("agent_io_log DB 적재 실패 (graceful skip): %s", exc)
+
+
 def log_agent_io(
     *,
     agent_name: str,
@@ -106,6 +157,7 @@ def log_agent_io(
             os.makedirs(parent, exist_ok=True)
         with open(path, "a", encoding="utf-8") as fh:
             fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+        _maybe_write_db(record, settings)  # HIP-006 S3 (gated sub-flag, graceful)
         return True
     except Exception as exc:  # ★ graceful — 로깅 실패가 생성 흐름을 막지 않는다
         logger.debug("agent_io_log 기록 실패 (graceful skip): %s", exc)

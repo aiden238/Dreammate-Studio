@@ -25,11 +25,13 @@ import asyncio
 import copy
 import json
 import logging
+import time
 from typing import Any, Sequence
 
 from openai import OpenAI, OpenAIError
 
 from ..config import effective_output_mode, get_settings
+from ..observability.agent_io_log import log_agent_io, usage_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -356,6 +358,7 @@ def run_planning(
         len(rag_context or []),
     )
 
+    _t0 = time.perf_counter()
     try:
         response = _client.chat.completions.create(
             model=_model,

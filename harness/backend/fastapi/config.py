@@ -160,6 +160,17 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── HIP-006 S3 (2026-06-05) — agent_io 텔레메트리 DB 적재 승격 (additive, gated default-off) ─
+    # JSONL(agent_io_log_enabled)과 별개 sub-flag. ON + Supabase 시 agent_io_logs 테이블에도 적재.
+    # ★ JSONL 은 인프라 0(로컬 파일) — 본 flag 는 Supabase DB 적재 옵션(서버 배포 아님, Supabase 만 필요).
+    agent_io_log_to_db: bool = Field(
+        default=False,
+        description=(
+            "HIP-006 텔레메트리 Supabase agent_io_logs 적재 on/off. ★ gated default-off — "
+            "False 면 JSONL 만(인프라 0). True + Supabase 설정 시 DB 적재(graceful). 환경변수 AGENT_IO_LOG_TO_DB."
+        ),
+    )
+
     # ─── Phase 11 A안 Slice 2 — cross-validation 게이트 + Gemini 튜닝 (additive) ─
     # ★ behavior-preserving / gated default-off: cross_validation_enabled=False →
     #   호출측(orchestrator 등)에서 교차검증 skip. 본 Slice 는 모듈만 추가 — 자동
