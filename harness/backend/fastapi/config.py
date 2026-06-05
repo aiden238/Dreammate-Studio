@@ -108,6 +108,45 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── HIP-006 (2026-06-05) — agent_io 텔레메트리 발신기 (additive, gated default-off, graceful) ─
+    # 배경: self_improvement_loop §1.2 패턴 마이닝 + cost-review 데이터원이 부재(meta/audits/2026-06-05.md §3).
+    # ★ behavior-preserving: default False → 기존 hermetic pytest 파일쓰기 0 (byte-identical).
+    #   ON 시 gateway.complete 가 LLM 호출 1건당 JSONL 1행 기록 (db_schema §7.1 agent_io_logs 정합, graceful).
+    #   환경변수 AGENT_IO_LOG_ENABLED / AGENT_IO_LOG_PATH.
+    agent_io_log_enabled: bool = Field(
+        default=False,
+        description=(
+            "HIP-006 agent_io 텔레메트리 발신기 on/off. ★ gated default-off — False 면 "
+            "LLM 호출 로깅 0 (behavior-preserving). True 면 cost-review/patterns 데이터원 활성."
+        ),
+    )
+    agent_io_log_path: str = Field(
+        default="logs/telemetry/agent_io.jsonl",
+        description=(
+            "HIP-006 텔레메트리 JSONL append 경로 (gitignore). 부모 디렉토리 자동 생성. "
+            "환경변수 AGENT_IO_LOG_PATH 로 override."
+        ),
+    )
+
+    # ─── HIP-007 S1 (2026-06-05) — critic 낙관편향 보정 (additive, gated default-off) ─
+    # 배경: critic 전수 approve(낙관 편향, "88점 함정") — 얕은 plan 도 평균이 높아 통과
+    #   (meta/audits/2026-06-05.md HIP-007). ★ behavior-preserving: default False → 프롬프트/게이트
+    #   미적용 = critic 출력 byte-identical. ON 시 (1) anti-optimism 프롬프트 (2) 핵심 차원 게이트.
+    critic_calibration_enabled: bool = Field(
+        default=False,
+        description=(
+            "HIP-007 critic 낙관편향 보정 on/off. ★ gated default-off — False 면 critic "
+            "프롬프트·verdict 불변(byte-identical). True 면 엄격 채점 프리앰블 + 핵심 차원 approve 게이트."
+        ),
+    )
+    critic_calibration_min_score: int = Field(
+        default=3,
+        description=(
+            "HIP-007 보정 ON 시 핵심 차원(모드별 CALIBRATION_KEY_DIMS) 최소 점수(0~5). "
+            "이 미만이면 평균이 approve 라도 revise 로 강등(88점 함정 차단)."
+        ),
+    )
+
     # ─── Phase 11 A안 Slice 2 — cross-validation 게이트 + Gemini 튜닝 (additive) ─
     # ★ behavior-preserving / gated default-off: cross_validation_enabled=False →
     #   호출측(orchestrator 등)에서 교차검증 skip. 본 Slice 는 모듈만 추가 — 자동

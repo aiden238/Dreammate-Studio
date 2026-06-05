@@ -293,12 +293,37 @@ COMMERCIAL_SYSTEM_PROMPT = (
 )
 
 
+# ─── HIP-007 S1 (gated): critic 낙관편향 보정 (anti-optimism calibration) ─────
+# ★ critic_calibration_enabled ON 경로 전용 (default OFF → 프롬프트/게이트 미적용 = byte-identical).
+#   문제: critic 가 전수 approve(낙관 편향, "88점 함정") — 얕은 plan 도 평균이 높아 통과.
+#   보정 2축: (1) 프롬프트 anti-optimism 지침(엄격 채점) (2) 핵심 차원 게이트(_derive_verdict).
+#   meta/audits/2026-06-05.md HIP-007. rubric 정합: eval/video_planning_eval.md.
+CALIBRATION_PREAMBLE = """
+★ 보정 지침 (엄격 채점 — 낙관 편향 금지):
+- 기본 태도는 회의(skeptical)다. 의심스러우면 낮은 점수를 준다.
+- 4~5점은 "추가 질문 없이 바로 실행 가능한, 명백히 탁월한" 경우에만. 평범하면 2~3점.
+- 점수를 일괄 고득점 주지 마라(grade inflation 금지). 각 차원 독립 채점 + reason 에 약점 최소 1개 명시.
+- 핵심 차원(깊이·실행가능성/구조/후크)이 빈약하면, 다른 차원이 높아도 전체를 통과시키지 마라.
+- "그럴듯하지만 일반론"인 plan 은 differentiation/non_genericity 를 낮춘다.
+"""
+
+# 모드별 핵심 차원 — calibration ON 시 이 차원이 calibration_min 미만이면 approve 차단.
+CALIBRATION_KEY_DIMS: dict[str, tuple[str, ...]] = {
+    "compact": ("hook_strength", "structure"),
+    "rich": ("depth_actionability",),
+    "director": ("depth_actionability", "retention_design"),
+    "commercial_viral": ("depth_actionability", "non_genericity", "commercial_conversion"),
+}
+
+
 # ─── verdict 산출 (server-side 보정) ──────────────────────────────────
 
 def _derive_verdict(
     scores: dict[str, int],
     *,
     dimensions: tuple[str, ...] = DIMENSIONS,
+    calibration_key_dims: tuple[str, ...] | None = None,
+    calibration_min: int = 3,
 ) -> tuple[float, str]:
     """평균 + 미달 카운트로 verdict 산출 (output_schema §9.2).
 
@@ -306,6 +331,11 @@ def _derive_verdict(
     기존 8차원 DIMENSIONS 이므로 OFF 경로 호출(인자 생략)은 byte-identical.
     rich(ON) 경로는 DIMENSIONS_RICH(9차원)를 넘겨 depth_actionability 를 평균에 포함한다
     (임계 식·verdict 규칙 구조는 동일 — dim 수만 9).
+
+    HIP-007 S1 (gated): `calibration_key_dims` 가 주어지면(critic_calibration_enabled ON)
+    핵심 차원 게이트를 적용한다 — 평균이 approve 라도 핵심 차원 중 하나라도
+    `calibration_min` 미만이면 approve→revise 강등 ("88점 함정" 차단). 기본값 None →
+    게이트 미적용 = OFF byte-identical.
 
     Returns:
         (overall_score_avg, verdict)
@@ -320,6 +350,11 @@ def _derive_verdict(
         verdict = "revise"
     else:  # avg >= 3.5 AND 모든 점수 ≥ 2
         verdict = "approve"
+
+    # ★ HIP-007 S1 calibration 게이트 (gated — calibration_key_dims=None 이면 미적용 = byte-identical)
+    if calibration_key_dims and verdict == "approve":
+        if any(int(scores.get(k, 0)) < calibration_min for k in calibration_key_dims):
+            verdict = "revise"
     return round(avg, 4), verdict
 
 
@@ -378,6 +413,13 @@ def run_critic(
         _system_prompt = SYSTEM_PROMPT
         _expected = DIMENSIONS
         _user_intro = "다음 plan을 8차원으로 평가해줘:\n\n"
+
+    # ★ HIP-007 S1 (gated): critic 낙관편향 보정. OFF(default) 면 프롬프트/게이트 미적용 = byte-identical.
+    _calib_key_dims: tuple[str, ...] | None = None
+    _calib_min = int(getattr(settings, "critic_calibration_min_score", 3))
+    if getattr(settings, "critic_calibration_enabled", False):
+        _system_prompt = _system_prompt + "\n" + CALIBRATION_PREAMBLE
+        _calib_key_dims = CALIBRATION_KEY_DIMS.get(_mode, CALIBRATION_KEY_DIMS["compact"])
 
     target_plan_id = str(plan.get("plan_id") or "")
 
@@ -440,7 +482,12 @@ def run_critic(
 
     # server-side verdict 보정 (output_schema §9.2 규칙 강제)
     # OFF=8차원(DIMENSIONS), ON=9차원(DIMENSIONS_RICH) — depth_actionability 가 평균에 포함됨.
-    avg, derived_verdict = _derive_verdict(norm_scores, dimensions=_expected)
+    avg, derived_verdict = _derive_verdict(
+        norm_scores,
+        dimensions=_expected,
+        calibration_key_dims=_calib_key_dims,
+        calibration_min=_calib_min,
+    )
     llm_verdict = str(parsed.get("overall_verdict", "")).strip().lower()
     if llm_verdict not in {"approve", "revise", "reject"}:
         llm_verdict = derived_verdict
@@ -614,3 +661,7 @@ DIRECTOR_PROMPT_VERSION = "v1.3.0"
 # Phase 20 S4 (gated, CC-027): commercial_viral 17차원(director 10 + 상업 7) — semver minor.
 # ★ output_mode=commercial_viral 경로 전용. compact/rich/director(v1.1.0/v1.2.0/v1.3.0) 불변.
 COMMERCIAL_PROMPT_VERSION = "v1.4.0"
+# HIP-007 S1 (gated, 2026-06-05): anti-optimism 보정 프리앰블 + 핵심 차원 approve 게이트 —
+# semver minor (additive, gated). ★ critic_calibration_enabled=True 경로 전용.
+# OFF 면 위 버전들 불변 byte-identical. prompt_registry P-007 §7 v1.5.0 정합.
+CALIBRATION_PROMPT_VERSION = "v1.5.0"
