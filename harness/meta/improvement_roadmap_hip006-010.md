@@ -95,3 +95,16 @@ Handoff(ops/사람): 006-S3 DB·staging / 007-S2 실행(키) / 007-S3 human N=5 
   - 007-S2 ✅ real-eval 정식 트리거 — `eval/run_eval.py`(run_and_report + build_real_llm_caller + CLI) — golden_set eval 한 명령 + regression_results 기록. mock 기본 + real opt-in(키 없으면 graceful mock). test 3 → pytest 795→**798**. "1회성→반복 가능" 해소.
   - 007-S3 🔴 human blind N=5 = handoff(사람, eval/human_review kit 존재).
 - 다음: **Wave 3** (008 운영 도달성: S1 done정의 → S4 홈/네비 → S3 PlansRepo → S2 match SQL).
+- 2026-06-05 **Wave 3 진행 (008-S1+S2 / S3·S4 다음)**:
+  - 008-S1 ✅ qa-check **v1.3.0** 카테고리 12 "운영 도달성" — "동작≠도달" done 게이트(진입경로/flag ON/영속·운영의존 명시 or 이월). phase-complete 자동 포함.
+  - 008-S2 ✅ `0008_match_approved_knowledge.sql` — RAG retrieval RPC 함수 정의(미정의→동작). Supabase 적용=ops(NG11). pytest 798 불변(retrieval RPC mock).
+  - 008-S3 ✅ PlansRepo 영속 — `_persist_plan_envelope`(orchestrator seam, gated `plans_repo_enabled` default False, upsert+graceful) + config + test 4 → pytest 798→**802**. OFF byte-identical(기존 798 무수정). 실영속=Supabase ops.
+  - 008-S4 ✅ 홈 진입 — `app/page.tsx` 에 /new·/new/branding 진입 카드(도달성) + stale footer 교정 + component_map AppShell deferred 주석. typecheck+lint pass. full AppShell=deferred.
+- 2026-06-05 **Wave 3 완료** (008 전체: S1 done게이트 / S2 RAG RPC / S3 영속 / S4 홈진입). pytest 802.
+- 2026-06-05 **Wave 4 완료 (009-S2/S3 + 010-S3/S4 — 문서·결정)**:
+  - 009-S2 ✅ meta/factory validation_workflow 6검증을 우리 하네스에 **reflexive 적용(첫 실사용)** → `meta/factory/outputs/improvement_reports/2026-06-05_self-validation.md` (PASS 6 / fail 0 / pending-by-design 1, 신규 GAP 0 — audit 와 수렴).
+  - 009-S3 ✅ 보류 HIP 결착 — HIP-003 **반려·흡수**(audit_naming) / HIP-004 **승인·정의**(HIP-006 데이터원 기반 multi-llm 임계) / HIP-005 **반려·흡수**(qa-check cat12+sanity).
+  - 010-S3 ✅ 유령 eval 채널 처분(결정): `cost_snapshots`=부활(006-S2)·유지 / `design_reviews`·`eval/security_reviews`=흡수(회고 §B / meta/security_reviews) / `qa_reports`=historical 보존 / `docs/bug_reports`=on-demand(bug-triage). 빈 dedicated 채널은 "흡수" 확정 — 신규 산출은 실제 위치로.
+  - 010-S4 ✅ `instruction_index/dependency_map.yaml` → **"frozen reference, 미유지" 격하**(헤더 주석) + living blueprint=canonical self-map 명시. 자동 파생=future.
+- ★ **HIP-006~010 코드/문서 가능분 전부 집행 완료.** handoff(ops/사람): 006-S3 DB·staging / 007-S3 human N=5 / 008 Supabase 적용·full AppShell·실 e2e / HIP-004 multi-llm SKILL 반영(contract-change).
+- 다음: **Phase C** 최종 검증 + 커밋.

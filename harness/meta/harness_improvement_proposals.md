@@ -290,6 +290,7 @@ P1 (Phase 1 진입 시)
 ### 결정
 보류 (2026-05-26). 재검토: Phase 1 진입 시.
 사유: Phase 0 범위 외. 단 Phase 1 시작 시 즉시 작성.
+→ ★ **반려·흡수 종결 (2026-06-05, HIP-009 S3)**: naming_standard contract 별도 신설 대신 `scripts/audit_naming.ps1`(harness-audit §6.5 + qa-check cat 11)이 plan_candidates/video_projects/critic_evaluation/rag_references 명명 일관성을 매 phase 자동 강제 → 의도 충족. canonical 용어 SoT = audit_naming NAMING_POLICY. 신규 contract 불요.
 ```
 
 ### HIP-004 multi-llm-validation 트리거 정량 기준
@@ -325,6 +326,7 @@ P1 (Phase 1 진입 시)
 ### 결정
 보류 (2026-05-26). 재검토: Phase 5+ (사용자 / 비용 실데이터 후).
 사유: 사용자 수 / 비용 임계 기준은 실 데이터 없으면 무의미.
+→ ★ **승인·정의 (2026-06-05, HIP-009 S3)**: HIP-006 텔레메트리(agent_io_logs) + cost-review(006-S2)로 비용 실데이터원 확보 → multi-llm-validation 필수 임계 정량화: ① 영향 파일 ≥5 ② prompt major bump ③ 가격/보안/영구제외(mvp_non_goals) 변경 ④ cost-review 월 추정 비용 임계 초과. 1+ 해당 시 트리거. **multi-llm-validation SKILL 반영은 후속 contract-change.**
 ```
 
 ### HIP-005 Sprint 종료 자동 PROJECT_STATE 검증
@@ -355,6 +357,7 @@ P1 (Sprint S5 종료 시)
 ### 결정
 보류 (2026-05-26). 재검토: Sprint S5-3에서 적용 검토.
 사유: 본 Sprint (S5-1)는 deep 작성 우선.
+→ ★ **반려·흡수 종결 (2026-06-05, HIP-009 S3)**: Sprint 단위 운영 종료(현재 phase 단위). PROJECT_STATE 갱신 강제는 qa-check **cat 12(운영 도달성, 008-S1)** + phase-complete acceptance + `scripts/sanity_end_*.ps1` 에 흡수 → 별도 자동검증 스크립트 불요.
 ```
 
 ---
@@ -493,10 +496,14 @@ P1 — PROJECT_STATE가 스스로 추천한 🅐(실사용 경험 잇기)와 정
 - 측정 시점: 적용 phase 종료 라이브 데모
 
 ### 결정
-검토 대기 (2026-06-05 작성). 결정자: 사용자.
+승인 → S1+S2 구현 (2026-06-05). 결정자: 사용자. (S3 PlansRepo 영속 / S4 홈·네비 진행)
 
 ### 적용 결과
-(적용 후 작성)
+- **S1 (2026-06-05, done 정의 강화)**: `qa-check` SKILL **v1.3.0** 카테고리 12 "운영 도달성(Operational Reachability)" 추가 — 사용자 진입 경로 / flag ON 경로 / 영속·운영 의존 명시 또는 명시적 이월 강제. "behavior-preserving + green 만으로 done 금지". phase-complete 가 qa-check 를 호출 → phase 종료 acceptance 에 자동 포함. audit §A/B/C 의 "동작 ≠ 도달" 게이트.
+- **S2 (2026-06-05, RAG retrieval 활성)**: `db/migrations/0008_match_approved_knowledge.sql` — retrieval 이 호출하나 미정의였던 RPC 함수 정의(approved_knowledge cosine top-k, RPC 계약 정합 + brand/auth 격리). RAG "graceful-empty(함수 미정의)" → 동작 가능. ★ Supabase 적용은 운영자(NG11) — SQL 작성 완료, pytest 영향 0(retrieval test 는 RPC mock).
+- **S3 (2026-06-05, plan 영속)**: `orchestration/moa_orchestrator.py` `_persist_plan_envelope`(gated `plans_repo_enabled` default False, PlansRepo upsert=update→없으면 create, graceful) + config flag + test 4 → pytest 798→**802**. OFF=in-memory only byte-identical(기존 798 무수정). 실영속은 Supabase 설정(ops). PlansRepo(기존)·graceful 패턴 재사용.
+- **S4 (2026-06-05, 홈 진입)**: `apps/web/app/page.tsx` 에 "단계별로 기획하기" 진입 카드(→ `/new`, `/new/branding`) + stale footer("후속 Phase 추가") 교정. typecheck+lint pass. ★ 범위=홈 진입 링크(도달성 핵심) — full AppShell(탭바/사이드바)은 deferred(component_map 주석). 시각 e2e=headless 한계.
+- ★ HIP-008 **S1~S4 완료** (done게이트 + RAG RPC + 영속 + 홈진입). 운영 적용(Supabase migration/flag ON)·full AppShell·실 e2e = ops/후속.
 ```
 
 ### HIP-009 메타-메타 루프 정식화 (★ meta_factory validation_workflow reflexive 적용)
@@ -596,12 +603,12 @@ P2 — HIP-006/009 선행 후 정리가 자연스러움(텔레메트리·living 
 |---|---|---|---|---|
 | 001 | 9줄 stub placeholder marker | P0 | 승인 | 적용 완료 |
 | 002 | Skill INDEX 갱신 강제 | P0 | 승인 | 적용 완료 |
-| 003 | 네이밍 표준 contract | P1 | 보류 | Phase 1 → HIP-009에서 결착 |
-| 004 | multi-LLM 트리거 정량 기준 | P1 | 보류 | HIP-006 텔레메트리 후 재평가 |
-| 005 | Sprint 종료 자동 검증 | P1 | 보류 | HIP-009에서 결착 |
+| 003 | 네이밍 표준 contract | P1 | **반려·흡수** | audit_naming 으로 충족 (2026-06-05 HIP-009) |
+| 004 | multi-LLM 트리거 정량 기준 | P1 | **승인·정의** | HIP-006 데이터원 후 임계 정의 (2026-06-05) |
+| 005 | Sprint 종료 자동 검증 | P1 | **반려·흡수** | qa-check cat12+sanity 흡수 (2026-06-05) |
 | 006 | 텔레메트리 발신기 (agent_io_logs) | P0 | **승인 → S1+S2 구현** | 2026-06-05 (pytest 789, gated) |
 | 007 | 품질 신호 현실 접지 (critic+human) | P0 | **S1+S2 구현** (S3=human handoff) | 2026-06-05 (pytest 798) |
-| 008 | "done" 정의에 운영 도달성 | P1 | 검토 대기 | 2026-06-05 audit 발 |
+| 008 | "done" 정의에 운영 도달성 | P1 | **S1~S4 구현** (운영적용=ops) | 2026-06-05 (pytest 802, qa-check v1.3.0) |
 | 009 | 메타-메타 루프 = meta_factory reflexive | P1 | 검토 대기 | 2026-06-05 audit 발 |
 | 010 | 유령/동결 정리 = self-map 파생 | P2 | 검토 대기 | 2026-06-05 audit 발 |
 

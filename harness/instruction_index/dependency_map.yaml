@@ -1,3 +1,9 @@
+# ⚠ STATUS (2026-06-05, HIP-010 S4 결정): 본 파일은 Phase 1(2026-05-26) 동결 reference 다.
+#   Phase 2~26 의 contract/agent/prompt 진화를 반영하지 않으며(예: deprecated 'plan_options' 잔존,
+#   P-AUX-3 등 신규 누락, 코드는 backend/fastapi 로 이동), **수기 유지하지 않는다**.
+#   ★ canonical self-map = meta/factory/blueprints/dreammate_current_harness_blueprint.md (living, §0.1).
+#   자동 파생(living blueprint → index)은 future(meta_factory generation). 라우팅은 CLAUDE.md/AGENTS.md
+#   라우터 + Skill 자동트리거 + instruction_index/routes.yaml(타겟 실존 검증됨)이 담당 — 본 파일 비의존.
 dependencies:
   # Frontend
   apps/web/design.md:
