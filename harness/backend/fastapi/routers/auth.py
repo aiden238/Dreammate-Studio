@@ -159,11 +159,73 @@ async def login(payload: LoginRequest, response: Response) -> AuthSession:
     if not access_token:
         raise HTTPException(status_code=401, detail="invalid_credentials")
 
+    # ★ Phase 27 fix: secure 쿠키는 HTTPS 에서만 저장된다. 로컬 개발(HTTP localhost)에서는
+    #   secure=True 면 브라우저가 쿠키를 버려 로그인이 사실상 실패 → app_env=development 면 False.
     _set_session_cookies(
         response,
         access_token=access_token,
         refresh_token=refresh_token,
-        secure=True,
+        secure=(settings.app_env != "development"),
+    )
+    return AuthSession(
+        user_id=str(getattr(user, "id", "")),
+        email=str(getattr(user, "email", "") or ""),
+    )
+
+
+@router.post("/signup", response_model=AuthSession)
+async def signup(payload: LoginRequest, response: Response) -> AuthSession:
+    """이메일 + 비밀번호로 회원가입 후 자동 로그인 (httpOnly cookie 발급).
+
+    ★ MVP: admin create_user(email_confirm=True)로 즉시 가입(이메일 인증 단계 생략) → 자동 로그인.
+      production 은 실 이메일 인증 흐름 권장(보안). 본 엔드포인트는 1차 MVP 실사용/로컬 테스트용.
+    """
+    settings = get_settings()
+    client = get_supabase()
+    if client is None:
+        if getattr(settings, "dev_auth_mock", False):
+            _set_session_cookies(
+                response, access_token="mock-token", refresh_token=None, secure=False
+            )
+            return AuthSession(user_id="mock-user-1", email=str(payload.email))
+        raise HTTPException(status_code=503, detail="auth_unavailable")
+
+    # 1) 계정 생성 (auto-confirm). 이미 있으면 409.
+    try:
+        client.auth.admin.create_user(
+            {
+                "email": str(payload.email),
+                "password": payload.password,
+                "email_confirm": True,
+            }
+        )
+    except Exception as exc:  # noqa: BLE001
+        msg = str(exc).lower()
+        if any(t in msg for t in ("already", "registered", "exist")):
+            raise HTTPException(status_code=409, detail="email_already_registered")
+        logger.warning("signup_failed: %s", exc.__class__.__name__)
+        raise HTTPException(status_code=400, detail="signup_failed")
+
+    # 2) 자동 로그인 (세션 토큰 발급).
+    try:
+        result = client.auth.sign_in_with_password(
+            {"email": str(payload.email), "password": payload.password}
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("signup_login_failed: %s", exc.__class__.__name__)
+        raise HTTPException(status_code=401, detail="signup_login_failed")
+
+    user = getattr(result, "user", None)
+    session = getattr(result, "session", None)
+    access_token = getattr(session, "access_token", None) if session else None
+    if user is None or not access_token:
+        raise HTTPException(status_code=401, detail="signup_login_failed")
+
+    _set_session_cookies(
+        response,
+        access_token=access_token,
+        refresh_token=getattr(session, "refresh_token", None),
+        secure=(settings.app_env != "development"),
     )
     return AuthSession(
         user_id=str(getattr(user, "id", "")),

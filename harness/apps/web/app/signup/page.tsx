@@ -1,24 +1,22 @@
 "use client";
 
 /**
- * Phase 5 Slice 3 — Login page.
+ * Phase 27 — Signup page (회원가입 → 자동 로그인).
  *
  * 정합:
- *   - lib/auth.ts: login(email, password) — httpOnly cookie 발급
+ *   - lib/auth.ts: signup(email, password) — backend admin create + auto-login (httpOnly cookie)
  *   - design.md: mobile-first / 한 줄 form / 44px tap target
- *   - security-review §T1: 토큰 frontend 미저장
  *
- * 흐름:
- *   email + password 입력 → POST /auth/login → 성공 시 router.push("/")
+ * 흐름: email + password 입력 → POST /auth/signup → 성공(자동 로그인) 시 router.push("/")
  */
 
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { login } from "@/lib/auth";
+import { signup } from "@/lib/auth";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,12 +26,21 @@ export default function LoginPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (password.length < 6) {
+      setError("비밀번호는 6자 이상이어야 해요.");
+      return;
+    }
     setSubmitting(true);
     try {
-      await login(email, password);
+      await signup(email, password);
       router.push("/");
-    } catch {
-      setError("로그인 실패: 이메일 또는 비밀번호를 확인해주세요.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("409")) {
+        setError("이미 가입된 이메일이에요. 로그인해 주세요.");
+      } else {
+        setError("회원가입 실패: 잠시 후 다시 시도해 주세요.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -42,18 +49,15 @@ export default function LoginPage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center px-6 py-10">
       <header className="mb-6 flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-neutral-900">로그인</h1>
+        <h1 className="text-2xl font-bold text-neutral-900">회원가입</h1>
         <p className="text-sm text-neutral-600">
-          이메일과 비밀번호를 입력해주세요.
+          이메일과 비밀번호로 계정을 만들면 바로 시작할 수 있어요.
         </p>
       </header>
 
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         <div className="flex flex-col gap-1">
-          <label
-            htmlFor="email"
-            className="text-sm font-medium text-neutral-800"
-          >
+          <label htmlFor="email" className="text-sm font-medium text-neutral-800">
             이메일
           </label>
           <input
@@ -70,16 +74,13 @@ export default function LoginPage() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label
-            htmlFor="password"
-            className="text-sm font-medium text-neutral-800"
-          >
-            비밀번호
+          <label htmlFor="password" className="text-sm font-medium text-neutral-800">
+            비밀번호 (6자 이상)
           </label>
           <input
             id="password"
             type="password"
-            autoComplete="current-password"
+            autoComplete="new-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -107,14 +108,14 @@ export default function LoginPage() {
               : "bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
           }`}
         >
-          {submitting ? "처리 중..." : "로그인"}
+          {submitting ? "처리 중..." : "회원가입하고 시작하기"}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-neutral-600">
-        계정이 없으신가요?{" "}
-        <Link href="/signup" className="font-medium text-primary-600 hover:underline">
-          회원가입
+        이미 계정이 있으신가요?{" "}
+        <Link href="/login" className="font-medium text-primary-600 hover:underline">
+          로그인
         </Link>
       </p>
     </main>

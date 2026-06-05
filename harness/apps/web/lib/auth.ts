@@ -43,6 +43,31 @@ export async function login(
 }
 
 /**
+ * POST /api/v1/auth/signup
+ * 회원가입 후 자동 로그인. 성공 시 backend 가 httpOnly cookie 발급.
+ * 실패 시 throw (409=이미 가입됨 등) — signup page 에서 메시지 변환.
+ */
+export async function signup(
+  email: string,
+  password: string,
+): Promise<AuthSession> {
+  const url = `${API_BASE_URL}/api/v1/auth/signup`;
+  const resp = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!resp.ok) {
+    throw new Error(`signup_failed: HTTP ${resp.status}`);
+  }
+  return (await resp.json()) as AuthSession;
+}
+
+/**
  * GET /api/v1/auth/me
  * 현재 user 조회. 미인증 (401) / 네트워크 실패 / 알 수 없는 응답 시 null 반환.
  */
