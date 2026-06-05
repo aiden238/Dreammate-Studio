@@ -64,3 +64,35 @@ async def test_persist_graceful_on_supabase_raise() -> None:
         "p1", _entry(), settings=Settings(plans_repo_enabled=True), supabase=sb
     )
     assert ok is True  # 시도됨, graceful 처리 — 생성 흐름 차단 0
+
+
+async def test_persist_maps_envelope_to_plans_columns() -> None:
+    """★ Phase 27 회귀: envelope 를 plans 실 스키마 컬럼으로 분해해야 한다.
+
+    라이브 데모에서 발견한 버그: 옛 코드는 plans 에 없는 단일 `envelope` 컬럼을 insert
+    → PGRST204 → 영속 실패(graceful in-memory). mock 은 스키마를 강제 안 해 못 잡았다.
+    """
+    sb = _mock_supabase(update_data=[], insert_data=[{"id": "p1"}])  # 행 없음 → create
+    entry = {
+        "envelope": {
+            "body": {
+                "plan_candidates": [{"name": "x"}],
+                "critic_evaluation": {"overall_score": 0.8},
+                "recommended_plan_index": 0,
+            }
+        },
+        "status": "generated",
+        "updated_at": "2026-06-05T00:00:00Z",
+    }
+    ok = await moa._persist_plan_envelope(
+        "p1", entry, settings=Settings(plans_repo_enabled=True), supabase=sb,
+        auth_user_id="user-1",
+    )
+    assert ok is True
+    payload = sb.table.return_value.insert.call_args[0][0]
+    assert "envelope" not in payload  # ★ 존재하지 않는 컬럼 금지 (옛 버그)
+    assert payload.get("mode")  # plans.mode NOT NULL 충족
+    assert payload["plan_candidates"] == [{"name": "x"}]
+    assert payload["critic_evaluation"] == {"overall_score": 0.8}
+    assert payload["recommended_plan_index"] == 0
+    assert payload["auth_user_id"] == "user-1"

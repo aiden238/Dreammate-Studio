@@ -216,6 +216,7 @@ async def _persist_plan_envelope(
     *,
     settings: Any = None,
     supabase: Any = None,
+    auth_user_id: str | None = None,
 ) -> bool:
     """HIP-008 S3 (gated): 생성된 plan envelope 를 PlansRepo 로 영속 (upsert, graceful).
 
@@ -235,11 +236,24 @@ async def _persist_plan_envelope(
 
         client = supabase if supabase is not None else get_supabase()
         repo = PlansRepo(supabase_client=client)
+        # ★ Phase 27 fix (라이브 데모 발견): plans 실 스키마(0001)에 매핑.
+        #   plans 테이블엔 단일 `envelope` 컬럼이 없다(PGRST204) + `mode` NOT NULL.
+        #   envelope dict(body.plan_candidates/critic_evaluation/...)를 구조화 컬럼으로 분해
+        #   (GET /plans/{id} + Phase 9 selection 이 읽는 컬럼과 정합).
+        env = plan_entry.get("envelope")
+        body = env.get("body") if isinstance(env, dict) else None
+        body = body if isinstance(body, dict) else {}
         patch = {
-            "envelope": plan_entry.get("envelope"),
             "status": plan_entry.get("status", "generated"),
             "updated_at": plan_entry.get("updated_at"),
+            "mode": plan_entry.get("mode") or "quick",  # plans.mode NOT NULL
+            "plan_candidates": body.get("plan_candidates"),
+            "critic_evaluation": body.get("critic_evaluation"),
+            "revise_history": body.get("revise_history"),
+            "recommended_plan_index": body.get("recommended_plan_index"),
+            "auth_user_id": auth_user_id,
         }
+        patch = {k: v for k, v in patch.items() if v is not None}
         updated = await repo.update(plan_id, patch)
         if updated is None:  # Supabase 에 행 없음 → 최초 생성 (upsert)
             await repo.create(plan_id, {"id": plan_id, **patch})
@@ -910,7 +924,9 @@ async def generate_plan(
     plan_entry["updated_at"] = now_iso()
 
     # ★ HIP-008 S3 (gated): envelope 영속 (PlansRepo upsert, graceful). OFF=in-memory only byte-identical.
-    await _persist_plan_envelope(plan_id, plan_entry, settings=settings)
+    await _persist_plan_envelope(
+        plan_id, plan_entry, settings=settings, auth_user_id=auth_user_id
+    )
 
     logger.info(
         "plans/generate ok plan_id=%s plans=%d verdict=%s rag_refs=%d db_status=%s",
