@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import AppShell from "@/components/AppShell";
 
 /**
  * Phase 1 Slice 7 — root layout
@@ -45,7 +46,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="min-h-screen bg-neutral-50 text-neutral-900 safe-area">
-        {children}
+        {/* 지속 네비(AppShell, fixed bottom)가 가리지 않도록 본문 하단 여백 확보 */}
+        <div className="pb-20">{children}</div>
+        <AppShell />
       </body>
     </html>
   );

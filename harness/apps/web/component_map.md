@@ -8,7 +8,7 @@
 
 | Component | Purpose | Used In |
 |---|---|---|
-| AppShell | 모바일 하단 탭바 + 데스크톱 좌측 사이드바 (⏳ **미구현** — HIP-008 S4: full AppShell deferred. 홈(`/`)에 /new·/new/branding 진입 링크 추가로 도달성 우선 충족, 2026-06-05) | Dashboard, Workspace 전반 |
+| AppShell | 지속 하단 탭 네비(홈/새 기획/내 brain) — ✅ **S2 최소 구현** (Phase 27, components/AppShell.tsx, root layout 배선, /login 숨김, 전 페이지 도달성). 데스크톱 좌측 사이드바 full 은 후속 deferred. | Dashboard, Workspace 전반 |
 | BreadcrumbBrandPath | Brand > Domain > Series > Video 경로 표시 | Project Workspace |
 | ProjectTreeNav | 데스크톱 좌측 트리 (Brand 폴딩) | Dashboard, Workspace |
 | BottomActionBar | 모바일 하단 고정 CTA | 모든 모바일 페이지 |
