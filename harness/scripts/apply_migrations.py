@@ -81,42 +81,102 @@ def cmd_list() -> int:
     return 0
 
 
-def _require(url: str) -> str | None:
+def _backend():
+    """적용 백엔드 선택: psql(우선) → psycopg2(폴백). (name, module|None) 반환."""
+    if which("psql") is not None:
+        return ("psql", None)
+    try:
+        import psycopg2  # type: ignore
+
+        return ("psycopg2", psycopg2)
+    except ImportError:
+        return (None, None)
+
+
+def _resolve() -> tuple[str, str, object] | None:
+    """(url, backend, module) 또는 None(전제 미충족)."""
+    url = load_database_url()
     if not url:
         print("✗ DATABASE_URL 미설정 (env 또는 backend/fastapi/.env).", file=sys.stderr)
         return None
-    if which("psql") is None:
+    name, mod = _backend()
+    if name is None:
         print(
-            "✗ psql CLI 미설치. 대안: Supabase 대시보드 SQL Editor 로 0001~0008 을 순서대로 실행.",
+            "✗ psql 미설치 + psycopg2 미설치. 택1: (a) pip install psycopg2-binary "
+            "(b) psql 설치 (c) Supabase SQL Editor 로 0001~0008 순서 실행.",
             file=sys.stderr,
         )
         return None
-    return url
+    return (url, name, mod)
+
+
+def _apply_file(name: str, mod: object, url: str, path: Path) -> bool:
+    if name == "psql":
+        return (
+            subprocess.run(["psql", url, "-v", "ON_ERROR_STOP=1", "-f", str(path)]).returncode
+            == 0
+        )
+    # psycopg2 — 파일 전체를 한 트랜잭션으로 (dollar-quoted 함수 본문 안전).
+    conn = mod.connect(url)  # type: ignore[attr-defined]
+    try:
+        conn.autocommit = False
+        with conn.cursor() as cur:
+            cur.execute(path.read_text(encoding="utf-8"))
+        conn.commit()
+        return True
+    except Exception as e:  # noqa: BLE001 — 어떤 DB 에러든 중단 + 보고
+        conn.rollback()
+        print(f"  ✗ {type(e).__name__}: {str(e).splitlines()[0]}", file=sys.stderr)
+        return False
+    finally:
+        conn.close()
 
 
 def cmd_apply() -> int:
-    url = _require(load_database_url())
-    if url is None:
+    r = _resolve()
+    if r is None:
         return 2
+    url, name, mod = r
+    print(f"(백엔드: {name})")
     for m in migrations():
         print(f"→ 적용: {m.name}")
-        r = subprocess.run(["psql", url, "-v", "ON_ERROR_STOP=1", "-f", str(m)])
-        if r.returncode != 0:
-            print(f"✗ 실패: {m.name} (exit {r.returncode}) — 중단.", file=sys.stderr)
+        if not _apply_file(name, mod, url, m):
+            print(f"✗ 실패: {m.name} — 중단.", file=sys.stderr)
             return 4
     print("✓ 전체 마이그레이션 적용 완료.")
     return cmd_verify()
 
 
 def cmd_verify() -> int:
-    url = _require(load_database_url())
-    if url is None:
+    r = _resolve()
+    if r is None:
         return 2
+    url, name, mod = r
     print("→ 핵심 객체 검증 (RPC + 테이블):")
-    r = subprocess.run(
-        ["psql", url, "-v", "ON_ERROR_STOP=1", "-t", "-A", "-c", VERIFY_SQL]
-    )
-    return 0 if r.returncode == 0 else 5
+    if name == "psql":
+        return (
+            0
+            if subprocess.run(
+                ["psql", url, "-v", "ON_ERROR_STOP=1", "-t", "-A", "-c", VERIFY_SQL]
+            ).returncode
+            == 0
+            else 5
+        )
+    conn = mod.connect(url)  # type: ignore[attr-defined]
+    try:
+        with conn.cursor() as cur:
+            cur.execute(VERIFY_SQL)
+            row = cur.fetchone()
+            cols = [d[0] for d in cur.description]
+        for c, v in zip(cols, row):
+            mark = "✓" if v else "✗"
+            print(f"  {mark} {c:32} = {v}")
+        return 0 if all(row) else 5
+    except Exception as e:  # noqa: BLE001
+        print(f"  ✗ {type(e).__name__}: {str(e).splitlines()[0]}", file=sys.stderr)
+        return 5
+    finally:
+        conn.close()
 
 
 def main() -> int:
