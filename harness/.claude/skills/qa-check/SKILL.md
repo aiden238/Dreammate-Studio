@@ -15,7 +15,7 @@ related_contracts:
   - apps/web/design.md
 related_state:
   - eval/regression_results/
-version: v1.2.0
+version: v1.3.0
 ---
 
 # qa-check
@@ -28,7 +28,7 @@ version: v1.2.0
 - 배포 직전 (staging → prod)
 - 사용자가 "배포해도 돼?" 또는 "QA 한 번 보자"
 
-## 점검 카테고리 11개 (v1.2.0)
+## 점검 카테고리 12개 (v1.3.0)
 
 각 카테고리는 pass/fail/skip 중 하나로 판정.
 
@@ -195,6 +195,27 @@ powershell -ExecutionPolicy Bypass -NoProfile -File scripts/audit_naming.ps1
 
 **배경**: P-DRIFT-001 (meta/patterns.md) — Phase 1 회고 P3 적용으로 매 Phase 종료 시 자동 게이트화.
 
+### 12. 운영 도달성 (Operational Reachability) — HIP-008 S1 (v1.3.0 추가)
+
+★ 배경 (`meta/audits/2026-06-05.md` §A/B/C): "코드 완성도 高 / 실사용 中" — flag default OFF, 홈/네비 미완, migration 미적용, in-memory 영속 등으로 **만든 기능이 사용자에게 도달하지 못한 채 누적**. 기존 done 기준(pytest green + flag-OFF byte-identical)이 관대해 "동작 ≠ 도달"을 못 걸렀다. 본 카테고리가 그 게이트.
+
+이 Phase 산출물에 대해:
+
+```
+- [ ] 사용자 진입 경로가 있는가? (홈/네비에서 클릭으로 도달 — 링크 없는 기능 = fail)
+- [ ] default 설정으로 동작하는가? OFF(gated)라면 ON 경로·조건이 문서화됐는가?
+- [ ] 영속이 필요한 데이터가 재시작 후 보존되는가? (in-memory only = warn + 이월 명시)
+- [ ] 운영 의존(migration / SQL function / secret)이 있으면 적용 절차가 명시됐는가? (미적용 = warn)
+- [ ] 라이브 1회 도달 데모(헤드리스 한계 시 유닛 + 도달 경로 입증)가 있는가?
+```
+
+**판정**:
+- 진입 경로 0 (사용자가 발견 불가) AND 명시적 이월(NG) 없음 → **fail**
+- flag OFF 인데 ON 경로/조건 미문서 → **fail**
+- 영속/운영 의존 미명시 → **warn** (이월 backlog 등록 필수)
+
+★ **"behavior-preserving + 테스트 green" 만으로 done 처리 금지** — 도달성 항목을 충족하거나, 충족 못 하면 **명시적 이월(NG 번호 + backlog)**로 기록해야 phase-complete 게이트 통과. (phase-complete 가 qa-check 를 호출하므로 본 항목이 phase 종료 acceptance 에 자동 포함.)
+
 ## 절차
 
 ### 1. 11개 카테고리 순차 점검
@@ -276,6 +297,7 @@ Critical 항목: 카테고리 1, 8(보안 부분), 9(전체), 10(Simplicity 3 fa
 - v1.0.0 (Phase 0): 9 카테고리 + smoke test
 - v1.1.0 (Phase 1 진입 전, 2026-05-26): 카테고리 10 Simplicity Check 추가
 - v1.2.0 (2026-05-27 Phase 1 회고 P3 적용): 카테고리 11 Contract Drift 추가 (`scripts/audit_naming.ps1` 자동 게이트, P-DRIFT-001 대응)
+- v1.3.0 (2026-06-05 HIP-008 S1): 카테고리 12 운영 도달성(Operational Reachability) 추가 — "동작 ≠ 도달" 게이트. done 정의에 사용자 진입 경로 + flag ON 경로 + 영속/운영 의존 명시 또는 이월 강제. meta/audits/2026-06-05.md §A/B/C 대응.
 
 ## 다른 Skill과의 관계
 

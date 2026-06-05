@@ -147,6 +147,19 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── HIP-008 S3 (2026-06-05) — plan envelope 영속 (additive, gated default-off, graceful) ─
+    # 배경: 생성 plan 이 _plan_store(in-memory)만 → 서버 재시작 시 휘발(meta/audits/2026-06-05.md §B).
+    #   ★ behavior-preserving: default False → PlansRepo 미호출 = in-memory only = byte-identical.
+    #   ON 시 orchestrator 가 envelope 를 PlansRepo upsert(graceful, Supabase 실패→in-memory fallback).
+    plans_repo_enabled: bool = Field(
+        default=False,
+        description=(
+            "HIP-008 plan envelope 영속(PlansRepo Supabase write) on/off. ★ gated default-off — "
+            "False 면 _plan_store(in-memory)만(재시작 시 휘발). True 활성은 Supabase 설정 후. "
+            "환경변수 PLANS_REPO_ENABLED."
+        ),
+    )
+
     # ─── Phase 11 A안 Slice 2 — cross-validation 게이트 + Gemini 튜닝 (additive) ─
     # ★ behavior-preserving / gated default-off: cross_validation_enabled=False →
     #   호출측(orchestrator 등)에서 교차검증 skip. 본 Slice 는 모듈만 추가 — 자동
