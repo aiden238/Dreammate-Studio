@@ -51,6 +51,21 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 27 S3 — 최소 rate limit 게이트 (B-7, additive, default False) ──
+    # ★ gated default-off: False 면 enforce_rate_limit 의존성이 즉시 no-op (기존 응답 byte-identical).
+    #   True 면 핵심 비용 endpoint(generation)를 신원(user-우선/IP) 기준 fixed-window 로 제한(429).
+    # ★ 실사용 프로파일(APP_PROFILE=realuse)과 별개 관심사 — 단일 로컬 사용자 테스트를 막지 않도록
+    #   realuse 묶음에 포함하지 않는다. 배포(Gate B+) 시 RATE_LIMIT_ENABLED=true 로 별도 활성.
+    rate_limit_enabled: bool = Field(
+        default=False,
+        description=(
+            "Phase 27 S3 최소 rate limit on/off (환경변수 RATE_LIMIT_ENABLED). "
+            "False(기본)=비용 endpoint 제한 0(byte-identical). True=generation endpoint "
+            "신원별 fixed-window 제한(rate_limit_policy.md §3.2 free: 2/분·5/일). "
+            "in-memory 단일 프로세스(U-2) — 분산은 운영 단계 후속."
+        ),
+    )
+
     # LLM
     openai_api_key: str = Field(default="", description="OpenAI API key")
     openai_model_default: str = Field(

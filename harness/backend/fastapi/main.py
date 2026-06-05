@@ -27,7 +27,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .middleware import auth_middleware
+from .middleware import (
+    RateLimitExceeded,
+    auth_middleware,
+    rate_limit_error_response,
+)
 from .routers import generate_router, me_router, plans_router
 from .routers.auth import router as auth_router
 from .routers.sse import router as sse_router
@@ -107,6 +111,14 @@ def create_app() -> FastAPI:
     # httpOnly cookie 우선, Bearer fallback. graceful: 토큰 없거나 검증 실패 시
     # request.state.user = None (pass-through). 인증 강제는 endpoint level 에서.
     app.middleware("http")(auth_middleware)
+
+    # Phase 27 S3 — rate limit 초과(RateLimitExceeded) → 429 ErrorEnvelope 핸들러.
+    # ★ rate_limit_enabled=False(default)면 enforce_rate_limit 가 no-op → 본 예외 미발생
+    #   → 핸들러 dormant = byte-identical. ON 일 때만 429 응답.
+    app.add_exception_handler(
+        RateLimitExceeded,
+        lambda request, exc: rate_limit_error_response(exc),
+    )
 
     # Routers
     app.include_router(generate_router)  # Phase 1 endpoint (Phase 8+ 제거 예정)

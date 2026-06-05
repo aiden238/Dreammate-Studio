@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import JSONResponse
 
 from ..agents.brand_memory_extractor import (
@@ -52,6 +52,7 @@ from ..agents.topic_discovery import (
     run_topic_discovery_finalize,
 )
 from ..config import get_settings
+from ..middleware import enforce_rate_limit
 from ..db import (
     BrandMemoryRepo,
     BrandRepo,
@@ -269,6 +270,8 @@ def plans_wizard_step(plan_id: str, step: str, req: WizardStepRequest):
 
 @router.post(
     "/plans/{plan_id}/generate",
+    # Phase 27 S3 — 비용 endpoint rate limit (gated default-off → no-op = byte-identical).
+    dependencies=[Depends(enforce_rate_limit)],
     responses={
         200: {"model": Envelope, "description": "3-plan Envelope (Phase 4 Slice 2)"},
         404: {"model": ErrorEnvelope, "description": "plan_id 미발견 (INV-006)"},

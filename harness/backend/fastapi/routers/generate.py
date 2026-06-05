@@ -42,7 +42,9 @@ import logging
 from typing import Union
 from uuid import uuid4
 
-from fastapi import APIRouter, Request, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
+
+from ..middleware import enforce_rate_limit
 from fastapi.responses import JSONResponse
 
 from ..agents.critic import (
@@ -140,6 +142,8 @@ def _error_response(
 
 @router.post(
     "/generate",
+    # Phase 27 S3 — 비용 endpoint rate limit (gated default-off → no-op = byte-identical).
+    dependencies=[Depends(enforce_rate_limit)],
     response_model=Envelope,
     responses={
         422: {"model": ErrorEnvelope, "description": "Intent 차단 (INV-001) 등"},
