@@ -26,10 +26,9 @@ import ProgressStepper, {
   type StepperState,
 } from "@/components/ProgressStepper";
 import SubmitButton from "@/components/SubmitButton";
-import { generate } from "@/lib/api";
+import { startPlan } from "@/lib/api";
 import { toDisplayErrorFromCode, type DisplayError } from "@/lib/errors";
 
-const SESSION_STORAGE_KEY = "dreammate.slice6.plan";
 const MAX_INPUT_LENGTH = 2000;
 
 export default function HomePage() {
@@ -51,36 +50,17 @@ export default function HomePage() {
     setInputWarning(null);
     setDisplayError(null);
     setIsLoading(true);
-    // Phase 1 백엔드는 동기라 실제 단계 콜백이 없다 → planning 단계로 고정 표시.
-    // Phase 4+ SSE 가 들어오면 단계별 setStepperState 호출하면 됨.
     setStepperState("planning");
 
     try {
-      const result = await generate({ input: trimmed, locale: "ko-KR" });
-      if (result.ok) {
-        setStepperState("complete");
-        if (typeof window !== "undefined") {
-          window.sessionStorage.setItem(
-            SESSION_STORAGE_KEY,
-            JSON.stringify(result.envelope),
-          );
-          window.sessionStorage.removeItem(`${SESSION_STORAGE_KEY}.error`);
-        }
-        router.push("/plan");
-        return;
-      }
-
-      // 에러 표시. plan/page.tsx 로 넘기지 않고 입력 페이지에 직접 표시
-      // → 사용자가 즉시 재입력 가능.
-      setDisplayError(
-        toDisplayErrorFromCode(
-          result.errorCode,
-          result.userMessage,
-          (result.error.error as { request_id?: string }).request_id,
-          result.retryAllowed,
-        ),
-      );
-      setStepperState("idle");
+      // ★ Phase 28 S1: 홈도 plans 흐름을 탄다 — startPlan(입력) → /plan/[id].
+      //   /plan/[id] 가 generateMultiPlan(credentials 포함=auth) + 영속(plans) + 피드백 UI 를 제공
+      //   → 어느 경로로 써도 저장되고 피드백→학습(PKM)으로 이어진다(2nd brain 루프).
+      //   (기존 레거시 /generate 단발 = 저장 실패 + 학습 미연결 막다른 길 제거.)
+      const { plan_id } = await startPlan(trimmed, "ko-KR");
+      setStepperState("complete");
+      router.push(`/plan/${plan_id}`);
+      return;
     } catch (unexpected) {
       const message =
         unexpected instanceof Error ? unexpected.message : String(unexpected);
@@ -219,8 +199,8 @@ export default function HomePage() {
 
       <footer className="mt-4 text-xs text-neutral-500 leading-relaxed">
         <p>
-          위 입력은 빠른 단일 기획이에요. 카드 3개 비교·단계별 기획·주제
-          발굴은 위 “단계별로 기획하기”에서 시작할 수 있어요.
+          한 줄만 적어도 기획안 3개를 만들어 비교해 드려요. 로그인하면 피드백이
+          내 brain에 쌓여 다음 기획에 반영됩니다(쓸수록 내 브랜드를 학습).
         </p>
       </footer>
     </main>
