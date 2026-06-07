@@ -32,8 +32,13 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push("/");
-    } catch {
-      setError("로그인 실패: 이메일 또는 비밀번호를 확인해주세요.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("422")) {
+        setError("올바른 이메일 형식을 입력해주세요 (예: name@example.com).");
+      } else {
+        setError("로그인 실패: 이메일 또는 비밀번호를 확인해주세요.");
+      }
     } finally {
       setSubmitting(false);
     }

@@ -36,7 +36,9 @@ export default function SignupPage() {
       router.push("/");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("409")) {
+      if (msg.includes("422")) {
+        setError("올바른 이메일 형식을 입력해주세요 (예: name@example.com).");
+      } else if (msg.includes("409")) {
         setError("이미 가입된 이메일이에요. 로그인해 주세요.");
       } else {
         setError("회원가입 실패: 잠시 후 다시 시도해 주세요.");
