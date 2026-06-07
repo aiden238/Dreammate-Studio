@@ -36,7 +36,7 @@
 }
 
 .bar-fill {
-  width: 70%;
+  width: 65%;
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(90deg, #12b76a, #06b6d4);
@@ -396,6 +396,7 @@ main {
 .p90::after { width: 90%; }
 .p85::after { width: 85%; }
 .p80::after { width: 80%; }
+.p60::after { width: 60%; }
 .p20::after { width: 20%; }
 
 .done-task { background: linear-gradient(180deg, #f0fdf4, #ffffff); }

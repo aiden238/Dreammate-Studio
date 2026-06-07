@@ -37,12 +37,12 @@
           <div class="hero-node output"><span>출력</span><strong>영상기획 + WBS</strong></div>
         </div>
         <div class="metrics compact">
-          <div><strong>Phase 10</strong><span>MVP 통합 완료</span></div>
-          <div><strong>381</strong><span>pytest 기준선</span></div>
-          <div><strong>11</strong><span>PWA routes</span></div>
-          <div><strong>17</strong><span>API endpoints</span></div>
+          <div><strong>Phase 27</strong><span>1차 MVP 실사용 마감</span></div>
+          <div><strong>814</strong><span>pytest (hermetic)</span></div>
+          <div><strong>14</strong><span>PWA routes</span></div>
+          <div><strong>30</strong><span>API endpoints</span></div>
         </div>
-        <p class="note">핵심 문장: AI가 영상 아이디어를 브랜드 방향, 기획안, 실행관리까지 연결합니다.</p>
+        <p class="note">핵심 문장: AI가 영상 아이디어를 브랜드 방향, 기획안, 실행관리까지 연결합니다. <strong>실 LLM 기획안 생성 + 저장은 라이브 검증(PASS)</strong>, 일부 핵심 기능은 실사용 프로파일에서 활성화됩니다.</p>
       </aside>
     </section>
 
@@ -151,29 +151,29 @@
             <p class="eyebrow">04. WBS Dashboard</p>
             <h2>진행중 프로젝트 WBS</h2>
           </div>
-          <p class="wbs-subtitle">100% 완료, 80% 이상 진행, 시작 단계 작업을 구분해 실제 진척 상태가 보이도록 재구성했습니다.</p>
+          <p class="wbs-subtitle">완료·진행·시작 단계를 정직하게 구분했습니다. <strong>코드 완성도 高 · 실사용 운영 中 · 품질 검증 弱</strong>(프로젝트 자체 진단).</p>
         </div>
 
         <div class="wbs-progress-panel">
           <article class="progress-bar-card wide-progress">
-            <div class="bar-head"><strong>70%</strong><span>MVP 이후 배포 준비 기준 진행률</span></div>
+            <div class="bar-head"><strong>65%</strong><span>1차 MVP 실사용 마감 기준 진행률</span></div>
             <div class="bar-track"><div class="bar-fill"></div></div>
-            <div class="bar-labels"><span>완료 2개</span><span>80% 이상 3개</span><span>시작 1개</span></div>
+            <div class="bar-labels"><span>완료 1개</span><span>진행 4개</span><span>시작 1개</span></div>
           </article>
           <div class="next-work-card">
             <span class="tag next">진행 예정</span>
-            <h3>배포 Gate B~G / Phase 11+</h3>
-            <p>staging → alpha → beta → 운영 배포 또는 브랜드 개인화·자동 평가 고도화로 확장합니다.</p>
+            <h3>실-런 검증 → 2차 MVP → 배포</h3>
+            <p>5~10명 실사용 테스트 + human 품질 실채점 → 프론트 시각 고도화 → 배포 Gate B~G(Phase 28+).</p>
           </div>
         </div>
 
         <div class="wbs-detail-grid">
-          <article class="wbs-task done-task"><b>기획·비전</b><span>문제 정의, 브랜드 방향, 핵심 가치 정리</span><em>100%</em><i class="meter p100"></i></article>
-          <article class="wbs-task done-task"><b>UX 설계</b><span>Discovery Wizard, Quick Mode, 사용자 분기</span><em>100%</em><i class="meter p100"></i></article>
-          <article class="wbs-task active-task"><b>AI 파이프라인</b><span>RAG Lite, MOA, Critic, Rewriter Loop</span><em>90%</em><i class="meter p90"></i></article>
-          <article class="wbs-task active-task"><b>데이터·피드백</b><span>결과 저장, feedback_events, Brand Memory 준비</span><em>85%</em><i class="meter p85"></i></article>
-          <article class="wbs-task active-task"><b>발표·시각화</b><span>GitHub Pages, WBS, Mermaid, 슬라이드 UX</span><em>80%</em><i class="meter p80"></i></article>
-          <article class="wbs-task next-task"><b>배포·운영</b><span>Gate B~G, 알파·베타 운영, Phase 11+</span><em>20%</em><i class="meter p20"></i></article>
+          <article class="wbs-task done-task"><b>기획·비전</b><span>문제 정의, 2nd-brain 포지셔닝, 4계층 데이터 모델</span><em>100%</em><i class="meter p100"></i></article>
+          <article class="wbs-task active-task"><b>AI 파이프라인</b><span>MOA Lite · RAG Lite 5단계 · Critic revise · 3-provider Gateway (실 LLM director 라이브 PASS)</span><em>90%</em><i class="meter p90"></i></article>
+          <article class="wbs-task active-task"><b>데이터·영속·피드백</b><span>plans 영속(Supabase 라이브 PASS) · feedback_events · Brand/PKM 메모리 · migration 0001~0008</span><em>85%</em><i class="meter p85"></i></article>
+          <article class="wbs-task active-task"><b>실사용 루프 마감</b><span>Phase 27: 홈→생성→저장→brain→반영 배선 + 실사용 프로파일 · 첫-사용자 e2e PASS</span><em>80%</em><i class="meter p80"></i></article>
+          <article class="wbs-task active-task"><b>프론트·UX 구현</b><span>Discovery·Quick·brain 14 라우트 동작 — 시각 완성도(에이전트 UX) 보강 예정</span><em>60%</em><i class="meter p60"></i></article>
+          <article class="wbs-task next-task"><b>품질 검증·배포</b><span>human 실채점 0건 · 배포 Gate B~G · rate limit/운영 (Phase 28+)</span><em>20%</em><i class="meter p20"></i></article>
         </div>
       </div>
     </section>
