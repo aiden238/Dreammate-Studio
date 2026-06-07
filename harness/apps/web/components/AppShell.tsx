@@ -29,8 +29,10 @@ const TABS: Tab[] = [
   { href: "/brain", label: "내 brain", icon: "🧠", ariaLabel: "내 brain — 지식 구조/PKM" },
 ];
 
-// 숨길 경로 (인증 등 풀스크린 흐름).
-const HIDDEN_PREFIXES = ["/login"];
+// 숨길 경로 — 집중 플로우(자체 고정 하단 CTA 보유). AppShell 고정 네비가 그 CTA 를 덮어
+//   "다음/생성/저장"을 못 누르는 버그 방지(Phase 29 S0). + 인증 풀스크린.
+//   홈(/) · 내 brain(/brain) = 목적지라 네비 유지.
+const HIDDEN_PREFIXES = ["/login", "/new", "/plan"];
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";

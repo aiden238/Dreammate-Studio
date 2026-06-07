@@ -176,39 +176,39 @@ const USER_INPUT_SLOT_BY_STEP: Record<2 | 3 | 4, BrandDirectionCardData> = {
     card_id: 'domain-user-input',
     kind: 'user_direct_input',
     name: '직접 입력',
-    description: '도메인을 직접 입력해주세요',
+    description: '어떤 주제 영역인지 직접 적어주세요',
   },
   3: {
     card_id: 'series-user-input',
     kind: 'user_direct_input',
     name: '직접 입력',
-    description: '시리즈 형식을 직접 입력해주세요',
+    description: '어떤 시리즈로 만들지 직접 적어주세요',
   },
   4: {
     card_id: 'target-user-input',
     kind: 'user_direct_input',
     name: '직접 입력',
-    description: '타깃을 직접 입력해주세요',
+    description: '누구에게 보여줄지 직접 적어주세요',
   },
 };
 
 const TITLE_BY_STEP: Record<2 | 3 | 4 | 5 | 6 | 7, { h1: string; sub: string }> =
   {
     2: {
-      h1: '도메인을 선택하세요',
-      sub: '어떤 분야의 콘텐츠인가요?',
+      h1: '어떤 주제 영역인가요?',
+      sub: '주로 어떤 이야기를 다룰까요?',
     },
     3: {
-      h1: '시리즈 형식을 선택하세요',
-      sub: '영상 길이와 포맷을 정해주세요.',
+      h1: '어떤 시리즈로 만들까요?',
+      sub: '영상 길이와 형식을 정해요.',
     },
     4: {
-      h1: '타깃을 선택하세요',
-      sub: '누구에게 보여주고 싶은 영상인가요?',
+      h1: '누구에게 먼저 보여줄까요?',
+      sub: '이 이야기를 가장 먼저 보여주고 싶은 사람은?',
     },
     5: {
-      h1: '톤을 선택하세요',
-      sub: '여러 톤을 동시에 선택할 수 있어요.',
+      h1: '어떤 톤으로 말하면 좋을까요?',
+      sub: '여러 개를 동시에 골라도 돼요.',
     },
     6: {
       h1: '기획 방향을 확인해주세요',

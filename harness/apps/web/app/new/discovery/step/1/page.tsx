@@ -74,7 +74,7 @@ const USER_INPUT_SLOT: BrandDirectionCardData = {
   card_id: 'brand-user-input',
   kind: 'user_direct_input',
   name: '직접 입력',
-  description: '브랜드 방향을 직접 입력해주세요',
+  description: '어떻게 기억되면 좋을지 직접 적어주세요',
 };
 
 export default function DiscoveryStep1Page() {
@@ -138,10 +138,10 @@ export default function DiscoveryStep1Page() {
       {/* Title section */}
       <section className="px-4 py-6 max-w-2xl mx-auto w-full">
         <h1 className="text-3xl font-bold text-text-default mb-2">
-          브랜드 방향을 선택하세요
+          어떤 느낌으로 기억되면 좋을까요?
         </h1>
         <p className="text-sm text-text-muted">
-          AI가 추천한 4가지 중 선택하거나 직접 입력하세요.
+          사람들이 이걸 어떻게 기억하면 좋을지 골라요. 직접 적어도 돼요.
         </p>
       </section>
 

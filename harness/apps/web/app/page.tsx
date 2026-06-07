@@ -31,6 +31,31 @@ import { toDisplayErrorFromCode, type DisplayError } from "@/lib/errors";
 
 const MAX_INPUT_LENGTH = 2000;
 
+// Phase 29 S1 — 4가지 "상황" 진입 (기능명이 아니라 사용자 상황). 전부 기존 route 재사용.
+//   브리프 §6: 첫 화면 버튼은 전문용어(브랜드/도메인/마케팅) 대신 상황 문장.
+const SITUATIONS: { label: string; hint: string; href: string }[] = [
+  {
+    label: "아이디어는 있는데 정리가 안 됐어요",
+    hint: "질문을 따라가며 방향을 좁혀드려요",
+    href: "/new/discovery/step/1",
+  },
+  {
+    label: "브랜드 방향부터 잡고 싶어요",
+    hint: "사람들이 나를 어떻게 기억하면 좋을지부터",
+    href: "/new/branding",
+  },
+  {
+    label: "SNS 콘텐츠로 반응을 보고 싶어요",
+    hint: "어디에 올려 반응을 볼지 같이 정해요",
+    href: "/new/branding?goal=sns_validation",
+  },
+  {
+    label: "바로 영상기획안을 만들고 싶어요",
+    hint: "짧게 입력하면 3개를 만들어 비교",
+    href: "/new/quick",
+  },
+];
+
 export default function HomePage() {
   const router = useRouter();
   const [input, setInput] = useState("");
@@ -100,11 +125,13 @@ export default function HomePage() {
           </Link>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 leading-tight">
-          영상기획 AI 에이전트
+          막막한 아이디어를,
+          <br />
+          실행 가능한 영상기획으로.
         </h1>
         <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">
-          어떤 영상을 만들지 한 줄로 적어주세요. AI가 기획안 카드로 정리해
-          드릴게요.
+          브랜드 방향부터 SNS 콘텐츠, 영상기획안까지 — 질문을 따라가며 같이
+          정리해 드려요.
         </p>
       </header>
 
@@ -126,7 +153,7 @@ export default function HomePage() {
           htmlFor="idea-input"
           className="text-sm font-medium text-neutral-900"
         >
-          영상 아이디어
+          지금 만들고 싶은 아이디어를 편하게 적어보세요
         </label>
         <textarea
           id="idea-input"
@@ -134,7 +161,7 @@ export default function HomePage() {
           required
           maxLength={MAX_INPUT_LENGTH}
           rows={5}
-          placeholder="어떤 영상을 기획하시나요?"
+          placeholder="예: 창업동아리 활동을 쇼츠로 만들고 싶어요"
           value={input}
           onChange={(event) => setInput(event.target.value)}
           disabled={isLoading}
@@ -164,40 +191,41 @@ export default function HomePage() {
         <ProgressStepper currentStep={stepperState} />
       )}
 
-      {/* HIP-008 S4 — 위저드·브랜딩 진입 (도달성: 홈에서 /new·/new/branding 발견 가능하게).
-          위 textarea = 빠른 단일 생성(Phase 1). 아래 = 단계별/주제발굴 진입 (라우트는 기존 존재, 링크만 추가). */}
+      {/* Phase 29 S1 — 4가지 상황 버튼 (기능명 X, 사용자 상황 O). 기존 route 재사용. */}
       <section
-        aria-labelledby="entry-heading"
+        aria-labelledby="situation-heading"
         className="flex flex-col gap-3 border-t border-neutral-200 pt-6"
       >
-        <h2 id="entry-heading" className="text-sm font-semibold text-neutral-900">
-          또는, 단계별로 기획하기
+        <h2 id="situation-heading" className="text-sm font-semibold text-neutral-900">
+          아직 막막하다면, 상황에 맞게 시작해요
         </h2>
-        <Link
-          href="/new"
-          className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-neutral-200 px-4 py-3 text-left transition-colors hover:border-primary-400 hover:bg-primary-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
-          aria-label="마법사로 단계별 기획 시작 (Quick / Discovery)"
-        >
-          <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium text-neutral-900">🧭 마법사로 기획하기</span>
-            <span className="text-xs text-neutral-600">Quick(짧게) · Discovery(5단계 카드)로 정리</span>
-          </span>
-          <span aria-hidden className="text-neutral-400">›</span>
-        </Link>
-        <Link
-          href="/new/branding"
-          className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-neutral-200 px-4 py-3 text-left transition-colors hover:border-primary-400 hover:bg-primary-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
-          aria-label="주제부터 찾기 (브랜딩 세션)"
-        >
-          <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium text-neutral-900">💡 주제부터 찾기</span>
-            <span className="text-xs text-neutral-600">뭘 만들지 모를 때 — 스무고개로 주제·방향 발굴</span>
-          </span>
-          <span aria-hidden className="text-neutral-400">›</span>
-        </Link>
+        {SITUATIONS.map((s) => (
+          <Link
+            key={s.href}
+            href={s.href}
+            className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-neutral-200 px-4 py-3 text-left transition-colors hover:border-primary-400 hover:bg-primary-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
+            aria-label={s.label}
+          >
+            <span className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium text-neutral-900">{s.label}</span>
+              <span className="text-xs text-neutral-600">{s.hint}</span>
+            </span>
+            <span aria-hidden className="text-neutral-400">›</span>
+          </Link>
+        ))}
       </section>
 
-      <footer className="mt-4 text-xs text-neutral-500 leading-relaxed">
+      {/* 흐름 표시 — 무엇을 향해 가는지 (브리프 §5.3) */}
+      <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-neutral-400">
+        {["아이디어", "기억될 이미지", "SNS 콘텐츠", "영상기획안"].map((step, i) => (
+          <span key={step} className="flex items-center gap-2">
+            {i > 0 && <span aria-hidden>→</span>}
+            <span>{step}</span>
+          </span>
+        ))}
+      </div>
+
+      <footer className="mt-2 text-xs text-neutral-500 leading-relaxed">
         <p>
           한 줄만 적어도 기획안 3개를 만들어 비교해 드려요. 로그인하면 피드백이
           내 brain에 쌓여 다음 기획에 반영됩니다(쓸수록 내 브랜드를 학습).
