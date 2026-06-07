@@ -22,6 +22,7 @@ Supabase 사용 가능 시 PostgreSQL(pkm_entries), 아니면 in-memory dict 로
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,43 @@ _VALID_ENTRY_TYPES = {
     "success_pattern",
     "rejection_pattern",
 }
+
+# ─── Phase 28 S2 — 강화/정리 상수 (스키마 변경 0, confidence 재활용) ──────────
+REINFORCE_BOOST = 0.15   # 유사 재등장 시 confidence 증가폭 (반복 강화)
+DECAY_FACTOR = 0.95      # 이번 패스에서 안 건드린 비-locked entry confidence 감쇠 (gentle)
+PRUNE_FLOOR = 0.3        # 감쇠 후 이 미만이면 제거 (불필요 제거)
+CONF_CAP = 1.0
+
+# 추출기가 가끔 만드는 일반·무정보 후보 (불필요 — 저장 안 함).
+_NOISE_SUBSTRINGS = (
+    "반복 선호한 기획 패턴",
+    "선호한 기획 패턴",
+)
+
+
+def _norm(s: str) -> str:
+    return re.sub(r"\s+", "", (s or "").lower())
+
+
+def _is_noise(content: str) -> bool:
+    c = (content or "").strip()
+    if len(c) < 5:
+        return True
+    return any(sub in c for sub in _NOISE_SUBSTRINGS)
+
+
+def _content_similar(a: str, b: str) -> bool:
+    """같은 entry_type 내 content 유사도(heuristic, LLM 0). 정규화 동일/포함 또는 토큰 Jaccard≥0.5."""
+    na, nb = _norm(a), _norm(b)
+    if not na or not nb:
+        return False
+    if na == nb or na in nb or nb in na:
+        return True
+    ta = set((a or "").lower().split())
+    tb = set((b or "").lower().split())
+    if not ta or not tb:
+        return False
+    return len(ta & tb) / len(ta | tb) >= 0.5
 
 
 class PkmRepo:
@@ -256,6 +294,97 @@ class PkmRepo:
                 rows.pop(i)
                 return True
         return False
+
+    # ─── Phase 28 S2 — 강화/정리 (반복 강화 + 불필요 제거, 스키마 변경 0) ──────
+
+    async def _update_confidence(
+        self, row: dict[str, Any], auth_user_id: str, new_conf: float
+    ) -> None:
+        """기존 entry 의 confidence 갱신 (Supabase: id+auth, in-memory: dict ref mutate). graceful."""
+        rid = row.get("id")
+        if self._use_supabase() and rid:
+            try:
+                self.client.table("pkm_entries").update(  # type: ignore[union-attr]
+                    {"confidence": new_conf}
+                ).eq("id", rid).eq("auth_user_id", auth_user_id).execute()
+            except Exception as exc:  # pragma: no cover — graceful
+                logger.warning("pkm_conf_update_failed: %s", exc.__class__.__name__)
+        row["confidence"] = new_conf  # in-memory mirror / store ref
+
+    async def consolidate_entry(
+        self,
+        auth_user_id: str,
+        entry_type: str,
+        content: str,
+        *,
+        scope: str = "personal",
+        confidence: float = 0.5,
+        source_plan_id: Optional[str] = None,
+    ) -> Optional[tuple[str, str]]:
+        """add_entry 의 강화-인지 버전 (반복 강화 + 중복/노이즈 제거).
+
+        - 노이즈(일반·무정보) → 저장 안 함 (None 반환).
+        - 같은 entry_type 에 유사 content 존재 → **강화**(confidence↑, dedup, insert 0) → ("reinforced", 기존content).
+        - 신규 → add_entry insert → ("inserted", content).
+
+        Returns: (action, canonical_content) 또는 None(노이즈 스킵).
+        """
+        if _is_noise(content):
+            return None
+        existing = await self.list_for_user(auth_user_id, scope=scope)
+        for row in existing:
+            if str(row.get("entry_type")) != str(entry_type):
+                continue
+            if _content_similar(content, str(row.get("content", ""))):
+                cur = float(row.get("confidence") or 0.5)
+                new_conf = round(min(CONF_CAP, max(cur, float(confidence)) + REINFORCE_BOOST), 4)
+                await self._update_confidence(row, auth_user_id, new_conf)
+                return ("reinforced", str(row.get("content", "")))
+        await self.add_entry(
+            auth_user_id, entry_type, content,
+            scope=scope, confidence=confidence, source_plan_id=source_plan_id,
+        )
+        return ("inserted", content)
+
+    async def decay_and_prune(
+        self,
+        auth_user_id: str,
+        *,
+        scope: str = "personal",
+        protect: Optional[set[str]] = None,
+        decay: float = DECAY_FACTOR,
+        floor: float = PRUNE_FLOOR,
+    ) -> tuple[int, int]:
+        """이번 패스에서 강화/삽입 안 된(=protect 외) 비-locked entry 를 gentle decay,
+        floor 미만은 삭제(불필요 제거). user_locked 는 절대 건드리지 않는다.
+
+        Returns: (decayed, pruned).
+        """
+        protect_norm = {_norm(c) for c in (protect or set())}
+        existing = await self.list_for_user(auth_user_id, scope=scope)
+        decayed = pruned = 0
+        for row in existing:
+            if row.get("is_user_locked"):
+                continue
+            if _norm(str(row.get("content", ""))) in protect_norm:
+                continue
+            cur = float(row.get("confidence") or 0.5)
+            new_conf = round(cur * decay, 4)
+            if new_conf < floor:
+                rid = row.get("id")
+                if rid:
+                    if await self.delete_entry(rid, auth_user_id=auth_user_id):
+                        pruned += 1
+                else:  # in-memory (id 없음)
+                    try:
+                        self.store.get(auth_user_id, []).remove(row)
+                        pruned += 1
+                    except ValueError:  # pragma: no cover
+                        pass
+            else:
+                await self._update_confidence(row, auth_user_id, new_conf)
+                decayed += 1
+        return (decayed, pruned)
 
     def _reset_for_test(self) -> None:
         """테스트용 in-memory store 초기화 (BrandMemoryRepo._reset 패턴)."""

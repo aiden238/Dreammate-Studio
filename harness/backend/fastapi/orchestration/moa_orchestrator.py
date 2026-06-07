@@ -399,6 +399,13 @@ async def generate_plan(
                 auth_user_id=auth_user_id,
                 pkm_repo=pkm_repo,
             )
+            # ★ Phase 28 S2: 강화된(confidence 높은) PKM 우선 + top-8 cap
+            #   → 반복 확인된 선호가 먼저 주입, 약한 잔여는 희석 안 시킴(컨셉 집중).
+            pkm_entries = sorted(
+                pkm_entries,
+                key=lambda e: float(e.get("confidence") or 0.0),
+                reverse=True,
+            )[:8]
             from ..agents.brand_injection import build_brand_constraint_preamble
 
             personal_preamble = build_brand_constraint_preamble(pkm_entries)

@@ -508,26 +508,38 @@ async def _run_personal_pkm_extract_hook(
         current_brand_memory=current_pkm,
     )
 
-    # 5. (gated 자동) 영속화 — confidence ≥ 0.9 명시 선호 후보만 INSERT (§7.5 governance parity).
+    # 5. (gated 자동) 영속화 — confidence ≥ 0.9 명시 선호 후보만 (§7.5 governance parity).
+    #   ★ Phase 28 S2: add_entry → consolidate_entry (반복 강화 + 노이즈/중복 제거).
+    #     유사 재등장 = confidence↑·dedup(강화), 노이즈 = skip. 이후 안 건드린 약한 entry 는
+    #     decay_and_prune 로 점진 제거(불필요 제거). user_locked 는 보호.
     persisted = 0
+    touched: set[str] = set()
     for entry in result.get("proposed_entries", []):
         if float(entry.get("confidence", 0.0)) < CONFIDENCE_EXPLICIT:
             continue  # 0.3/0.7 은 제안만 (쓰기 0, pending UX — NG12)
         try:
-            await pkm_repo.add_entry(
+            action = await pkm_repo.consolidate_entry(
                 auth_user_id,
                 entry["entry_type"],
                 entry["content"],
                 scope="personal",
                 confidence=float(entry["confidence"]),
-                source_plan_id=plan_id,  # Phase 26 S2 — provenance (어떤 plan 피드백에서 나왔는지).
+                source_plan_id=plan_id,  # Phase 26 S2 — provenance.
             )
-            persisted += 1
+            if action is not None:  # None = 노이즈 스킵
+                touched.add(action[1])
+                persisted += 1
         except Exception as exc:  # pragma: no cover — graceful (저장 실패 무시)
             logger.warning(
                 "personal_pkm_persist_failed: %s entry_type=%s (graceful)",
                 exc.__class__.__name__, entry.get("entry_type"),
             )
+
+    # 5b. 이번 피드백에서 강화/삽입 안 된 약한 entry 점진 제거 (불필요 제거, graceful).
+    try:
+        await pkm_repo.decay_and_prune(auth_user_id, scope="personal", protect=touched)
+    except Exception as exc:  # pragma: no cover — graceful
+        logger.warning("personal_pkm_decay_failed: %s (graceful)", exc.__class__.__name__)
 
     logger.info(
         "personal_pkm_extract triggered: plan_id=%s auth_user_id=%s proposed=%d persisted=%d",
