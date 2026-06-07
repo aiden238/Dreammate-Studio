@@ -21,6 +21,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter, notFound } from 'next/navigation';
 import { CardGrid5 } from '@/components/discovery/CardGrid5';
+import DiscoveryProgress from '@/components/discovery/DiscoveryProgress';
 import type { BrandDirectionCardData } from '@/components/discovery/BrandDirectionCard';
 import { ToneChipsForm } from '@/components/discovery/ToneChipsForm';
 import { DirectionApprovalCard } from '@/components/common/DirectionApprovalCard';
@@ -301,6 +302,9 @@ function BrandCardStep({ n }: { n: 2 | 3 | 4 }) {
       <section className="px-4 py-6 max-w-2xl mx-auto w-full">
         <h1 className="text-3xl font-bold text-text-default mb-2">{h1}</h1>
         <p className="text-sm text-text-muted">{sub}</p>
+        <div className="mt-4">
+          <DiscoveryProgress currentStep={n} />
+        </div>
       </section>
       <section className="flex-1 pb-32">
         <CardGrid5

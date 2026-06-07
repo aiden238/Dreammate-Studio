@@ -19,6 +19,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
 import AuthGuard from "@/components/AuthGuard"; // Phase 5 Slice 3 — 외부 wrapper (PlanCard 무수정 유지)
@@ -27,6 +28,7 @@ import PlanCard from "@/components/PlanCard"; // ★ 무수정 import (사용자
 import ProgressStepper from "@/components/ProgressStepper";
 import {
   generateMultiPlan,
+  getPkmGraph,
   getPlan,
   selectPlan,
   sendFeedback,
@@ -82,6 +84,8 @@ function PlanResultPageContent() {
   // Phase 5 Slice 4 — SSE Progress 상태 (D7). PlanCard 무수정 정신 계승:
   // 본 state 와 UI 는 PlanCard 외부 wrapper 에만 영향.
   const [progress, setProgress] = useState<ProgressEvent | null>(null);
+  // Phase 29 S5 — "내 brain 반영" 신호. 로그인 + PKM(개인/브랜드)>0 이면 realuse 주입이 적용됨.
+  const [brainReflected, setBrainReflected] = useState<number | null>(null);
 
   // Phase 9 Slice 5 — 선택/반려 피드백 상태 (ADR-030). PlanCard 무수정 정신 계승:
   // 본 state 와 UI 는 모두 PlanCard 외부 wrapper (page.tsx inline) 에만 영향.
@@ -158,6 +162,25 @@ function PlanResultPageContent() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Phase 29 S5 — 생성 후 "내 brain 반영" 신호: 로그인 + PKM(개인/브랜드)>0 이면
+  //   realuse 주입 경로상 이번 기획에 반영됨. 미로그인/무PKM/실패 → 표시 안 함(graceful).
+  useEffect(() => {
+    if (loading) return;
+    let alive = true;
+    getPkmGraph()
+      .then((g) => {
+        if (!alive) return;
+        const count = (g.summary.personal ?? 0) + (g.summary.brand ?? 0);
+        if (count > 0) setBrainReflected(count);
+      })
+      .catch(() => {
+        /* 미로그인/실패 → 배너 미표시 (graceful) */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [loading]);
 
   // Phase 5 Slice 4 — SSE Progress 구독 (ADR-022).
   // PlanCard.tsx 무수정 유지: progress UI 는 본 컴포넌트 상단 외부 wrapper 에만 렌더.
@@ -285,8 +308,10 @@ function PlanResultPageContent() {
         aria-busy
       >
         <ProgressStepper currentStep="planning" />
-        <p className="text-sm text-neutral-500">
-          AI가 기획안 3개를 만들고 있어요 (약 30~60초 소요)
+        <p className="text-sm text-neutral-500 text-center leading-relaxed">
+          AI 기획 파트너가 내 brain의 방향을 확인하고
+          <br />
+          기획안 3개를 작성하고 있어요 (약 30~60초)
         </p>
       </main>
     );
@@ -345,6 +370,12 @@ function PlanResultPageContent() {
         <p className="text-sm text-neutral-600">
           마음에 드는 기획안을 선택하세요.
         </p>
+        {/* Phase 29 S5 — "내 brain 반영" 신호 (에이전트 느낌: 쓸수록 내 브랜드를 학습) */}
+        {brainReflected !== null && (
+          <div className="rounded-md border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-700">
+            🧠 내 brain의 선호 {brainReflected}개를 반영해 만들었어요.
+          </div>
+        )}
         <p className="text-xs text-neutral-500 flex flex-wrap gap-x-3 gap-y-1">
           <span>
             request_id:{" "}
@@ -612,6 +643,38 @@ function PlanResultPageContent() {
             ))}
           </ul>
         </details>
+      )}
+
+      {/* Phase 29 S4 — 선택 저장 후 다음 행동 (브리프 §17 작업4: Brain CTA → "내 생각이 쌓인다" 락인) */}
+      {savedSelectedIndex !== null && (
+        <section className="flex flex-col gap-2 border-t border-neutral-200 pt-5">
+          <h2 className="text-sm font-semibold text-neutral-900">
+            선택을 저장했어요 — 이 방향이 내 brain에 쌓였어요 🧠
+          </h2>
+          <Link
+            href="/brain"
+            className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-primary-300 bg-primary-50 px-4 py-3 text-sm font-medium text-primary-700 hover:bg-primary-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
+          >
+            <span>🧠 내 brain에서 보기</span>
+            <span aria-hidden>›</span>
+          </Link>
+          <Link
+            href="/"
+            className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-900 hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
+          >
+            <span>✏️ 같은 방향으로 새 영상 만들기</span>
+            <span aria-hidden>›</span>
+          </Link>
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-400 cursor-not-allowed"
+          >
+            <span>📱 이 기획안으로 SNS 콘텐츠 만들기</span>
+            <span className="text-xs">준비중</span>
+          </button>
+        </section>
       )}
 
       {/* Bottom CTA (fixed) */}

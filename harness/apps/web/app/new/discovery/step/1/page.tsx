@@ -18,6 +18,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CardGrid5 } from '@/components/discovery/CardGrid5';
+import DiscoveryProgress from '@/components/discovery/DiscoveryProgress';
 import type { BrandDirectionCardData } from '@/components/discovery/BrandDirectionCard';
 import {
   saveDiscoveryStep1,
@@ -143,6 +144,9 @@ export default function DiscoveryStep1Page() {
         <p className="text-sm text-text-muted">
           사람들이 이걸 어떻게 기억하면 좋을지 골라요. 직접 적어도 돼요.
         </p>
+        <div className="mt-4">
+          <DiscoveryProgress currentStep={1} />
+        </div>
       </section>
 
       {/* Cards (CardGrid5) */}
