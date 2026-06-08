@@ -155,22 +155,34 @@ export default function HomePage() {
         >
           지금 만들고 싶은 아이디어를 편하게 적어보세요
         </label>
-        <textarea
-          id="idea-input"
-          name="idea"
-          required
-          maxLength={MAX_INPUT_LENGTH}
-          rows={5}
-          placeholder="예: 창업동아리 활동을 쇼츠로 만들고 싶어요"
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          disabled={isLoading}
-          className="w-full rounded-md border border-neutral-200 bg-neutral-0 px-3 py-3 text-base text-neutral-900 placeholder-neutral-400 leading-relaxed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500 disabled:bg-neutral-100 disabled:text-neutral-500"
-        />
-        <div className="flex items-center justify-between text-xs text-neutral-500">
-          <span aria-live="polite">
-            {input.length} / {MAX_INPUT_LENGTH}자
-          </span>
+        {/* Phase 29 — 프롬프트 입력 카드(폴리시) + 멀티모달 첨부 affordance(준비중) */}
+        <div className="rounded-2xl border border-neutral-200 bg-neutral-0 transition-colors focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-100">
+          <textarea
+            id="idea-input"
+            name="idea"
+            required
+            maxLength={MAX_INPUT_LENGTH}
+            rows={4}
+            placeholder="예: 창업동아리 활동을 쇼츠로 만들고 싶어요"
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            disabled={isLoading}
+            className="w-full resize-none rounded-2xl border-0 bg-transparent px-4 pt-4 pb-1 text-base text-neutral-900 placeholder-neutral-400 leading-relaxed outline-none disabled:text-neutral-500"
+          />
+          <div className="flex items-center justify-between px-3 pb-2.5 pt-1">
+            <button
+              type="button"
+              disabled
+              aria-disabled="true"
+              title="레퍼런스 이미지·영상 첨부 (곧 지원)"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-neutral-400 cursor-not-allowed"
+            >
+              <span aria-hidden>📎</span> 레퍼런스 첨부 (곧)
+            </button>
+            <span aria-live="polite" className="text-xs text-neutral-400">
+              {input.length} / {MAX_INPUT_LENGTH}
+            </span>
+          </div>
         </div>
 
         {inputWarning && (
