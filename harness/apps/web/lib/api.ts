@@ -27,6 +27,7 @@ import type {
   ErrorEnvelope,
   FastAPIDetailError,
   FeedbackRequest,
+  ConceptResponse,
   FeedbackResponse,
   MeDomainCreateResponse,
   MeMutationResponse,
@@ -635,6 +636,34 @@ export async function getPkmGraph(): Promise<PkmGraphResponse> {
     throw new Error(`pkm_graph_failed: ${resp.status}`);
   }
   return resp.json() as Promise<PkmGraphResponse>;
+}
+
+/**
+ * GET /api/v1/me/concept (Phase 28 S3 — 나만의 컨셉 수렴)
+ *
+ * 개인 PKM 종합 → {enabled, concept, pillars, conflicts, based_on}.
+ * gated OFF / 익명 / 무데이터 → enabled=false 빈 결과(200). 실패는 graceful 빈 결과로 흡수
+ * (컨셉 카드는 부가 표시 — /brain 본문 차단 금지).
+ */
+export async function getConcept(): Promise<ConceptResponse> {
+  const empty: ConceptResponse = {
+    enabled: false,
+    concept: "",
+    pillars: [],
+    conflicts: [],
+    based_on: 0,
+  };
+  try {
+    const resp = await fetch(`${API_BASE_URL}/api/v1/me/concept`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      credentials: "include",
+    });
+    if (!resp.ok) return empty;
+    return (await resp.json()) as ConceptResponse;
+  } catch {
+    return empty;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════

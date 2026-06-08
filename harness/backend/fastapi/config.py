@@ -505,6 +505,19 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 28 S3 — 나만의 컨셉 수렴 (concept surfacing) 게이트 ─────────
+    # 누적된 개인 PKM(신호 더미)을 1회 LLM 합성으로 (a)모순 해소 (b)중요도 분화 (c)컨셉 한 줄
+    # 로 표면화한다 (GET /me/concept, read-time, 영속 0 — NG12 계승). ★ gated default-off:
+    # False(default) OR 익명 → 합성 미호출 = byte-identical. realuse 프로파일에서 ON.
+    concept_surfacing_enabled: bool = Field(
+        default=False,
+        description=(
+            "Phase 28 S3: 개인 PKM 종합 → '내 컨셉' 한 줄 + 핵심 기둥 + 모순쌍 표면화 "
+            "(GET /me/concept, read-time LLM 합성, 영속 X). gated default-off — False/익명 시 "
+            "합성/호출 0(byte-identical). 환경변수 CONCEPT_SURFACING_ENABLED 로 override."
+        ),
+    )
+
     # ─── Phase 27 S1 — 실사용 프로파일 적용 (B-1) ────────────────────────────
     @model_validator(mode="after")
     def _apply_realuse_profile(self) -> "Settings":
@@ -527,6 +540,7 @@ class Settings(BaseSettings):
             "personal_pkm_injection_enabled",
             "personal_pkm_extract_enabled",
             "branding_pkm_seed_enabled",
+            "concept_surfacing_enabled",
         )
         explicit = self.model_fields_set
         # output tier: 사용자 결정 director (명시 OUTPUT_MODE 가 있으면 존중).

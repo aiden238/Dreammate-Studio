@@ -24,6 +24,8 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
+from ..agents.concept_synthesizer import synthesize_concept
+from ..config import get_settings as _get_settings
 from ..db import (
     BrandMemoryRepo,
     BrandRepo,
@@ -34,6 +36,7 @@ from ..db import (
     get_supabase,
 )
 from ..schemas.graph import (
+    ConceptResponse,
     MeDomainCreateRequest,
     MeDomainCreateResponse,
     MeDomainNode,
@@ -183,6 +186,34 @@ async def get_pkm_graph(request: Request) -> PkmGraphResponse:
       해석하지 않도록 route 시그니처는 request only).
     """
     return await _aggregate_pkm_graph(_auth_user_id(request))
+
+
+# ─── GET /api/v1/me/concept (Phase 28 S3 — 나만의 컨셉 수렴) ───────────
+
+
+@router.get(
+    "/concept",
+    response_model=ConceptResponse,
+    summary="나만의 컨셉 수렴 (Phase 28 S3)",
+    description=(
+        "누적된 개인 PKM(scope=personal) 신호를 1회 LLM 합성으로 (a)모순 해소 (b)중요도 분화 "
+        "(c)핵심 컨셉 한 줄 로 표면화한다 (read-time, 영속 0 — NG12 자동쓰기 금지 계승). "
+        "★ gated: concept_surfacing_enabled OFF / 익명 / 무데이터 / OpenAI key 없음 → "
+        "enabled=False 빈 결과 graceful(200). 본인 auth_user_id PKM 만 (교차 노출 0)."
+    ),
+)
+async def get_concept(request: Request) -> ConceptResponse:
+    """개인 PKM → 컨셉 합성 (thin handler — 게이트 + 신원 확인 후 위임)."""
+    settings = _get_settings()
+    auth_user_id = _auth_user_id(request)
+    # 게이트: flag OFF 또는 익명 → 합성 미호출 = byte-identical(호출 0).
+    if not (getattr(settings, "concept_surfacing_enabled", False) and auth_user_id):
+        return ConceptResponse()
+    try:
+        entries = await _pkm_repo.list_for_user(auth_user_id, scope="personal")
+    except Exception:  # pragma: no cover — graceful (repo 실패 시 빈 결과)
+        return ConceptResponse()
+    return ConceptResponse(**synthesize_concept(entries))
 
 
 async def _aggregate_pkm_graph(

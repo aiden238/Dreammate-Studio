@@ -43,13 +43,14 @@ import {
   deletePkmNode,
   deleteSeries,
   deleteVideo,
+  getConcept,
   getPkmGraph,
   updateDomain,
   updatePkmNode,
   updateSeries,
   updateVideo,
 } from "@/lib/api";
-import type { PkmGraphNode, PkmGraphResponse } from "@/lib/types";
+import type { ConceptResponse, PkmGraphNode, PkmGraphResponse } from "@/lib/types";
 import { useMediaQuery } from "@/lib/use_media_query";
 
 type Phase = "loading" | "error" | "data";
@@ -127,6 +128,8 @@ function BrainPageContent() {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("loading");
   const [graph, setGraph] = useState<PkmGraphResponse | null>(null);
+  // Phase 28 S3 — 나만의 컨셉 수렴 (부가 표시, graceful: 실패/OFF → null = 카드 숨김).
+  const [concept, setConcept] = useState<ConceptResponse | null>(null);
   // 큐레이션 동작 중인 node_id (중복 클릭 방지 + 스피너). null = 유휴.
   const [busyNodeId, setBusyNodeId] = useState<string | null>(null);
   // S2(Phase 24): 인라인 rename 중인 구조 노드 id(graph 접두어 그대로). null = 표시 모드.
@@ -150,6 +153,10 @@ function BrainPageContent() {
         if (!mounted) return;
         setPhase("error");
       });
+    // 컨셉 수렴 — 그래프와 독립(실패해도 본문 영향 0). gated OFF/무데이터면 enabled=false.
+    void getConcept().then((c) => {
+      if (mounted) setConcept(c);
+    });
     return () => {
       mounted = false;
     };
@@ -406,6 +413,54 @@ function BrainPageContent() {
               브랜드 {summary.brand}
               {summary.brands > 0 && ` · ${summary.brands}개 브랜드`}
             </span>
+          </div>
+        )}
+        {/* Phase 28 S3 — 나만의 컨셉 수렴 카드 (gated/graceful: enabled+concept 있을 때만). */}
+        {concept?.enabled && concept.concept && (
+          <div className="mt-5 rounded-xl border border-border-default bg-surface p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary text-text-inverse">
+                내 컨셉
+              </span>
+              <span className="text-[11px] text-text-muted">
+                신호 {concept.based_on}개 종합
+              </span>
+            </div>
+            <p className="text-base font-bold text-text-default leading-snug">
+              {concept.concept}
+            </p>
+            {concept.pillars.length > 0 && (
+              <ul className="mt-3 space-y-1.5">
+                {concept.pillars.map((p, i) => (
+                  <li key={i} className="text-sm text-text-default">
+                    <span className="font-semibold text-primary">· {p.label}</span>
+                    {p.detail && (
+                      <span className="text-text-muted"> — {p.detail}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {concept.conflicts.length > 0 && (
+              <div className="mt-3 rounded-lg border border-warning-500 bg-warning-50 p-2.5">
+                <p className="text-xs font-semibold text-warning-700 mb-1">
+                  ⚠ 방향이 엇갈리는 신호
+                </p>
+                <ul className="space-y-1">
+                  {concept.conflicts.map((c, i) => (
+                    <li key={i} className="text-xs text-text-muted leading-relaxed">
+                      <span className="text-text-default">{c.a}</span>
+                      {" ↔ "}
+                      <span className="text-text-default">{c.b}</span>
+                      {c.note && <span> — {c.note}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <p className="mt-2 text-[11px] text-text-muted">
+              피드백·레퍼런스를 줄수록 컨셉이 또렷해지고 모순이 정리돼요.
+            </p>
           </div>
         )}
         {/* S3: 데스크톱 전용 뷰 토글 (그래프 ↔ 리스트). 모바일은 미노출 → 카드 경로 무변경. */}

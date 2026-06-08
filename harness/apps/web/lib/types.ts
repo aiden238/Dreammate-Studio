@@ -588,6 +588,25 @@ export interface PkmGraphResponse {
   summary: PkmGraphSummary;
 }
 
+// ─── Phase 28 Slice S3 — 나만의 컨셉 수렴 (concept surfacing) types ──────
+// GET /api/v1/me/concept — 개인 PKM 종합 → 컨셉 한 줄 + 핵심 기둥 + 모순쌍.
+export interface ConceptPillar {
+  label: string;
+  detail: string;
+}
+export interface ConceptConflict {
+  a: string;
+  b: string;
+  note: string;
+}
+export interface ConceptResponse {
+  enabled: boolean;
+  concept: string;
+  pillars: ConceptPillar[];
+  conflicts: ConceptConflict[];
+  based_on: number;
+}
+
 // ─── Phase 22 Slice S1/S2 — 구조 생성 (Domain/Series CREATE) types ──────
 //
 // 참조:

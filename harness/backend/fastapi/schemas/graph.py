@@ -273,11 +273,50 @@ class MeVideoCreateResponse(BaseModel):
     video: MeVideoNode = Field(description="생성/편집된 video.")
 
 
+# ─── Phase 28 Slice S3 — 나만의 컨셉 수렴 (concept surfacing) 응답 스키마 ──
+#
+# GET /api/v1/me/concept — 누적 개인 PKM 신호 더미를 1회 LLM 합성으로
+#   (a)모순 해소 (b)중요도 분화 (c)컨셉 한 줄 로 표면화 (read-time, 영속 0).
+# ★ gated default-off + 익명/무데이터 → enabled=False 빈 결과 graceful(200).
+
+
+class ConceptPillar(BaseModel):
+    """컨셉 핵심 기둥 1개 — 반복·고신뢰 신호를 묶은 정체성 축."""
+
+    label: str = Field(description="정체성 축 이름(짧게).")
+    detail: str = Field(default="", description="이 축을 뒷받침하는 신호 종합 한 줄.")
+
+
+class ConceptConflict(BaseModel):
+    """서로 모순되는 신호 쌍 + 해소 제안 (모순 해소)."""
+
+    a: str = Field(description="신호 A.")
+    b: str = Field(description="A 와 모순되는 신호 B.")
+    note: str = Field(default="", description="왜 모순인지 + 해소 방향 제안.")
+
+
+class ConceptResponse(BaseModel):
+    """GET /api/v1/me/concept 응답 — 표면화된 '내 컨셉'.
+
+    enabled=False → 기능 OFF / 익명 / 무데이터 / 합성 실패 (빈 결과 graceful, 200).
+    based_on = 합성에 사용된 개인 PKM entry 수.
+    """
+
+    enabled: bool = Field(default=False, description="컨셉 표면화 활성+데이터 유무.")
+    concept: str = Field(default="", description="핵심 컨셉 한 줄.")
+    pillars: list[ConceptPillar] = Field(default_factory=list)
+    conflicts: list[ConceptConflict] = Field(default_factory=list)
+    based_on: int = Field(default=0, description="합성에 사용된 개인 PKM entry 수.")
+
+
 __all__ = [
     "PkmGraphNode",
     "PkmGraphEdge",
     "PkmGraphSummary",
     "PkmGraphResponse",
+    "ConceptPillar",
+    "ConceptConflict",
+    "ConceptResponse",
     "MePkmPatchRequest",
     "MePkmMutationResponse",
     "MeDomainCreateRequest",
