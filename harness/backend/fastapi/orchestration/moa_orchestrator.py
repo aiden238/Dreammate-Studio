@@ -425,6 +425,10 @@ async def generate_plan(
     # ★ Phase 29 A — 첨부 레퍼런스(이미지) 분석 → ① 요약 user_input 프리펜드(생성 반영, A1)
     #   ② 키워드 → 개인 PKM 적재(업로드가 brain 학습, A2). 전부 graceful — 분석 실패가 흐름 차단 X.
     #   이미지 미첨부(images 없음) → 호출 0 = 기존 동작 byte-identical(additive).
+    #   ★ A1(요약 프리펜드)은 생성 입력이므로 여기서 즉시. A2(키워드 적재)는 plans 행 영속 **이후**로
+    #     미룬다 — pkm_entries.source_plan_id 가 plans.id 를 FK 참조하므로, 영속 전엔 행이 없어
+    #     INSERT 가 FK(23503)로 전량 실패한다(라이브 검증으로 발견). 키워드는 아래 영속 직후 적재.
+    _reference_keywords: list[dict[str, Any]] = []
     if images:
         try:
             from ..agents.vision_analyzer import analyze_references
@@ -436,23 +440,7 @@ async def generate_plan(
                 logger.info(
                     "generate_plan reference_injected plan_id=%s images=%d", plan_id, len(images)
                 )
-            # A2: 키워드 → 개인 PKM (gated + authed). consolidate_entry(강화/dedup/노이즈 필터).
-            kws = analysis.get("keywords") or []
-            if kws and auth_user_id and getattr(settings, "personal_pkm_extract_enabled", False):
-                from ..db import PkmRepo, get_supabase
-
-                _repo = pkm_repo if pkm_repo is not None else PkmRepo(supabase_client=get_supabase())
-                for kw in kws:
-                    try:
-                        await _repo.consolidate_entry(
-                            auth_user_id, kw["entry_type"], kw["content"],
-                            scope="personal", confidence=0.9, source_plan_id=plan_id,
-                        )
-                    except Exception:  # pragma: no cover — graceful
-                        pass
-                logger.info(
-                    "generate_plan reference_keywords_to_pkm plan_id=%s count=%d", plan_id, len(kws)
-                )
+            _reference_keywords = analysis.get("keywords") or []
         except Exception:  # pragma: no cover — graceful (분석 실패는 생성 차단 X)
             logger.warning("reference 분석 실패 (graceful) plan_id=%s", plan_id)
 
@@ -966,9 +954,34 @@ async def generate_plan(
     plan_entry["updated_at"] = now_iso()
 
     # ★ HIP-008 S3 (gated): envelope 영속 (PlansRepo upsert, graceful). OFF=in-memory only byte-identical.
-    await _persist_plan_envelope(
+    persisted_plan = await _persist_plan_envelope(
         plan_id, plan_entry, settings=settings, auth_user_id=auth_user_id
     )
+
+    # ★ Phase 29 A2 — 레퍼런스 키워드 → 개인 PKM (gated+authed). plans 행 영속 **이후** 실행 →
+    #   source_plan_id FK(plans.id) 충족(provenance 보존 → Feature B 그래프 edge plan→keyword).
+    #   영속 OFF(persisted_plan=False)면 행이 없으므로 source_plan_id=None 으로 적재(키워드는 보존,
+    #   provenance 만 생략). consolidate_entry = 반복 강화 + dedup + 노이즈 필터. 전부 graceful.
+    if _reference_keywords and auth_user_id and getattr(settings, "personal_pkm_extract_enabled", False):
+        from ..db import PkmRepo, get_supabase
+
+        _repo = pkm_repo if pkm_repo is not None else PkmRepo(supabase_client=get_supabase())
+        _src = plan_id if persisted_plan else None
+        _landed = 0
+        for kw in _reference_keywords:
+            try:
+                _r = await _repo.consolidate_entry(
+                    auth_user_id, kw["entry_type"], kw["content"],
+                    scope="personal", confidence=0.9, source_plan_id=_src,
+                )
+                if _r is not None:
+                    _landed += 1
+            except Exception:  # pragma: no cover — graceful
+                pass
+        logger.info(
+            "generate_plan reference_keywords_to_pkm plan_id=%s count=%d landed=%d",
+            plan_id, len(_reference_keywords), _landed,
+        )
 
     logger.info(
         "plans/generate ok plan_id=%s plans=%d verdict=%s rag_refs=%d db_status=%s",

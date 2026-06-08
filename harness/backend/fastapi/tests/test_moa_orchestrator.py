@@ -460,3 +460,108 @@ async def test_generate_plan_anonymous_byte_identical(
     assert plan_entry["brand_id"] is None
     # 로깅은 anon 표기.
     assert "auth_user_id=anon" in caplog.text
+
+
+# ─── 11. Phase 29 A — 멀티모달 레퍼런스 키워드 PKM (순서 불변: 영속 → 적재) ─────
+# 라이브 검증으로 발견한 회귀 가드: pkm_entries.source_plan_id 는 plans.id 를 FK 참조하므로,
+# A2(키워드 적재)는 반드시 _persist_plan_envelope(plans 행 생성) **이후** 실행돼야 한다.
+# 영속 전 적재 시 모든 INSERT 가 FK(23503)로 전량 실패(silent) → 키워드 학습 0.
+# 본 테스트는 (1) 적재가 영속 뒤에 일어나고 (2) source_plan_id=plan_id 로 전달되며
+# (3) 4개 키워드가 모두 consolidate_entry 로 도달함을 DI seam(fake pkm_repo)으로 가드한다.
+
+
+class _RecordingPkmRepo:
+    """consolidate_entry / list_for_user 호출을 기록하는 fake PkmRepo (DI seam)."""
+
+    def __init__(self, order: list[str]) -> None:
+        self.order = order
+        self.consolidated: list[tuple[str, str, str | None]] = []
+
+    async def list_for_user(self, auth_user_id: str, *, scope: str = "personal") -> list[Any]:
+        return []
+
+    async def consolidate_entry(
+        self, auth_user_id: str, entry_type: str, content: str, *,
+        scope: str = "personal", confidence: float = 0.5, source_plan_id: str | None = None,
+    ) -> tuple[str, str]:
+        self.order.append("consolidate")
+        self.consolidated.append((entry_type, content, source_plan_id))
+        return ("inserted", content)
+
+
+@pytest.mark.asyncio
+async def test_reference_keywords_persisted_after_plan_row(
+    patch_agents_ok, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A2 키워드 적재가 plans 행 영속 **이후** + source_plan_id=plan_id 로 일어남 (FK 회귀 가드)."""
+    order: list[str] = []
+
+    # 비전 분석 → 고정 키워드 4종 (실 LLM 0).
+    fake_keywords = [
+        {"entry_type": "preferred_tone", "content": "아늑하고 따뜻한 분위기"},
+        {"entry_type": "preferred_phrase", "content": "손글씨 스타일의 진솔함"},
+        {"entry_type": "avoid_phrase", "content": "화려한 광고, 네온 사용 지양"},
+        {"entry_type": "success_pattern", "content": "자연스럽고 편안한 느낌의 영상 구성"},
+    ]
+    monkeypatch.setattr(
+        "backend.fastapi.agents.vision_analyzer.analyze_references",
+        lambda images, **k: {"summary": "따뜻한 카페 무드보드", "keywords": fake_keywords},
+    )
+
+    # 영속 시점 기록 + plans 행이 생겼다고 신호 (return True → source_plan_id=plan_id).
+    async def fake_persist(*args: Any, **kwargs: Any) -> bool:
+        order.append("persist")
+        return True
+
+    monkeypatch.setattr(
+        "backend.fastapi.orchestration.moa_orchestrator._persist_plan_envelope", fake_persist,
+    )
+
+    # 개인 PKM 추출 게이트 ON (env + cache_clear, _set_multi_provider_flag 패턴).
+    monkeypatch.setenv("PERSONAL_PKM_EXTRACT_ENABLED", "true")
+    get_settings.cache_clear()
+    try:
+        repo = _RecordingPkmRepo(order)
+        result = await generate_plan(
+            "test-plan-id", _make_plan_entry(), GenerateRequest(),
+            auth_user_id="u-7", images=["data:image/png;base64,AAAA"], pkm_repo=repo,
+        )
+    finally:
+        get_settings.cache_clear()  # 다음 테스트를 위해 (복원된) env 로 재빌드.
+
+    assert isinstance(result, Envelope)
+    # (1) 순서 불변 — 영속이 먼저, 그 다음 적재 (FK 충족).
+    assert "persist" in order and "consolidate" in order
+    assert order.index("persist") < order.index("consolidate")
+    # (2) 4개 키워드 전부 도달 + (3) source_plan_id=plan_id (provenance 보존).
+    assert len(repo.consolidated) == 4
+    assert {c[0] for c in repo.consolidated} == {
+        "preferred_tone", "preferred_phrase", "avoid_phrase", "success_pattern",
+    }
+    assert all(src == "test-plan-id" for (_, _, src) in repo.consolidated)
+
+
+@pytest.mark.asyncio
+async def test_no_images_no_reference_keyword_calls(
+    patch_agents_ok, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """images 미첨부 → 비전 분석/키워드 적재 0 (additive, 기존 경로 byte-identical)."""
+    def _must_not_run(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        raise AssertionError("analyze_references must NOT be called without images")
+
+    monkeypatch.setattr(
+        "backend.fastapi.agents.vision_analyzer.analyze_references", _must_not_run,
+    )
+    monkeypatch.setenv("PERSONAL_PKM_EXTRACT_ENABLED", "true")
+    get_settings.cache_clear()
+    try:
+        repo = _RecordingPkmRepo([])
+        result = await generate_plan(
+            "test-plan-id", _make_plan_entry(), GenerateRequest(),
+            auth_user_id="u-7", pkm_repo=repo,  # images 미지정 → None
+        )
+    finally:
+        get_settings.cache_clear()
+
+    assert isinstance(result, Envelope)
+    assert repo.consolidated == []
