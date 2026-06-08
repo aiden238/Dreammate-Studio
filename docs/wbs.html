@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dreammate Studio WBS</title>
+  <link rel="stylesheet" href="./wbs.css" />
+</head>
+<body>
+  <header class="hero">
+    <nav class="topbar">
+      <a class="brand" href="./index.html">Dreammate Studio</a>
+      <a class="pill" href="#wbs">WBS Dashboard</a>
+    </nav>
+    <section class="hero-grid">
+      <div>
+        <p class="eyebrow">영상기획 AI 에이전트 · GitHub Pages</p>
+        <h1>진행 중인 프로젝트를<br>WBS로 일괄 확인합니다</h1>
+        <p class="lead">PPT의 네이비, 블루, 옐로우 디자인 톤을 유지해 작업 범위와 진행 상태를 한 화면에서 볼 수 있도록 구성했습니다.</p>
+      </div>
+      <aside class="hero-card">
+        <span>Current Focus</span>
+        <strong>첫 사용자 루프 안정화</strong>
+        <p>브랜드 방향 질문 → 타깃 정리 → 영상 기획안 생성 → 저장과 검증 흐름을 기준선으로 관리합니다.</p>
+      </aside>
+    </section>
+  </header>
+  <main>
+    <section class="summary">
+      <article class="card yellow"><span>완료</span><strong id="doneCount">0</strong><p>검증 완료</p></article>
+      <article class="card blue"><span>진행</span><strong id="doingCount">0</strong><p>현재 보강</p></article>
+      <article class="card soft"><span>예정</span><strong id="todoCount">0</strong><p>최종 발표 전</p></article>
+      <article class="card dark"><span>진척률</span><strong id="progressRate">0%</strong><p>완료 기준</p></article>
+    </section>
+    <section class="section-head" id="wbs">
+      <div><p class="eyebrow dark-text">WBS Overview</p><h2>작업 분해 구조</h2></div>
+      <div class="filters">
+        <button class="filter active" data-filter="all">전체</button>
+        <button class="filter" data-filter="done">완료</button>
+        <button class="filter" data-filter="doing">진행</button>
+        <button class="filter" data-filter="todo">예정</button>
+        <button class="filter" data-filter="later">후순위</button>
+      </div>
+    </section>
+    <section class="wbs-wrap">
+      <table class="wbs-table">
+        <thead><tr><th>WBS</th><th>영역</th><th>작업</th><th>산출물</th><th>상태</th><th>우선순위</th><th>시점</th></tr></thead>
+        <tbody id="wbsBody"></tbody>
+      </table>
+    </section>
+    <section class="roadmap">
+      <article><span>초반</span><h3>UI · 모델 레이어 보강</h3><p>결과 화면과 첫 진입 흐름을 안정화합니다.</p></article>
+      <article><span>중반</span><h3>품질 평가 · 예외 처리</h3><p>사람 기준 평가와 검증 루프를 정리합니다.</p></article>
+      <article><span>후반</span><h3>최종 발표 패키징</h3><p>시연 영상, 발표 자료, 실행 가이드를 묶습니다.</p></article>
+    </section>
+  </main>
+  <footer>Dreammate Studio · WBS Dashboard</footer>
+  <script src="./wbs.js"></script>
+</body>
+</html>
