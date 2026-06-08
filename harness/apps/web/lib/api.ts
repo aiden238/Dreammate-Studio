@@ -43,8 +43,14 @@ import type {
 } from "./types";
 import { isEnvelope, isErrorEnvelope, isFastAPIDetailError } from "./types";
 
+// 동일-출처(same-origin) 우선: 브라우저에선 상대경로("")를 써서 페이지와 같은 출처로 호출 →
+// next.config.js 의 rewrites 가 백엔드(:8000)로 프록시한다. 이러면 (1) 원격/터널(cloudflare)·LAN
+// 어디서 열어도 API 가 같은 호스트로 가서 닿고, (2) auth 쿠키가 1st-party 라 localhost/127.0.0.1
+// 교차-출처 문제(SameSite/CORS)가 사라진다. NEXT_PUBLIC_API_URL 명시 시 그 절대주소 우선(프로덕션).
+// SSR(window undefined)에선 상대경로 불가하므로 절대주소 fallback.
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_URL ??
+  (typeof window === "undefined" ? "http://localhost:8000" : "");
 
 export interface GenerateRequest {
   input: string;
