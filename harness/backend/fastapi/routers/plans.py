@@ -958,8 +958,16 @@ def plans_branding_next(plan_id: str, req: BrandingNextRequest):
     if answer and history and history[-1].get("answer") is None:
         history[-1]["answer"] = answer
 
+    # Phase 29 — 상황 버튼 goal(예: sns_validation) 보존 → 질문 프레이밍 분기.
+    if getattr(req, "goal", None) and not branding.get("goal"):
+        branding["goal"] = req.goal
+
     # 2. 다음 질문 생성 (또는 종료) — topic_discovery ask 위임.
-    state = {"history": history, "max_questions": BRANDING_MAX_QUESTIONS}
+    state = {
+        "history": history,
+        "max_questions": BRANDING_MAX_QUESTIONS,
+        "goal": branding.get("goal"),
+    }
     try:
         result = run_topic_discovery_ask(state)
     except Exception as exc:  # graceful — agent 실패가 plan 흐름을 차단하지 않는다 (500 금지).

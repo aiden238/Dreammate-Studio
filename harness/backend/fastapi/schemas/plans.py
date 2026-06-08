@@ -153,6 +153,8 @@ class BrandingNextRequest(BaseModel):
 
     answer: str | None = Field(default=None, max_length=2000)
     selected_option: str | None = Field(default=None, max_length=500)
+    # Phase 29 — 상황 버튼 목표(예: 'sns_validation'). 첫 호출에 전달하면 질문 프레이밍이 분기된다.
+    goal: str | None = Field(default=None, max_length=64)
 
 
 class BrandingNextResponse(BaseModel):

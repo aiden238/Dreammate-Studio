@@ -71,6 +71,8 @@ export default function BrandingPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   // 답변 전송/생성 중 입력 잠금 (중복 호출 방지).
   const [busy, setBusy] = useState<boolean>(false);
+  // Phase 29 — 상황 버튼 목표(?goal). SNS 등 목표별 질문 프레이밍 + 인트로 배너.
+  const [goalLabel, setGoalLabel] = useState<string | null>(null);
 
   // ── mount: plan 시작 + 첫 질문 (★ startedRef 가드, cancelled 플래그 미사용) ──
   useEffect(() => {
@@ -79,9 +81,17 @@ export default function BrandingPage() {
 
     async function bootstrap(): Promise<void> {
       try {
+        // Phase 29 — ?goal(상황 버튼) 읽어 첫 호출에 전달 → 질문 프레이밍 분기.
+        const goal =
+          new URLSearchParams(window.location.search).get("goal") || undefined;
+        const labels: Record<string, string> = {
+          sns_validation: "SNS에서 반응을 볼 콘텐츠 방향을 같이 찾아요",
+          organize: "막연한 아이디어를 질문으로 정리해 드려요",
+        };
+        if (goal && labels[goal]) setGoalLabel(labels[goal]);
         const { plan_id } = await startPlan("(브랜딩 세션)");
         planIdRef.current = plan_id;
-        const res = await brandingNext(plan_id, {});
+        const res = await brandingNext(plan_id, goal ? { goal } : {});
         applyNext(res);
       } catch (e) {
         setErrorMsg(friendlyError(e));
@@ -271,6 +281,12 @@ export default function BrandingPage() {
           {phase === "generating" &&
             "고른 주제로 영상기획안 3개를 만들고 있어요. (30~60초)"}
         </p>
+        {/* Phase 29 — 상황 버튼 목표 인트로 (예: SNS 반응) → 질문이 그 목표로 분기됨 */}
+        {goalLabel && (phase === "qa" || phase === "loading") && (
+          <div className="mt-3 rounded-md border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-700">
+            🎯 {goalLabel}
+          </div>
+        )}
       </section>
 
       {/* 에러 */}

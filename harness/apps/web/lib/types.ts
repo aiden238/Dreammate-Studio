@@ -455,6 +455,8 @@ export interface AuthSession {
 export interface BrandingNextRequest {
   answer?: string;
   selected_option?: string;
+  /** Phase 29 — 상황 버튼 목표(예: 'sns_validation'). 첫 호출에 전달 시 질문 프레이밍 분기. */
+  goal?: string;
 }
 
 /**

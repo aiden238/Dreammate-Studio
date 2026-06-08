@@ -209,7 +209,18 @@ def run_topic_discovery_ask(
     _client = client or OpenAI(api_key=settings.openai_api_key)
     _model = model or settings.openai_model_default
 
+    # Phase 29 — goal 분기(상황 버튼별 질문 프레이밍). 미지정이면 기존과 동일(byte-identical 의도).
+    _GOAL_LABELS = {
+        "sns_validation": "SNS에서 반응을 볼 콘텐츠 방향 찾기 — 어떤 채널·어떤 반응(저장/공유/댓글)·어떤 형식이 맞을지 중심으로",
+        "organize": "막연한 아이디어를 정리·진단 — 핵심이 뭔지, 부족한 게 뭔지 좁혀가며",
+    }
+    _goal = state.get("goal")
+    _goal_directive = ""
+    if isinstance(_goal, str) and _goal:
+        _goal_directive = f"★ 사용자 목표: {_GOAL_LABELS.get(_goal, _goal)}. 모든 질문을 이 목표에 맞춰 이끌어라.\n\n"
+
     user_prompt = (
+        f"{_goal_directive}"
         f"지금까지의 Q&A:\n{_history_text(state)}\n\n"
         f"(현재 질문 수: {len(history)} / 상한: {cap})\n"
         "위를 바탕으로 다음 질문 1개 + 선택지 2~4개를 만들거나, 충분하면 종료해줘. JSON으로만."
