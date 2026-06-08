@@ -4,9 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dreammate Studio 발표자료</title>
-  <meta name="description" content="Dreammate Studio GitHub Pages 발표자료" />
+  <meta name="description" content="Dreammate Studio GitHub Pages 슬라이드 발표자료" />
   <link rel="stylesheet" href="./style.css" />
   <link rel="stylesheet" href="./fix.css" />
+  <style>
+    .slide-wbs-frame{display:grid;grid-template-rows:auto auto 1fr;gap:16px;width:100%}.wbs-topline{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:stretch}.wbs-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.wbs-kpi{padding:14px 16px;border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}.wbs-kpi b{display:block;font-size:34px;line-height:1;color:#101828}.wbs-kpi span{display:block;margin-top:6px;color:var(--muted);font-size:13px;font-weight:900}.wbs-kpi.done{background:linear-gradient(180deg,#f0fdf4,#fff)}.wbs-kpi.doing{background:linear-gradient(180deg,#fff7ed,#fff)}.wbs-kpi.todo{background:linear-gradient(180deg,#eef2ff,#fff)}.wbs-kpi.later{background:linear-gradient(180deg,#f8fafc,#fff)}.wbs-focus{padding:18px 20px;border-radius:24px;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;box-shadow:var(--shadow)}.wbs-focus span{display:inline-flex;margin-bottom:8px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.18);font-size:12px;font-weight:900}.wbs-focus h3{font-size:24px}.wbs-focus p{margin:8px 0 0;color:#eef2ff;font-size:13px;font-weight:800}.wbs-lanes{display:grid;grid-template-columns:1.1fr 1.1fr 1.1fr .8fr;gap:12px;min-height:390px}.wbs-lane{padding:14px;border-radius:24px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}.wbs-lane h3{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:20px}.wbs-lane h3 small{padding:4px 9px;border-radius:999px;background:#f8fafc;color:var(--muted);font-size:11px}.mini-task{display:grid;grid-template-columns:42px 1fr;gap:10px;align-items:center;margin-top:8px;padding:9px 10px;border-radius:16px;border:1px solid #edf1f8;background:#fafbff}.mini-task code{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:900}.mini-task b{font-size:14px;line-height:1.15}.mini-task span{display:block;margin-top:2px;color:var(--muted);font-size:11px;font-weight:800;line-height:1.25}.lane-done{background:linear-gradient(180deg,#f0fdf4,#fff)}.lane-doing{background:linear-gradient(180deg,#fff7ed,#fff)}.lane-todo{background:linear-gradient(180deg,#eef2ff,#fff)}.lane-later{background:linear-gradient(180deg,#f8fafc,#fff)}@media(max-width:980px){.wbs-topline,.wbs-kpi-row,.wbs-lanes{grid-template-columns:1fr}.wbs-lanes{min-height:0}}
+  </style>
 </head>
 <body>
   <header class="topbar">
@@ -23,7 +26,7 @@
   <main id="top">
     <section class="slide hero" id="cover">
       <div>
-        <p class="eyebrow">GitHub Pages · WBS · Agent Pipeline</p>
+        <p class="eyebrow">GitHub Pages · Slide Deck · WBS</p>
         <h1>영상기획을<br>실행 가능한 계획으로 바꾸는 AI 에이전트</h1>
         <p class="lead">Dreammate Studio는 영상 브랜딩과 브랜드 마케팅을 위한 기획 과정을 질문형 AI로 구조화하는 영상기획 AI 에이전트 플랫폼입니다.</p>
       </div>
@@ -36,12 +39,6 @@
           <div class="hero-arrow">→</div>
           <div class="hero-node output"><span>출력</span><strong>영상기획 + WBS</strong></div>
         </div>
-        <div class="metrics compact">
-          <div><strong>Phase 10</strong><span>MVP 통합 완료</span></div>
-          <div><strong>381</strong><span>pytest 기준선</span></div>
-          <div><strong>11</strong><span>PWA routes</span></div>
-          <div><strong>17</strong><span>API endpoints</span></div>
-        </div>
         <p class="note">핵심 문장: AI가 영상 아이디어를 브랜드 방향, 기획안, 실행관리까지 연결합니다.</p>
       </aside>
     </section>
@@ -52,21 +49,11 @@
       <div class="problem-infographic">
         <div class="pain-group">
           <article class="pain-card"><span>01</span><h3>브랜드 방향 불명확</h3><p>무엇을 보여줄 브랜드인지 흐리면 영상 톤이 흔들립니다.</p></article>
-          <article class="pain-card"><span>02</span><h3>타깃 모호</h3><p>누구에게 각인될 영상인지 불명확하면 마케팅 메시지가 약해집니다.</p></article>
+          <article class="pain-card"><span>02</span><h3>타깃 모호</h3><p>누구에게 각인될 영상인지 불명확하면 메시지가 약해집니다.</p></article>
           <article class="pain-card"><span>03</span><h3>실행 단절</h3><p>브랜딩 전략이 촬영·편집·업로드 작업으로 분해되지 않으면 실행이 멈춥니다.</p></article>
         </div>
-        <div class="bridge-card">
-          <span>Dreammate Studio</span>
-          <strong>브랜드 방향을 영상기획과 실행 WBS로 변환</strong>
-        </div>
-        <div class="vision-strip">
-          <div>브랜드</div>
-          <div>타깃</div>
-          <div>메시지</div>
-          <div>레퍼런스</div>
-          <div>영상기획</div>
-          <div>WBS</div>
-        </div>
+        <div class="bridge-card"><span>Dreammate Studio</span><strong>브랜드 방향을 영상기획과 실행 WBS로 변환</strong></div>
+        <div class="vision-strip"><div>브랜드</div><div>타깃</div><div>메시지</div><div>레퍼런스</div><div>영상기획</div><div>WBS</div></div>
       </div>
     </section>
 
@@ -75,17 +62,12 @@
       <h2>질문형 AI로 브랜드 방향을 좁혀갑니다</h2>
       <div class="process-infographic">
         <article class="process-step"><b>1</b><h3>Brand</h3><p>브랜드 정체성과 콘텐츠 방향을 질문으로 정리합니다.</p></article>
-        <article class="process-step"><b>2</b><h3>Target</h3><p>시청자와 구매·참여 동기를 구체화합니다.</p></article>
-        <article class="process-step"><b>3</b><h3>Reference</h3><p>LLM Wiki와 RAG Lite로 기획 근거를 보강합니다.</p></article>
-        <article class="process-step"><b>4</b><h3>Plan</h3><p>브랜드 마케팅에 맞는 영상 기획 후보를 생성합니다.</p></article>
-        <article class="process-step"><b>5</b><h3>WBS</h3><p>선택된 기획을 실행 가능한 작업 단위로 전환합니다.</p></article>
+        <article class="process-step"><b>2</b><h3>Target</h3><p>시청자와 참여 동기를 구체화합니다.</p></article>
+        <article class="process-step"><b>3</b><h3>Reference</h3><p>RAG Lite로 기획 근거를 보강합니다.</p></article>
+        <article class="process-step"><b>4</b><h3>Plan</h3><p>영상 기획 후보를 생성합니다.</p></article>
+        <article class="process-step"><b>5</b><h3>WBS</h3><p>선택된 기획을 실행 작업으로 전환합니다.</p></article>
       </div>
-      <div class="decision-bar">
-        <span>사용자 선택</span>
-        <span>피드백 저장</span>
-        <span>Brand Memory 준비</span>
-        <span>다음 기획에 반영</span>
-      </div>
+      <div class="decision-bar"><span>사용자 선택</span><span>피드백 저장</span><span>Brand Memory 준비</span><span>다음 기획에 반영</span></div>
     </section>
 
     <section id="architecture" class="slide architecture-slide">
@@ -93,87 +75,78 @@
       <h2>소프트웨어 아키텍처와 AI 에이전트 파이프라인</h2>
       <div class="arch-split css-arch">
         <article class="card arch-block software-arch">
-          <div class="arch-title-row">
-            <h3>Software Architecture</h3>
-            <span>Front / Back / Data</span>
-          </div>
+          <div class="arch-title-row"><h3>Software Architecture</h3><span>Front / Back / Data</span></div>
           <div class="arch-layout">
-            <div class="arch-canvas software-canvas" aria-label="소프트웨어 아키텍처 도식">
-              <div class="arch-node user-node">User</div>
-              <div class="arch-line arrow-right line-user-fe"></div>
-              <div class="arch-node front-node">Next.js<br><small>PWA</small></div>
-              <div class="arch-line arrow-right line-fe-api"></div>
-              <div class="arch-node back-node">FastAPI<br><small>BFF</small></div>
-              <div class="arch-line arrow-right line-api-ai"></div>
-              <div class="arch-node ai-node">AI Engine</div>
-              <div class="arch-line arrow-down line-api-db"></div>
-              <div class="arch-node data-node">Supabase<br><small>Auth · DB · Storage</small></div>
+            <div class="arch-canvas software-canvas">
+              <div class="arch-node user-node">User</div><div class="arch-line arrow-right line-user-fe"></div>
+              <div class="arch-node front-node">Next.js<br><small>PWA</small></div><div class="arch-line arrow-right line-fe-api"></div>
+              <div class="arch-node back-node">FastAPI<br><small>BFF</small></div><div class="arch-line arrow-right line-api-ai"></div>
+              <div class="arch-node ai-node">AI Engine</div><div class="arch-line arrow-down line-api-db"></div>
+              <div class="arch-node data-node">Supabase<br><small>Auth · DB</small></div>
             </div>
             <div class="arch-notes">
-              <article><b>Next.js PWA</b><span>브랜드 질문 UI와 결과 확인 화면</span></article>
-              <article><b>FastAPI BFF</b><span>인증, 기획 요청, SSE 진행률 처리</span></article>
-              <article><b>AI Engine</b><span>기획 에이전트와 품질 검증 실행</span></article>
-              <article><b>Supabase</b><span>사용자, 기획안, 피드백 데이터 저장</span></article>
+              <article><b>Next.js PWA</b><span>브랜드 질문 UI와 결과 화면</span></article>
+              <article><b>FastAPI BFF</b><span>인증, 기획 요청, 진행률 처리</span></article>
+              <article><b>AI Engine</b><span>기획 에이전트와 검증 실행</span></article>
+              <article><b>Supabase</b><span>사용자, 기획안, 피드백 저장</span></article>
             </div>
           </div>
         </article>
-
         <article class="card arch-block pipeline-arch">
-          <div class="arch-title-row">
-            <h3>AI Agent Pipeline</h3>
-            <span>내부 처리 흐름</span>
-          </div>
-          <div class="pipeline-canvas" aria-label="AI 에이전트 파이프라인 도식">
-            <article class="pipeline-node"><b>Route</b><span>입력 분기</span></article>
-            <div class="pipeline-arrow">→</div>
-            <article class="pipeline-node"><b>Retrieve</b><span>근거 검색</span></article>
-            <div class="pipeline-arrow">→</div>
-            <article class="pipeline-node wide"><b>Generate + Review</b><span>3개 후보 생성 · 품질 평가 · 최대 2회 개선</span></article>
-            <div class="pipeline-arrow">→</div>
+          <div class="arch-title-row"><h3>AI Agent Pipeline</h3><span>내부 처리 흐름</span></div>
+          <div class="pipeline-canvas">
+            <article class="pipeline-node"><b>Route</b><span>입력 분기</span></article><div class="pipeline-arrow">→</div>
+            <article class="pipeline-node"><b>Retrieve</b><span>근거 검색</span></article><div class="pipeline-arrow">→</div>
+            <article class="pipeline-node wide"><b>Generate + Review</b><span>후보 생성 · 품질 평가 · 개선</span></article><div class="pipeline-arrow">→</div>
             <article class="pipeline-node memory"><b>Save + Memory</b><span>결과 저장 · 다음 기획 반영</span></article>
           </div>
-          <div class="pipeline-chip-row">
-            <span>Intent Router</span>
-            <span>RAG Lite</span>
-            <span>Plan Generator</span>
-            <span>Critic Agent</span>
-            <span>Rewriter Loop</span>
-            <span>Brand Memory</span>
-          </div>
+          <div class="pipeline-chip-row"><span>Intent Router</span><span>RAG Lite</span><span>Plan Generator</span><span>Critic Agent</span><span>Rewriter Loop</span><span>Brand Memory</span></div>
         </article>
       </div>
     </section>
 
     <section id="wbs" class="slide">
-      <div class="wbs-frame detail-wbs-frame">
-        <div class="wbs-header">
-          <div>
-            <p class="eyebrow">04. WBS Dashboard</p>
-            <h2>진행중 프로젝트 WBS</h2>
-          </div>
-          <p class="wbs-subtitle">100% 완료, 80% 이상 진행, 시작 단계 작업을 구분해 실제 진척 상태가 보이도록 재구성했습니다.</p>
+      <div class="slide-wbs-frame">
+        <div>
+          <p class="eyebrow">04. WBS Slide</p>
+          <h2>진행 중 프로젝트 WBS를 슬라이드 한 장에서 확인합니다</h2>
         </div>
-
-        <div class="wbs-progress-panel">
-          <article class="progress-bar-card wide-progress">
-            <div class="bar-head"><strong>70%</strong><span>MVP 이후 배포 준비 기준 진행률</span></div>
-            <div class="bar-track"><div class="bar-fill"></div></div>
-            <div class="bar-labels"><span>완료 2개</span><span>80% 이상 3개</span><span>시작 1개</span></div>
+        <div class="wbs-topline">
+          <div class="wbs-kpi-row">
+            <article class="wbs-kpi done"><b>11</b><span>완료 · 구현/검증 통과</span></article>
+            <article class="wbs-kpi doing"><b>5</b><span>진행 · 발표 전 보강</span></article>
+            <article class="wbs-kpi todo"><b>7</b><span>예정 · 최종 발표 전 처리</span></article>
+            <article class="wbs-kpi later"><b>2</b><span>후순위 · 확장 검토</span></article>
+          </div>
+          <article class="wbs-focus"><span>Priority</span><h3>첫 사용자 루프 안정화</h3><p>브랜드 방향 질문 → 타깃 정리 → 영상 기획안 생성 → 저장/검증을 기준선으로 둡니다.</p></article>
+        </div>
+        <div class="wbs-lanes">
+          <article class="wbs-lane lane-done"><h3>완료 <small>Done</small></h3>
+            <div class="mini-task"><code>1.1</code><div><b>문제 정의·가치 제안</b><span>중간발표 핵심 슬라이드</span></div></div>
+            <div class="mini-task"><code>2.1</code><div><b>Next.js PWA 화면</b><span>입력·결과 기본 화면</span></div></div>
+            <div class="mini-task"><code>3.1</code><div><b>FastAPI 생성 API</b><span>generation API 구성</span></div></div>
+            <div class="mini-task"><code>4.1</code><div><b>계층형 데이터 구조</b><span>User → Brand → Domain → Series → Video</span></div></div>
+            <div class="mini-task"><code>6.3</code><div><b>회귀 검증 루프</b><span>pytest · scenario_sim · audit</span></div></div>
           </article>
-          <div class="next-work-card">
-            <span class="tag next">진행 예정</span>
-            <h3>배포 Gate B~G / Phase 11+</h3>
-            <p>staging → alpha → beta → 운영 배포 또는 브랜드 개인화·자동 평가 고도화로 확장합니다.</p>
-          </div>
-        </div>
-
-        <div class="wbs-detail-grid">
-          <article class="wbs-task done-task"><b>기획·비전</b><span>문제 정의, 브랜드 방향, 핵심 가치 정리</span><em>100%</em><i class="meter p100"></i></article>
-          <article class="wbs-task done-task"><b>UX 설계</b><span>Discovery Wizard, Quick Mode, 사용자 분기</span><em>100%</em><i class="meter p100"></i></article>
-          <article class="wbs-task active-task"><b>AI 파이프라인</b><span>RAG Lite, MOA, Critic, Rewriter Loop</span><em>90%</em><i class="meter p90"></i></article>
-          <article class="wbs-task active-task"><b>데이터·피드백</b><span>결과 저장, feedback_events, Brand Memory 준비</span><em>85%</em><i class="meter p85"></i></article>
-          <article class="wbs-task active-task"><b>발표·시각화</b><span>GitHub Pages, WBS, Mermaid, 슬라이드 UX</span><em>80%</em><i class="meter p80"></i></article>
-          <article class="wbs-task next-task"><b>배포·운영</b><span>Gate B~G, 알파·베타 운영, Phase 11+</span><em>20%</em><i class="meter p20"></i></article>
+          <article class="wbs-lane lane-doing"><h3>진행 <small>Doing</small></h3>
+            <div class="mini-task"><code>1.3</code><div><b>질문 기반 브랜딩</b><span>브랜드 방향 질문 세트 고정</span></div></div>
+            <div class="mini-task"><code>2.2</code><div><b>AppShell 네비게이션</b><span>첫 사용자 진입 경로 보강</span></div></div>
+            <div class="mini-task"><code>2.3</code><div><b>결과 화면 가독성</b><span>기획안 카드 UI 개선</span></div></div>
+            <div class="mini-task"><code>5.2</code><div><b>LLM 모델 레이어</b><span>출력 안정화와 역할 분리</span></div></div>
+            <div class="mini-task"><code>7.2</code><div><b>데모 영상 백업</b><span>라이브 실패 대비</span></div></div>
+          </article>
+          <article class="wbs-lane lane-todo"><h3>예정 <small>Todo</small></h3>
+            <div class="mini-task"><code>3.3</code><div><b>예외 처리 정리</b><span>오류 메시지와 폴백 정책</span></div></div>
+            <div class="mini-task"><code>4.3</code><div><b>브랜딩 맥락 자동 연결</b><span>브랜드·시리즈·비디오 연결</span></div></div>
+            <div class="mini-task"><code>5.3</code><div><b>MOA 교차 검증</b><span>다중 모델 비교</span></div></div>
+            <div class="mini-task"><code>6.2</code><div><b>품질 평가 레이어</b><span>사람 기준 평가표</span></div></div>
+            <div class="mini-task"><code>8.2</code><div><b>멀티모달 입력</b><span>이미지·영상 맥락 입력</span></div></div>
+          </article>
+          <article class="wbs-lane lane-later"><h3>후순위 <small>Later</small></h3>
+            <div class="mini-task"><code>8.3</code><div><b>PDF/PPT 산출</b><span>자동 문서 생성 검토</span></div></div>
+            <div class="mini-task"><code>8.4</code><div><b>AI 영상 자동화</b><span>대본 기반 영상 워크플로우</span></div></div>
+            <div class="mini-task"><code>Next</code><div><b>확장 원칙</b><span>무리한 기능 추가보다 첫 루프 안정화 우선</span></div></div>
+          </article>
         </div>
       </div>
     </section>
@@ -185,18 +158,13 @@
     const slides = Array.from(document.querySelectorAll('.slide'));
     const navLinks = Array.from(document.querySelectorAll('nav a'));
     let currentIndex = Math.max(0, slides.findIndex((slide) => '#' + slide.id === window.location.hash));
-
     function setSlide(index, pushHash = true) {
       currentIndex = Math.max(0, Math.min(slides.length - 1, index));
       slides.forEach((slide, i) => slide.classList.toggle('active', i === currentIndex));
       const activeId = slides[currentIndex].id;
       navLinks.forEach((link) => link.classList.toggle('active', link.getAttribute('href') === '#' + activeId || (activeId === 'cover' && link.getAttribute('href') === '#top')));
-      if (pushHash) {
-        const hash = activeId === 'cover' ? '#top' : '#' + activeId;
-        history.replaceState(null, '', hash);
-      }
+      if (pushHash) history.replaceState(null, '', activeId === 'cover' ? '#top' : '#' + activeId);
     }
-
     navLinks.forEach((link) => {
       link.addEventListener('click', (event) => {
         event.preventDefault();
@@ -206,20 +174,12 @@
         if (targetIndex >= 0) setSlide(targetIndex);
       });
     });
-
     window.addEventListener('keydown', (event) => {
       const tag = document.activeElement.tagName.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
-      if (event.key === 'ArrowRight' || event.code === 'Space' || event.key === 'PageDown') {
-        event.preventDefault();
-        setSlide(currentIndex + 1);
-      }
-      if (event.key === 'ArrowLeft' || event.key === 'PageUp' || (event.shiftKey && event.code === 'Space')) {
-        event.preventDefault();
-        setSlide(currentIndex - 1);
-      }
+      if (event.key === 'ArrowRight' || event.code === 'Space' || event.key === 'PageDown') { event.preventDefault(); setSlide(currentIndex + 1); }
+      if (event.key === 'ArrowLeft' || event.key === 'PageUp' || (event.shiftKey && event.code === 'Space')) { event.preventDefault(); setSlide(currentIndex - 1); }
     });
-
     setSlide(currentIndex, false);
   </script>
 </body>
