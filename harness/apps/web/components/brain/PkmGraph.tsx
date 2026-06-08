@@ -1,24 +1,24 @@
 "use client";
 
 /**
- * Phase 19 Slice S3 — 데스크톱 전용 PKM 노드 그래프 (react-flow / @xyflow/react).
+ * Phase 19 S3 → Phase 29 B1 — 데스크톱 전용 PKM **동적 force 그래프** (react-flow + d3-force).
  *
  * `/brain` 데스크톱 경로에서만 lazy-load 되는 읽기 중심 그래프 뷰.
  *   - S2 카드/리스트(모바일)와 **동일한** getPkmGraph 데이터(`{nodes, edges}`)를 소비 — 추가 fetch 0.
  *   - 큐레이션(잠금/편집/삭제)은 카드 뷰에 유지 — 그래프는 구조 파악(읽기)에 집중.
  *
- * 레이아웃(자체 좌표 — dagre 등 추가 의존성 없이):
- *   user 노드를 중심(0,0)에 두고, owns 엣지로 연결된 brand 노드를 user 우측 컬럼에 세로 배치.
- *   각 brand 의 has_brand_pkm leaf 는 그 brand 우측에 세로로 펼친다(brand 별 leaf 블록).
- *   user 의 has_personal leaf(개인 PKM)는 user 좌측 컬럼에 세로 배치.
- *   엣지로 연결되지 않은 잔여 노드(방어적)는 맨 아래 줄에 흘려 배치.
+ * ★ Phase 29 B1 (동적화): 기존 고정 계층(user→brand→leaf 컬럼) 좌표를 **d3-force 물리
+ *   시뮬레이션**으로 교체 → 유기적(Obsidian 풍) force-directed 배치. 노드 드래그 + 타입 필터 칩 추가.
+ *   - 레이아웃은 전체 그래프에 대해 **1회 settle**(deterministic, 동기 tick) → 좌표 안정.
+ *     필터 토글은 노드를 숨길 뿐 생존 노드를 **재배치하지 않는다**(안정 UX + 재계산 0).
+ *   - 동기 settle + 명시 width/height → headless/preview(ResizeObserver 부재)에서도 엣지/fitView 결정적.
+ *   - 노드 드래그: nodesDraggable + onNodeschange(applyNodeChanges) 로 위치 변경 반영(snap-back 없음).
  *
  * 스타일(design.md / tokens.md 토큰값 — globals.css :root 와 동일 hex):
  *   user  = 루트 강조 (primary 채움, 흰 텍스트)
  *   brand = 허브 (surface + primary 보더, 굵게)
  *   pkm   = leaf (scope 별 보더색: personal=accent / brand=primary, locked 시 🔒 prefix)
- *
- * react-flow Controls(pan/zoom/fit) + fitView. nodesDraggable=false(읽기 전용 안정).
+ *   domain/series/source = 4계층·출처 (Phase 21)
  *
  * 참조:
  *   - apps/web/app/brain/page.tsx (S2 카드/리스트 + S4 큐레이션, getPkmGraph 보유)
@@ -26,15 +26,27 @@
  *   - apps/web/design.md §18 (색/토큰), §16-17 (데스크톱 레이아웃)
  */
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  applyNodeChanges,
   Background,
   Controls,
   Position,
   ReactFlow,
   type Edge,
   type Node,
+  type NodeChange,
 } from "@xyflow/react";
+import {
+  forceCollide,
+  forceLink,
+  forceManyBody,
+  forceSimulation,
+  forceX,
+  forceY,
+  type SimulationLinkDatum,
+  type SimulationNodeDatum,
+} from "d3-force";
 
 import "@xyflow/react/dist/style.css";
 
@@ -54,191 +66,152 @@ const TOKEN = {
   borderDefault: "#E5E5E5",
 } as const;
 
-// ── 자체 좌표 레이아웃 상수 ─────────────────────────────────────────────
-const COL_USER_X = 0; // user 중심 컬럼
-const COL_BRAND_X = 320; // brand 허브 컬럼 (user 우측)
-const COL_BRAND_LEAF_X = 640; // brand 의 pkm leaf 컬럼
-const COL_PERSONAL_X = -320; // 개인 pkm leaf 컬럼 (user 좌측)
-const ROW_GAP = 90; // 세로 간격
-const LEAF_ROW_GAP = 72; // leaf 세로 간격
-
 // 노드 고정 치수 — ★ react-flow v12 는 ResizeObserver 로 노드를 비동기 측정해야 엣지/fitView 가
 // 그려진다. headless/preview/SSR 등 ResizeObserver 가 안 도는 환경에선 노드만 뜨고 엣지·fitView 가
 // 누락된다. width/height 를 명시하면 측정 의존 없이 결정적으로 엣지+fitView 동작(실 브라우저 동일).
-const NODE_W = 200;
-const NODE_H = 44;
+const NODE_W = 188;
+const NODE_H = 42;
+
+// ── d3-force 파라미터 ─────────────────────────────────────────────────
+// 엣지 종류별 이상 거리 — owns(user↔brand) 는 멀게(허브 분리), leaf 는 가깝게(클러스터).
+const LINK_DIST: Record<string, number> = {
+  owns: 190,
+  has_domain: 150,
+  has_series: 130,
+  has_brand_pkm: 96,
+  has_personal: 96,
+  sourced_from: 84,
+};
+const SETTLE_TICKS = 420; // 동기 settle 반복 (결정적 — 라이브 tick 없이 안정 좌표).
 
 interface PkmGraphProps {
   nodes: PkmGraphNode[];
   edges: PkmGraphEdge[];
 }
 
+// ── 필터 그룹 (타입/scope → 사람이 읽는 묶음) ──────────────────────────
+type FilterGroup = "personal" | "brand" | "structure" | "source";
+
+const FILTER_META: ReadonlyArray<{
+  key: FilterGroup;
+  label: string;
+  color: string;
+}> = [
+  { key: "personal", label: "개인", color: TOKEN.accent },
+  { key: "brand", label: "브랜드", color: TOKEN.primary },
+  { key: "structure", label: "구조", color: TOKEN.accent },
+  { key: "source", label: "출처·영상", color: TOKEN.textMuted },
+];
+
+/** 노드를 필터 그룹으로 분류. user 는 루트라 항상 보임(그룹 없음 → null). */
+function nodeGroup(n: PkmGraphNode): FilterGroup | null {
+  if (n.type === "user") return null;
+  if (n.type === "brand") return "brand";
+  if (n.type === "domain" || n.type === "series") return "structure";
+  if (n.type === "source" || n.type === "video") return "source";
+  // pkm leaf — scope 로 개인/브랜드 구분.
+  return n.scope === "personal" ? "personal" : "brand";
+}
+
+// ── force 레이아웃 (전체 그래프 1회 settle, 결정적) ─────────────────────
+interface SimNode extends SimulationNodeDatum {
+  id: string;
+}
+
 /**
- * getPkmGraph 결과를 react-flow Node[] / Edge[] 로 변환 + 자체 좌표 배치.
- * 순수 함수 — useMemo 로 nodes/edges 가 바뀔 때만 재계산.
+ * 전체 그래프에 d3-force 를 동기 적용해 노드별 좌표 Map 을 만든다.
+ * 초기 좌표는 golden-angle 나선(결정적) → 매 settle 이 유사 배치로 수렴(안정 UX).
+ * 순수 함수 — useMemo 로 (nodes, edges) 가 바뀔 때만 재계산.
  */
-function toFlow(
+function computeForceLayout(
   graphNodes: PkmGraphNode[],
   graphEdges: PkmGraphEdge[],
-): { flowNodes: Node[]; flowEdges: Edge[] } {
-  const byId = new Map<string, PkmGraphNode>();
-  for (const n of graphNodes) byId.set(n.id, n);
-
-  // 관계 인덱싱.
-  const brandIds: string[] = [];
-  const personalIds: string[] = [];
-  const brandLeafIds = new Map<string, string[]>(); // brandId → pkm leaf ids
-  let userId: string | null = null;
-
-  for (const n of graphNodes) {
-    if (n.type === "user") userId = userId ?? n.id;
-  }
-  for (const e of graphEdges) {
-    if (e.kind === "owns" && byId.get(e.target)?.type === "brand") {
-      brandIds.push(e.target);
-      if (!brandLeafIds.has(e.target)) brandLeafIds.set(e.target, []);
-    } else if (
-      e.kind === "has_personal" &&
-      byId.get(e.target)?.type === "pkm"
-    ) {
-      personalIds.push(e.target);
-    } else if (
-      e.kind === "has_brand_pkm" &&
-      byId.get(e.source)?.type === "brand" &&
-      byId.get(e.target)?.type === "pkm"
-    ) {
-      const bucket = brandLeafIds.get(e.source) ?? [];
-      bucket.push(e.target);
-      brandLeafIds.set(e.source, bucket);
-    }
-  }
-
-  const placed = new Set<string>();
-  const positions = new Map<string, { x: number; y: number }>();
-
-  // brand 컬럼 + 각 brand 의 leaf 블록 높이를 고려해 세로 중심 정렬.
-  // 각 brand block 의 높이 = max(1, leaf 수) 행. 누적 y 로 쌓는다.
-  let brandCursorY = 0;
-  const brandBlockCenters: number[] = [];
-  for (const bId of brandIds) {
-    const leaves = brandLeafIds.get(bId) ?? [];
-    const rows = Math.max(1, leaves.length);
-    const blockTop = brandCursorY;
-    const blockHeight = (rows - 1) * LEAF_ROW_GAP;
-    const blockCenter = blockTop + blockHeight / 2;
-    brandBlockCenters.push(blockCenter);
-
-    positions.set(bId, { x: COL_BRAND_X, y: blockCenter });
-    placed.add(bId);
-
-    leaves.forEach((leafId, i) => {
-      positions.set(leafId, {
-        x: COL_BRAND_LEAF_X,
-        y: blockTop + i * LEAF_ROW_GAP,
-      });
-      placed.add(leafId);
-    });
-
-    brandCursorY = blockTop + blockHeight + ROW_GAP;
-  }
-
-  // user 는 brand 블록 전체의 세로 중심에 배치 (brand 없으면 0).
-  const userY =
-    brandBlockCenters.length > 0
-      ? brandBlockCenters.reduce((a, b) => a + b, 0) / brandBlockCenters.length
-      : 0;
-  if (userId) {
-    positions.set(userId, { x: COL_USER_X, y: userY });
-    placed.add(userId);
-  }
-
-  // 개인 pkm leaf 는 user 좌측에 user 중심 기준 세로로 펼친다.
-  const personalCount = personalIds.length;
-  const personalStartY = userY - ((personalCount - 1) * LEAF_ROW_GAP) / 2;
-  personalIds.forEach((pId, i) => {
-    positions.set(pId, {
-      x: COL_PERSONAL_X,
-      y: personalStartY + i * LEAF_ROW_GAP,
-    });
-    placed.add(pId);
+): Map<string, { x: number; y: number }> {
+  const GOLDEN = Math.PI * (3 - Math.sqrt(5)); // ≈2.39996 rad
+  const simNodes: SimNode[] = graphNodes.map((n, i) => {
+    const r = 26 * Math.sqrt(i + 1);
+    const a = i * GOLDEN;
+    return { id: n.id, x: r * Math.cos(a), y: r * Math.sin(a) };
   });
+  const idSet = new Set(simNodes.map((s) => s.id));
+  const links: SimulationLinkDatum<SimNode>[] = graphEdges
+    .filter((e) => idSet.has(e.source) && idSet.has(e.target))
+    .map((e) => ({ source: e.source, target: e.target, kind: e.kind }) as never);
 
-  // ── Phase 21: 4계층(domain/series) + 출처(source) 배치 — 있을 때만(graceful, 없으면 무변경) ──
-  //   domain(brand→domain, has_domain) / series(domain→series, has_series) / source(bm→source, sourced_from).
-  //   각 전용 컬럼에 세로 스택(데이터 희소 — 전역 스택으로 충분, 엣지가 부모와 시각 연결).
-  const COL_DOMAIN_X = 940;
-  const COL_SERIES_X = 1240;
-  const COL_SOURCE_X = 1540;
-  const depthCursor = { domain: 0, series: 0, source: 0 };
-  const depthPlan: ReadonlyArray<[PkmGraphEdge["kind"], PkmGraphNode["type"], number, keyof typeof depthCursor]> = [
-    ["has_domain", "domain", COL_DOMAIN_X, "domain"],
-    ["has_series", "series", COL_SERIES_X, "series"],
-    ["sourced_from", "source", COL_SOURCE_X, "source"],
-  ];
-  for (const [kind, type, x, cursorKey] of depthPlan) {
-    for (const e of graphEdges) {
-      if (e.kind !== kind) continue;
-      const tgt = byId.get(e.target);
-      if (!tgt || tgt.type !== type || placed.has(e.target)) continue;
-      positions.set(e.target, { x, y: depthCursor[cursorKey] });
-      depthCursor[cursorKey] += LEAF_ROW_GAP;
-      placed.add(e.target);
-    }
-  }
+  const sim = forceSimulation<SimNode>(simNodes)
+    .force("charge", forceManyBody().strength(-460))
+    .force(
+      "link",
+      forceLink<SimNode, SimulationLinkDatum<SimNode>>(links)
+        .id((d) => d.id)
+        .distance((l) => LINK_DIST[(l as { kind?: string }).kind ?? ""] ?? 120)
+        .strength(0.38),
+    )
+    .force("collide", forceCollide(74))
+    .force("x", forceX(0).strength(0.045))
+    .force("y", forceY(0).strength(0.045))
+    .stop();
 
-  // 방어적: 엣지 어디에도 안 걸린 잔여 노드(있으면)는 맨 아래 줄에 흘려 배치.
-  let strayCursorX = COL_PERSONAL_X;
-  const strayY = Math.max(brandCursorY, personalStartY + personalCount * LEAF_ROW_GAP) + ROW_GAP;
+  for (let i = 0; i < SETTLE_TICKS; i++) sim.tick();
+
+  const pos = new Map<string, { x: number; y: number }>();
+  for (const s of simNodes) pos.set(s.id, { x: s.x ?? 0, y: s.y ?? 0 });
+  return pos;
+}
+
+/** getPkmGraph → react-flow Node[]/Edge[] (필터 적용 + force 좌표 주입). */
+function buildFlow(
+  graphNodes: PkmGraphNode[],
+  graphEdges: PkmGraphEdge[],
+  positions: Map<string, { x: number; y: number }>,
+  enabled: Set<FilterGroup>,
+): { flowNodes: Node[]; flowEdges: Edge[] } {
+  const visible = new Set<string>();
   for (const n of graphNodes) {
-    if (placed.has(n.id)) continue;
-    positions.set(n.id, { x: strayCursorX, y: strayY });
-    placed.add(n.id);
-    strayCursorX += 260;
+    const g = nodeGroup(n);
+    if (g === null || enabled.has(g)) visible.add(n.id);
   }
 
-  const flowNodes: Node[] = graphNodes.map((n) => {
-    const pos = positions.get(n.id) ?? { x: 0, y: 0 };
-    return {
+  const flowNodes: Node[] = graphNodes
+    .filter((n) => visible.has(n.id))
+    .map((n) => ({
       id: n.id,
-      position: pos,
+      position: positions.get(n.id) ?? { x: 0, y: 0 },
       data: { label: nodeLabel(n) },
-      // ★ 명시적 측정값 — react-flow v12 가 비동기 측정을 기다리지 않고 즉시 엣지/fitView 계산.
       width: NODE_W,
       height: NODE_H,
       style: nodeStyle(n),
-      // 좌→우 흐름: user(중심) 기준 brand/leaf 는 우측, personal 은 좌측.
-      // 핸들 방향을 수평으로 두면 엣지가 자연스럽게 가로로 흐른다.
       sourcePosition: Position.Right,
       targetPosition: Position.Left,
-      draggable: false,
+      draggable: true,
       selectable: true,
-    };
-  });
+    }));
 
-  const flowEdges: Edge[] = graphEdges.map((e, i) => ({
-    id: `${e.source}->${e.target}:${e.kind}:${i}`,
-    source: e.source,
-    target: e.target,
-    // owns(user→brand) 강조, 4계층(has_domain/has_series) accent, 출처(sourced_from) 점선, leaf 옅게.
-    style: {
-      stroke:
-        e.kind === "owns"
-          ? TOKEN.primary
-          : e.kind === "has_domain" || e.kind === "has_series"
-            ? TOKEN.accent
-            : TOKEN.borderDefault,
-      strokeWidth: e.kind === "owns" ? 2 : 1.5,
-      strokeDasharray: e.kind === "sourced_from" ? "4 3" : undefined,
-    },
-    animated: false,
-  }));
+  const flowEdges: Edge[] = graphEdges
+    .filter((e) => visible.has(e.source) && visible.has(e.target))
+    .map((e, i) => ({
+      id: `${e.source}->${e.target}:${e.kind}:${i}`,
+      source: e.source,
+      target: e.target,
+      style: {
+        stroke:
+          e.kind === "owns"
+            ? TOKEN.primary
+            : e.kind === "has_domain" || e.kind === "has_series"
+              ? TOKEN.accent
+              : TOKEN.borderDefault,
+        strokeWidth: e.kind === "owns" ? 2 : 1.5,
+        strokeDasharray: e.kind === "sourced_from" ? "4 3" : undefined,
+      },
+      animated: false,
+    }));
 
   return { flowNodes, flowEdges };
 }
 
 /** locked 면 🔒 prefix. 너무 길면 잘라 노드 가독성 유지. */
 function nodeLabel(n: PkmGraphNode): string {
-  const base = n.label.length > 28 ? `${n.label.slice(0, 27)}…` : n.label;
+  const base = n.label.length > 26 ? `${n.label.slice(0, 25)}…` : n.label;
   return n.locked ? `🔒 ${base}` : base;
 }
 
@@ -250,7 +223,6 @@ function nodeStyle(n: PkmGraphNode): React.CSSProperties {
     fontSize: 12,
     fontWeight: 600,
     textAlign: "center",
-    // 고정 치수(NODE_W/H 와 일치) + 1줄 말줄임 — 측정 비의존 + 가독성.
     width: NODE_W,
     height: NODE_H,
     boxSizing: "border-box",
@@ -279,7 +251,6 @@ function nodeStyle(n: PkmGraphNode): React.CSSProperties {
       border: `2px solid ${TOKEN.primary}`,
     };
   }
-  // Phase 21: 4계층(domain/series) + 출처(source) 노드 스타일.
   if (n.type === "domain") {
     return {
       ...common,
@@ -297,7 +268,7 @@ function nodeStyle(n: PkmGraphNode): React.CSSProperties {
       border: `1.5px solid ${TOKEN.accent}`,
     };
   }
-  if (n.type === "source") {
+  if (n.type === "source" || n.type === "video") {
     return {
       ...common,
       background: TOKEN.surface,
@@ -319,27 +290,104 @@ function nodeStyle(n: PkmGraphNode): React.CSSProperties {
 }
 
 /**
- * 데스크톱 PKM 그래프. 부모(/brain page)가 데스크톱일 때만 dynamic import → 렌더한다.
+ * 데스크톱 PKM 동적 force 그래프. 부모(/brain page)가 데스크톱일 때만 dynamic import → 렌더.
  * 높이는 부모 컨테이너에 맞춤(부모가 명시적 높이를 줌).
  */
 export default function PkmGraph({ nodes, edges }: PkmGraphProps) {
-  const { flowNodes, flowEdges } = useMemo(
-    () => toFlow(nodes, edges),
+  // 전체 그래프 force 좌표 — (nodes, edges) 가 바뀔 때만 재계산(필터엔 불변 → 안정).
+  const positions = useMemo(
+    () => computeForceLayout(nodes, edges),
     [nodes, edges],
   );
 
+  // 필터: 기본 전체 ON. user 루트는 항상 표시.
+  const [enabled, setEnabled] = useState<Set<FilterGroup>>(
+    () => new Set<FilterGroup>(FILTER_META.map((f) => f.key)),
+  );
+
+  // 그룹별 노드 수(칩 라벨 표시 + 0개 그룹 비활성).
+  const counts = useMemo(() => {
+    const c: Record<FilterGroup, number> = {
+      personal: 0,
+      brand: 0,
+      structure: 0,
+      source: 0,
+    };
+    for (const n of nodes) {
+      const g = nodeGroup(n);
+      if (g) c[g] += 1;
+    }
+    return c;
+  }, [nodes]);
+
+  const built = useMemo(
+    () => buildFlow(nodes, edges, positions, enabled),
+    [nodes, edges, positions, enabled],
+  );
+
+  // 드래그 위치 변경을 반영하기 위해 노드는 state 로 관리(필터/데이터 변경 시 재설정).
+  const [rfNodes, setRfNodes] = useState<Node[]>(built.flowNodes);
+  useEffect(() => {
+    setRfNodes(built.flowNodes);
+  }, [built.flowNodes]);
+
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => setRfNodes((nds) => applyNodeChanges(changes, nds)),
+    [],
+  );
+
+  const toggle = useCallback((key: FilterGroup) => {
+    setEnabled((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
   return (
     <div
-      className="w-full h-full rounded-lg border border-border-default bg-surface"
+      className="relative w-full h-full rounded-lg border border-border-default bg-surface"
       role="img"
-      aria-label="내 2nd brain 노드 그래프 (사용자·브랜드·PKM 관계도)"
+      aria-label="내 2nd brain 동적 노드 그래프 (사용자·브랜드·PKM 관계도, 드래그·필터 가능)"
     >
+      {/* 필터 칩 — 좌상단 오버레이. 그룹 토글로 노드 숨김(생존 노드 재배치 없음). */}
+      <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
+        {FILTER_META.map((f) => {
+          const on = enabled.has(f.key);
+          const n = counts[f.key];
+          return (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => toggle(f.key)}
+              disabled={n === 0}
+              aria-pressed={on}
+              className={[
+                "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors duration-fast",
+                "disabled:opacity-40 disabled:cursor-not-allowed",
+                on
+                  ? "border-border-default bg-surface text-text-default shadow-sm"
+                  : "border-border-default bg-bg-subtle text-text-muted line-through",
+              ].join(" ")}
+            >
+              <span
+                className="inline-block h-2 w-2 rounded-full"
+                style={{ background: f.color, opacity: on ? 1 : 0.35 }}
+              />
+              {f.label}
+              <span className="text-text-muted">{n}</span>
+            </button>
+          );
+        })}
+      </div>
+
       <ReactFlow
-        nodes={flowNodes}
-        edges={flowEdges}
+        nodes={rfNodes}
+        edges={built.flowEdges}
+        onNodesChange={onNodesChange}
         fitView
         fitViewOptions={{ padding: 0.2 }}
-        nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable
         proOptions={{ hideAttribution: true }}
