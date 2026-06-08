@@ -30,6 +30,12 @@ class PlanStartRequest(BaseModel):
         description="optional initial prompt",
     )
     locale: str = Field(default="ko-KR")
+    # Phase 29 A — 멀티모달 레퍼런스(이미지) base64 data URL 목록. 미첨부 시 None=기존 동일.
+    images: list[str] | None = Field(
+        default=None,
+        max_length=4,
+        description="첨부 레퍼런스 이미지 (data URL, 최대 4장). 생성 시 비전 분석에 사용.",
+    )
 
 
 class PlanStartResponse(BaseModel):

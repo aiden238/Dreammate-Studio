@@ -17,7 +17,7 @@
  * Discovery Wizard, Quick Mode 는 Phase 3 에서 추가.
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -63,6 +63,35 @@ export default function HomePage() {
   const [stepperState, setStepperState] = useState<StepperState>("idle");
   const [displayError, setDisplayError] = useState<DisplayError | null>(null);
   const [inputWarning, setInputWarning] = useState<string | null>(null);
+  // Phase 29 A — 멀티모달 레퍼런스(이미지) 첨부 (base64 data URL, 최대 4장).
+  const [images, setImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  function handleFiles(files: FileList | null) {
+    if (!files) return;
+    const room = 4 - images.length;
+    Array.from(files)
+      .slice(0, Math.max(0, room))
+      .forEach((f) => {
+        if (!f.type.startsWith("image/")) return;
+        if (f.size > 5 * 1024 * 1024) {
+          setInputWarning("이미지는 5MB 이하만 첨부할 수 있어요.");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          const url = reader.result;
+          if (typeof url === "string") {
+            setImages((prev) => (prev.length >= 4 ? prev : [...prev, url]));
+          }
+        };
+        reader.readAsDataURL(f);
+      });
+  }
+
+  function removeImage(i: number) {
+    setImages((prev) => prev.filter((_, idx) => idx !== i));
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -82,7 +111,11 @@ export default function HomePage() {
       //   /plan/[id] 가 generateMultiPlan(credentials 포함=auth) + 영속(plans) + 피드백 UI 를 제공
       //   → 어느 경로로 써도 저장되고 피드백→학습(PKM)으로 이어진다(2nd brain 루프).
       //   (기존 레거시 /generate 단발 = 저장 실패 + 학습 미연결 막다른 길 제거.)
-      const { plan_id } = await startPlan(trimmed, "ko-KR");
+      const { plan_id } = await startPlan(
+        trimmed,
+        "ko-KR",
+        images.length > 0 ? images : undefined, // Phase 29 A — 첨부 레퍼런스 전달
+      );
       setStepperState("complete");
       router.push(`/plan/${plan_id}`);
       return;
@@ -169,20 +202,54 @@ export default function HomePage() {
             disabled={isLoading}
             className="w-full resize-none rounded-2xl border-0 bg-transparent px-4 pt-4 pb-1 text-base text-neutral-900 placeholder-neutral-400 leading-relaxed outline-none disabled:text-neutral-500"
           />
+          {images.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-3 pb-1">
+              {images.map((src, i) => (
+                <div key={i} className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={`레퍼런스 ${i + 1}`}
+                    className="h-14 w-14 rounded-md border border-neutral-200 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    aria-label={`레퍼런스 ${i + 1} 제거`}
+                    className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-neutral-800 text-[10px] leading-none text-white"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex items-center justify-between px-3 pb-2.5 pt-1">
             <button
               type="button"
-              disabled
-              aria-disabled="true"
-              title="레퍼런스 이미지·영상 첨부 (곧 지원)"
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-neutral-400 cursor-not-allowed"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading || images.length >= 4}
+              title="레퍼런스 이미지 첨부 (무드보드·참고 영상 캡처 등, 최대 4장)"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-neutral-500 transition-colors hover:bg-primary-50 hover:text-primary-600 disabled:cursor-not-allowed disabled:text-neutral-300"
             >
-              <span aria-hidden>📎</span> 레퍼런스 첨부 (곧)
+              <span aria-hidden>📎</span> 레퍼런스 첨부
+              {images.length > 0 ? ` (${images.length}/4)` : ""}
             </button>
             <span aria-live="polite" className="text-xs text-neutral-400">
               {input.length} / {MAX_INPUT_LENGTH}
             </span>
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              handleFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
         </div>
 
         {inputWarning && (

@@ -275,6 +275,7 @@ async def generate_plan(
     brands_resolver: Any | None = None,
     brand_repo: Any | None = None,
     pkm_repo: Any | None = None,
+    images: list[str] | None = None,
 ) -> Envelope | JSONResponse:
     """MOA orchestration — Intent → RAG → 3-plan parallel → Critic+revise → DB save → Envelope.
 
@@ -420,6 +421,40 @@ async def generate_plan(
             logger.exception(
                 "personal PKM 주입 실패 (graceful — user_input 무변경) plan_id=%s", plan_id,
             )
+
+    # ★ Phase 29 A — 첨부 레퍼런스(이미지) 분석 → ① 요약 user_input 프리펜드(생성 반영, A1)
+    #   ② 키워드 → 개인 PKM 적재(업로드가 brain 학습, A2). 전부 graceful — 분석 실패가 흐름 차단 X.
+    #   이미지 미첨부(images 없음) → 호출 0 = 기존 동작 byte-identical(additive).
+    if images:
+        try:
+            from ..agents.vision_analyzer import analyze_references
+
+            analysis = analyze_references(images)
+            summary = analysis.get("summary") or ""
+            if summary:
+                user_input = f"[첨부 레퍼런스 분석]\n{summary}\n\n" + user_input
+                logger.info(
+                    "generate_plan reference_injected plan_id=%s images=%d", plan_id, len(images)
+                )
+            # A2: 키워드 → 개인 PKM (gated + authed). consolidate_entry(강화/dedup/노이즈 필터).
+            kws = analysis.get("keywords") or []
+            if kws and auth_user_id and getattr(settings, "personal_pkm_extract_enabled", False):
+                from ..db import PkmRepo, get_supabase
+
+                _repo = pkm_repo if pkm_repo is not None else PkmRepo(supabase_client=get_supabase())
+                for kw in kws:
+                    try:
+                        await _repo.consolidate_entry(
+                            auth_user_id, kw["entry_type"], kw["content"],
+                            scope="personal", confidence=0.9, source_plan_id=plan_id,
+                        )
+                    except Exception:  # pragma: no cover — graceful
+                        pass
+                logger.info(
+                    "generate_plan reference_keywords_to_pkm plan_id=%s count=%d", plan_id, len(kws)
+                )
+        except Exception:  # pragma: no cover — graceful (분석 실패는 생성 차단 X)
+            logger.warning("reference 분석 실패 (graceful) plan_id=%s", plan_id)
 
     # 1. Intent ──────────────────────────────────────────────────────
     progress.emit("intent", step=1, message="의도 분석 중...")

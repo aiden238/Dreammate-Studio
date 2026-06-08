@@ -210,6 +210,7 @@ def plans_start(req: PlanStartRequest) -> PlanStartResponse:
         "updated_at": now,
         "locale": req.locale,
         "initial_input": req.user_input,
+        "images": req.images or [],  # Phase 29 A — 멀티모달 레퍼런스(이미지).
         "wizard_data": {},
         "envelope": None,
     }
@@ -311,6 +312,7 @@ async def plans_generate(plan_id: str, req: GenerateRequest, request: Request):
         plan_id, plan_entry, req,
         progress=StoreProgressSink(plan_id),
         auth_user_id=_auth_user_id(request),
+        images=plan_entry.get("images"),  # Phase 29 A — 첨부 레퍼런스(이미지) 멀티모달.
     )
     # Phase 15 S3 (gated 직렬화 분기 — live POST):
     #   ★ 성공 Envelope 은 항상 generate_plan 이 plan_entry["envelope"] 에 저장한 **mode 별 직렬화 dict**

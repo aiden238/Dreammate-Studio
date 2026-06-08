@@ -246,6 +246,7 @@ export type GenerateMultiPlanResult =
 export async function startPlan(
   initialInput?: string,
   locale: string = "ko-KR",
+  images?: string[], // Phase 29 A — 멀티모달 레퍼런스(data URL, 최대 4장)
 ): Promise<PlanStartResponse> {
   const url = `${API_BASE_URL}/api/v1/plans/start`;
   const response = await fetch(url, {
@@ -254,7 +255,11 @@ export async function startPlan(
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify({ user_input: initialInput, locale }),
+    body: JSON.stringify({
+      user_input: initialInput,
+      locale,
+      ...(images && images.length > 0 ? { images } : {}),
+    }),
   });
   if (!response.ok) {
     throw new Error(`startPlan failed: HTTP ${response.status}`);
