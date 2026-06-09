@@ -15,11 +15,50 @@ from typing import Any, Optional
 logger = logging.getLogger(__name__)
 
 
+async def _embed_gemini(
+    text: str, *, task_type: str = "RETRIEVAL_QUERY"
+) -> Optional[list[float]]:
+    """gemini-embedding-2 임베딩 (httpx REST, taskType 비대칭). graceful None.
+
+    A9 측정: ko 숏폼에서 OpenAI 압도(0.7 통과). ★ 임베딩만 Gemini, 생성은 GPT 계열(분리).
+    문서=RETRIEVAL_DOCUMENT, 쿼리=RETRIEVAL_QUERY 비대칭 최적화.
+    """
+    from ..config import get_settings
+
+    s = get_settings()
+    key = getattr(s, "google_api_key", "") or ""
+    if not key:
+        logger.warning("embedding_failed: google_api_key 미설정 (graceful)")
+        return None
+    model = getattr(s, "rag_embedding_gemini_model", "gemini-embedding-2")
+    dim = int(getattr(s, "rag_embedding_dim", 1536))
+    try:
+        import httpx
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:embedContent"
+        body = {
+            "content": {"parts": [{"text": text}]},
+            "outputDimensionality": dim,
+            "taskType": task_type,
+        }
+        async with httpx.AsyncClient(timeout=40) as c:
+            r = await c.post(url, params={"key": key}, json=body)
+        if r.status_code != 200:
+            logger.warning("embedding_failed: gemini %s (graceful)", r.status_code)
+            return None
+        vals = r.json().get("embedding", {}).get("values")
+        return vals if isinstance(vals, list) else None
+    except Exception as exc:
+        logger.warning("embedding_failed: gemini %s (graceful)", exc.__class__.__name__)
+        return None
+
+
 async def embed(
     text: str,
     *,
     model: str = "text-embedding-3-small",
     client: Any | None = None,
+    task_type: str = "RETRIEVAL_QUERY",
 ) -> Optional[list[float]]:
     """OpenAI embedding API → 1536 dim float list.
 
@@ -39,6 +78,19 @@ async def embed(
     """
     if not text or not text.strip():
         return None
+
+    # Phase 27 A9: RAG 임베딩 provider 분기 (gated, default openai). client 주입(테스트 mock)이면
+    #   provider 무시 → openai 경로(behavior-preserving). provider=gemini 면 gemini 경로 반환
+    #   (openai 폴백 금지 — 임베딩 공간 불일치 방지).
+    if client is None:
+        try:
+            from ..config import get_settings
+
+            _provider = getattr(get_settings(), "rag_embedding_provider", "openai")
+        except Exception:
+            _provider = "openai"
+        if _provider == "gemini":
+            return await _embed_gemini(text, task_type=task_type)
 
     if client is None:
         try:

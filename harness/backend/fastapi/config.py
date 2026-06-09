@@ -196,6 +196,17 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── HIP-006 S3 (2026-06-05) — agent_io 텔레메트리 DB 적재 승격 (additive, gated default-off) ─
+    # JSONL(agent_io_log_enabled)과 별개 sub-flag. ON + Supabase 시 agent_io_logs 테이블에도 적재.
+    # ★ JSONL 은 인프라 0(로컬 파일) — 본 flag 는 Supabase DB 적재 옵션(서버 배포 아님, Supabase 만 필요).
+    agent_io_log_to_db: bool = Field(
+        default=False,
+        description=(
+            "HIP-006 텔레메트리 Supabase agent_io_logs 적재 on/off. ★ gated default-off — "
+            "False 면 JSONL 만(인프라 0). True + Supabase 설정 시 DB 적재(graceful). 환경변수 AGENT_IO_LOG_TO_DB."
+        ),
+    )
+
     # ─── Phase 11 A안 Slice 2 — cross-validation 게이트 + Gemini 튜닝 (additive) ─
     # ★ behavior-preserving / gated default-off: cross_validation_enabled=False →
     #   호출측(orchestrator 등)에서 교차검증 skip. 본 Slice 는 모듈만 추가 — 자동
@@ -455,6 +466,19 @@ class Settings(BaseSettings):
             "(Phase 21+ Custom embedding 교체 시 사용)."
         ),
     )
+    # ─── Phase 27 A9 — RAG 임베딩 provider (gated, default openai = byte-identical) ───
+    rag_embedding_provider: Literal["openai", "gemini"] = Field(
+        default="openai",
+        description=(
+            "RAG 임베딩 provider. default 'openai'(text-embedding-3-small)=기존 동작. "
+            "'gemini'(gemini-embedding-2 @1536, taskType 비대칭)=A9 측정상 ko 압도(0.7 통과). "
+            "★ 임베딩만 Gemini, 생성은 GPT 계열(분리). 환경변수 RAG_EMBEDDING_PROVIDER."
+        ),
+    )
+    rag_embedding_gemini_model: str = Field(
+        default="gemini-embedding-2",
+        description="Gemini 임베딩 모델(provider=gemini 시). outputDimensionality=rag_embedding_dim(1536).",
+    )
     rag_embedding_dim: int = Field(
         default=1536,
         description=(
@@ -541,6 +565,10 @@ class Settings(BaseSettings):
             "personal_pkm_extract_enabled",
             "branding_pkm_seed_enabled",
             "concept_surfacing_enabled",
+            # Phase 27 A8 (측정 접지선): 실사용 시 agent_io 텔레메트리 기록 ON →
+            #   cost_report.py(소비)가 실제 데이터를 집계. 코드 default 는 여전히 False
+            #   (default 프로파일 byte-identical 유지) — realuse env 에서만 활성.
+            "agent_io_log_enabled",
         )
         explicit = self.model_fields_set
         # output tier: 사용자 결정 director (명시 OUTPUT_MODE 가 있으면 존중).

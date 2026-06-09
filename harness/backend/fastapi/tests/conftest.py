@@ -33,18 +33,42 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from backend.fastapi.db.types import PersistenceResult
-from backend.fastapi.rag.types import RAGReference, RetrievalResult
+# ─── .env 격리 (hermeticity) — ★ 반드시 다른 backend 모듈 import 보다 먼저 ──────────────
+# pydantic-settings 의 Settings.model_config env_file=".env" 는 **CWD 상대** 경로다.
+# `cd backend/fastapi && pytest` 처럼 실 .env 가 있는 위치에서 돌리면 APP_PROFILE=realuse /
+# DATABASE_URL / SUPABASE_* / DEV_AUTH_MOCK 같은 실값이 Settings 로 새어들어, default-OFF/
+# compact 를 가정하는 테스트가 깨진다 (rootdir(harness/, .env 없음)에서는 깨끗 — 실행 위치에
+# 따라 결과가 갈리는 비격리 상태). 실행 위치·.env 내용과 무관하게 항상 동일한 hermetic 기준으로
+# 돌리기 위해, Settings 가 .env 파일을 읽지 않도록 env_file 을 None 으로 무력화한다.
+#   · os.environ / 명시 kwarg(Settings(app_profile=...), _env_file=None)는 그대로 존중된다
+#     → 개별 테스트의 monkeypatch.setenv / 명시 Settings(...) override 는 정상 동작.
+#   · ★ routers/plans.py·me.py 의 repo 싱글톤은 **import 시점**에 get_supabase() 로 Supabase
+#     client 를 잡는다(SUPABASE_* 실값이면 실 client → INSERT 실패 후 SELECT 가 빈 결과를 덮어
+#     쓰는 비격리 버그). 따라서 격리는 어떤 backend 모듈 import 보다도 먼저 적용돼야 한다.
+#     conftest 모듈 본문은 테스트 수집(test 모듈 import) 전에 실행되므로 여기서 1회 무력화한다.
+#   · behavior-preserving: 실 앱 프로세스는 conftest 를 import 하지 않는다 — 테스트 전용 격리.
+#     (config 모듈 import 자체는 client/settings 를 구성하지 않으므로 부수효과 없음.)
+from backend.fastapi.config import Settings as _Settings
+
+_Settings.model_config["env_file"] = None
+
+from backend.fastapi.db.types import PersistenceResult  # noqa: E402
+from backend.fastapi.rag.types import RAGReference, RetrievalResult  # noqa: E402
 
 
 # ─── 환경변수 강제 주입 ────────────────────────────────────────────────
 
 @pytest.fixture(autouse=True)
 def _env_setup(monkeypatch: pytest.MonkeyPatch) -> None:
-    """모든 테스트에 더미 OPENAI_API_KEY 주입.
+    """모든 테스트에 더미 OPENAI_API_KEY 주입 + settings lru_cache 재생성.
 
     실제 LLM 호출은 mock으로 차단되므로 키 자체는 사용되지 않는다.
-    """
+
+    ★ .env 격리(hermeticity)는 본 모듈 상단 ".env 격리" 블록에서 1회 무력화한다
+      (env_file=None). import 시점에 get_supabase()/get_settings() 를
+      호출하는 repo 싱글톤까지 커버하려면 어떤 backend 모듈 import 보다도 먼저 적용돼야 하기
+      때문이다. 본 fixture 는 per-test 환경변수 주입 + lru_cache 재생성만 담당한다 (각
+      테스트의 monkeypatch.setenv override 가 즉시 반영되도록)."""
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test-dummy")
     monkeypatch.setenv("APP_ENV", "development")
     # config.get_settings는 lru_cache이므로 cache 초기화 필요

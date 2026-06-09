@@ -1,0 +1,20 @@
+# CODEOWNERS — 프로젝트(런타임) ↔ 지침(하네스) 경계 가시화
+# 경계 정의: harness/BOUNDARIES.md, 정책: harness/meta/factory/factory_contract.md 규칙1
+# 솔로 운영(@aiden238)이라 소유자는 단일이지만, 본 파일의 가치는 PR에서 L1 런타임 변경을
+# 시각적으로 분리·표시해 "런타임 변경 vs 지침 변경"을 한눈에 구분하는 데 있다.
+
+# ─── 기본 ───
+*                                   @aiden238
+
+# ─── L1 — Product Runtime (결정론 코어 / 변경 시 가장 신중) ───
+/harness/backend/fastapi/           @aiden238
+/harness/apps/web/                  @aiden238
+/harness/packages/                  @aiden238
+/harness/backend/fastapi/db/migrations/   @aiden238
+
+# ─── L2 — 계약 (변경은 contract-change Skill 절차 필수) ───
+/harness/docs/contracts/            @aiden238
+/harness/.claude/skills/            @aiden238
+
+# ─── L2 — 메타-하네스 (proposal-first, L1 read-only) ───
+/harness/meta/factory/              @aiden238

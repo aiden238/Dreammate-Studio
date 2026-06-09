@@ -20,11 +20,13 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any
 
 from openai import OpenAI, OpenAIError
 
 from ..config import effective_output_mode, get_settings
+from ..observability.agent_io_log import log_agent_io, usage_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -425,6 +427,7 @@ def run_critic(
 
     logger.info("critic call start model=%s plan_id=%s", _model, target_plan_id)
 
+    _t0 = time.perf_counter()
     try:
         response = _client.chat.completions.create(
             model=_model,
@@ -509,6 +512,19 @@ def run_critic(
         "blocking_issues": blocking_issues,
         "revise_round": 0,  # Phase 1: 항상 0 (서버 관리)
     }
+
+    # ★ HIP-006 S3: 기본 경로(gateway 미경유) 텔레메트리 — gated default-off + graceful.
+    _in_tok, _out_tok = usage_tokens(getattr(response, "usage", None))
+    log_agent_io(
+        agent_name="critic",
+        prompt_id=PROMPT_ID,
+        prompt_version=PROMPT_VERSION,
+        model=_model,
+        input_tokens=_in_tok,
+        output_tokens=_out_tok,
+        latency_ms=int((time.perf_counter() - _t0) * 1000),
+        success=True,
+    )
 
     logger.info(
         "critic ok plan_id=%s avg=%.2f verdict=%s",

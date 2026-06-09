@@ -10,7 +10,8 @@
 
 from backend.fastapi.config import Settings, effective_output_mode
 
-# 실사용 프로파일이 ON 으로 켜는 7개 core-loop flag.
+# 실사용 프로파일이 ON 으로 켜는 9개 core-loop flag
+# (Phase 28 S3 concept_surfacing + Phase 27 A8 agent_io_log 측정 접지선 포함).
 _REALUSE_FLAGS = (
     "rich_output_enabled",
     "plans_repo_enabled",
@@ -19,6 +20,8 @@ _REALUSE_FLAGS = (
     "personal_pkm_injection_enabled",
     "personal_pkm_extract_enabled",
     "branding_pkm_seed_enabled",
+    "concept_surfacing_enabled",  # Phase 28 S3 — 컨셉 수렴(GET /me/concept)
+    "agent_io_log_enabled",  # A8 — 실사용 시 텔레메트리 기록(cost_report 소비)
 )
 
 

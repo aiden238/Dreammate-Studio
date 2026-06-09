@@ -1,5 +1,9 @@
 # meta/skill_usage_log.md
 
+> ★ Phase 27 A8 (측정 접지선): 본 파일의 수동 집계는 5/31 이후 stale였다. **자동 집계 소스 =
+>   `meta/skill_usage_report_generated.md`** (`scripts/skill_usage_report.py` 가 세션 트랜스크립트
+>   에서 deterministic 생성, INDEX 폐기/자동화 룰 적용). 폐기·자동화 판정은 그 리포트를 본다.
+>   본 파일은 서사/이력 보존용으로만 유지(자동 수집은 코드로 이관).
 > 🚧 Placeholder (Phase 0 진입 직후 생성. 첫 Skill 트리거부터 자동 누적 시작)
 
 ## 목적

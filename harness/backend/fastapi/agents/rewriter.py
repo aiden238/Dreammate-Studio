@@ -22,9 +22,12 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any
 
 from pydantic import BaseModel, Field
+
+from ..observability.agent_io_log import log_agent_io, usage_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -142,6 +145,7 @@ async def run_rewriter(
         critic_verdict.get("overall_verdict") or critic_verdict.get("action"),
     )
 
+    _t0 = time.perf_counter()
     try:
         completion = await client.chat.completions.create(
             model=model,
@@ -163,9 +167,30 @@ async def run_rewriter(
             if preserve_key in plan and preserve_key not in revised:
                 revised[preserve_key] = plan[preserve_key]
         revised.setdefault("_rewriter_model", model)
+        # ★ Phase 27 A8: 텔레메트리 (gated default-off + graceful).
+        _r_in, _r_out = usage_tokens(getattr(completion, "usage", None))
+        log_agent_io(
+            agent_name="rewriter",
+            prompt_id=PROMPT_ID,
+            prompt_version=PROMPT_VERSION,
+            model=model,
+            input_tokens=_r_in,
+            output_tokens=_r_out,
+            latency_ms=int((time.perf_counter() - _t0) * 1000),
+            success=True,
+        )
         return revised
     except Exception as exc:  # graceful — LLM 실패 시 원본 보존
         logger.warning("rewriter_failed: %s", exc.__class__.__name__, exc_info=exc)
+        log_agent_io(
+            agent_name="rewriter",
+            prompt_id=PROMPT_ID,
+            prompt_version=PROMPT_VERSION,
+            model=model,
+            latency_ms=int((time.perf_counter() - _t0) * 1000),
+            success=False,
+            error=type(exc).__name__,
+        )
         fallback = dict(plan)
         fallback["_rewriter_warning"] = f"rewriter_failed: {exc.__class__.__name__}"
         return fallback
