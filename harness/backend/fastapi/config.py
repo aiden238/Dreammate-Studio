@@ -451,6 +451,19 @@ class Settings(BaseSettings):
             "(Phase 21+ Custom embedding 교체 시 사용)."
         ),
     )
+    # ─── Phase 27 A9 — RAG 임베딩 provider (gated, default openai = byte-identical) ───
+    rag_embedding_provider: Literal["openai", "gemini"] = Field(
+        default="openai",
+        description=(
+            "RAG 임베딩 provider. default 'openai'(text-embedding-3-small)=기존 동작. "
+            "'gemini'(gemini-embedding-2 @1536, taskType 비대칭)=A9 측정상 ko 압도(0.7 통과). "
+            "★ 임베딩만 Gemini, 생성은 GPT 계열(분리). 환경변수 RAG_EMBEDDING_PROVIDER."
+        ),
+    )
+    rag_embedding_gemini_model: str = Field(
+        default="gemini-embedding-2",
+        description="Gemini 임베딩 모델(provider=gemini 시). outputDimensionality=rag_embedding_dim(1536).",
+    )
     rag_embedding_dim: int = Field(
         default=1536,
         description=(
@@ -523,6 +536,10 @@ class Settings(BaseSettings):
             "personal_pkm_injection_enabled",
             "personal_pkm_extract_enabled",
             "branding_pkm_seed_enabled",
+            # Phase 27 A8 (측정 접지선): 실사용 시 agent_io 텔레메트리 기록 ON →
+            #   cost_report.py(소비)가 실제 데이터를 집계. 코드 default 는 여전히 False
+            #   (default 프로파일 byte-identical 유지) — realuse env 에서만 활성.
+            "agent_io_log_enabled",
         )
         explicit = self.model_fields_set
         # output tier: 사용자 결정 director (명시 OUTPUT_MODE 가 있으면 존중).

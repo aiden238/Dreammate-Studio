@@ -686,3 +686,17 @@ v1.1.0 (2026-06-05): harness-audit 최초 완주(meta/audits/2026-06-05.md) 발 
                       핵심: 현실 접지선(텔레메트리/품질/도달성) + meta_factory reflexive 승격.
                       전부 검토 대기 (사용자 결정). HIP-003/004/005 결착 경로를 HIP-009/006에 연결.
 ```
+
+---
+
+## 2026-06-10 — harness-audit Phase 2 (상세: meta/audits/2026-06-10.md)
+
+PASS (critical 0 / high 0; stub 0 / instruction_index 0 / naming 0 drift). medium 4 proposal — proposal-first, contract-change/사용자 결정 대상:
+
+- **HIP-A: routes.yaml ↔ skill 이중라우팅 정리** — 2-track 명문화 또는 통합(routes.yaml 장식화 중). [contract-change + INDEX]
+- **HIP-B: default-off "죽은 게이트" 4 처리** (A7 audit) — `critic_calibration` 활성/측정(가치 高, 88점 함정) · `cross_validation` 의사결정 승격 or sunset(현 logging-only) · `multi_provider_plans` Claude-JSON robustness+provider 안정 선결(A11: 다양성 real but 취약) · `agent_io_log_to_db` 유지. [사용자 결정 + 측정]
+- **HIP-C: skill 통합·격하** (11실사용/6잠재/4dead) — eval(design+run)·rag(design+update) 통합 / phase-review·context-compact 격하 / **bug-triage 강제 게이트화**(버그가 절차 우회 중). [contract-change skill]
+- **HIP-D: 검토형 skill 산출물 drift** — security-review·design-review가 SKILL.md 의무 산출물 경로 비움 → 요구 완화 or 강제. [contract-change]
+- low: rag-update related `knowledge/candidate_knowledge/` = Supabase 테이블 → 경로 표기 정정.
+
+★ 자정작용(완료): `scripts/skill_usage_report.py`(A8, skill_usage 자동집계 졸업) + `BOUNDARIES.md`/`CODEOWNERS`/`check_boundaries.py`(경계 기계화) + (이전) cost_report.py.

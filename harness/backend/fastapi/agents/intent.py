@@ -17,11 +17,13 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any
 
 from openai import OpenAI, OpenAIError
 
 from ..config import get_settings
+from ..observability.agent_io_log import log_agent_io, usage_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +89,7 @@ def run_intent(
 
     logger.info("intent call start model=%s input_len=%d", _model, len(user_input))
 
+    _t0 = time.perf_counter()
     try:
         response = _client.chat.completions.create(
             model=_model,
@@ -112,6 +115,19 @@ def run_intent(
 
     if "intent_ok" not in parsed:
         raise ValueError("Intent LLM 응답에 intent_ok 필드 없음")
+
+    # ★ Phase 27 A8: 기본 경로 텔레메트리 (gated default-off + graceful).
+    _i_in, _i_out = usage_tokens(getattr(response, "usage", None))
+    log_agent_io(
+        agent_name="intent",
+        prompt_id=PROMPT_ID,
+        prompt_version=PROMPT_VERSION,
+        model=_model,
+        input_tokens=_i_in,
+        output_tokens=_i_out,
+        latency_ms=int((time.perf_counter() - _t0) * 1000),
+        success=True,
+    )
 
     return parsed
 

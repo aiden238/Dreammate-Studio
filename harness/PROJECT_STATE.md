@@ -8,6 +8,18 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 **🟢 최신 = Phase 26 4계층 video 노드 + 개인 PKM 출처 (기능마감 완결) ✅ done (2026-06-04, archive)** — 🅑 잔여 완결. ① **video 노드**: VideoProjectRepo 신규 + /me/videos CRUD(4-hop 소유검증) + 그래프 has_video → **User→Brand→Domain→Series→Video 전 계층** ② **개인 PKM 출처**: migration 0007(pkm_entries +source_plan_id) + 추출 훅 plan_id 기록 + 그래프 개인 PKM sourced_from(`_append_source_provenance` 공유 헬퍼, Phase 21 브랜드 PKM 재사용). S1(video)+S2(pkm source)+S3(frontend). ★ **video 라이브 PASS**(CRUD+has_video+summary.videos+미소유 404), 개인 출처=유닛 6 + 공유 헬퍼. additive/graceful(video 0/출처 없음 byte-identical). hermetic pytest 749→**779**(+30) + scenario_sim 36/36 + audit 0 + typecheck/lint. CC-033/034. **branch `phase-26-video-pkm-source` (main 머지 진행).** ★ **🅑 기능마감 완결** — /brain 4계층이 완전한 지식 구조(생성·편집·삭제·자동연결·출처추적·video). 이월: generate→video 자동연결 / 0007 운영 적용(NG11). **다음 = pending_user_decision.**
 > (과거 최신 경로: Phase 19 2nd brain → 20 commercial_viral → 21 4계층 깊이/출처 → 22 생성 → 23 품질 baseline → 24 편집·삭제 → 25 브랜딩 자동연결 → 26 video/개인출처. 전부 archive.)
 
+## 🟢🟢 최신 세션 (2026-06-09~10) — 프로젝트 재점검(측정-grounding) + RAG Gemini 채택 + 하네스 점검
+
+> 상세: `phases/active/phase-27-mvp-realuse-close/notes.md` · `product/platform_evolution.md` · `meta/audits/2026-06-10.md` · **핸드오프 `meta/handoffs/2026-06-10.md`**
+
+- **★ RAG 임베딩 = Gemini 채택**: text-embedding-3-small(ko 약함, 0.7 미달) → **gemini-embedding-2 @1536(taskType 비대칭)** 측정 압도(0.7 통과 3/3). `config.rag_embedding_provider`(gated, default openai) + `embedding.py _embed_gemini` + `.env RAG_EMBEDDING_PROVIDER=gemini`. `approved_knowledge` 8건 Gemini 재임베딩. **임베딩=Gemini / 생성=GPT 분리.** ⚠️ Gemini=선결제 크레딧 필요(충전됨). **OpenAI 원복 금지(공간 불일치)**.
+- **측정 접지선(A8)**: agent_io_log realuse ON + 4 에이전트+gateway 텔레메트리 + `scripts/skill_usage_report.py`(skill 사용 자동집계 졸업).
+- **2nd Brain**: heuristic(자가개선 없음 — 명문화) + HTTP+JWT 신원배선 검증. 끝단 Supabase 영속=실 Auth(uuid) 필요=배포게이트.
+- **A7 flag audit**: 활성+wired 8 / "만들고 안 켠" 4(critic_calibration 활성검토 등). **A11**: 3-provider 다양성 real(0.959→0.680) but 취약(무료티어 503/Claude JSON).
+- **경계**: `BOUNDARIES.md`+`.github/CODEOWNERS`+`scripts/check_boundaries.py`(L1/L2 기계 가시화). **하네스 점검(Phase 2)**: harness-audit PASS(critical/high 0) + HIP-A~D(`meta/harness_improvement_proposals.md`).
+- **pytest 812 green** (전 변경 gated/behavior-preserving, default OFF byte-identical). ✅ 정정: pkm_entries/brand_memory/approved_knowledge + match_approved_knowledge RPC = Supabase 적용 **확인**(구 "미적용"은 stale).
+- **▶ Phase 27 잔여 = A2 AppShell 네비 / A3 rate_limit / A5 첫-사용자 e2e** (realuse-마감, 미완 = 다음 main 작업). A1·A4·A7~A11 완료.
+
 ## 🔎 실사용 준비도 / 운영·검증 갭 (★ 정직, 2026-06-05 종합 갱신)
 
 > 3영역 정밀 조사(배포·영속 / 기능완성도 / 품질·이월) 결과. **"코드 완성도 高(Phase 0~26 done, pytest 779) — 실사용·운영 준비 中 — 품질 검증 弱"**. 상세 backlog = `meta/backlog.md`.
@@ -17,7 +29,8 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 - **홈/네비 미완**: 홈(`/`)은 Phase 1 단일 textarea — `/new`(위저드)·`/new/branding` 진입 링크 없음. **AppShell(네비) component_map 정의만, 코드 미구현**. → 위저드·브랜딩·4계층을 사용자가 발견 못 함.
 
 ### B. 데이터 영속 / 운영 반영 (Phase 26 포함, NG11 = 운영 단계)
-- **migration 0001~0007 Supabase 미적용**(수동/운영자). **`match_approved_knowledge` SQL function 미정의** → RAG retrieval 운영 graceful-empty(동작 안 함). **RLS 실 DB 미검증**(코드/문서만).
+- ✅ **정정(2026-06-08 라이브 탐침)**: `pkm_entries`(0006)+`source_plan_id`(0007)+`brand_memory_entries`+`plans`+`brands` **Supabase 적용 확인됨**(REST service_key). **R2 영속 라운드트립 PASS** — extract→`pkm_entries` write→**다른 인스턴스 read**(conf≥0.9)→주입 프리앰블 생성, cleanup 완료(`Temp/ignite_r2.py`). 기존 "migration 0001~0007 미적용" 기록은 stale였음.
+- ⚠️ 남은 영속/운영 갭: **`match_approved_knowledge` SQL function 미정의**(RAG retrieval graceful-empty, 미검증) · **DATABASE_URL 비번=placeholder(`YOUR-PASSWORD`)** → 직접 DDL 불가(REST만 동작) · **RLS 격리 실검증 미완**(service_key 우회로 쓰기 동작, anon JWT 본인-격리는 미검증).
 - **PlansRepo plan 영속 미완**(2회 이월): 생성 plan이 `_plan_store`(in-memory)만 → 서버 재시작 시 휘발. video_projects 저장 경로 deprecated.
 
 ### C. 배포 미준비 (Gate B~G)
