@@ -1,0 +1,59 @@
+:root {
+  /* Orange brand */
+  --color-primary-50: #FFF6E8;
+  --color-primary-100: #FFE9C4;
+  --color-primary-200: #FFD68B;
+  --color-primary-300: #FFBF57;
+  --color-primary-400: #FF9A2F;
+  --color-primary-500: #F47B20;
+  --color-primary-600: #E96818;
+  --color-primary-700: #D94C1A;
+  --color-primary-800: #AD3817;
+  --color-primary-900: #7C2915;
+
+  /* Warm neutral */
+  --color-neutral-0: #FFFFFF;
+  --color-neutral-50: #FFFAF4;
+  --color-neutral-100: #F5EFE6;
+  --color-neutral-200: #EEE3D5;
+  --color-neutral-300: #DDCDBD;
+  --color-neutral-400: #A08E82;
+  --color-neutral-500: #78685F;
+  --color-neutral-600: #65544B;
+  --color-neutral-700: #4D3D35;
+  --color-neutral-800: #3F3029;
+  --color-neutral-900: #352A24;
+
+  --color-primary: #F47B20;
+  --color-primary-hover: #E96818;
+  --color-primary-pressed: #D94C1A;
+  --color-primary-disabled: #E8B58E;
+
+  --color-bg-default: #F5EFE6;
+  --color-bg-subtle: #EEE3D5;
+  --color-surface: #FFFAF4;
+
+  --color-text-default: #352A24;
+  --color-text-muted: #78685F;
+  --color-text-placeholder: #A08E82;
+  --color-text-inverse: #FFF9F2;
+
+  --color-border-default: rgba(102, 72, 54, 0.16);
+  --color-border-subtle: rgba(102, 72, 54, 0.09);
+  --color-border-focus: #F47B20;
+
+  --color-rail: #573A2A;
+  --color-rail-text: #E5D7CC;
+
+  --font-family-display:
+    "Paperlogy", "SUIT Variable", "SUIT",
+    "Pretendard Variable", "Pretendard", sans-serif;
+
+  --font-family-ui:
+    "SUIT Variable", "SUIT",
+    "Pretendard Variable", "Pretendard",
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+
+  --font-family-editorial:
+    "Noto Serif KR", "MaruBuri", "Nanum Myeongjo", serif;
+}
