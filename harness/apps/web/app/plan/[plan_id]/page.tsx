@@ -31,6 +31,8 @@ import ProgressStepper from "@/components/ProgressStepper";
 //   + PlanFeedbackControls + BrandMemoryAside + BrainReflectedBanner.
 import BrainReflectedBanner from "@/components/plan/BrainReflectedBanner";
 import BrandMemoryAside from "@/components/plan/BrandMemoryAside";
+// Phase 30 Slice 6 — 선택완료 결과를 영상기획 브리프 깊이로 표현(표현 계층 전용).
+import FinalBriefPanel from "@/components/plan/FinalBriefPanel";
 import PlanComparisonGrid from "@/components/plan/PlanComparisonGrid";
 import PlanFeedbackControls from "@/components/plan/PlanFeedbackControls";
 import PlanOptionFrame from "@/components/plan/PlanOptionFrame";
@@ -475,36 +477,43 @@ function PlanResultPageContent() {
         </details>
       )}
 
-      {/* Phase 29 S4 — 선택 저장 후 다음 행동 (브리프 §17 작업4: Brain CTA → "내 생각이 쌓인다" 락인) */}
-      {savedSelectedIndex !== null && (
-        <section className="flex flex-col gap-2 border-t border-border-default pt-5">
-          <h2 className="font-display text-sm font-semibold text-text-default">
-            선택을 저장했어요 — 이 방향이 내 brain에 쌓였어요 🧠
-          </h2>
-          <Link
-            href="/brain"
-            className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-primary-300 bg-primary-50 px-4 py-3 text-sm font-medium text-primary-700 hover:bg-primary-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
-          >
-            <span>🧠 내 brain에서 보기</span>
-            <span aria-hidden>›</span>
-          </Link>
-          <Link
-            href="/"
-            className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-border-default bg-surface px-4 py-3 text-sm font-medium text-text-default hover:bg-primary-50/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
-          >
-            <span>✏️ 같은 방향으로 새 영상 만들기</span>
-            <span aria-hidden>›</span>
-          </Link>
-          <button
-            type="button"
-            disabled
-            aria-disabled="true"
-            className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-border-default px-4 py-3 text-sm font-medium text-text-placeholder cursor-not-allowed"
-          >
-            <span>📱 이 기획안으로 SNS 콘텐츠 만들기</span>
-            <span className="text-xs">준비중</span>
-          </button>
-        </section>
+      {/* Phase 30 S6 — 선택 저장 후 결과 표현: 영상기획 **브리프 깊이**로 정리(FinalBriefPanel wrapper).
+          ★ 선택 plan 의 현 output_schema 실데이터만 표시(제작 산출물 하드코딩 금지, graceful).
+          다음 행동 CTA(Phase 29 S4 Brain 락인)는 기능 무변경으로 actions 슬롯에 주입. */}
+      {savedSelectedIndex !== null && plans[savedSelectedIndex] && (
+        <FinalBriefPanel
+          plan={plans[savedSelectedIndex]}
+          actions={
+            <div className="flex flex-col gap-2">
+              <h3 className="font-display text-sm font-semibold text-text-default">
+                다음 행동
+              </h3>
+              <Link
+                href="/brain"
+                className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-primary-300 bg-primary-50 px-4 py-3 text-sm font-medium text-primary-700 hover:bg-primary-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
+              >
+                <span>🧠 내 brain에서 보기</span>
+                <span aria-hidden>›</span>
+              </Link>
+              <Link
+                href="/"
+                className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-border-default bg-surface px-4 py-3 text-sm font-medium text-text-default hover:bg-primary-50/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
+              >
+                <span>✏️ 같은 방향으로 새 영상 만들기</span>
+                <span aria-hidden>›</span>
+              </Link>
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-border-default px-4 py-3 text-sm font-medium text-text-placeholder cursor-not-allowed"
+              >
+                <span>📱 이 기획안으로 SNS 콘텐츠 만들기</span>
+                <span className="text-xs">준비중</span>
+              </button>
+            </div>
+          }
+        />
       )}
 
       {/* Bottom CTA (fixed) */}
