@@ -26,6 +26,14 @@ import AuthGuard from "@/components/AuthGuard"; // Phase 5 Slice 3 — 외부 wr
 import ErrorCard from "@/components/ErrorCard";
 import PlanCard from "@/components/PlanCard"; // ★ 무수정 import (사용자 결정 6-a)
 import ProgressStepper from "@/components/ProgressStepper";
+// Phase 30 Slice 5 — PlanCard 외부 wrapper(표현 계층 전용). PlanCard.tsx 무수정.
+//   COMPONENT_MAPPING §6 권장 구조: PlanComparisonGrid ▸ PlanOptionFrame ▸ PlanCard
+//   + PlanFeedbackControls + BrandMemoryAside + BrainReflectedBanner.
+import BrainReflectedBanner from "@/components/plan/BrainReflectedBanner";
+import BrandMemoryAside from "@/components/plan/BrandMemoryAside";
+import PlanComparisonGrid from "@/components/plan/PlanComparisonGrid";
+import PlanFeedbackControls from "@/components/plan/PlanFeedbackControls";
+import PlanOptionFrame from "@/components/plan/PlanOptionFrame";
 import {
   generateMultiPlan,
   getPkmGraph,
@@ -36,7 +44,6 @@ import {
 import { subscribeToPlanProgress, type ProgressEvent } from "@/lib/sse";
 import type {
   CriticEvaluation,
-  CriticVerdict,
   ErrorEnvelope,
   FeedbackEventType,
   MultiPlanEnvelope,
@@ -46,18 +53,6 @@ import type {
 import { isEnvelope } from "@/lib/types";
 
 const SESSION_KEY_PREFIX = "dreammate.phase4.plan.selected";
-
-const VERDICT_LABEL: Record<CriticVerdict, string> = {
-  approve: "승인",
-  revise: "보완 필요",
-  reject: "재시도 권장",
-};
-
-const VERDICT_CLASS: Record<CriticVerdict, string> = {
-  approve: "bg-success-50 text-success-700",
-  revise: "bg-warning-50 text-warning-700",
-  reject: "bg-error-50 text-error-700",
-};
 
 /**
  * Phase 5 Slice 3 — AuthGuard 외부 wrapper.
@@ -308,7 +303,7 @@ function PlanResultPageContent() {
         aria-busy
       >
         <ProgressStepper currentStep="planning" />
-        <p className="text-sm text-neutral-500 text-center leading-relaxed">
+        <p className="text-sm text-text-muted text-center leading-relaxed">
           AI 기획 파트너가 내 brain의 방향을 확인하고
           <br />
           기획안 3개를 작성하고 있어요 (약 30~60초)
@@ -330,14 +325,16 @@ function PlanResultPageContent() {
   if (!envelope || !envelope.body.plan_candidates?.length) {
     return (
       <main className="mx-auto w-full max-w-2xl px-4 py-8 flex flex-col gap-4 items-center text-center">
-        <h1 className="text-xl font-bold text-neutral-900">기획안 없음</h1>
-        <p className="text-sm text-neutral-600">
+        <h1 className="font-display text-xl font-bold text-text-default">
+          기획안 없음
+        </h1>
+        <p className="text-sm text-text-muted">
           생성된 기획안이 없어요. 처음으로 돌아가 다시 시도해주세요.
         </p>
         <button
           type="button"
           onClick={handleHome}
-          className="inline-flex items-center justify-center min-h-[44px] px-4 py-2 rounded-md bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600"
+          className="inline-flex items-center justify-center min-h-[44px] px-4 py-2 rounded-md bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
         >
           처음으로
         </button>
@@ -358,25 +355,22 @@ function PlanResultPageContent() {
       : null;
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-10 pb-32 flex flex-col gap-6">
+    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-10 pb-32 flex flex-col gap-6">
       {/* Header */}
       <header className="flex flex-col gap-2">
         <p className="text-xs font-semibold tracking-wider uppercase text-primary-600">
           기획안 {plans.length}개
         </p>
-        <h1 className="text-xl sm:text-2xl font-bold text-neutral-900">
+        <h1 className="font-display text-xl sm:text-2xl font-bold text-text-default">
           AI가 만든 영상 기획안 {plans.length}개
         </h1>
-        <p className="text-sm text-neutral-600">
-          마음에 드는 기획안을 선택하세요.
+        <p className="text-sm text-text-muted">
+          서로 다른 접근을 같은 기준으로 비교하고, 마음에 드는 기획안을
+          선택하세요.
         </p>
-        {/* Phase 29 S5 — "내 brain 반영" 신호 (에이전트 느낌: 쓸수록 내 브랜드를 학습) */}
-        {brainReflected !== null && (
-          <div className="rounded-md border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-700">
-            🧠 내 brain의 선호 {brainReflected}개를 반영해 만들었어요.
-          </div>
-        )}
-        <p className="text-xs text-neutral-500 flex flex-wrap gap-x-3 gap-y-1">
+        {/* Phase 29 S5 / Phase 30 S5 — "내 brain 반영" 신호 (BrainReflectedBanner wrapper) */}
+        <BrainReflectedBanner count={brainReflected} />
+        <p className="text-xs text-text-muted flex flex-wrap gap-x-3 gap-y-1">
           <span>
             request_id:{" "}
             <span className="font-mono">{envelope.meta.request_id}</span>
@@ -387,7 +381,7 @@ function PlanResultPageContent() {
                 <span aria-hidden>●</span> 저장됨
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-neutral-500">
+              <span className="inline-flex items-center gap-1 text-text-muted">
                 <span aria-hidden>○</span> 임시 결과
               </span>
             )}
@@ -400,7 +394,7 @@ function PlanResultPageContent() {
         <section
           aria-label="생성 진행 상황"
           aria-live="polite"
-          className="rounded-lg bg-primary-50 border border-primary-200 px-3 py-2 text-sm text-primary-900"
+          className="rounded-xl bg-primary-50 border border-primary-200 px-3 py-2 text-sm text-primary-700"
         >
           <p className="font-semibold">
             단계 {progress.step} / 4 — {progress.name ?? ""}
@@ -414,212 +408,48 @@ function PlanResultPageContent() {
         </section>
       )}
 
-      {/* Critic 점수 + RAG 참조 */}
-      {critic && (
-        <section
-          aria-label="품질 평가"
-          className={`rounded-md px-3 py-2 ${VERDICT_CLASS[critic.overall_verdict]}`}
-        >
-          <p className="text-sm font-semibold">
-            {/* Phase 9.5 Slice 4 (ADR-034): backend deprecated 0–5(overall_score_avg) 제거.
-                canonical overall_score(0–1) 를 % 로 표시 (PlanCard 무수정 — page.tsx inline wrapper).
-                canonical 미존재(graceful skip) 시 품질 점수 라벨 숨김, verdict 만 노출. */}
-            {typeof critic.overall_score === "number" && (
-              <>품질 점수 {Math.round(critic.overall_score * 100)}점 / 100 · </>
-            )}
-            {VERDICT_LABEL[critic.overall_verdict]}
-            {critic.revise_round > 0 && (
-              <span className="ml-1 text-xs">
-                (개선 {critic.revise_round}회)
-              </span>
-            )}
-          </p>
-          {critic.blocking_issues.length > 0 && (
-            <ul className="mt-1 list-disc list-inside text-xs">
-              {critic.blocking_issues.map((issue, idx) => (
-                <li key={idx}>{issue}</li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
-      <section
-        aria-label="참고 자료"
-        className="text-xs text-neutral-600 flex items-center gap-2"
-      >
-        <span aria-hidden>📚</span>
-        <span>
-          {ragRefs.length > 0
-            ? `참고 자료 ${ragRefs.length}개를 활용했어요`
-            : "참고 자료 없이 생성했어요"}
-        </span>
-      </section>
-
-      {/* 3-plan 세로 스택 (★ PlanCard 무수정 + 단순 반복) */}
-      <section
-        aria-label="기획안 후보 목록"
-        role="radiogroup"
-        className="flex flex-col gap-4"
-      >
-        {plans.map((plan, i) => {
-          const isSelected = selectedPlanId === plan.plan_id;
-          const isRecommended = recommendedIdx === i;
-          // selected 우선순위: 선택됨 시 primary ring, 그렇지 않고 추천일 때 emerald ring.
-          const ringClass = isSelected
-            ? "ring-2 ring-primary-500 ring-offset-2"
-            : isRecommended
-              ? "ring-2 ring-emerald-500 ring-offset-2"
-              : "ring-0 hover:ring-1 hover:ring-neutral-300";
-          return (
-            <div
-              key={plan.plan_id}
-              role="radio"
-              aria-checked={isSelected}
-              aria-label={`기획안 ${i + 1} / ${plans.length} — ${plan.name}${
-                isRecommended ? " (AI 추천)" : ""
-              }`}
-              data-recommended={isRecommended ? "true" : "false"}
-              tabIndex={0}
-              onClick={() => handleSelect(plan.plan_id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleSelect(plan.plan_id);
+      {/* 데스크톱 2열(비교 그리드 + Brand Memory aside) / 모바일 1열(VISUAL_CONTRACT §5) */}
+      <div className="grid grid-cols-1 gap-5 desktop:grid-cols-[minmax(0,1fr)_300px]">
+        {/* 좌: 3열 비교 그리드 (★ PlanComparisonGrid ▸ PlanOptionFrame ▸ PlanCard 무수정) */}
+        <PlanComparisonGrid label="기획안 후보 목록">
+          {plans.map((plan, i) => {
+            const isSelected = selectedPlanId === plan.plan_id;
+            const isRecommended = recommendedIdx === i;
+            return (
+              <PlanOptionFrame
+                key={plan.plan_id}
+                optionIndex={i}
+                total={plans.length}
+                planName={plan.name}
+                selected={isSelected}
+                recommended={isRecommended}
+                onSelect={() => handleSelect(plan.plan_id)}
+                footer={
+                  <PlanFeedbackControls
+                    optionIndex={i}
+                    savedSelectedIndex={savedSelectedIndex}
+                    selectBusy={selectBusy}
+                    feedback={feedbackByIndex[i]}
+                    rejectOpen={rejectOpenIndex === i}
+                    rejectReason={rejectReason}
+                    onConfirmSelect={(idx) => void handleConfirmSelect(idx)}
+                    onFeedback={(idx, et) => void handleFeedback(idx, et)}
+                    onToggleReject={handleToggleReject}
+                    onSubmitReject={(idx) => void handleSubmitReject(idx)}
+                    onRejectReasonChange={setRejectReason}
+                  />
                 }
-              }}
-              className={`relative cursor-pointer rounded-lg transition-shadow ${ringClass} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500`}
-            >
-              {/* Phase 4.5 Slice 3 (Z-X3): AI 추천 badge — wrapper 에만 추가 (PlanCard 무수정). */}
-              {isRecommended && !isSelected && (
-                <span
-                  aria-hidden
-                  className="absolute -top-2 left-3 z-10 inline-flex items-center rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-semibold text-white shadow"
-                >
-                  AI 추천
-                </span>
-              )}
-              <div className="flex items-center gap-2 mb-2 px-1">
-                <span className="text-xs font-medium text-neutral-500">
-                  옵션 {i + 1} / {plans.length}
-                </span>
-                {isSelected && (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-500 text-white">
-                    선택됨
-                  </span>
-                )}
-              </div>
-              <PlanCard plan={plan} />
-
-              {/* Phase 9 Slice 5 — 선택/반려 피드백 UI (★ PlanCard 외부 wrapper inline, ADR-030).
-                  신규 component 안 만듦 → component_map.md 0줄. PlanCard.tsx 0줄.
-                  wrapper 의 radio onClick 버블링 차단 위해 각 액션 stopPropagation. */}
-              <div
-                className="mt-3 px-1 flex flex-col gap-2"
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
               >
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={selectBusy}
-                    onClick={() => void handleConfirmSelect(i)}
-                    aria-label={`옵션 ${i + 1} 이 안 선택`}
-                    className={`inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
-                      savedSelectedIndex === i
-                        ? "bg-primary-600 text-white"
-                        : "bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700"
-                    } disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500`}
-                  >
-                    {savedSelectedIndex === i ? "선택 저장됨" : "이 안 선택"}
-                  </button>
+                {/* ★ PlanCard 무수정 import */}
+                <PlanCard plan={plan} />
+              </PlanOptionFrame>
+            );
+          })}
+        </PlanComparisonGrid>
 
-                  <button
-                    type="button"
-                    aria-pressed={feedbackByIndex[i] === "like"}
-                    aria-label={`옵션 ${i + 1} 좋아요`}
-                    onClick={() => void handleFeedback(i, "like")}
-                    className={`inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
-                      feedbackByIndex[i] === "like"
-                        ? "border-success-500 bg-success-50 text-success-700"
-                        : "border-neutral-300 text-neutral-700 hover:bg-neutral-100"
-                    } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500`}
-                  >
-                    <span aria-hidden>👍</span>
-                    <span className="ml-1">좋아요</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    aria-pressed={feedbackByIndex[i] === "dislike"}
-                    aria-label={`옵션 ${i + 1} 별로예요`}
-                    onClick={() => void handleFeedback(i, "dislike")}
-                    className={`inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
-                      feedbackByIndex[i] === "dislike"
-                        ? "border-warning-500 bg-warning-50 text-warning-700"
-                        : "border-neutral-300 text-neutral-700 hover:bg-neutral-100"
-                    } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500`}
-                  >
-                    <span aria-hidden>👎</span>
-                    <span className="ml-1">별로예요</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    aria-expanded={rejectOpenIndex === i}
-                    aria-label={`옵션 ${i + 1} 반려 이유 입력`}
-                    onClick={() => handleToggleReject(i)}
-                    className={`inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
-                      feedbackByIndex[i] === "reject"
-                        ? "border-error-500 bg-error-50 text-error-700"
-                        : "border-neutral-300 text-neutral-700 hover:bg-neutral-100"
-                    } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500`}
-                  >
-                    {feedbackByIndex[i] === "reject" ? "반려됨" : "반려"}
-                  </button>
-                </div>
-
-                {/* 반려 이유 입력 (inline textarea — 해당 카드에서만 노출) */}
-                {rejectOpenIndex === i && (
-                  <div className="flex flex-col gap-2 rounded-md border border-neutral-200 bg-neutral-50 p-3">
-                    <label
-                      htmlFor={`reject-reason-${i}`}
-                      className="text-xs font-semibold text-neutral-700"
-                    >
-                      반려 이유 (선택 입력)
-                    </label>
-                    <textarea
-                      id={`reject-reason-${i}`}
-                      value={rejectReason}
-                      onChange={(e) => setRejectReason(e.target.value)}
-                      maxLength={2000}
-                      rows={3}
-                      placeholder="이 기획안이 맞지 않은 이유를 적어주세요 (선택)"
-                      className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
-                    />
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void handleSubmitReject(i)}
-                        className="inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-md bg-error-500 text-white text-sm font-semibold hover:bg-error-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error-500"
-                      >
-                        반려 제출
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleReject(i)}
-                        className="inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-md border border-neutral-300 text-neutral-700 text-sm font-medium hover:bg-neutral-100"
-                      >
-                        취소
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </section>
+        {/* 우: Brand Memory aside — 기존 critic·rag 데이터 표시 (목업 아님) */}
+        <BrandMemoryAside critic={critic} ragRefs={ragRefs} />
+      </div>
 
       {/* Phase 9 Slice 5 — 선택/피드백 호출 실패 표시 (PlanCard 외부 wrapper) */}
       {actionError && (
@@ -633,7 +463,7 @@ function PlanResultPageContent() {
 
       {/* Warnings (개발자 정보) */}
       {warnings.length > 0 && (
-        <details className="rounded-md border border-neutral-200 bg-neutral-100 px-3 py-2 text-xs text-neutral-600">
+        <details className="rounded-md border border-border-default bg-bg-subtle px-3 py-2 text-xs text-text-muted">
           <summary className="font-semibold cursor-pointer">
             개발자 정보 ({warnings.length} warnings)
           </summary>
@@ -647,8 +477,8 @@ function PlanResultPageContent() {
 
       {/* Phase 29 S4 — 선택 저장 후 다음 행동 (브리프 §17 작업4: Brain CTA → "내 생각이 쌓인다" 락인) */}
       {savedSelectedIndex !== null && (
-        <section className="flex flex-col gap-2 border-t border-neutral-200 pt-5">
-          <h2 className="text-sm font-semibold text-neutral-900">
+        <section className="flex flex-col gap-2 border-t border-border-default pt-5">
+          <h2 className="font-display text-sm font-semibold text-text-default">
             선택을 저장했어요 — 이 방향이 내 brain에 쌓였어요 🧠
           </h2>
           <Link
@@ -660,7 +490,7 @@ function PlanResultPageContent() {
           </Link>
           <Link
             href="/"
-            className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-900 hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
+            className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-border-default bg-surface px-4 py-3 text-sm font-medium text-text-default hover:bg-primary-50/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
           >
             <span>✏️ 같은 방향으로 새 영상 만들기</span>
             <span aria-hidden>›</span>
@@ -669,7 +499,7 @@ function PlanResultPageContent() {
             type="button"
             disabled
             aria-disabled="true"
-            className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-400 cursor-not-allowed"
+            className="flex items-center justify-between gap-3 min-h-[44px] rounded-lg border border-border-default px-4 py-3 text-sm font-medium text-text-placeholder cursor-not-allowed"
           >
             <span>📱 이 기획안으로 SNS 콘텐츠 만들기</span>
             <span className="text-xs">준비중</span>
@@ -678,7 +508,7 @@ function PlanResultPageContent() {
       )}
 
       {/* Bottom CTA (fixed) */}
-      <footer className="fixed bottom-0 left-0 right-0 border-t border-neutral-200 bg-white p-4 z-10">
+      <footer className="fixed bottom-0 left-0 right-0 border-t border-border-default bg-surface p-4 z-10">
         <div className="mx-auto w-full max-w-2xl">
           <button
             type="button"
@@ -695,7 +525,7 @@ function PlanResultPageContent() {
             className={`w-full min-h-[44px] px-4 py-3 rounded-md text-sm font-semibold transition-colors ${
               selectedPlanId && !selectBusy
                 ? "bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
-                : "bg-neutral-200 text-neutral-500 cursor-not-allowed"
+                : "bg-neutral-200 text-text-muted cursor-not-allowed"
             }`}
           >
             {!selectedPlanId
