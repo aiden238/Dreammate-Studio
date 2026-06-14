@@ -23,42 +23,44 @@
  */
 
 export const TOKENS = {
-  /** Color — tokens.md §1 (semantic, not literal) */
+  /** Color — Orange × Beige (Phase 30 S8 QA: globals.css :root 와 동기, legacy indigo/cool 잔재 제거).
+   *  본 상수는 현재 import 없음(dead) — Tailwind utility(var alias) 경유가 정본.
+   *  값만 새 팔레트로 정정해 중복 토큰 소스의 stale indigo 제거(키/타입 불변). */
   color: {
-    // Primary
-    primary: "#6366F1",
-    primaryHover: "#4F46E5",
-    primaryPressed: "#4338CA",
-    primaryDisabled: "#A5B4FC",
-    // Accent
-    accent: "#06B6D4",
-    // Background / Surface
-    bgDefault: "#FAFAFA",
-    bgSubtle: "#F5F5F5",
-    bgOverlay: "rgba(0, 0, 0, 0.5)",
-    surface: "#FFFFFF",
-    // Text
-    textDefault: "#171717",
-    textMuted: "#525252",
-    textPlaceholder: "#A3A3A3",
-    textInverse: "#FFFFFF",
-    textDanger: "#B91C1C",
-    textSuccess: "#15803D",
-    // Border
-    borderDefault: "#E5E5E5",
-    borderSubtle: "#F5F5F5",
-    borderFocus: "#6366F1",
-    // State
-    stateSuccess: "#22C55E",
-    stateWarning: "#F59E0B",
-    stateError: "#EF4444",
-    stateInfo: "#3B82F6",
+    // Primary (CTA, 선택, 활성) — orange
+    primary: "#F47B20",
+    primaryHover: "#E96818",
+    primaryPressed: "#D94C1A",
+    primaryDisabled: "#E8B58E",
+    // Accent — 앰버 톤
+    accent: "#FFB23F",
+    // Background / Surface — 베이지·아이보리 종이
+    bgDefault: "#F5EFE6",
+    bgSubtle: "#EEE3D5",
+    bgOverlay: "rgba(53, 42, 36, 0.5)",
+    surface: "#FFFAF4",
+    // Text — 짙은 브라운 잉크
+    textDefault: "#352A24",
+    textMuted: "#78685F",
+    textPlaceholder: "#A08E82",
+    textInverse: "#FFF9F2",
+    textDanger: "#A23B22",
+    textSuccess: "#4D7C3A",
+    // Border — 웜 브라운 반투명
+    borderDefault: "rgba(102, 72, 54, 0.16)",
+    borderSubtle: "rgba(102, 72, 54, 0.09)",
+    borderFocus: "#F47B20",
+    // State — error=적갈색, warning=앰버(primary 주황과 구분)
+    stateSuccess: "#5C8A3A",
+    stateWarning: "#E0991C",
+    stateError: "#C2452A",
+    stateInfo: "#4A6FA5",
   },
 
   /** Typography — tokens.md §2 */
   font: {
     familySans:
-      '"Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+      '"SUIT Variable", "SUIT", "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
     familyMono: '"JetBrains Mono", "Menlo", "Consolas", monospace',
     sizeXs: "0.75rem",
     sizeSm: "0.875rem",

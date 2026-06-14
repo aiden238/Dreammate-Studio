@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <!-- maskable: full bleed background (no rounded corners); safe zone is center 80% -->
-  <rect width="512" height="512" fill="#6366F1"/>
+  <rect width="512" height="512" fill="#F47B20"/>
   <text x="50%" y="55%" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="200" font-weight="700" fill="white" text-anchor="middle" dominant-baseline="middle">D</text>
 </svg>

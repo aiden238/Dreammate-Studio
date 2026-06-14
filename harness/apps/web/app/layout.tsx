@@ -34,7 +34,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#6366F1",
+  // Phase 30 S8 QA — PWA 브라우저 크롬 색을 새 팔레트(orange primary)로 정정.
+  //   legacy indigo(#6366F1) 잔재 제거. 출처: globals.css --color-primary / VISUAL_CONTRACT §2.
+  themeColor: "#F47B20",
   colorScheme: "light",
 };
 
