@@ -52,18 +52,21 @@ import "@xyflow/react/dist/style.css";
 
 import type { PkmGraphEdge, PkmGraphNode } from "@/lib/types";
 
-// ── 토큰값 (globals.css :root 와 1:1, design.md §18) ───────────────────
+// ── 토큰값 (globals.css :root 와 1:1, VISUAL_CONTRACT §2 — Orange × Beige) ──
 // react-flow 노드 style 은 인라인 객체라 Tailwind 토큰 클래스를 못 받으므로
 // 동일 hex 를 상수로 둔다 (토큰 변경 시 이 블록만 동기화).
+// Phase 30 S7 — 웜 팔레트 리스킨(색만): selected/root=주황, 일반=베이지/브라운, 엣지 웜톤.
 const TOKEN = {
-  primary: "#6366F1",
-  accent: "#06B6D4",
-  surface: "#FFFFFF",
-  bgSubtle: "#F5F5F5",
-  textDefault: "#171717",
-  textInverse: "#FFFFFF",
-  textMuted: "#525252",
-  borderDefault: "#E5E5E5",
+  primary: "#F47B20", // 주황 — root/selected 강조
+  accent: "#FFB23F", // 앰버 — 보조 강조(구조/개인 보더)
+  surface: "#FFFAF4", // 크림 화이트 카드
+  bgSubtle: "#EEE3D5", // 베이지 leaf 채움
+  textDefault: "#352A24", // 짙은 브라운 잉크
+  textInverse: "#FFF9F2", // 주황 위 밝은 텍스트
+  textMuted: "#78685F", // 웜 그레이 본문/보조 노드
+  borderDefault: "rgba(102, 72, 54, 0.16)", // 웜 브라운 반투명 보더(노드)
+  // 엣지/배경 격자 — 노드 보더(.16)보다 진한 웜 브라운으로 종이 위 대비 확보.
+  edge: "rgba(102, 72, 54, 0.34)",
 } as const;
 
 // 노드 고정 치수 — ★ react-flow v12 는 ResizeObserver 로 노드를 비동기 측정해야 엣지/fitView 가
@@ -199,7 +202,7 @@ function buildFlow(
             ? TOKEN.primary
             : e.kind === "has_domain" || e.kind === "has_series"
               ? TOKEN.accent
-              : TOKEN.borderDefault,
+              : TOKEN.edge,
         strokeWidth: e.kind === "owns" ? 2 : 1.5,
         strokeDasharray: e.kind === "sourced_from" ? "4 3" : undefined,
       },
@@ -279,7 +282,8 @@ function nodeStyle(n: PkmGraphNode): React.CSSProperties {
     };
   }
   // pkm leaf — scope 별 보더색으로 개인/브랜드 구분.
-  const scopeColor = n.scope === "personal" ? TOKEN.accent : TOKEN.primary;
+  // Phase 30 S7 — 일반 leaf 는 웜 뉴트럴/앰버로(주황은 root·hub 강조에 한정, 80/20 비율 유지).
+  const scopeColor = n.scope === "personal" ? TOKEN.accent : TOKEN.textMuted;
   return {
     ...common,
     background: TOKEN.bgSubtle,
