@@ -18,45 +18,61 @@
  */
 
 :root {
-  /* ─────────────── Color (semantic, not literal) — tokens.md §1 ─────────────── */
-  /* Primary (CTA, 선택, 활성) — tokens.md §1.2 */
-  --color-primary: #6366F1;
-  --color-primary-hover: #4F46E5;
-  --color-primary-pressed: #4338CA;
-  --color-primary-disabled: #A5B4FC;
+  /* ─────────────── Color (semantic, not literal) — Orange × Beige (Phase 30 S1) ───────────────
+   *
+   * 출처: apps/web/design_reference/DESIGN_TOKENS.css + VISUAL_CONTRACT.md §2.
+   * 80% 베이지·아이보리·웜그레이 + 20% 주황(CTA/선택/진행/focus). 장문 주황·전체 주황 배경 금지.
+   * semantic 토큰만 정의 — 리터럴 hex 직접 참조 금지(컴포넌트는 토큰 alias 경유). */
 
-  /* Accent — tokens.md §1.3 */
-  --color-accent: #06B6D4;
+  /* Primary (CTA, 선택, 활성) — orange #F47B20 */
+  --color-primary: #F47B20;
+  --color-primary-hover: #E96818;
+  --color-primary-pressed: #D94C1A;
+  --color-primary-disabled: #E8B58E;
 
-  /* Background / Surface — tokens.md §1.4 */
-  --color-bg-default: #FAFAFA;
-  --color-bg-subtle: #F5F5F5;
-  --color-bg-overlay: rgba(0, 0, 0, 0.5);
-  --color-surface: #FFFFFF;
+  /* Accent — 보조 강조(앰버 톤, primary와 구분) */
+  --color-accent: #FFB23F;
 
-  /* Text — tokens.md §1.5 */
-  --color-text-default: #171717;
-  --color-text-muted: #525252;
-  --color-text-placeholder: #A3A3A3;
-  --color-text-inverse: #FFFFFF;
-  --color-text-danger: #B91C1C;
-  --color-text-success: #15803D;
+  /* Background / Surface — 베이지·아이보리 종이 워크스페이스 */
+  --color-bg-default: #F5EFE6;
+  --color-bg-subtle: #EEE3D5;
+  --color-bg-overlay: rgba(53, 42, 36, 0.5);
+  --color-surface: #FFFAF4;
 
-  /* Border — tokens.md §1.6 */
-  --color-border-default: #E5E5E5;
-  --color-border-subtle: #F5F5F5;
-  --color-border-focus: #6366F1;
+  /* Text — 짙은 브라운 잉크 */
+  --color-text-default: #352A24;
+  --color-text-muted: #78685F;
+  --color-text-placeholder: #A08E82;
+  --color-text-inverse: #FFF9F2;
+  --color-text-danger: #A23B22;
+  --color-text-success: #4D7C3A;
 
-  /* State (semantic) — tokens.md §1.7 */
-  --color-state-success: #22C55E;
-  --color-state-warning: #F59E0B;
-  --color-state-error: #EF4444;
-  --color-state-info: #3B82F6;
+  /* Border — 웜 브라운 반투명 */
+  --color-border-default: rgba(102, 72, 54, 0.16);
+  --color-border-subtle: rgba(102, 72, 54, 0.09);
+  --color-border-focus: #F47B20;
 
-  /* ─────────────── Typography — tokens.md §2 ─────────────── */
+  /* State (semantic) — 웜 톤과 구분(error=적갈색, warning=앰버) */
+  --color-state-success: #5C8A3A;
+  --color-state-warning: #E0991C;
+  --color-state-error: #C2452A;
+  --color-state-info: #4A6FA5;
+
+  /* Rail / paper (VISUAL_CONTRACT §2·§5 — 데스크톱 Primary Rail, 서적 카드) */
+  --color-rail: #573A2A;
+  --color-rail-text: #E5D7CC;
+
+  /* ─────────────── Typography — VISUAL_CONTRACT §4 ─────────────── */
+  /* font-family fallback 체인만 정의(폰트파일/deps 추가 없음).
+   * display=Paperlogy(제목/Hero), ui=SUIT/Pretendard(본문/UI), editorial=Noto Serif KR(대본/인용). */
+  --font-family-display:
+    "Paperlogy", "SUIT Variable", "SUIT", "Pretendard Variable", "Pretendard",
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-family-sans:
-    "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont,
-    "Segoe UI", system-ui, sans-serif;
+    "SUIT Variable", "SUIT", "Pretendard Variable", "Pretendard", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-family-editorial:
+    "Noto Serif KR", "MaruBuri", "Nanum Myeongjo", serif;
   --font-family-mono: "JetBrains Mono", "Menlo", "Consolas", monospace;
 
   /* Font sizes (mobile-first, tokens.md §2.2) */
@@ -138,6 +154,27 @@ body {
   font-family: var(--font-family-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* 선택 영역 — 옅은 앰버 하이라이트 (Phase 30 S1) */
+::selection {
+  background: var(--color-primary-disabled);
+  color: var(--color-text-default);
+}
+
+/* Warm form defaults — input/textarea/select 기본을 종이 톤 surface로 (Phase 30 S1).
+ * 컴포넌트가 명시 클래스로 덮으면 그쪽이 우선. accent-color로 체크박스/라디오도 주황. */
+input,
+textarea,
+select {
+  background-color: var(--color-surface);
+  color: var(--color-text-default);
+  accent-color: var(--color-primary);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-placeholder);
 }
 
 /* PWA safe-area (frontend_design_contract.md §3.2) */

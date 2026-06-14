@@ -24,57 +24,68 @@
 - light mode 우선, dark mode는 자리만 (Phase 11+ 본격)
 - 강조색은 1개 (primary)만 사용. UI 전반 chromatic 금지
 
+> **Phase 30 S1 (2026-06-15): Orange × Beige 리브랜딩.** 아래 색/폰트 값은 `apps/web/app/globals.css` :root 및 `apps/web/design_reference/DESIGN_TOKENS.css` / `VISUAL_CONTRACT.md` §2·§4와 일치. 80% 베이지·아이보리·웜그레이 + 20% 주황. dark 열은 Phase 11+ 자리(TBD).
+
 ### 1.2 Primary (CTA, 선택, 활성)
 
 | 토큰 | light | dark (자리, Phase 11+) | 용도 |
 |---|---|---|---|
-| `color.primary` | `#6366F1` | TBD | 기본 CTA, 카드 선택 상태, 진행률 |
-| `color.primary_hover` | `#4F46E5` | TBD | hover 상태 |
-| `color.primary_pressed` | `#4338CA` | TBD | pressed/active 상태 |
-| `color.primary_disabled` | `#A5B4FC` | TBD | disabled 상태 (50% opacity 대안 허용) |
+| `color.primary` | `#F47B20` | TBD | 기본 CTA, 카드 선택 상태, 진행률 |
+| `color.primary_hover` | `#E96818` | TBD | hover 상태 |
+| `color.primary_pressed` | `#D94C1A` | TBD | pressed/active 상태 |
+| `color.primary_disabled` | `#E8B58E` | TBD | disabled 상태 (50% opacity 대안 허용) |
 
 ### 1.3 Accent (보조 강조)
 
 | 토큰 | light | dark | 용도 |
 |---|---|---|---|
-| `color.accent` | `#06B6D4` | TBD | 정보성 배지 ("AI 생성", "참고 자료 사용") |
+| `color.accent` | `#FFB23F` | TBD | 보조 강조(앰버), 정보성 배지 ("AI 생성", "참고 자료 사용") |
 
 ### 1.4 Background / Surface
 
 | 토큰 | light | dark | 용도 |
 |---|---|---|---|
-| `color.bg_default` | `#FAFAFA` | `#0A0A0A` | 페이지 배경 |
-| `color.bg_subtle` | `#F5F5F5` | `#171717` | 보조 배경 (카드 선택 시 등) |
-| `color.bg_overlay` | `rgba(0,0,0,0.5)` | `rgba(0,0,0,0.7)` | 모달/drawer backdrop |
-| `color.surface` | `#FFFFFF` | `#171717` | 카드 본체 |
+| `color.bg_default` | `#F5EFE6` | `#0A0A0A` | 페이지 배경 (베이지) |
+| `color.bg_subtle` | `#EEE3D5` | `#171717` | 보조 배경 (샌드, 카드 선택 시 등) |
+| `color.bg_overlay` | `rgba(53,42,36,0.5)` | `rgba(0,0,0,0.7)` | 모달/drawer backdrop |
+| `color.surface` | `#FFFAF4` | `#171717` | 카드 본체 (아이보리) |
 
 ### 1.5 Text
 
 | 토큰 | light | dark | 용도 |
 |---|---|---|---|
-| `color.text_default` | `#171717` | `#FAFAFA` | 본문 주 텍스트 |
-| `color.text_muted` | `#525252` | `#A3A3A3` | 보조 텍스트, 캡션 |
-| `color.text_placeholder` | `#A3A3A3` | `#737373` | input placeholder |
-| `color.text_inverse` | `#FFFFFF` | `#171717` | CTA 위 텍스트 (primary 배경 대비) |
-| `color.text_danger` | `#B91C1C` | `#F87171` | 에러 텍스트 |
-| `color.text_success` | `#15803D` | `#4ADE80` | 성공 텍스트 |
+| `color.text_default` | `#352A24` | `#FAFAFA` | 본문 주 텍스트 (짙은 브라운) |
+| `color.text_muted` | `#78685F` | `#A3A3A3` | 보조 텍스트, 캡션 (웜그레이) |
+| `color.text_placeholder` | `#A08E82` | `#737373` | input placeholder |
+| `color.text_inverse` | `#FFF9F2` | `#171717` | CTA 위 텍스트 (primary 배경 대비) |
+| `color.text_danger` | `#A23B22` | `#F87171` | 에러 텍스트 (적갈색) |
+| `color.text_success` | `#4D7C3A` | `#4ADE80` | 성공 텍스트 |
 
 ### 1.6 Border
 
 | 토큰 | light | dark | 용도 |
 |---|---|---|---|
-| `color.border_default` | `#E5E5E5` | `#2A2A2A` | 카드 / input 기본 테두리 |
-| `color.border_subtle` | `#F5F5F5` | `#1F1F1F` | 보조 구분선 |
-| `color.border_focus` | `#6366F1` | `#818CF8` | 키보드 포커스 outline |
+| `color.border_default` | `rgba(102,72,54,0.16)` | `#2A2A2A` | 카드 / input 기본 테두리 (웜 브라운) |
+| `color.border_subtle` | `rgba(102,72,54,0.09)` | `#1F1F1F` | 보조 구분선 |
+| `color.border_focus` | `#F47B20` | `#818CF8` | 키보드 포커스 outline (주황) |
 
 ### 1.7 State (semantic)
 
+> 웜 톤과 구분: error=적갈색, warning=앰버 (primary 주황과 혼동 방지 — `COMPONENT_MAPPING.md` §8).
+
 | 토큰 | light | dark | 용도 |
 |---|---|---|---|
-| `color.state_success` | `#22C55E` | `#4ADE80` | Critic 좋은 점수, 저장 성공 |
-| `color.state_warning` | `#F59E0B` | `#FCD34D` | Intent warning, 광고 단어 안내 |
-| `color.state_error` | `#EF4444` | `#F87171` | LLM 실패, 검증 실패 |
-| `color.state_info` | `#3B82F6` | `#60A5FA` | RAG 참고 자료 표시 |
+| `color.state_success` | `#5C8A3A` | `#4ADE80` | Critic 좋은 점수, 저장 성공 |
+| `color.state_warning` | `#E0991C` | `#FCD34D` | Intent warning, 광고 단어 안내 (앰버) |
+| `color.state_error` | `#C2452A` | `#F87171` | LLM 실패, 검증 실패 (적갈색) |
+| `color.state_info` | `#4A6FA5` | `#60A5FA` | RAG 참고 자료 표시 |
+
+### 1.7b Rail / Paper (Phase 30 S1 — VISUAL_CONTRACT §2·§5)
+
+| 토큰 | light | 용도 |
+|---|---|---|
+| `color.rail` | `#573A2A` | 데스크톱 Primary Rail 배경 (짙은 브라운) |
+| `color.rail_text` | `#E5D7CC` | Rail 텍스트/아이콘 |
 
 ### 1.8 Critic 점수 (8차원 색상)
 
@@ -92,12 +103,16 @@ color.critic_bad    = color.state_error     (점수 0~1)
 
 ### 2.1 Font Family
 
+> **Phase 30 S1 (VISUAL_CONTRACT §4):** font-family **fallback 체인만** 정의 — 폰트 파일/deps 추가 없음. 같은 문단 내 3종 혼용 금지.
+
 | 토큰 | 값 | 용도 |
 |---|---|---|
-| `font.family_sans` | `"Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif` | 본문 / UI 전반 |
+| `font.family_display` | `"Paperlogy", "SUIT Variable", "SUIT", "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif` | Hero / 페이지·기획안·섹션 제목 / 대시보드 주요 수치 |
+| `font.family_sans` | `"SUIT Variable", "SUIT", "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif` | 본문 / UI 전반 (버튼·입력·사이드바·카드 설명·상태 문구) |
+| `font.family_editorial` | `"Noto Serif KR", "MaruBuri", "Nanum Myeongjo", serif` | 최종 대본 / 긴 인용문 / 방향 요약 책 페이지 본문 (작은 UI 텍스트엔 미사용) |
 | `font.family_mono` | `"JetBrains Mono", "Menlo", "Consolas", monospace` | 코드 / request_id |
 
-design.md §18: 시스템 폰트 우선, Pretendard 권장.
+design.md §18: 시스템 폰트 우선. display=Paperlogy, ui=SUIT/Pretendard, editorial=Noto Serif KR (모두 fallback 체인으로만 사용).
 
 ### 2.2 Font Size Scale (mobile-first)
 

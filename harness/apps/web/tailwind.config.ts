@@ -30,17 +30,19 @@ const config: Config = {
           hover: "var(--color-primary-hover)",
           pressed: "var(--color-primary-pressed)",
           disabled: "var(--color-primary-disabled)",
-          // Phase 1 호환 scale (Phase 1 컴포넌트 회귀 보호)
-          50: "#EEF2FF",
-          100: "#E0E7FF",
-          200: "#C7D2FE",
-          300: "#A5B4FC",
-          400: "#818CF8",
-          500: "#6366F1",
-          600: "#4F46E5",
-          700: "#4338CA",
-          800: "#3730A3",
-          900: "#312E81",
+          // Phase 30 S1 de-risk — legacy scale을 앰버~테라코타 웜 팔레트로 재매핑.
+          // 앱 전반 primary-N00 직접 사용분이 자동 리컬러됨(기능 0 변화).
+          // 출처: apps/web/design_reference/DESIGN_TOKENS.css.
+          50: "#FFF6E8",
+          100: "#FFE9C4",
+          200: "#FFD68B",
+          300: "#FFBF57",
+          400: "#FF9A2F",
+          500: "#F47B20",
+          600: "#E96818",
+          700: "#D94C1A",
+          800: "#AD3817",
+          900: "#7C2915",
         },
         accent: "var(--color-accent)",
         "bg-default": "var(--color-bg-default)",
@@ -60,44 +62,53 @@ const config: Config = {
         "state-warning": "var(--color-state-warning)",
         "state-error": "var(--color-state-error)",
         "state-info": "var(--color-state-info)",
-        // ── Phase 1 호환 (neutral / warning / error / success / info) ──
-        // Phase 1 컴포넌트 (PlanCard, ErrorCard 등)가 직접 참조 — 보존.
+        // Phase 30 S1 — 데스크톱 Primary Rail / 서적 카드용 (VISUAL_CONTRACT §2·§5).
+        rail: "var(--color-rail)",
+        "rail-text": "var(--color-rail-text)",
+        // ── Phase 30 S1 de-risk — legacy scale 웜 재매핑 ──
+        // PlanCard / ErrorCard / ProgressStepper 등이 neutral-N00 / status-N00을
+        // 직접 참조 — 보존하되 값만 아이보리~짙은브라운 웜그레이로 교체해 자동 리컬러.
+        // 출처: apps/web/design_reference/DESIGN_TOKENS.css + VISUAL_CONTRACT §2.
         neutral: {
           0: "#FFFFFF",
-          50: "#FAFAFA",
-          100: "#F5F5F5",
-          200: "#E5E5E5",
-          300: "#D4D4D4",
-          400: "#A3A3A3",
-          500: "#737373",
-          600: "#525252",
-          700: "#404040",
-          800: "#262626",
-          900: "#171717",
+          50: "#FFFAF4",
+          100: "#F5EFE6",
+          200: "#EEE3D5",
+          300: "#DDCDBD",
+          400: "#A08E82",
+          500: "#78685F",
+          600: "#65544B",
+          700: "#4D3D35",
+          800: "#3F3029",
+          900: "#352A24",
         },
+        // warning=앰버, error=적갈색 — primary 주황과 시각적으로 구분(VISUAL_CONTRACT §8 / COMPONENT_MAPPING §8).
         warning: {
-          50: "#FFFBEB",
-          500: "#F59E0B",
-          700: "#B45309",
+          50: "#FCF1DC",
+          500: "#E0991C",
+          700: "#9C6A12",
         },
         error: {
-          50: "#FEF2F2",
-          500: "#EF4444",
-          700: "#B91C1C",
+          50: "#F7E6E0",
+          500: "#C2452A",
+          700: "#8F2E1B",
         },
         success: {
-          50: "#F0FDF4",
-          500: "#22C55E",
-          700: "#15803D",
+          50: "#EAF1E0",
+          500: "#5C8A3A",
+          700: "#3F6326",
         },
         info: {
-          50: "#EFF6FF",
-          500: "#3B82F6",
-          700: "#1D4ED8",
+          50: "#E6EDF5",
+          500: "#4A6FA5",
+          700: "#34507A",
         },
       },
       fontFamily: {
-        sans: "var(--font-family-sans)",
+        // Phase 30 S1 — VISUAL_CONTRACT §4 폰트 역할(fallback 체인만, 폰트파일/deps 추가 없음).
+        sans: "var(--font-family-sans)", // UI·본문 (SUIT/Pretendard)
+        display: "var(--font-family-display)", // Hero·제목 (Paperlogy)
+        editorial: "var(--font-family-editorial)", // 대본·긴 인용 (Noto Serif KR)
         mono: "var(--font-family-mono)",
       },
       fontSize: {

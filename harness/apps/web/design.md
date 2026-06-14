@@ -500,35 +500,40 @@ Brand 톤
 
 shadcn/ui 기본 + Tailwind CSS를 사용한다.
 
+> **Phase 30 S1 (2026-06-15): Orange × Beige 종이 워크스페이스로 확정.** 아래 톤·색·폰트는 `apps/web/design_reference/VISUAL_CONTRACT.md` + `apps/web/app/globals.css` :root와 일치.
+
 ### 톤
 
-- 신뢰감 있는 AI 생산성 도구
-- 과한 크리에이터 감성보다 정돈된 실용성
+- 따뜻한 종이 위에서 아이디어를 정리하는 학생·기획자용 AI 워크스페이스
+- 과한 크리에이터 감성보다 정돈된 실용성, 아이보리·베이지 종이 질감
 - 카드 기반 정보 구조
-- 명확한 CTA
+- 명확한 주황 CTA
 
-### 색상 토큰 (초안, Phase 2에서 확정)
+### 색상 토큰 (Phase 30 S1 확정 — 80% 베이지/아이보리/웜그레이 + 20% 주황)
 
 ```
-background       : 흰색에 가까운 따뜻한 톤 (#FAFAFA 계열)
-surface          : 카드 배경, 흰색
-border           : 연한 회색 (#E5E5E5)
-text/primary     : 짙은 회색 (#1A1A1A)
-text/secondary   : 중간 회색 (#666)
-accent           : 신뢰감 있는 1색 (제안: #3B5BDB 또는 사용자 결정)
-warning          : 노란 톤 (Intent Warning용)
-critic/good      : 녹색
-critic/bad       : 적색에 가깝지만 부드러운 톤
+background       : 베이지 (#F5EFE6)
+surface          : 카드 배경, 아이보리 (#FFFAF4)
+border           : 웜 브라운 반투명 (rgba(102,72,54,.16))
+text/primary     : 짙은 브라운 (#352A24)
+text/secondary   : 웜그레이 (#78685F)
+primary(accent)  : 주황 (#F47B20 — hover #E96818, pressed #D94C1A)
+warning          : 앰버 (#E0991C, Intent Warning용)
+error            : 적갈색 (#C2452A — 주황 CTA와 구분)
+critic/good      : 녹색 (#5C8A3A)
+critic/bad       : 적갈색 (#C2452A)
+rail             : 데스크톱 Primary Rail 짙은 브라운 (#573A2A)
 ```
 
-강조색은 CTA, 선택 상태, 점수 시각화에만 제한적으로 사용한다.
+주황은 CTA, 현재 선택, 진행률, focus, 핵심 키워드에만 강하게 사용한다. 장문 본문·전체 패널 배경엔 쓰지 않는다.
 
-### 타이포
+### 타이포 (Phase 30 S1 — fallback 체인만, 폰트 파일 추가 없음)
 
 - 본문 모바일: 15–16px
 - 카드 제목: 17–19px
 - 한 줄 방향: 18–22px
-- 시스템 폰트 우선 (Pretendard 또는 시스템 디폴트)
+- display=Paperlogy (Hero·제목), ui=SUIT Variable/Pretendard (본문·UI), editorial=Noto Serif KR (대본·긴 인용)
+- 같은 문단 안에서 세 글꼴 혼용 금지
 
 ### 아이콘
 

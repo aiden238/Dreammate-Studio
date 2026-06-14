@@ -60,79 +60,79 @@
 
 토큰 명명: `--color-{role}-{scale}`. 스케일은 50/100/.../900.
 
-#### Primary (accent, CTA)
+> **Phase 30 S1 (2026-06-15): Orange × Beige 리브랜딩.** 아래 값은 `apps/web/tailwind.config.ts` legacy scale 및 `apps/web/design_reference/DESIGN_TOKENS.css` / `VISUAL_CONTRACT.md` §2와 일치. 비율 80% 베이지·아이보리·웜그레이 + 20% 주황(CTA/선택/진행/focus만).
+
+#### Primary (accent, CTA) — Orange #F47B20
 
 ```
---color-primary-50:   #EEF2FF
---color-primary-100:  #E0E7FF
---color-primary-200:  #C7D2FE
---color-primary-300:  #A5B4FC
---color-primary-400:  #818CF8
---color-primary-500:  #6366F1   /* base accent */
---color-primary-600:  #4F46E5   /* hover */
---color-primary-700:  #4338CA   /* pressed */
---color-primary-800:  #3730A3
---color-primary-900:  #312E81
+--color-primary-50:   #FFF6E8
+--color-primary-100:  #FFE9C4
+--color-primary-200:  #FFD68B
+--color-primary-300:  #FFBF57
+--color-primary-400:  #FF9A2F
+--color-primary-500:  #F47B20   /* base accent */
+--color-primary-600:  #E96818   /* hover */
+--color-primary-700:  #D94C1A   /* pressed */
+--color-primary-800:  #AD3817
+--color-primary-900:  #7C2915
 ```
 
-용도: 주요 CTA, 선택 상태, 진행률 바, 활성 탭.
+용도: 주요 CTA, 선택 상태, 진행률 바, 활성 탭. (장문 본문·전체 패널 배경엔 금지.)
 
 #### Secondary (보조 강조)
 
 ```
---color-secondary-50:  #ECFEFF
---color-secondary-500: #06B6D4   /* cyan accent */
---color-secondary-700: #0E7490
+--color-secondary-500: #FFB23F   /* amber accent */
 ```
 
 용도: 보조 강조, 정보성 배지 (예: "AI 생성", "참고 자료 사용").
 
-#### Neutral (text/surface/border)
+#### Neutral (text/surface/border) — Warm beige~brown
 
 ```
 --color-neutral-0:   #FFFFFF
---color-neutral-50:  #FAFAFA   /* background */
---color-neutral-100: #F5F5F5
---color-neutral-200: #E5E5E5   /* border */
---color-neutral-300: #D4D4D4
---color-neutral-400: #A3A3A3   /* placeholder */
---color-neutral-500: #737373
---color-neutral-600: #525252   /* secondary text */
---color-neutral-700: #404040
---color-neutral-800: #262626
---color-neutral-900: #171717   /* primary text */
+--color-neutral-50:  #FFFAF4   /* surface (아이보리) */
+--color-neutral-100: #F5EFE6   /* background (베이지) */
+--color-neutral-200: #EEE3D5   /* subtle bg / border */
+--color-neutral-300: #DDCDBD
+--color-neutral-400: #A08E82   /* placeholder */
+--color-neutral-500: #78685F   /* muted text */
+--color-neutral-600: #65544B
+--color-neutral-700: #4D3D35
+--color-neutral-800: #3F3029
+--color-neutral-900: #352A24   /* primary text (짙은 브라운) */
 ```
 
 매핑:
-- `background`: neutral-50
-- `surface` (카드): neutral-0
-- `border`: neutral-200
+- `background`: neutral-100 (베이지)
+- `surface` (카드): neutral-50 (아이보리)
+- `border`: `rgba(102,72,54,.16)` (웜 브라운 반투명)
 - `text/primary`: neutral-900
-- `text/secondary`: neutral-600
+- `text/secondary`: neutral-500
 - `text/placeholder`: neutral-400
 
-#### Semantic
+#### Semantic — 웜 톤과 구분 (error=적갈색, warning=앰버)
 
 ```
 /* Success (Critic 좋은 점수, save 성공) */
---color-success-50:  #F0FDF4
---color-success-500: #22C55E
---color-success-700: #15803D
+--color-success-50:  #EAF1E0
+--color-success-500: #5C8A3A
+--color-success-700: #3F6326
 
-/* Warning (Intent warning, ad phrase 2차 경고) */
---color-warning-50:  #FFFBEB
---color-warning-500: #F59E0B
---color-warning-700: #B45309
+/* Warning (Intent warning, ad phrase 2차 경고) — 앰버 */
+--color-warning-50:  #FCF1DC
+--color-warning-500: #E0991C
+--color-warning-700: #9C6A12
 
-/* Error (LLM 실패, 검증 실패) */
---color-error-50:    #FEF2F2
---color-error-500:   #EF4444
---color-error-700:   #B91C1C
+/* Error (LLM 실패, 검증 실패) — 적갈색, primary 주황과 구분 */
+--color-error-50:    #F7E6E0
+--color-error-500:   #C2452A
+--color-error-700:   #8F2E1B
 
 /* Info (참고 자료, RAG 사용 표시) */
---color-info-50:     #EFF6FF
---color-info-500:    #3B82F6
---color-info-700:    #1D4ED8
+--color-info-50:     #E6EDF5
+--color-info-500:    #4A6FA5
+--color-info-700:    #34507A
 ```
 
 #### Critic 점수 시각화 (8차원)
@@ -175,12 +175,16 @@
 
 #### Font Family
 
+> **Phase 30 S1 (VISUAL_CONTRACT §4):** font-family **fallback 체인만** 정의 — 폰트 파일/deps 추가 없음. display=Paperlogy(제목), ui=SUIT/Pretendard(본문·UI), editorial=Noto Serif KR(대본·인용). 같은 문단 내 3종 혼용 금지.
+
 ```
---font-family-sans:    "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif
---font-family-mono:    "JetBrains Mono", "Menlo", "Consolas", monospace
+--font-family-display:    "Paperlogy", "SUIT Variable", "SUIT", "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif
+--font-family-sans:       "SUIT Variable", "SUIT", "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif
+--font-family-editorial:  "Noto Serif KR", "MaruBuri", "Nanum Myeongjo", serif
+--font-family-mono:       "JetBrains Mono", "Menlo", "Consolas", monospace
 ```
 
-design.md §18: 시스템 폰트 우선, Pretendard 권장.
+design.md §18: 시스템 폰트 우선. Hero/제목은 display, 본문·UI는 sans, 대본·긴 인용은 editorial.
 
 #### Type Scale
 
@@ -423,11 +427,11 @@ Esc          → 모달/드로어 닫기, 진행 취소
 | UI 컴포넌트 (border, icon) | 3:1 | 비텍스트 |
 | 포커스 표시 | 3:1 (배경 대비) | |
 
-토큰 조합 검증:
-- neutral-900 on neutral-50: 17.4:1 ✓
-- neutral-600 on neutral-50: 5.7:1 ✓
-- primary-500 on neutral-0: 4.6:1 ✓ (CTA 텍스트)
-- warning-500 on neutral-0: 2.4:1 ✗ → warning 텍스트는 warning-700 사용
+토큰 조합 검증 (Phase 30 S1 웜 팔레트 기준):
+- text-default(#352A24) on bg-default(#F5EFE6): ~10:1 ✓ (본문)
+- text-muted(#78685F) on bg-default(#F5EFE6): ~3.7:1 → 본문은 14px+ 또는 보조 텍스트로 제한, 작은 본문엔 text-default 사용
+- primary CTA(#F47B20) 배경 위 텍스트는 짙은 브라운(text-default) 사용 — 흰 텍스트 대비 부족 주의 (VISUAL_CONTRACT §7)
+- warning-500(앰버)·error-500(적갈색) 텍스트는 700 단계 사용해 대비 확보
 
 ### 5.5 색상만으로 상태 구분 금지 (design.md §19)
 
