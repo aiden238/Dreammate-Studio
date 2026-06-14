@@ -11,6 +11,10 @@
  *
  * Slice 2 단독: mock 데이터 사용 (Slice 3+에서 실 API 호출 분기).
  * Slice 3: router.push('/new/discovery/step/2') 활성화.
+ *
+ * Phase 30 Slice 4 — 시각 리스킨(orange × beige 종이). 기능(상태/복원/handleNext/
+ *   route href/CardGrid5/DiscoveryProgress) 전부 보존. 표현 계층만: Paperlogy 제목 +
+ *   진행 헤더 + 고정 하단 CTA(BottomActionBar). 참조: VISUAL_CONTRACT.md, reference/discovery.html.
  */
 
 'use client';
@@ -121,27 +125,36 @@ export default function DiscoveryStep1Page() {
   return (
     <main className="min-h-screen bg-bg-default flex flex-col">
       {/* Header (WizardStepHeader placeholder — Slice 3에서 컴포넌트화) */}
-      <header className="border-b border-border-default px-4 py-3 sticky top-0 bg-bg-default z-10">
+      <header className="border-b border-border-default px-4 py-3 sticky top-0 bg-bg-default/90 backdrop-blur z-10">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <button
             type="button"
-            className="text-text-muted text-sm font-medium hover:text-text-default transition-colors duration-fast"
+            className="min-h-[44px] -ml-2 px-2 inline-flex items-center text-text-muted text-sm font-medium rounded-xl hover:text-text-default hover:bg-bg-subtle transition-colors duration-fast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
             onClick={() => router.back()}
             aria-label="뒤로 가기"
           >
             {'←'} back
           </button>
-          <div className="text-text-muted text-sm font-medium">1 / 7</div>
+          <div
+            className="text-[11px] font-bold uppercase tracking-[0.1em] text-primary-600"
+            aria-current="step"
+          >
+            Step 1 / 7
+          </div>
           <div className="w-12" aria-hidden="true" />
         </div>
       </header>
 
       {/* Title section */}
       <section className="px-4 py-6 max-w-2xl mx-auto w-full">
-        <h1 className="text-3xl font-bold text-text-default mb-2">
-          어떤 느낌으로 기억되면 좋을까요?
+        <h1 className="font-display text-3xl font-extrabold text-text-default mb-2 tracking-tight leading-[1.18]">
+          어떤{' '}
+          <span className="bg-gradient-to-r from-primary-300 via-primary-500 to-primary-700 bg-clip-text text-transparent">
+            느낌
+          </span>
+          으로 기억되면 좋을까요?
         </h1>
-        <p className="text-sm text-text-muted">
+        <p className="text-sm text-text-muted leading-relaxed">
           사람들이 이걸 어떻게 기억하면 좋을지 골라요. 직접 적어도 돼요.
         </p>
         <div className="mt-4">
@@ -161,14 +174,14 @@ export default function DiscoveryStep1Page() {
         />
       </section>
 
-      {/* Sticky bottom CTA */}
-      <footer className="fixed bottom-0 left-0 right-0 border-t border-border-default bg-bg-default px-4 py-3 safe-area">
+      {/* Sticky bottom CTA (BottomActionBar) */}
+      <footer className="fixed bottom-0 left-0 right-0 border-t border-border-default bg-bg-default/90 backdrop-blur px-4 py-3 safe-area">
         <div className="max-w-2xl mx-auto">
           <button
             type="button"
             disabled={ctaDisabled}
             onClick={handleNext}
-            className="w-full py-3 rounded-md font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed disabled:bg-primary-disabled disabled:cursor-not-allowed transition-colors duration-fast"
+            className="w-full min-h-[44px] py-3 rounded-xl font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed disabled:bg-primary-disabled disabled:cursor-not-allowed transition-colors duration-fast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
             aria-label="다음 단계로 진행"
           >
             {ctaDisabled ? '카드를 선택해주세요' : '다음 단계로 ▶'}

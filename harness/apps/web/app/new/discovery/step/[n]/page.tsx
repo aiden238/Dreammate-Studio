@@ -14,6 +14,10 @@
  *   - apps/web/discovery_flow.md §2~§7
  *   - apps/web/component_map.md (Routes ↔ Components 매핑 표)
  *   - apps/web/wireframes/direction_approval.md
+ *
+ * Phase 30 Slice 4 — 시각 리스킨(orange × beige 종이). 기능(각 step 상태/복원/
+ *   handleNext/route href/startPlan·wizardStep·generateMultiPlan/ProgressStepper) 전부 보존.
+ *   표현 계층만: Paperlogy 제목 + 진행 헤더 + 고정 하단 CTA. 참조: VISUAL_CONTRACT.md.
  */
 
 'use client';
@@ -231,21 +235,21 @@ function WizardHeader({
   onBack: () => void;
 }) {
   return (
-    <header className="border-b border-border-default px-4 py-3 sticky top-0 bg-bg-default z-10">
+    <header className="border-b border-border-default px-4 py-3 sticky top-0 bg-bg-default/90 backdrop-blur z-10">
       <div className="max-w-2xl mx-auto flex items-center justify-between">
         <button
           type="button"
-          className="text-text-muted text-sm font-medium hover:text-text-default transition-colors duration-fast"
+          className="min-h-[44px] -ml-2 px-2 inline-flex items-center text-text-muted text-sm font-medium rounded-xl hover:text-text-default hover:bg-bg-subtle transition-colors duration-fast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
           onClick={onBack}
           aria-label="뒤로 가기"
         >
           ← back
         </button>
         <div
-          className="text-text-muted text-sm font-medium"
+          className="text-[11px] font-bold uppercase tracking-[0.1em] text-primary-600"
           aria-current="step"
         >
-          {n} / 7
+          Step {n} / 7
         </div>
         <div className="w-12" aria-hidden="true" />
       </div>
@@ -300,8 +304,10 @@ function BrandCardStep({ n }: { n: 2 | 3 | 4 }) {
     <main className="min-h-screen bg-bg-default flex flex-col">
       <WizardHeader n={n} onBack={() => router.back()} />
       <section className="px-4 py-6 max-w-2xl mx-auto w-full">
-        <h1 className="text-3xl font-bold text-text-default mb-2">{h1}</h1>
-        <p className="text-sm text-text-muted">{sub}</p>
+        <h1 className="font-display text-3xl font-extrabold text-text-default mb-2 tracking-tight leading-[1.18]">
+          {h1}
+        </h1>
+        <p className="text-sm text-text-muted leading-relaxed">{sub}</p>
         <div className="mt-4">
           <DiscoveryProgress currentStep={n} />
         </div>
@@ -316,13 +322,13 @@ function BrandCardStep({ n }: { n: 2 | 3 | 4 }) {
           ariaLabel={h1}
         />
       </section>
-      <footer className="fixed bottom-0 left-0 right-0 border-t border-border-default bg-bg-default px-4 py-3 safe-area">
+      <footer className="fixed bottom-0 left-0 right-0 border-t border-border-default bg-bg-default/90 backdrop-blur px-4 py-3 safe-area">
         <div className="max-w-2xl mx-auto">
           <button
             type="button"
             disabled={ctaDisabled}
             onClick={handleNext}
-            className="w-full py-3 rounded-md font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed disabled:bg-primary-disabled disabled:cursor-not-allowed transition-colors duration-fast"
+            className="w-full min-h-[44px] py-3 rounded-xl font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed disabled:bg-primary-disabled disabled:cursor-not-allowed transition-colors duration-fast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
             aria-label="다음 단계로 진행"
           >
             {ctaDisabled ? '카드를 선택해주세요' : '다음 단계로 ▶'}
@@ -368,8 +374,10 @@ function Step5Tone() {
     <main className="min-h-screen bg-bg-default flex flex-col">
       <WizardHeader n={5} onBack={() => router.back()} />
       <section className="px-4 py-6 max-w-2xl mx-auto w-full">
-        <h1 className="text-3xl font-bold text-text-default mb-2">{h1}</h1>
-        <p className="text-sm text-text-muted">{sub}</p>
+        <h1 className="font-display text-3xl font-extrabold text-text-default mb-2 tracking-tight leading-[1.18]">
+          {h1}
+        </h1>
+        <p className="text-sm text-text-muted leading-relaxed">{sub}</p>
       </section>
       <section className="flex-1 pb-32">
         <ToneChipsForm
@@ -388,13 +396,13 @@ function Step5Tone() {
           </div>
         )}
       </section>
-      <footer className="fixed bottom-0 left-0 right-0 border-t border-border-default bg-bg-default px-4 py-3 safe-area">
+      <footer className="fixed bottom-0 left-0 right-0 border-t border-border-default bg-bg-default/90 backdrop-blur px-4 py-3 safe-area">
         <div className="max-w-2xl mx-auto">
           <button
             type="button"
             disabled={ctaDisabled}
             onClick={handleNext}
-            className="w-full py-3 rounded-md font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed disabled:bg-primary-disabled disabled:cursor-not-allowed transition-colors duration-fast"
+            className="w-full min-h-[44px] py-3 rounded-xl font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed disabled:bg-primary-disabled disabled:cursor-not-allowed transition-colors duration-fast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
             aria-label="다음 단계로 진행"
           >
             {ctaDisabled ? '톤을 선택해주세요' : '다음 단계로 ▶'}
@@ -514,8 +522,10 @@ function Step6Direction() {
     <main className="min-h-screen bg-bg-default flex flex-col">
       <WizardHeader n={6} onBack={() => router.back()} />
       <section className="px-4 py-6 max-w-2xl mx-auto w-full">
-        <h1 className="text-3xl font-bold text-text-default mb-2">{h1}</h1>
-        <p className="text-sm text-text-muted">{sub}</p>
+        <h1 className="font-display text-3xl font-extrabold text-text-default mb-2 tracking-tight leading-[1.18]">
+          {h1}
+        </h1>
+        <p className="text-sm text-text-muted leading-relaxed">{sub}</p>
       </section>
       <section className="flex-1 pb-8">
         <DirectionApprovalCard
@@ -637,10 +647,10 @@ function Step7Generate() {
     <main className="min-h-screen bg-bg-default flex flex-col">
       <WizardHeader n={7} onBack={() => router.back()} />
       <section className="px-4 py-6 max-w-2xl mx-auto w-full">
-        <h1 className="text-3xl font-bold text-text-default mb-2">
+        <h1 className="font-display text-3xl font-extrabold text-text-default mb-2 tracking-tight leading-[1.18]">
           {errorMsg ? '생성 실패' : h1}
         </h1>
-        <p className="text-sm text-text-muted">
+        <p className="text-sm text-text-muted leading-relaxed">
           {errorMsg
             ? '잠시 후 다시 시도하거나 처음부터 다시 만들어주세요.'
             : sub}
@@ -660,7 +670,7 @@ function Step7Generate() {
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="w-full py-3 rounded-md font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed transition-colors duration-fast"
+                className="w-full min-h-[44px] py-3 rounded-xl font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed transition-colors duration-fast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
                 aria-label="다시 시도"
               >
                 다시 시도 ↻
@@ -668,7 +678,7 @@ function Step7Generate() {
               <button
                 type="button"
                 onClick={() => router.push('/new/discovery/step/1')}
-                className="w-full py-3 rounded-md font-medium text-text-muted bg-bg-default border border-border-default hover:bg-bg-subtle transition-colors duration-fast"
+                className="w-full min-h-[44px] py-3 rounded-xl font-medium text-text-muted bg-surface border border-border-default hover:bg-bg-subtle transition-colors duration-fast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
                 aria-label="처음으로"
               >
                 처음으로

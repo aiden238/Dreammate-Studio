@@ -37,6 +37,11 @@
  *
  * Phase 18 S4: 택1 시 brandingSelect 로 planning 연결 + brand_memory 시드(gated+authed, best-effort).
  *   e2e 라이브 = S5.
+ *
+ * Phase 30 Slice 4 — 시각 리스킨(orange × beige 종이 워크스페이스).
+ *   기능(startedRef·planIdRef·Q&A 흐름·자유입력·brandingSelect/generate·route·진행바) 전부 보존.
+ *   표현 계층만: 진행률 헤더 + Paperlogy 질문 제목 + 크림 surface 선택카드(체크 아이콘) +
+ *   고정 하단 CTA + 주황은 CTA/선택/진행/focus 에만. 참조: VISUAL_CONTRACT.md, reference/discovery.html.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -223,17 +228,19 @@ export default function BrandingPage() {
   return (
     <main className="min-h-screen bg-bg-default flex flex-col">
       {/* Header */}
-      <header className="border-b border-border-default px-4 py-3 sticky top-0 bg-bg-default z-10">
+      <header className="border-b border-border-default px-4 py-3 sticky top-0 bg-bg-default/90 backdrop-blur z-10">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <button
             type="button"
-            className="text-text-muted text-sm font-medium hover:text-text-default transition-colors duration-fast"
+            className="min-h-[44px] -ml-2 px-2 inline-flex items-center text-text-muted text-sm font-medium rounded-xl hover:text-text-default hover:bg-bg-subtle transition-colors duration-fast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
             onClick={() => router.back()}
             aria-label="뒤로 가기"
           >
             {"←"} back
           </button>
-          <div className="text-text-muted text-sm font-medium">주제 추천</div>
+          <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-primary-600">
+            주제 추천
+          </div>
           <div className="w-12" aria-hidden="true" />
         </div>
       </header>
@@ -264,12 +271,26 @@ export default function BrandingPage() {
 
       {/* Title */}
       <section className="px-4 py-6 max-w-2xl mx-auto w-full">
-        <h1 className="text-3xl font-bold text-text-default mb-2">
-          {phase === "candidates"
-            ? "이런 주제는 어때요?"
-            : phase === "generating"
-              ? "기획안 생성 중"
-              : "무엇을 찍을지 같이 찾아봐요"}
+        <h1 className="font-display text-3xl font-extrabold text-text-default mb-2 tracking-tight leading-[1.18]">
+          {phase === "candidates" ? (
+            <>
+              이런{" "}
+              <span className="bg-gradient-to-r from-primary-300 via-primary-500 to-primary-700 bg-clip-text text-transparent">
+                주제
+              </span>
+              는 어때요?
+            </>
+          ) : phase === "generating" ? (
+            "기획안 생성 중"
+          ) : (
+            <>
+              무엇을 찍을지{" "}
+              <span className="bg-gradient-to-r from-primary-300 via-primary-500 to-primary-700 bg-clip-text text-transparent">
+                같이
+              </span>{" "}
+              찾아봐요
+            </>
+          )}
         </h1>
         <p className="text-sm text-text-muted">
           {phase === "loading" && "첫 질문을 준비하고 있어요…"}
@@ -302,7 +323,7 @@ export default function BrandingPage() {
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="w-full py-3 rounded-md font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed transition-colors duration-fast"
+              className="w-full min-h-[44px] py-3 rounded-xl font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed transition-colors duration-fast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
               aria-label="처음부터 다시 시도"
             >
               처음부터 다시 ↻
@@ -310,7 +331,7 @@ export default function BrandingPage() {
             <button
               type="button"
               onClick={() => router.push("/new")}
-              className="w-full py-3 rounded-md font-medium text-text-muted bg-bg-default border border-border-default hover:bg-bg-subtle transition-colors duration-fast"
+              className="w-full min-h-[44px] py-3 rounded-xl font-medium text-text-muted bg-surface border border-border-default hover:bg-bg-subtle transition-colors duration-fast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
               aria-label="다른 방법으로 시작"
             >
               다른 방법으로 시작
@@ -339,18 +360,18 @@ export default function BrandingPage() {
           {question && (
             <h2
               aria-live="polite"
-              className="text-text-default font-semibold text-lg mb-4 leading-normal"
+              className="font-display text-text-default font-bold text-xl mb-4 leading-normal tracking-tight"
             >
-              Q. {question}
+              <span className="text-primary-600">Q.</span> {question}
             </h2>
           )}
 
-          {/* 선택지 카드 (2~4개) */}
+          {/* 선택지 카드 (2~4개) — 모바일 1열, 데스크톱 2열 (reference .choice-grid) */}
           {options.length > 0 && (
             <div
               role="group"
               aria-label="선택지 카드"
-              className="flex flex-col gap-3 mb-6"
+              className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-2"
             >
               {options.map((opt, i) => (
                 <button
@@ -358,7 +379,7 @@ export default function BrandingPage() {
                   type="button"
                   disabled={busy}
                   onClick={() => void submitAnswer({ selected_option: opt })}
-                  className="w-full text-left p-4 rounded-lg border border-border-default bg-surface text-base text-text-default leading-normal transition-all duration-fast hover:bg-bg-subtle hover:scale-[1.01] focus:outline-none focus:border-border-focus focus:border-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full min-h-[44px] text-left p-4 rounded-2xl border border-border-default bg-surface text-base text-text-default leading-normal transition-all duration-fast hover:border-primary-300 hover:bg-primary-50/40 motion-safe:hover:-translate-y-0.5 focus:outline-none focus:border-border-focus focus:border-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label={`선택: ${opt}`}
                 >
                   {opt}
@@ -368,7 +389,7 @@ export default function BrandingPage() {
           )}
 
           {/* 자유 입력 (기타 / 직접 입력) */}
-          <div className="bg-surface border border-border-default rounded-md p-3 focus-within:border-border-focus focus-within:border-2 transition-colors duration-fast">
+          <div className="bg-surface border border-border-default rounded-2xl p-4 focus-within:border-border-focus focus-within:border-2 transition-colors duration-fast">
             <label
               htmlFor="branding-free-text"
               className="block text-sm font-medium text-text-muted mb-2"
@@ -400,7 +421,7 @@ export default function BrandingPage() {
             type="button"
             disabled={freeTextDisabled}
             onClick={() => void submitAnswer({ answer: freeText.trim() })}
-            className="mt-3 w-full py-3 rounded-md font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed disabled:bg-primary-disabled disabled:cursor-not-allowed transition-colors duration-fast"
+            className="mt-3 w-full min-h-[44px] py-3 rounded-xl font-semibold text-text-inverse bg-primary hover:bg-primary-hover active:bg-primary-pressed disabled:bg-primary-disabled disabled:cursor-not-allowed transition-colors duration-fast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
             aria-label="직접 입력한 답변으로 진행"
           >
             {busy ? "처리 중…" : "이 답변으로 진행 ▶"}
@@ -422,34 +443,48 @@ export default function BrandingPage() {
                 type="button"
                 disabled={busy}
                 onClick={() => void pickCandidate(c)}
-                className="w-full text-left p-4 rounded-lg border border-border-default bg-surface transition-all duration-fast hover:bg-bg-subtle hover:scale-[1.01] focus:outline-none focus:border-border-focus focus:border-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative w-full min-h-[44px] overflow-hidden text-left p-5 rounded-2xl border border-border-default bg-surface shadow-[0_10px_30px_-22px_rgba(86,55,36,0.4)] transition-all duration-fast hover:border-primary-300 hover:bg-primary-50/40 motion-safe:hover:-translate-y-0.5 focus:outline-none focus:border-border-focus focus:border-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label={`주제 선택: ${c.topic}`}
               >
-                <div className="font-semibold text-lg text-text-default mb-2 leading-normal">
+                {/* 종이 위 옅은 주황 광원 (장식, 약하게 — VISUAL_CONTRACT §6) */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-8 -bottom-10 h-28 w-28 rounded-full bg-primary-100/50 blur-2xl"
+                />
+                <div className="relative font-display font-bold text-lg text-text-default mb-2 leading-normal tracking-tight">
                   {c.topic}
                 </div>
-                <div className="flex flex-wrap gap-2 mb-3">
+                <div className="relative flex flex-wrap gap-2 mb-3">
                   {c.tone && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-bg-subtle text-text-muted">
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-bg-subtle text-text-muted">
                       톤 · {c.tone}
                     </span>
                   )}
                   {c.target && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-bg-subtle text-text-muted">
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-bg-subtle text-text-muted">
                       타깃 · {c.target}
                     </span>
                   )}
                   {c.format && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-bg-subtle text-text-muted">
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-bg-subtle text-text-muted">
                       포맷 · {c.format}
                     </span>
                   )}
                 </div>
                 {c.why_fit && (
-                  <div className="text-sm text-text-muted leading-normal border-t border-border-subtle pt-3">
+                  <div className="relative text-sm text-text-muted leading-relaxed border-t border-border-subtle pt-3 font-editorial">
                     {c.why_fit}
                   </div>
                 )}
+                <span
+                  aria-hidden="true"
+                  className="relative mt-3 inline-flex items-center text-xs font-semibold text-primary-700"
+                >
+                  이 주제로 만들기
+                  <span className="ml-1 transition-transform group-hover:translate-x-0.5">
+                    →
+                  </span>
+                </span>
               </button>
             ))}
           </div>

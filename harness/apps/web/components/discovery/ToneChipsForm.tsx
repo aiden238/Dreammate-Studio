@@ -80,14 +80,19 @@ export const ToneChipsForm: FC<ToneChipsFormProps> = ({
               aria-label={chip}
               disabled={isDisabled}
               onClick={() => toggleChip(chip)}
-              className={`px-4 py-2 rounded-full border text-sm transition-colors duration-fast focus:outline-none focus:border-border-focus focus:border-2 ${
+              className={`inline-flex min-h-[44px] items-center gap-1.5 px-4 py-2 rounded-full border text-sm transition-colors duration-fast focus:outline-none focus:border-border-focus focus:border-2 ${
                 isSelected
-                  ? 'bg-primary text-text-inverse border-primary'
+                  ? 'bg-primary text-text-inverse border-primary shadow-[0_8px_22px_-14px_rgba(86,55,36,0.5)]'
                   : isDisabled
                     ? 'bg-bg-subtle text-text-placeholder border-border-subtle cursor-not-allowed'
-                    : 'bg-surface text-text-default border-border-default hover:bg-bg-subtle'
+                    : 'bg-surface text-text-default border-border-default hover:border-primary-300 hover:bg-primary-50/50'
               }`}
             >
+              {isSelected && (
+                <span aria-hidden="true" className="text-xs font-bold">
+                  {'✓'}
+                </span>
+              )}
               {chip}
             </button>
           );

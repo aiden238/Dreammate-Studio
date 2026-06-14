@@ -13,6 +13,11 @@
  *   - docs/contracts/output_schema.md §3 P-001 brand_direction_cards.cards[i]
  *
  * a11y: role=radio + aria-checked + aria-label (frontend_design_contract.md §5.3)
+ *
+ * Phase 30 Slice 4 — 시각 리스킨(ChoiceCard, orange × beige 종이).
+ *   기능(role/aria-checked/onSelect/onKeyDown/onUserInputChange) 전부 보존.
+ *   표현 계층만: 크림 surface + 웜 보더 + 선택 시 주황 보더·옅은 앰버 배경 + 체크 아이콘.
+ *   참조: design_reference/VISUAL_CONTRACT.md §6(선택 카드), reference/discovery.html(.choice-card).
  */
 
 'use client';
@@ -69,10 +74,10 @@ export const BrandDirectionCard: FC<BrandDirectionCardProps> = ({
         tabIndex={0}
         aria-label={card.name}
         aria-checked={selected}
-        className={`w-full p-4 rounded-lg border transition-all duration-fast focus-within:outline-none ${
+        className={`relative w-full min-h-[44px] p-4 rounded-2xl border transition-all duration-fast focus-within:outline-none ${
           selected
-            ? 'bg-bg-subtle border-primary border-2'
-            : 'bg-surface border-border-default focus-within:border-border-focus focus-within:border-2'
+            ? 'border-primary border-2 bg-primary-50 shadow-[0_10px_30px_-18px_rgba(86,55,36,0.35)]'
+            : 'bg-surface border-border-default focus-within:border-border-focus focus-within:border-2 hover:border-primary-300'
         }`}
         onClick={() => onSelect(card.card_id)}
         onKeyDown={(e) => {
@@ -82,11 +87,19 @@ export const BrandDirectionCard: FC<BrandDirectionCardProps> = ({
           }
         }}
       >
-        <div className="text-text-default font-semibold text-lg mb-3">
+        {selected && (
+          <span
+            aria-hidden="true"
+            className="absolute right-3.5 top-3.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-text-inverse text-xs font-bold"
+          >
+            {'✓'}
+          </span>
+        )}
+        <div className="font-display text-text-default font-bold text-lg mb-3">
           {'✎'} {card.name}
         </div>
         <textarea
-          className="w-full p-3 border border-border-default rounded-md text-sm text-text-default placeholder:text-text-placeholder bg-surface focus:outline-none focus:border-border-focus focus:border-2 resize-none"
+          className="w-full p-3 border border-border-default rounded-xl text-sm text-text-default placeholder:text-text-placeholder bg-surface focus:outline-none focus:border-border-focus focus:border-2 resize-none"
           placeholder={card.description || '직접 브랜드 방향을 입력해주세요...'}
           rows={3}
           aria-label="브랜드 방향 직접 입력"
@@ -109,22 +122,22 @@ export const BrandDirectionCard: FC<BrandDirectionCardProps> = ({
       aria-checked={selected}
       aria-label={card.name}
       onClick={() => onSelect(card.card_id)}
-      className={`w-full text-left p-4 rounded-lg border transition-all duration-fast hover:scale-[1.02] focus:outline-none focus:border-border-focus focus:border-2 ${
+      className={`relative w-full min-h-[44px] text-left p-4 rounded-2xl border transition-all duration-fast focus:outline-none focus:border-border-focus focus:border-2 motion-safe:hover:-translate-y-0.5 ${
         selected
-          ? 'bg-bg-subtle border-primary border-2'
-          : 'bg-surface border-border-default hover:bg-bg-subtle'
+          ? 'border-primary border-2 bg-primary-50 shadow-[0_10px_30px_-18px_rgba(86,55,36,0.35)]'
+          : 'bg-surface border-border-default hover:border-primary-300 hover:bg-primary-50/40'
       }`}
     >
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-2 pr-7">
         {selected && (
           <span
             aria-hidden="true"
-            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-text-inverse text-xs font-bold"
+            className="absolute right-3.5 top-3.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-text-inverse text-xs font-bold"
           >
             {'✓'}
           </span>
         )}
-        <div className="font-semibold text-lg text-text-default">
+        <div className="font-display font-bold text-lg text-text-default">
           {card.name}
         </div>
       </div>

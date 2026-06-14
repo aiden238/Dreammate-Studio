@@ -11,6 +11,10 @@
  *   - apps/web/design_system/tokens.md (space.3 gap, space.4 padding)
  *
  * a11y: role=radiogroup + aria-label (frontend_design_contract.md §5.3)
+ *
+ * Phase 30 Slice 4 — 시각 리스킨(ChoiceGrid). 기능(role=radiogroup·controlled 선택) 보존.
+ *   표현 계층만: 모바일 1열 → 데스크톱 2열(reference .choice-grid). user_direct_input 슬롯은
+ *   전체 너비(2열 span)로 두어 입력 영역을 넓게 — 선택 동작/순서/aria 불변.
  */
 
 'use client';
@@ -61,18 +65,22 @@ export const CardGrid5: FC<CardGrid5Props> = ({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className="flex flex-col gap-3 px-4 w-full max-w-2xl mx-auto"
+      className="grid grid-cols-1 gap-3 px-4 w-full max-w-2xl mx-auto sm:grid-cols-2"
     >
       {allCards.map((card) => (
-        <BrandDirectionCard
+        <div
           key={card.card_id}
-          card={card}
-          selected={selectedCardId === card.card_id}
-          onSelect={onSelect}
-          onUserInputChange={
-            card.kind === 'user_direct_input' ? onUserInputChange : undefined
-          }
-        />
+          className={card.kind === 'user_direct_input' ? 'sm:col-span-2' : ''}
+        >
+          <BrandDirectionCard
+            card={card}
+            selected={selectedCardId === card.card_id}
+            onSelect={onSelect}
+            onUserInputChange={
+              card.kind === 'user_direct_input' ? onUserInputChange : undefined
+            }
+          />
+        </div>
       ))}
     </div>
   );
