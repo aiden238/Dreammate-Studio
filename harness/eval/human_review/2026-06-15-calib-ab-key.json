@@ -1,0 +1,563 @@
+{
+  "meta": {
+    "date": "2026-06-15",
+    "n": 10,
+    "arms": [
+      "A0",
+      "A1"
+    ],
+    "rubric_dims": [
+      "content_quality",
+      "safety",
+      "brand_fit",
+      "actionability_depth",
+      "differentiation"
+    ],
+    "depth_axis": "depth_actionability(0~1 별도축)",
+    "output_mode": "director",
+    "toggle": "env CRITIC_CALIBRATION_ENABLED + get_settings.cache_clear()",
+    "smoke": false
+  },
+  "cases": [
+    {
+      "case_id": "GS-001",
+      "kind": "normal",
+      "hidden": {
+        "A0": {
+          "overall_score_avg": 4.5,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.75,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.3333,
+            "differentiation": 4.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 4,
+            "message_clarity": 5,
+            "structure": 5,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 4,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        },
+        "A1": {
+          "overall_score_avg": 4.0,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.0,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.0,
+            "differentiation": 3.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 3,
+            "message_clarity": 4,
+            "structure": 4,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 3,
+            "depth_actionability": 4,
+            "retention_design": 3
+          },
+          "depth_axis_0_1": 0.8
+        }
+      }
+    },
+    {
+      "case_id": "GS-002",
+      "kind": "normal",
+      "hidden": {
+        "A0": {
+          "overall_score_avg": 4.6,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.75,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.6667,
+            "differentiation": 4.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 4,
+            "message_clarity": 5,
+            "structure": 5,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 4,
+            "depth_actionability": 5,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 1.0
+        },
+        "A1": {
+          "overall_score_avg": 4.1,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.0,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.3333,
+            "differentiation": 3.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 3,
+            "message_clarity": 4,
+            "structure": 4,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 3,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        }
+      }
+    },
+    {
+      "case_id": "GS-003",
+      "kind": "normal",
+      "hidden": {
+        "A0": {
+          "overall_score_avg": 4.4,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.75,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.3333,
+            "differentiation": 3.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 4,
+            "message_clarity": 5,
+            "structure": 5,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 3,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        },
+        "A1": {
+          "overall_score_avg": 4.2,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.25,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.3333,
+            "differentiation": 3.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 3,
+            "message_clarity": 5,
+            "structure": 4,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 3,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        }
+      }
+    },
+    {
+      "case_id": "GS-004",
+      "kind": "normal",
+      "hidden": {
+        "A0": {
+          "overall_score_avg": 4.2,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.25,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.3333,
+            "differentiation": 3.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 3,
+            "message_clarity": 4,
+            "structure": 5,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 3,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        },
+        "A1": {
+          "overall_score_avg": 3.8,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.0,
+            "safety": 5.0,
+            "brand_fit": 4.0,
+            "actionability_depth": 3.6667,
+            "differentiation": 3.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 3,
+            "hook_strength": 3,
+            "message_clarity": 4,
+            "structure": 4,
+            "feasibility": 4,
+            "brand_consistency": 5,
+            "differentiation": 3,
+            "depth_actionability": 4,
+            "retention_design": 3
+          },
+          "depth_axis_0_1": 0.8
+        }
+      }
+    },
+    {
+      "case_id": "GS-005",
+      "kind": "normal",
+      "hidden": {
+        "A0": {
+          "overall_score_avg": 4.5,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.75,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.3333,
+            "differentiation": 4.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 4,
+            "message_clarity": 5,
+            "structure": 5,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 4,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        },
+        "A1": {
+          "overall_score_avg": 4.1,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.0,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.3333,
+            "differentiation": 3.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 3,
+            "message_clarity": 4,
+            "structure": 4,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 3,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        }
+      }
+    },
+    {
+      "case_id": "SHALLOW-1",
+      "kind": "shallow",
+      "hidden": {
+        "A0": {
+          "overall_score_avg": 4.5,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.75,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.6667,
+            "differentiation": 3.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 4,
+            "message_clarity": 5,
+            "structure": 5,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 3,
+            "depth_actionability": 5,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 1.0
+        },
+        "A1": {
+          "overall_score_avg": 4.2,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.5,
+            "safety": 5.0,
+            "brand_fit": 4.0,
+            "actionability_depth": 4.3333,
+            "differentiation": 3.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 3,
+            "hook_strength": 4,
+            "message_clarity": 4,
+            "structure": 5,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 3,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        }
+      }
+    },
+    {
+      "case_id": "SHALLOW-2",
+      "kind": "shallow",
+      "hidden": {
+        "A0": {
+          "overall_score_avg": 4.4,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.5,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.3333,
+            "differentiation": 4.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 4,
+            "message_clarity": 4,
+            "structure": 5,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 4,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        },
+        "A1": {
+          "overall_score_avg": 4.0,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.0,
+            "safety": 5.0,
+            "brand_fit": 4.0,
+            "actionability_depth": 4.3333,
+            "differentiation": 3.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 3,
+            "hook_strength": 4,
+            "message_clarity": 3,
+            "structure": 4,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 3,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        }
+      }
+    },
+    {
+      "case_id": "SHALLOW-3",
+      "kind": "shallow",
+      "hidden": {
+        "A0": {
+          "overall_score_avg": 4.3,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.5,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.3333,
+            "differentiation": 3.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 3,
+            "message_clarity": 5,
+            "structure": 5,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 3,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        },
+        "A1": {
+          "overall_score_avg": 3.9,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.0,
+            "safety": 5.0,
+            "brand_fit": 4.0,
+            "actionability_depth": 4.3333,
+            "differentiation": 2.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 3,
+            "hook_strength": 3,
+            "message_clarity": 4,
+            "structure": 4,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 2,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        }
+      }
+    },
+    {
+      "case_id": "SHALLOW-4",
+      "kind": "shallow",
+      "hidden": {
+        "A0": {
+          "overall_score_avg": 4.5,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.5,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.6667,
+            "differentiation": 4.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 4,
+            "message_clarity": 4,
+            "structure": 5,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 4,
+            "depth_actionability": 5,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 1.0
+        },
+        "A1": {
+          "overall_score_avg": 4.3,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.25,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.3333,
+            "differentiation": 4.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 4,
+            "message_clarity": 4,
+            "structure": 4,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 4,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        }
+      }
+    },
+    {
+      "case_id": "SHALLOW-5",
+      "kind": "shallow",
+      "hidden": {
+        "A0": {
+          "overall_score_avg": 4.6,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.75,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.6667,
+            "differentiation": 4.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 4,
+            "message_clarity": 5,
+            "structure": 5,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 4,
+            "depth_actionability": 5,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 1.0
+        },
+        "A1": {
+          "overall_score_avg": 4.4,
+          "verdict": "approve",
+          "dimensions": {
+            "content_quality": 4.75,
+            "safety": 5.0,
+            "brand_fit": 4.5,
+            "actionability_depth": 4.3333,
+            "differentiation": 3.0
+          },
+          "raw_scores": {
+            "intent_fit": 5,
+            "target_clarity": 4,
+            "hook_strength": 4,
+            "message_clarity": 5,
+            "structure": 5,
+            "feasibility": 5,
+            "brand_consistency": 5,
+            "differentiation": 3,
+            "depth_actionability": 4,
+            "retention_design": 4
+          },
+          "depth_axis_0_1": 0.8
+        }
+      }
+    }
+  ]
+}
