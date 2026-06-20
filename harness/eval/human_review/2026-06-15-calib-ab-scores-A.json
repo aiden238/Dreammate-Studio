@@ -1,0 +1,106 @@
+{
+  "date": "2026-06-15",
+  "rater": "A",
+  "scores": [
+    {
+      "case_id": "GS-001",
+      "content_quality": 2,
+      "safety": 4,
+      "brand_fit": 2,
+      "actionability_depth": 2,
+      "differentiation": 3,
+      "depth_actionability": 0.5,
+      "comment": "좀더 어떻게 구체적으로 동아리에 대해 소개하는지에 대해 임의로라도 정해져 있으면 좋겠음"
+    },
+    {
+      "case_id": "GS-002",
+      "content_quality": 3,
+      "safety": 3,
+      "brand_fit": 3,
+      "actionability_depth": 2,
+      "differentiation": 3,
+      "depth_actionability": 0.7,
+      "comment": "후크 시스템이나 다른 요소들은 한번 리서치 작업을 통해 정말 쓰일수있는 후킹으로 발전했으면 좋겠음(너무 단조로움, 각색된 특색이 없음"
+    },
+    {
+      "case_id": "GS-003",
+      "content_quality": 2,
+      "safety": 2,
+      "brand_fit": 2,
+      "actionability_depth": 1,
+      "differentiation": 2,
+      "depth_actionability": 0.4,
+      "comment": "BGM. 시청자 이목, 단순히 맛있는 음식 이미지를 보여주는것 만으로는 한계가 있음, 영상에서 음식을 소개할때의 컨셉을 잡아줘야함"
+    },
+    {
+      "case_id": "GS-004",
+      "content_quality": 2,
+      "safety": 1,
+      "brand_fit": 2,
+      "actionability_depth": 1,
+      "differentiation": 2,
+      "depth_actionability": 0.4,
+      "comment": "이부분도 마찬가지, 사용자 프롬프트나 2nd 브레인을 통해서, 유저의 브랜딩을 해줘야함, 너무나도 당연한 템플릿, 대화를 통해 COT 기법으로 발전시켜줘야함"
+    },
+    {
+      "case_id": "GS-005",
+      "content_quality": 3,
+      "safety": 2,
+      "brand_fit": 3,
+      "actionability_depth": 2,
+      "differentiation": 3,
+      "depth_actionability": 0.6,
+      "comment": "좀 더 관련영상에 대한 딥리서치가 필요, 관련 채널이나, 쇼츠를 파악해서 공통점을 찾아주면 좋음"
+    },
+    {
+      "case_id": "SHALLOW-1",
+      "content_quality": 4,
+      "safety": 3,
+      "brand_fit": 1,
+      "actionability_depth": 3,
+      "differentiation": 2,
+      "depth_actionability": 0.7,
+      "comment": "주제가 너무 일방적임, COT기법으로 조율해나갈수있게 해야함"
+    },
+    {
+      "case_id": "SHALLOW-2",
+      "content_quality": 2,
+      "safety": 3,
+      "brand_fit": 1,
+      "actionability_depth": 3,
+      "differentiation": 1,
+      "depth_actionability": 0.7,
+      "comment": "짧지만 굵은 정보 전달 주제도 같이 찾아주면 좋음 "
+    },
+    {
+      "case_id": "SHALLOW-3",
+      "content_quality": 2,
+      "safety": 1,
+      "brand_fit": 3,
+      "actionability_depth": 2,
+      "differentiation": 1,
+      "depth_actionability": 0.5,
+      "comment": "다른 브이로그들을 분석한 레퍼런스도 있으면 좋음"
+    },
+    {
+      "case_id": "SHALLOW-4",
+      "content_quality": 2,
+      "safety": 1,
+      "brand_fit": 3,
+      "actionability_depth": 2,
+      "differentiation": 2,
+      "depth_actionability": 0.5,
+      "comment": "엉뚱한 아이디어 일부를 직접뽑아주고, 어떻게 하면좋은지도 알려주면 좋음"
+    },
+    {
+      "case_id": "SHALLOW-5",
+      "content_quality": 3,
+      "safety": 1,
+      "brand_fit": 2,
+      "actionability_depth": 3,
+      "differentiation": 1,
+      "depth_actionability": 0.5,
+      "comment": "서울에 숨겨진 맛집 리스트드들을 리서치하여 종합하여 알려주면, 영상들을 만들때 참고가됨"
+    }
+  ]
+}
