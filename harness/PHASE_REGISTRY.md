@@ -52,7 +52,10 @@
 | **29** | **에이전트 UX 마감 (랜딩·4상황버튼·멀티모달·동적 그래프·동일출처 프록시)** | **done** (2026-06-09, ✅ archive 2026-06-21 + 회고 phase-29.md) | 랜딩 리디자인/4상황버튼 distinct/용어번역(S0~2) + Discovery 진행요약·Brain CTA·에이전트 느낌(S3~5) + **멀티모달 A**(이미지 분석→생성 반영[A1]+키워드 PKM[A2], ★ 라이브 **FK 23503 회귀 수정**, PKM 0→4) + **/brain 동적 force 그래프 B1**(react-flow+d3-force, 드래그+필터, 라이브 10노드/9엣지) + **동일출처 API 프록시**(`/api/*` rewrites → 원격 터널·LAN·localhost/127 교차출처 로그인 문제 해소). tsc 0/lint 0. 이월: 컨셉→생성 주입 / B2 의미 그래프 타이핑 / 시각 e2e. (main `af345ae`) |
 | **30** | **UI 리브랜딩 (Orange × Beige)** | **done** (2026-06-15, ✅ archive 2026-06-21 + 회고 phase-30.md) | behavior-preserving 리스킨 — indigo/cyan → 따뜻한 주황(#F47B20)×아이보리·베이지 "종이 워크스페이스". API/output_schema/DB/AI flow 불변, 토큰·레이아웃·정보계층만. 9 Slice(S0 audit→S1 tailwind scale 웜 재매핑 ~325건 자동리컬러→S2 AppShell 데스크톱 이중내비→S3 홈→S4 Discovery/Branding→S5 PlanCard wrapper→S6 final-output 브리프깊이 한정→S7 Brain 그래프색→S8 QA legacy indigo 잔재). final-output=브리프 깊이(제작 아님). tsc 0/lint 0. (archive) |
 | **31** | **critic 품질 계측기 production화 + 마감 (cross-provider judge·consensus·P-006)** | 🟢 **active** (2026-06-21) | critic 품질 연구 아크(88점 함정→cross-provider Claude judge=사람정렬 계측기)의 production 마감. S1 consensus-min 배선(엄격 verdict, 안전 default 후보) / S2 P-006 prompt-version-review(특이성+RAG/PKM ref) / S3 golden_set RAG ON/OFF 품질측정. + project-2 결착(HIP-B/C·RAG Gemini) & research 5커밋 main 머지 동반. |
-| 32+ | 고도화 / 배포 | future | 배포 Gate B~G(실 staging — 인프라 user-provided) / 품질 후속(🅒 human 실채점) / 컨셉→생성 주입 / Custom RAG·LangGraph |
+| **32** | **Judge 수렴 (cross-provider + consensus, plotter←Dreammate)** | planned | cross-project 강점취합(meta/proposals/2026-06-22). plotter 보류 cross-provider judge 재고(Dreammate 측정 근거) + consensus-min. **초안 완료**(plotter-draft/ADR-0033 + validator patch) → plotter 적용·측정 대기. |
+| **33** | **결정적 깊이 게이트 수렴 (Dreammate←plotter)** | planned | plotter structure_pacing_issues(비-LLM) 이식 → cross-provider judge와 직교 차단층. **S1 구현완료**(b996eda: critic_pacing_gate, gated, pytest 845). S2 게이트∘judge 직교 합산 측정 대기. |
+| **34** | **정직·UX·RAG 수렴 (양방향)** | planned | 추정/예시: 라벨(plotter) + 결과-후 follow-up UX(양쪽) + Gemini ko 임베딩(plotter, 선택). 미착수. |
+| 35+ | 고도화 / 배포 | future | 배포 Gate B~G(실 staging — 인프라 user-provided) / 품질 후속(🅒 human 실채점) / 컨셉→생성 주입 / Custom RAG·LangGraph |
 
 ### ★ PARKED 제안 (future direction — proposal-first, 선행조건 gated, 빌드 승격 X)
 

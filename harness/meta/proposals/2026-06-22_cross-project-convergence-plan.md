@@ -8,6 +8,20 @@
 ## 0. 한 줄
 지난 세션(critic 연구 아크)이 설계한 **"false-approve 통합 방어 = plotter의 결정적 깊이 게이트 + Dreammate의 cross-provider judge"**를 양 프로젝트에 적용한다. 현재 **어느 쪽도 풀세트를 안 가져** 미적용 상태다.
 
+## 0.5 현재 상태 + (d) 조정 (2026-06-22, a~d 실행 반영)
+
+| Phase | 상태 | 비고 |
+|---|---|---|
+| **32 Judge 수렴** | **초안 완료**(plotter 적용 대기) | `plotter-draft/ADR-0033` + `validator-cross-judge.patch.md`. plotter 원격이라 적용·테스트는 plotter에서(user). |
+| **33 결정적 게이트** | **S1 구현완료**(b996eda) | Dreammate `critic_pacing_gate`(비-LLM, gated, pytest 845). S2(게이트∘judge 직교 합산 측정) 대기. |
+| **34 정직·UX·RAG** | 미착수 | 후속. |
+
+**(d) 조정 결론**:
+- **번호**: canonical 기준 **32~34** 확정(PHASE_REGISTRY 등록 완료). OneDrive 트리도 main 정렬돼 동일 번호 인식("phase 30" 혼선 해소).
+- **분할**: 3-phase(Judge/Gate/UX-RAG) 유지 — 직교 관심사라 합치지 않음.
+- **우선순위 실측 보정**: 계획상 Phase 32(Judge)가 ★최우선이었으나, **Dreammate 직접 구현 가능분(Phase 33 게이트)이 저마찰이라 먼저 완료**. 실제 흐름 = ① Dreammate 게이트(완료) → ② plotter judge(초안→user 적용) → ③ 게이트∘judge 합산 측정(Phase 33 S2) → ④ UX/RAG(34).
+- **active 1개**: 게이트는 critic 품질이라 Phase 31 테마와 겹치나, cross-project 수렴이라 **Phase 33로 등록**(planned). Phase 31(S1~S4 사실상 done) 정식 close 후 32~34가 active 승격 권장.
+
 ## 1. 찾은 결정 (파악)
 - **근거**: `eval/regression_results/2026-06-15-critic-calib-ab-preliminary.md:43` — "후속(데이터가 정당화): **L3 결정적 깊이 게이트(plotter식 — LLM 점수 재량 박탈, 비-LLM 계산으로 approve 상한 강제) + cross-provider 독립 Judge(OpenAI 생성 → Claude 채점)**. 둘 다 같은 10 plan + 같은 사람 점수에 대보면 됨."
 - **근거**: `2026-06-21-cross-provider-judge.md:74` — "모델 교체 = 다른 blind spot (plotter의 in-provider Haiku→Opus judge보다 강함)."
