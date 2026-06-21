@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
+import MainFrame from "@/components/MainFrame";
 
 /**
  * Phase 1 Slice 7 — root layout
@@ -48,9 +49,10 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="min-h-screen bg-neutral-50 text-neutral-900 safe-area">
-        {/* 지속 네비(AppShell)가 본문을 가리지 않도록 여백 확보:
-            모바일=하단 탭바(pb-20), 데스크톱=좌측 이중 내비(rail 76px + sidebar 244px = 320px). */}
-        <div className="pb-20 desktop:pb-0 desktop:pl-[320px]">{children}</div>
+        {/* 지속 네비(AppShell)가 본문을 가리지 않도록 여백 확보 — 단, shell 이 실제 보이는
+            경로에서만(MainFrame 이 isShellHidden 로 연동). 숨김 경로(/login·/new·/plan)는 여백 0
+            → 콘텐츠 전체폭 중앙 정렬(우측 치우침 해소). 모바일=하단 탭바(pb-20)/데스크톱=좌측 내비(320px). */}
+        <MainFrame>{children}</MainFrame>
         <AppShell />
       </body>
     </html>

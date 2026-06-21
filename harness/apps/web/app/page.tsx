@@ -122,18 +122,23 @@ export default function HomePage() {
 
     setInputWarning(null);
     setDisplayError(null);
+
+    // ★ Phase 34 S2 (수렴): 텍스트 입력은 단일 대화형 흐름(/new/flow)으로 — 확인 턴(명확도)+
+    //   카드+이어가기를 한 화면에서. 이미지 첨부 시엔 멀티모달 경로 보존(/new/flow 는 이미지 미지원이라
+    //   기존 startPlan→/plan/[id] 유지). 어느 경로든 종착 /plan 흐름이라 저장·피드백·학습(PKM)은 동일.
+    if (images.length === 0) {
+      router.push(`/new/flow?prompt=${encodeURIComponent(trimmed)}`);
+      return;
+    }
+
     setIsLoading(true);
     setStepperState("planning");
 
     try {
-      // ★ Phase 28 S1: 홈도 plans 흐름을 탄다 — startPlan(입력) → /plan/[id].
-      //   /plan/[id] 가 generateMultiPlan(credentials 포함=auth) + 영속(plans) + 피드백 UI 를 제공
-      //   → 어느 경로로 써도 저장되고 피드백→학습(PKM)으로 이어진다(2nd brain 루프).
-      //   (기존 레거시 /generate 단발 = 저장 실패 + 학습 미연결 막다른 길 제거.)
       const { plan_id } = await startPlan(
         trimmed,
         "ko-KR",
-        images.length > 0 ? images : undefined, // Phase 29 A — 첨부 레퍼런스 전달
+        images, // Phase 29 A — 첨부 레퍼런스 전달 (이미지 경로 전용)
       );
       setStepperState("complete");
       router.push(`/plan/${plan_id}`);

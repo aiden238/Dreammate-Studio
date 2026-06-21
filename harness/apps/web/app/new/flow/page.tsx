@@ -126,6 +126,20 @@ export default function NewFlowPage() {
   // 언마운트 시 타이머 정리(누수·stale setState 방지).
   useEffect(() => clearTimer, [clearTimer]);
 
+  // 홈(/)에서 ?prompt= 로 넘어온 의도 계승 → 바로 확인 턴으로 (단일 흐름 진입점).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = (new URLSearchParams(window.location.search).get("prompt") ?? "").trim();
+    if (!p) return;
+    setPrompt(p);
+    setDirection({
+      text: buildDirectionText(p, 0),
+      clarity_score: quickClarity({ promptLen: p.length, clarified: false }),
+      revise_count: 0,
+    });
+    setPhase("confirm");
+  }, []);
+
   // ── intent → confirm: 의도 제출 시 mock 방향 + 명확도 계산(클라이언트, 무비용) ──
   const handleIntentSubmit = useCallback(() => {
     const text = prompt.trim();

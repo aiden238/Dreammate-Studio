@@ -119,6 +119,17 @@ const SIDE_SECTIONS: SideSection[] = [
 //   홈(/) · 내 brain(/brain) = 목적지라 네비 유지.
 const HIDDEN_PREFIXES = ["/login", "/new", "/plan"];
 
+/**
+ * 이 경로에서 AppShell(좌측 이중 내비 + 모바일 하단 탭)이 숨겨지는가.
+ * layout.tsx 의 본문 여백(데스크톱 pl-320 / 모바일 pb-20)을 shell 가시성과 **연동**하기 위해 export.
+ * (숨김 경로에서 여백을 그대로 두면 사이드바 없이 빈 좌측 320px → 콘텐츠가 우측으로 치우침.)
+ */
+export function isShellHidden(pathname: string): boolean {
+  return HIDDEN_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
+}
+
 function matchesPrefix(pathname: string, prefix: string): boolean {
   if (prefix === "/") return pathname === "/";
   return pathname === prefix || pathname.startsWith(prefix + "/");
@@ -303,7 +314,7 @@ function MobileBottomNav({ pathname }: { pathname: string }) {
 export default function AppShell() {
   const pathname = usePathname() ?? "/";
 
-  if (HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+  if (isShellHidden(pathname)) {
     return null;
   }
 
