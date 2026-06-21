@@ -7,6 +7,25 @@
 
 ---
 
+## 📌 발표 · 과제 문서 안내 (채점용 인덱스)
+
+> 발표 슬라이드는 GitHub Pages로 제공합니다 → **https://aiden238.github.io/Dreammate-Studio/**
+
+| 채점 항목 | 문서 | 핵심 키워드 |
+|---|---|---|
+| 기획서 · 요구사항 | [docs/grading/01_기획서_요구사항.md](docs/grading/01_기획서_요구사항.md) | 기획서, 요구사항, 비전, 문제정의 |
+| WBS · 일정 | [docs/grading/02_WBS_일정.md](docs/grading/02_WBS_일정.md) | WBS, 일정, 마일스톤 |
+| 아키텍처 · ADR | [docs/grading/03_아키텍처_ADR.md](docs/grading/03_아키텍처_ADR.md) | 아키텍처, ADR, 디렉토리 구조 |
+| setup · deploy · testing | [docs/grading/04_setup_deploy_testing.md](docs/grading/04_setup_deploy_testing.md) | setup, deploy, testing, 단위/통합 테스트, 빌드, 배포 |
+| AGENTS.md · 통합 기법 | [AGENTS.md](AGENTS.md) | AGENTS, 단일 md, skills, rules, commands |
+| 발표 슬라이드 / 대본 | [docs/index.html](docs/index.html) · [docs/발표대본_5분.md](docs/발표대본_5분.md) | 발표, 데모 |
+
+**핵심 수치 스냅샷**: Phase 0~31 완료 · pytest **845** green · 통합 시나리오 **36/36** · **ADR 39건** · Next.js PWA 11 routes · FastAPI 17 endpoints.
+
+**나만의 기법(가산점)**: 단일 `AGENTS.md`로 agent·skills·rules·commands 통합 + `.claude/skills` 21종 자동 트리거 + `docs/contracts` 단일 진실 소스 + LLM Wiki 암묵지 관리 + multi-LLM(Claude·GPT·Gemini) 교차검증.
+
+---
+
 ## 현재 상태
 
 | 항목 | 내용 |
