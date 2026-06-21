@@ -422,6 +422,34 @@ def _judge_via_anthropic(
     return (resp.text or "{}").strip(), model["model_id"], resp.usage
 
 
+# ─── Phase 31 S1: consensus-min (gated, additive) ────────────────────
+
+# verdict 엄격도 순위 (높을수록 엄격). consensus-min 은 둘 중 더 엄격한 verdict 를 채택.
+_VERDICT_RANK = {"approve": 0, "revise": 1, "reject": 2}
+
+
+def _run_critic_consensus_min(
+    plan: dict[str, Any], *, model: str | None = None
+) -> dict[str, Any]:
+    """consensus-min (Phase 31 S1, gated): OpenAI + Claude 독립 채점 → 더 엄격한 verdict 채택.
+
+    단조(monotone): 합의 verdict 는 두 채점 중 **절대 더 약하지 않다**(approve<revise<reject).
+    OpenAI self-review 낙관편향을 Claude 가, Claude 변동을 OpenAI 가 상호 보정 → 안전 default 후보.
+    동률이면 Claude(사람정렬 검증 계측기) result 채택. 더 엄격한 verdict 를 낸 쪽의 full
+    result(scores/reasons 정합)를 그대로 반환한다.
+
+    비용: 2x LLM 호출(트레이드오프) + 외부 실패표면 2배. gated default-off →
+    critic_judge_provider 가 'consensus_min' 일 때만, client 미주입(실 경로)에서만 활성.
+    검증 근거: eval/regression_results/2026-06-21-cross-provider-judge.md §consensus-min.
+    """
+    r_openai = run_critic(plan, model=model, provider_override="openai")
+    r_claude = run_critic(plan, model=model, provider_override="anthropic")
+    rank_o = _VERDICT_RANK.get(str(r_openai["overall_verdict"]), 0)
+    rank_c = _VERDICT_RANK.get(str(r_claude["overall_verdict"]), 0)
+    # Claude 가 ≥ 면 Claude(동률 시에도 검증된 계측기) — 반환 result 의 verdict 가 곧 consensus.
+    return r_claude if rank_c >= rank_o else r_openai
+
+
 # ─── 호출 함수 ────────────────────────────────────────────────────────
 
 def run_critic(
@@ -429,6 +457,7 @@ def run_critic(
     *,
     client: OpenAI | None = None,
     model: str | None = None,
+    provider_override: str | None = None,
 ) -> dict[str, Any]:
     """Critic 평가 LLM 호출.
 
@@ -457,8 +486,19 @@ def run_critic(
     _model = model or settings.openai_model_critic
     # ★ Phase 31 (gated): cross-provider judge. default "openai" → OpenAI 경로 byte-identical.
     #   "anthropic" + client 미주입 시 Claude(registry claude-sonnet)로 채점 (self-review 편향 차단).
+    #   "consensus_min" → OpenAI+Claude 둘 다 채점 후 더 엄격한 verdict 채택(안전 default 후보, 2x 비용).
     #   client 가 주입되면(테스트 mock) provider 무관하게 그 client 사용 → 테스트 결정성 보존.
-    _judge_provider = str(getattr(settings, "critic_judge_provider", "openai")).lower()
+    #   provider_override(consensus 재귀)는 settings 보다 우선 + consensus 재진입 차단.
+    _judge_provider = (
+        provider_override or str(getattr(settings, "critic_judge_provider", "openai"))
+    ).lower()
+    # ★ Phase 31 S1 consensus-min: 실 경로(client 미주입) + override 아님일 때만 위임(재귀 차단).
+    if (
+        _judge_provider == "consensus_min"
+        and client is None
+        and provider_override is None
+    ):
+        return _run_critic_consensus_min(plan, model=model)
     _use_anthropic = _judge_provider == "anthropic" and client is None
 
     # Phase 15 S3 (gated): output_mode 별 차원. compact=8 / rich=9(DIMENSIONS_RICH) / director=9(현재 rich 차원,

@@ -201,7 +201,9 @@ class Settings(BaseSettings):
         description=(
             "Phase 31 cross-provider judge: critic 채점 provider 선택 "
             "('openai'=기본 gpt-4o critic, byte-identical / 'anthropic'=Claude 독립 judge로 "
-            "self-review 낙관편향 차단). 환경변수 CRITIC_JUDGE_PROVIDER."
+            "self-review 낙관편향 차단 / 'consensus_min'=OpenAI+Claude 둘 다 채점 후 더 엄격한 "
+            "verdict 채택(단조·안전 default 후보, 2x 비용)). 환경변수 CRITIC_JUDGE_PROVIDER. "
+            "★ default 전환은 prompt-version-review 대상(major)."
         ),
     )
 

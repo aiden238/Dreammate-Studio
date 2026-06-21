@@ -134,3 +134,55 @@ def test_injected_client_overrides_provider(monkeypatch) -> None:
     out = run_critic({"plan_id": "p"}, client=client)
     assert out["overall_verdict"] == "approve"  # 주입 client(4점) 사용 → approve
     client.chat.completions.create.assert_called_once()
+
+
+# ─── Phase 31 S1: consensus-min (더 엄격한 verdict 채택) ──────────────
+
+def test_consensus_min_takes_stricter_verdict(monkeypatch) -> None:
+    """OpenAI=approve(4점) vs Claude=reject(2점) → consensus=reject(엄격). 둘 다 호출."""
+    _FakeAdapter.last_req = None
+    _FakeAdapter.payload = _payload(2)  # Claude → reject
+    monkeypatch.setattr(_ADAPTER_PATH, _FakeAdapter)
+    monkeypatch.setattr(
+        critic_mod,
+        "get_settings",
+        lambda: Settings(critic_judge_provider="consensus_min", anthropic_api_key="k"),
+    )
+    fake_openai = _openai_fake(_payload(4))  # OpenAI → approve
+    monkeypatch.setattr(critic_mod, "OpenAI", lambda *a, **k: fake_openai)
+
+    out = run_critic({"plan_id": "p"})  # client 미주입 → consensus_min 분기
+
+    assert out["overall_verdict"] == "reject"  # 단조: 더 엄격한 쪽(reject) 채택
+    assert out["target_plan_id"] == "p"
+    fake_openai.chat.completions.create.assert_called_once()  # OpenAI 채점됨
+    assert _FakeAdapter.last_req is not None  # Claude 채점됨 (2x 호출)
+
+
+def test_consensus_min_monotone_no_weaker(monkeypatch) -> None:
+    """OpenAI=approve(5점) vs Claude=approve(4점) → 둘 다 approve → consensus=approve(약화 0)."""
+    _FakeAdapter.payload = _payload(4)  # Claude → approve
+    monkeypatch.setattr(_ADAPTER_PATH, _FakeAdapter)
+    monkeypatch.setattr(
+        critic_mod,
+        "get_settings",
+        lambda: Settings(critic_judge_provider="consensus_min", anthropic_api_key="k"),
+    )
+    fake_openai = _openai_fake(_payload(5))  # OpenAI → approve
+    monkeypatch.setattr(critic_mod, "OpenAI", lambda *a, **k: fake_openai)
+
+    out = run_critic({"plan_id": "p"})
+    assert out["overall_verdict"] == "approve"  # 둘 다 approve → approve
+
+
+def test_consensus_min_injected_client_skips_consensus(monkeypatch) -> None:
+    """client 주입 시 consensus 미적용(byte-identical) — 주입 client 단독 사용."""
+    monkeypatch.setattr(
+        critic_mod,
+        "get_settings",
+        lambda: Settings(critic_judge_provider="consensus_min", anthropic_api_key="k"),
+    )
+    client = _openai_fake(_payload(4))
+    out = run_critic({"plan_id": "p"}, client=client)
+    assert out["overall_verdict"] == "approve"  # consensus 우회 → 주입 client(4) → approve
+    client.chat.completions.create.assert_called_once()
