@@ -139,9 +139,10 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 
 ## 현재 Active Phase
 
-**🟢 Phase 31 = critic 품질 계측기 production화 + 마감 — ✅ active (2026-06-21)** — cross-provider Claude judge(88점 함정 해소·사람정렬 계측기)의 production 마감 + project-2 결착 main 통합. **S1** consensus-min 배선(OpenAI+Claude 엄격 verdict, 안전 default 후보, additive gated) **S2** P-006 prompt-version-review(특이성 표면레버 + 할루시네이션 라벨 강제 + RAG/PKM ref) **S3** golden_set RAG ON/OFF 품질측정(judge 사용, 2c 후속) **S4** research 5 + project-2 결착 → main 머지/push(outward, 사용자 승인). 진입 docs = `phases/active/phase-31-critic-quality-close/`. acceptance A1~A8.
+**🟢 Phase 32 = Judge 수렴 (cross-provider + consensus, plotter←Dreammate) — ✅ active (2026-06-22)** — cross-project 강점취합(`meta/proposals/2026-06-22_cross-project-convergence-plan.md`). plotter가 보류한 cross-provider judge를 Dreammate 측정 근거로 재고·적용(consensus-min, gated). 결정적 게이트(Phase 33 S1=`critic_pacing_gate` 구현완료)와 직교 합산. S1/S2 plotter 초안완료(`meta/proposals/plotter-draft/`) → 적용·측정 대기. 진입 docs = `phases/active/phase-32-judge-convergence/`. (planned 33 게이트 S2 측정 / 34 정직·UX·RAG.)
 
-> ✅ Phase 28·29·30 **정식 close 완료** (2026-06-21): 회고 phase-28/29/30.md + archive 이동 + phase-27 active/archive 중복 정리(notes.md 보존) → `phases/active` = **phase-31 단일**("active 1개" 복원).
+> ✅ **Phase 31 done (2026-06-22, archive + 회고 phase-31.md)** — S1 consensus-min / S2 P-006 v1.2.1(정직가드) / S3 RAG ON/OFF(Δ+0.9) / S4 main push. + project-2 결착 + brand-memory 버그 수정(CODEX 발견 a9abc16) + Phase 33 S1 결정적 게이트(b996eda). pytest 845.
+> ✅ Phase 28·29·30 정식 close (2026-06-21): 회고 + archive → "active 1개" 복원.
 
 ### (직전 done) Phase 29 — 에이전트 UX 마감 (참고)
 
