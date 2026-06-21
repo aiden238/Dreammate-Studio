@@ -1,0 +1,206 @@
+diff --git a/web/app/page.tsx b/web/app/page.tsx
+index 9ba48e7..b0bb8cf 100644
+--- a/web/app/page.tsx
++++ b/web/app/page.tsx
+@@ -6,6 +6,7 @@ import { FlaskConical, History, RefreshCw } from "lucide-react";
+ import { AuthButton } from "@/components/auth-button";
+ import { AuthErrorNotice } from "@/components/auth-error";
+ import { ConfirmPanel } from "@/components/confirm-panel";
++import { FollowUpComposer } from "@/components/follow-up-composer";
+ import { IntentForm } from "@/components/intent-form";
+ import { ResultPanel } from "@/components/result-panel";
+ import { Button, buttonVariants } from "@/components/ui/button";
+@@ -26,6 +27,10 @@ export default function Home() {
+   const [result, setResult] = useState<GenerateResponse | null>(null);
+   const [lastReq, setLastReq] = useState<GenerateRequest | null>(null);
+   const [stages, setStages] = useState<PipelineStage[]>([]); // SSE 진행 단계(ADR-0005)
++  // Phase 34 S2 (수렴) — 대화형 follow-up 스레드: 결과 카드 후 프롬프트로 계속 이어가기.
++  const [followUps, setFollowUps] = useState<{ input: string; result: GenerateResponse }[]>([]);
++  const [followUpLoading, setFollowUpLoading] = useState(false);
++  const [followUpError, setFollowUpError] = useState<string | null>(null);
+ 
+   async function run(req: GenerateRequest) {
+     setLoading(true);
+@@ -80,6 +85,49 @@ export default function Home() {
+     }
+   }
+ 
++  // Phase 34 S2 — 결과 후 추가 요청 → 새 생성 → 스레드 누적 (대화형 이어가기).
++  //   직전 요청의 topic/track/model 을 계승하고 follow-up 텍스트를 이어붙여 컨텍스트 유지.
++  async function runFollowUp(text: string) {
++    if (!lastReq) return;
++    setFollowUpLoading(true);
++    setFollowUpError(null);
++    const contextual = `${lastReq.user_text} — 이어서 요청: ${text}`;
++    const req: GenerateRequest = { user_text: contextual, track: lastReq.track, model: lastReq.model };
++    let received: GenerateResponse | null = null;
++    try {
++      await generateStream(req, {
++        onStage: () => {},
++        onResult: (res) => {
++          received = res;
++          void track("result_received", { stage: res.stage }, res.candidate_id);
++        },
++        onError: (msg) => setFollowUpError(msg),
++      });
++      if (received) {
++        const r: GenerateResponse = received;
++        if (r.stage === "done") {
++          setFollowUps((prev) => [...prev, { input: text, result: r }]);
++          if (typeof window !== "undefined") {
++            window.setTimeout(
++              () => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }),
++              80,
++            );
++          }
++        } else {
++          // confirm/clarify/rejected → 메인 result 로 전환(기존 FSM 처리), 스레드 초기화
++          setResult(r);
++          setLastReq(req);
++          setStages([]);
++          setFollowUps([]);
++        }
++      }
++    } catch (e) {
++      setFollowUpError(e instanceof GenerateError ? e.message : "이어서 생성하지 못했습니다.");
++    } finally {
++      setFollowUpLoading(false);
++    }
++  }
++
+   function handleFeedback(index: number, kind: FeedbackKind) {
+     // feedback 테이블 적재 (slice 3b, ADR-0019 — Memory Vault 채택/거부 신호). fire-and-forget.
+     // candidate_id는 /generate 응답에서 옴 — mock·비로그인·미적재면 없으니 적재는 skip.
+@@ -189,6 +237,36 @@ export default function Home() {
+           />
+         )}
+       </section>
++
++      {/* Phase 34 S2 — follow-up 스레드: 추가 요청의 새 기획안 묶음 누적 (각 카드 피드백 가능) */}
++      {followUps.map((fu, i) => (
++        <section key={`fu-${i}`} className="flex flex-col gap-3 border-t pt-6">
++          <p className="text-sm text-muted-foreground">
++            💬 이어서:{" "}
++            <span className="font-medium text-foreground">&ldquo;{fu.input}&rdquo;</span>
++          </p>
++          <ResultPanel
++            loading={false}
++            error={null}
++            result={fu.result}
++            onFeedback={handleFeedback}
++            onExport={(format) => {
++              void track("export", { format }, fu.result.candidate_id);
++              const cid = fu.result.candidate_id;
++              if (cid) void sendFeedback({ candidateId: cid, kind: "download" });
++            }}
++          />
++        </section>
++      ))}
++
++      {/* Phase 34 S2 — 이어서 요청하기 (done 이면 표시; 선택/저장 후에도 계속 프롬프트) */}
++      {result?.stage === "done" && (
++        <FollowUpComposer
++          onSubmit={(t) => void runFollowUp(t)}
++          loading={followUpLoading}
++          error={followUpError}
++        />
++      )}
+     </main>
+   );
+ }
+diff --git a/web/components/follow-up-composer.tsx b/web/components/follow-up-composer.tsx
+new file mode 100644
+index 0000000..986125e
+--- /dev/null
++++ b/web/components/follow-up-composer.tsx
+@@ -0,0 +1,90 @@
++"use client";
++
++/**
++ * Phase 34 S2 (cross-project 수렴) — 대화형 follow-up 입력.
++ *
++ * 결과 카드(done)를 보고 "재생성(같은 입력)"만 가능하던 종료 화면에, 프롬프트로 계속 이어갈 수
++ * 있게 한다. 추가 요청을 보내면 새 기획안 묶음이 아래에 쌓인다(page.tsx가 스레드 누적).
++ *
++ * Dreammate 측 FollowUpComposer 와 대칭(양 web 앱 수렴). 표현 계층 전용.
++ */
++
++import { useState } from "react";
++import { CornerDownLeft } from "lucide-react";
++import { Button } from "@/components/ui/button";
++
++interface FollowUpComposerProps {
++  onSubmit: (text: string) => void;
++  loading: boolean;
++  error?: string | null;
++}
++
++const HINTS = ["더 짧게(30초)", "다른 후크로", "더 위트있게", "다른 컨셉도"];
++
++export function FollowUpComposer({ onSubmit, loading, error }: FollowUpComposerProps) {
++  const [text, setText] = useState("");
++
++  function submit() {
++    const t = text.trim();
++    if (!t || loading) return;
++    onSubmit(t);
++    setText("");
++  }
++
++  return (
++    <section
++      aria-label="이어서 요청하기"
++      className="flex flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm"
++    >
++      <div className="flex items-center gap-2 text-sm font-semibold">
++        <span className="h-4 w-1 rounded-full bg-warning" aria-hidden />
++        이어서 요청하기
++      </div>
++      <p className="text-xs text-muted-foreground">
++        마음에 드는 카드를 고른 뒤, 수정·추가 요청을 입력하면 이어서 새 기획안을 만들어요.
++      </p>
++
++      <div className="flex items-end gap-2">
++        <textarea
++          value={text}
++          onChange={(e) => setText(e.target.value)}
++          onKeyDown={(e) => {
++            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
++              e.preventDefault();
++              submit();
++            }
++          }}
++          disabled={loading}
++          rows={2}
++          placeholder="예: 더 짧게 / 다른 후크 / 다른 컨셉도"
++          aria-label="추가 요청 입력"
++          className="flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
++        />
++        <Button type="button" onClick={submit} disabled={loading || text.trim().length === 0}>
++          <CornerDownLeft aria-hidden />
++          {loading ? "생성 중…" : "이어가기"}
++        </Button>
++      </div>
++
++      <div className="flex flex-wrap gap-1.5">
++        {HINTS.map((h) => (
++          <button
++            key={h}
++            type="button"
++            disabled={loading}
++            onClick={() => setText(h)}
++            className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent disabled:opacity-50"
++          >
++            {h}
++          </button>
++        ))}
++      </div>
++
++      {error && (
++        <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
++          {error}
++        </p>
++      )}
++    </section>
++  );
++}
