@@ -207,6 +207,29 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 33 (2026-06-22) — 결정적 pacing 게이트 (plotter structure_pacing_issues 이식) ─
+    # 배경: calibration per-axis 게이트(LLM 점수 기반)는 director "얕은 입력→깊은 plan"에서 미발동
+    #   (eval/regression_results/2026-06-15). plotter는 비-LLM 으로 구조 시간배분 붕괴를 직접 검출
+    #   (ADR-0031: 40초 마무리/90초 = 44% bloat 차단). cross-provider judge 와 **직교**하는 2번째
+    #   false-approve 차단층(LLM 점수 재량 박탈). ★ behavior-preserving: default False → 미발동 = byte-identical.
+    #   ON 시 director flow 의 payoff(마지막 beat) duration 이 총 시간의 ratio 초과면 approve→revise 강등.
+    critic_pacing_gate_enabled: bool = Field(
+        default=False,
+        description=(
+            "Phase 33 결정적 pacing 게이트 on/off. ★ gated default-off — False 면 미발동(byte-identical). "
+            "True 면 director flow payoff(마무리) beat 이 총 시간 ratio 초과 시 비-LLM 으로 approve→revise 강등."
+        ),
+    )
+    critic_pacing_payoff_max_ratio: float = Field(
+        default=0.30,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Phase 33 pacing 게이트 ON 시 payoff(마무리=마지막 beat) duration 의 총 시간 대비 상한 비율. "
+            "초과면 bloat 으로 판정(plotter PAYOFF_MAX_RATIO=0.30 정합 — 40s/90s=44% 차단)."
+        ),
+    )
+
     # ─── HIP-008 S3 (2026-06-05) — plan envelope 영속 (additive, gated default-off, graceful) ─
     # 배경: 생성 plan 이 _plan_store(in-memory)만 → 서버 재시작 시 휘발(meta/audits/2026-06-05.md §B).
     #   ★ behavior-preserving: default False → PlansRepo 미호출 = in-memory only = byte-identical.

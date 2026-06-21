@@ -450,6 +450,46 @@ def _run_critic_consensus_min(
     return r_claude if rank_c >= rank_o else r_openai
 
 
+# ─── Phase 33: 결정적 pacing 게이트 (plotter structure_pacing_issues 이식) ──
+
+def _pacing_gate_issue(plan: dict[str, Any], settings: Any) -> Optional[str]:
+    """결정적 pacing 게이트 — director flow 의 payoff(마무리) 시간 비대 검출 (비-LLM).
+
+    LLM 점수 재량과 **직교**: calibration per-axis(LLM 점수 기반)는 director "얕은 입력→깊은
+    plan"에서 미발동(연구 arc). 본 게이트는 plan 구조에서 직접 time-split 을 계산해 cross-provider
+    judge 와 합산하는 2번째 false-approve 차단층(plotter ADR-0031 structure_pacing_issues 이식).
+
+    payoff(마지막 beat) duration 이 총 flow 시간의 critic_pacing_payoff_max_ratio 초과면 bloat.
+
+    gated: critic_pacing_gate_enabled=False(default) → None(미발동) = byte-identical.
+    Returns: 위반 사유 문자열 또는 None(정상/판단불가 — beat<2 / total<=0).
+    """
+    if not getattr(settings, "critic_pacing_gate_enabled", False):
+        return None
+    flow = plan.get("flow")
+    if not isinstance(flow, list) or len(flow) < 2:
+        return None
+    durs: list[float] = []
+    for b in flow:
+        if not isinstance(b, dict):
+            return None  # 비정형 flow → 판단 보류
+        try:
+            durs.append(max(0.0, float(b.get("duration_sec", 0) or 0)))
+        except (TypeError, ValueError):
+            durs.append(0.0)
+    total = sum(durs)
+    if total <= 0:
+        return None
+    ratio = float(getattr(settings, "critic_pacing_payoff_max_ratio", 0.30))
+    payoff = durs[-1]  # 마지막 beat = 마무리/payoff
+    if payoff / total > ratio:
+        return (
+            f"pacing_bloat: payoff(마무리) {payoff:.0f}s/{total:.0f}s="
+            f"{payoff / total:.0%} > 상한 {ratio:.0%}"
+        )
+    return None
+
+
 # ─── 호출 함수 ────────────────────────────────────────────────────────
 
 def run_critic(
@@ -613,10 +653,18 @@ def run_critic(
     # 규칙 우선 (LLM이 점수와 모순되는 verdict 내면 규칙 채택)
     verdict = derived_verdict if llm_verdict != derived_verdict else llm_verdict
 
+    # ★ Phase 33: 결정적 pacing 게이트 (gated default-off, 비-LLM — plotter 이식).
+    #   payoff 비대면 LLM 점수 무관하게 approve→revise 강등(approve 상한 강제, cross-provider judge 와 직교).
+    _pacing_reason = _pacing_gate_issue(plan, settings)
+    if _pacing_reason and verdict == "approve":
+        verdict = "revise"
+
     blocking_raw = parsed.get("blocking_issues") or []
     if not isinstance(blocking_raw, list):
         blocking_raw = []
     blocking_issues = [str(b) for b in blocking_raw][:3]
+    if _pacing_reason:  # 게이트 ON + 위반 시 사유 노출(상위 우선)
+        blocking_issues = ([_pacing_reason] + blocking_issues)[:3]
 
     result: dict[str, Any] = {
         "target_plan_id": target_plan_id,
