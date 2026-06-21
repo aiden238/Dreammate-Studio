@@ -8,6 +8,16 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 **🟢 (직전 기능마감) Phase 26 4계층 video 노드 + 개인 PKM 출처 ✅ done (2026-06-04, archive)** — ★ 현재 최신은 아래 §🟢🟢🟢 최신(2026-06-10, Phase 27~29 + 통합) 참조. — 🅑 잔여 완결. ① **video 노드**: VideoProjectRepo 신규 + /me/videos CRUD(4-hop 소유검증) + 그래프 has_video → **User→Brand→Domain→Series→Video 전 계층** ② **개인 PKM 출처**: migration 0007(pkm_entries +source_plan_id) + 추출 훅 plan_id 기록 + 그래프 개인 PKM sourced_from(`_append_source_provenance` 공유 헬퍼, Phase 21 브랜드 PKM 재사용). S1(video)+S2(pkm source)+S3(frontend). ★ **video 라이브 PASS**(CRUD+has_video+summary.videos+미소유 404), 개인 출처=유닛 6 + 공유 헬퍼. additive/graceful(video 0/출처 없음 byte-identical). hermetic pytest 749→**779**(+30) + scenario_sim 36/36 + audit 0 + typecheck/lint. CC-033/034. **branch `phase-26-video-pkm-source` (main 머지 진행).** ★ **🅑 기능마감 완결** — /brain 4계층이 완전한 지식 구조(생성·편집·삭제·자동연결·출처추적·video). 이월: generate→video 자동연결 / 0007 운영 적용(NG11). **다음 = pending_user_decision.**
 > (과거 최신 경로: Phase 19 2nd brain → 20 commercial_viral → 21 4계층 깊이/출처 → 22 생성 → 23 품질 baseline → 24 편집·삭제 → 25 브랜딩 자동연결 → 26 video/개인출처. 전부 archive.)
 
+## 🟢🟢🟢🟢 최신 (2026-06-21) — critic 품질 연구 아크 (cross-provider judge + B0/B1) — 브랜치 `phase-29-agent-ux`
+
+> ★ 상세 핸드오프: **`meta/handoffs/2026-06-21-research-critic-quality-handoff.md`** (다음 세션 이것부터). CODEX 독립실행: `meta/handoffs/2026-06-21-codex-improved-output-ab.md`.
+> ⚠️ research 5커밋(c82ed9b·98edc37·72b57a9·eca5706·6b52d3f)은 **phase-29-agent-ux 에만 = main 미머지**. 다음 세션 머지/푸시 확인.
+
+- **88점 함정 정량 확정**: critic 89점 vs 사람(rater A) 44점. calibration 단독은 verdict 0건도 못 뒤집음.
+- **★ cross-provider Claude judge** = 사람정렬 계측기(괴리 0.53). approve 10건 전부 뒤집어 **false-approve 10/10→0/10**. gated 배선(`config.critic_judge_provider` default openai=byte-identical / `critic.py::_judge_via_anthropic`) + test 4 + 전체 pytest 835 green. ★ default 전환은 prompt-version-review 대상.
+- **개선 출력물 before/after(B0/B1)**: 특이성 rewrite로 2.71→3.04(Δ+0.33, 가밍 0). 단 **표면만**(hook +0.8) **개념 정체**(differentiation +0.2), approve 0→0. **시사: 진짜 차별화는 RAG/PKM grounding 필요**(프롬프트 불가, 단일변인 격리 입증).
+- **다음**: ① rater B(팀원) → κ ② P-006 표면레버 prompt-version-review(가드 포함) ③ differentiation=RAG/PKM 별도 트랙 ④ CODEX 교차검증 ⑤ Phase 28/29/30 close + main 머지.
+
 ## 🟢🟢🟢 최신 (2026-06-10) — Phase 27 마감 + 28·29 done + 두 동시 트랙 통합 (HEAD `af345ae`)
 
 > 단일 소스 main = `af345ae` (origin/main 동기화 완료). 두 병행 트랙 통합: ① 이 worktree(Phase 27 S1-S5 + Phase 28 + Phase 29 + 동일출처 프록시) ② project-2(Gemini RAG·agent_io 텔레메트리·측정 A7~A11·platform). 검증: **hermetic pytest 831 green** + tsc 0/lint 0, 충돌 4건 해소·마커 0.
