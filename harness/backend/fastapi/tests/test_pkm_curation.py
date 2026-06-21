@@ -48,12 +48,18 @@ async def _seed_brand(
     brand_repo: BrandRepo, bm_repo: BrandMemoryRepo,
     auth_user_id: str, entry_id: str, content: str, *, locked: bool = False,
 ) -> tuple[str, str]:
-    """소유 brand 1 + 브랜드 PKM entry(명시 id) 시드. (node_id, brand_id) 반환."""
+    """소유 brand 1 + 브랜드 PKM entry 시드. (node_id, brand_id) 반환.
+
+    ★ 실 Supabase row 모사 — brand_memory_entries PK 는 **entry_id**(0005), `id` 컬럼 없음.
+    (구 버전은 `["id"]` 를 주입해 live schema(entry_id) 회귀를 못 잡았다 — CODEX 발견, 2026-06-22.)
+    """
     brand_id = await brand_repo.get_or_create_default(auth_user_id, name="내 브랜드")
     assert brand_id
     await bm_repo.add_entry(brand_id, "preferred_tone", content)
-    bm_repo.store[brand_id][-1]["id"] = entry_id
-    bm_repo.store[brand_id][-1]["is_user_locked"] = locked
+    row = bm_repo.store[brand_id][-1]
+    row["entry_id"] = entry_id  # 실 PK 컬럼 — repo 가 read 시 entry_id→id 미러
+    row.pop("id", None)         # 실 DB 행엔 id 없음
+    row["is_user_locked"] = locked
     return f"bm:{entry_id}", brand_id
 
 

@@ -23,6 +23,7 @@ Brand Memory entry 영속화 (수동/준비용). Supabase 사용 가능 시 Post
 from __future__ import annotations
 
 import logging
+import uuid
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,24 @@ _VALID_ENTRY_TYPES = {
     "success_pattern",
     "rejection_pattern",
 }
+
+
+def _identity(row: dict[str, Any]) -> str:
+    """행의 식별자 값 — 실 PK 는 entry_id(0005), 호출측 컨벤션은 id. 둘 다 허용."""
+    return str(row.get("entry_id") or row.get("id") or "")
+
+
+def _norm(row: dict[str, Any]) -> dict[str, Any]:
+    """brand_memory_entries 행을 호출측('id') 컨벤션과 정합시킨다.
+
+    ★ 실 DB PK 는 entry_id(`0005_feedback_selection.sql:62`)라 select/insert 응답은 entry_id 만
+    가진다. me.py `_pkm_node`/`_brand_owns_entry` 등 호출측은 다른 PKM(pkm_entries=id)과 대칭으로
+    row['id'] 를 읽으므로, entry_id → id 미러를 보장해 그래프 노드 id·소유검증·라운드트립이 깨지지
+    않게 한다(스키마 quirk 를 repo 경계에 격리 — me.py 무변경).
+    """
+    if isinstance(row, dict) and row.get("id") is None and row.get("entry_id") is not None:
+        row = {**row, "id": row["entry_id"]}
+    return row
 
 
 class BrandMemoryRepo:
@@ -103,7 +122,7 @@ class BrandMemoryRepo:
                     .execute()
                 )
                 if resp and getattr(resp, "data", None):
-                    row = resp.data[0]
+                    row = _norm(resp.data[0])  # entry_id → id 미러(호출측 컨벤션)
                     self.store.setdefault(brand_id, []).append(row)  # in-memory mirror
                     return row
             except Exception as exc:
@@ -111,8 +130,10 @@ class BrandMemoryRepo:
                     "brand_memory_add_failed: %s — falling back to in-memory",
                     exc.__class__.__name__,
                 )
-        # graceful in-memory fallback
+        # graceful in-memory fallback — entry_id 생성(실 DB gen_random_uuid 대응)해 식별 가능하게.
         row = dict(payload)
+        row["entry_id"] = str(uuid.uuid4())
+        row = _norm(row)
         self.store.setdefault(brand_id, []).append(row)
         return row
 
@@ -127,13 +148,13 @@ class BrandMemoryRepo:
                     .execute()
                 )
                 if resp and getattr(resp, "data", None) is not None:
-                    return list(resp.data)
+                    return [_norm(r) for r in resp.data]  # entry_id → id 미러
             except Exception as exc:
                 logger.warning(
                     "brand_memory_list_failed: %s — falling back to in-memory",
                     exc.__class__.__name__,
                 )
-        return list(self.store.get(brand_id, []))
+        return [_norm(r) for r in self.store.get(brand_id, [])]
 
     # ─── 큐레이션 (Phase 19 Slice S4 — 수동 잠금/편집/삭제) ──────────────
     #
@@ -167,11 +188,11 @@ class BrandMemoryRepo:
                 resp = (
                     self.client.table("brand_memory_entries")  # type: ignore[union-attr]
                     .update(patch)
-                    .eq("id", entry_id)
+                    .eq("entry_id", entry_id)  # ★ 실 PK 컬럼(0005) — 'id' 아님
                     .execute()
                 )
                 if resp and getattr(resp, "data", None):
-                    return resp.data[0]
+                    return _norm(resp.data[0])
                 return None
             except Exception as exc:
                 logger.warning(
@@ -180,12 +201,12 @@ class BrandMemoryRepo:
                 )
                 return None
 
-        # graceful in-memory fallback — 전 brand store 에서 id 일치 행 갱신.
+        # graceful in-memory fallback — 전 brand store 에서 entry_id(=노출 id) 일치 행 갱신.
         for rows in self.store.values():
             for row in rows:
-                if str(row.get("id")) == str(entry_id):
+                if _identity(row) == str(entry_id):
                     row.update(patch)
-                    return row
+                    return _norm(row)
         return None
 
     async def delete_entry(self, entry_id: str) -> bool:
@@ -198,7 +219,7 @@ class BrandMemoryRepo:
                 resp = (
                     self.client.table("brand_memory_entries")  # type: ignore[union-attr]
                     .delete()
-                    .eq("id", entry_id)
+                    .eq("entry_id", entry_id)  # ★ 실 PK 컬럼(0005) — 'id' 아님
                     .execute()
                 )
                 if resp and getattr(resp, "data", None):
@@ -211,20 +232,20 @@ class BrandMemoryRepo:
                 )
                 return False
 
-        # graceful in-memory fallback — 전 brand store 에서 id 일치 행 제거.
+        # graceful in-memory fallback — 전 brand store 에서 entry_id(=노출 id) 일치 행 제거.
         for rows in self.store.values():
             for i, row in enumerate(rows):
-                if str(row.get("id")) == str(entry_id):
+                if _identity(row) == str(entry_id):
                     rows.pop(i)
                     return True
         return False
 
     def _find_in_memory(self, entry_id: str) -> Optional[dict[str, Any]]:
-        """in-memory store 전체에서 entry_id 일치 행 검색 (no-op update 보조)."""
+        """in-memory store 전체에서 entry_id(=노출 id) 일치 행 검색 (no-op update 보조)."""
         for rows in self.store.values():
             for row in rows:
-                if str(row.get("id")) == str(entry_id):
-                    return row
+                if _identity(row) == str(entry_id):
+                    return _norm(row)
         return None
 
     def _reset_for_test(self) -> None:

@@ -191,3 +191,53 @@ async def test_brand_memory_repo_add_and_list_prep() -> None:
     assert entries[0]["entry_type"] == "rejection_pattern"
     # 준비용 — 자동 추출 아님 (수동 입력, is_user_locked 기본 False)
     assert entries[0]["is_user_locked"] is False
+
+
+# ─── ★ 회귀 가드: live schema entry_id 정합 (CODEX 발견, 2026-06-22) ───────
+# 배경: brand_memory_entries PK 는 entry_id(0005) 인데 repo 가 .eq("id") 로 쿼리해
+#   실 Supabase 에서 update/delete 가 0행 매칭(브랜드 PKM 큐레이션 조용한 무동작).
+#   ★ 아래 3 테스트는 실 DB row(entry_id, no id)를 모사 — 구 코드면 실패한다.
+
+
+@pytest.mark.asyncio
+async def test_brand_memory_update_queries_real_entry_id_column() -> None:
+    """update 는 실 PK 'entry_id' 로 쿼리(‘id’ 아님) + 반환행에 id 미러."""
+    mock_client = MagicMock()
+    eq_mock = mock_client.table.return_value.update.return_value.eq
+    eq_mock.return_value.execute.return_value = MagicMock(
+        data=[{"entry_id": "e1", "content": "new", "is_user_locked": True}]
+    )
+    repo = BrandMemoryRepo(supabase_client=mock_client)
+    out = await repo.update_entry("e1", content="new")
+    eq_mock.assert_called_once_with("entry_id", "e1")  # ★ 실 컬럼
+    assert out is not None and out["id"] == "e1"  # entry_id → id 노출(me.py 호환)
+
+
+@pytest.mark.asyncio
+async def test_brand_memory_delete_queries_real_entry_id_column() -> None:
+    """delete 는 실 PK 'entry_id' 로 쿼리(‘id’ 아님)."""
+    mock_client = MagicMock()
+    eq_mock = mock_client.table.return_value.delete.return_value.eq
+    eq_mock.return_value.execute.return_value = MagicMock(data=[{"entry_id": "e1"}])
+    repo = BrandMemoryRepo(supabase_client=mock_client)
+    ok = await repo.delete_entry("e1")
+    eq_mock.assert_called_once_with("entry_id", "e1")  # ★ 실 컬럼
+    assert ok is True
+
+
+@pytest.mark.asyncio
+async def test_brand_memory_list_mirrors_entry_id_to_id() -> None:
+    """list 는 실 DB row(entry_id, no id)에 id 미러 — 그래프 노드 id/라운드트립 안정."""
+    mock_client = MagicMock()
+    (
+        mock_client.table.return_value.select.return_value.eq.return_value.execute.return_value
+    ) = MagicMock(
+        data=[{
+            "entry_id": "e9", "entry_type": "preferred_tone",
+            "content": "c", "is_user_locked": False,
+        }]
+    )
+    repo = BrandMemoryRepo(supabase_client=mock_client)
+    entries = await repo.list_for_brand("brand-x")
+    assert entries[0]["id"] == "e9"  # entry_id → id 미러
+    assert entries[0]["entry_id"] == "e9"
