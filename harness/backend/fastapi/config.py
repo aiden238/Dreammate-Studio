@@ -183,6 +183,25 @@ class Settings(BaseSettings):
         ),
     )
 
+    # ─── Phase 31 (2026-06-21) — cross-provider judge (additive, gated default-openai) ─
+    # 배경: HIP-007 calibration(프롬프트+게이트) 단독으론 verdict 를 0건도 못 뒤집음
+    #   (human blind N=10 에서 false-approve 10/10 잔존 — eval/regression_results/2026-06-15).
+    #   같은 plan 을 다른 provider(Claude)가 독립 채점하니 self-review 낙관편향이 깨져
+    #   false-approve 10/10→0/10, 사람괴리 2.27→0.53 (2026-06-21 cross-provider 측정).
+    # ★ behavior-preserving: default "openai" → 기존 OpenAI(gpt-4o) critic 경로 byte-identical.
+    #   "anthropic" 시 critic 채점만 Claude(registry 'claude-sonnet')로 교체 — plan 생성·출력
+    #   스키마·verdict 규칙은 불변(채점 모델만 교차). ANTHROPIC_API_KEY 없으면 ValueError(안전 차단).
+    # ★ DEFAULT 를 anthropic 으로 전환하는 것은 모델 교체(major) → prompt-version-review 절차
+    #   대상. 본 flag 는 opt-in 측정/운영 레버이며 realuse 프로파일에 포함하지 않는다.
+    critic_judge_provider: str = Field(
+        default="openai",
+        description=(
+            "Phase 31 cross-provider judge: critic 채점 provider 선택 "
+            "('openai'=기본 gpt-4o critic, byte-identical / 'anthropic'=Claude 독립 judge로 "
+            "self-review 낙관편향 차단). 환경변수 CRITIC_JUDGE_PROVIDER."
+        ),
+    )
+
     # ─── HIP-008 S3 (2026-06-05) — plan envelope 영속 (additive, gated default-off, graceful) ─
     # 배경: 생성 plan 이 _plan_store(in-memory)만 → 서버 재시작 시 휘발(meta/audits/2026-06-05.md §B).
     #   ★ behavior-preserving: default False → PlansRepo 미호출 = in-memory only = byte-identical.

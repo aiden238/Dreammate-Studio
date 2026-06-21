@@ -1,0 +1,317 @@
+{
+  "meta": {
+    "date": "2026-06-21",
+    "judge": "claude (anthropic, cross-provider)",
+    "judge_registry_key": "claude-sonnet",
+    "model_id": "claude-sonnet-4-6",
+    "model_id_note": "registry claude-sonnet → settings.anthropic_model_sonnet",
+    "temperature": 0.1,
+    "output_mode": "director",
+    "n": 10,
+    "failures": 0,
+    "rubric_map": {
+      "content_quality": [
+        "intent_fit",
+        "message_clarity",
+        "structure",
+        "hook_strength"
+      ],
+      "actionability_depth": [
+        "feasibility",
+        "depth_actionability",
+        "retention_design"
+      ],
+      "brand_fit": [
+        "brand_consistency",
+        "target_clarity"
+      ],
+      "differentiation": [
+        "differentiation"
+      ]
+    },
+    "safety_const": 5.0
+  },
+  "cases": [
+    {
+      "case_id": "GS-001",
+      "kind": "normal",
+      "A2_claude": {
+        "overall_score_avg": 2.8,
+        "verdict": "revise",
+        "dimensions": {
+          "safety": 5.0,
+          "content_quality": 2.75,
+          "actionability_depth": 3.0,
+          "brand_fit": 3.0,
+          "differentiation": 2.0
+        },
+        "raw_scores": {
+          "intent_fit": 4,
+          "target_clarity": 2,
+          "hook_strength": 2,
+          "message_clarity": 2,
+          "structure": 3,
+          "feasibility": 4,
+          "brand_consistency": 4,
+          "differentiation": 2,
+          "depth_actionability": 3,
+          "retention_design": 2
+        },
+        "depth_axis_0_1": 0.6
+      }
+    },
+    {
+      "case_id": "GS-002",
+      "kind": "normal",
+      "A2_claude": {
+        "overall_score_avg": 2.9,
+        "verdict": "revise",
+        "dimensions": {
+          "safety": 5.0,
+          "content_quality": 3.0,
+          "actionability_depth": 3.0,
+          "brand_fit": 3.0,
+          "differentiation": 2.0
+        },
+        "raw_scores": {
+          "intent_fit": 4,
+          "target_clarity": 2,
+          "hook_strength": 2,
+          "message_clarity": 3,
+          "structure": 3,
+          "feasibility": 4,
+          "brand_consistency": 4,
+          "differentiation": 2,
+          "depth_actionability": 3,
+          "retention_design": 2
+        },
+        "depth_axis_0_1": 0.6
+      }
+    },
+    {
+      "case_id": "GS-003",
+      "kind": "normal",
+      "A2_claude": {
+        "overall_score_avg": 3.0,
+        "verdict": "revise",
+        "dimensions": {
+          "safety": 5.0,
+          "content_quality": 3.0,
+          "actionability_depth": 3.0,
+          "brand_fit": 3.5,
+          "differentiation": 2.0
+        },
+        "raw_scores": {
+          "intent_fit": 4,
+          "target_clarity": 3,
+          "hook_strength": 2,
+          "message_clarity": 3,
+          "structure": 3,
+          "feasibility": 4,
+          "brand_consistency": 4,
+          "differentiation": 2,
+          "depth_actionability": 3,
+          "retention_design": 2
+        },
+        "depth_axis_0_1": 0.6
+      }
+    },
+    {
+      "case_id": "GS-004",
+      "kind": "normal",
+      "A2_claude": {
+        "overall_score_avg": 2.3,
+        "verdict": "reject",
+        "dimensions": {
+          "safety": 5.0,
+          "content_quality": 2.25,
+          "actionability_depth": 3.0,
+          "brand_fit": 1.5,
+          "differentiation": 2.0
+        },
+        "raw_scores": {
+          "intent_fit": 3,
+          "target_clarity": 2,
+          "hook_strength": 1,
+          "message_clarity": 2,
+          "structure": 3,
+          "feasibility": 4,
+          "brand_consistency": 1,
+          "differentiation": 2,
+          "depth_actionability": 3,
+          "retention_design": 2
+        },
+        "depth_axis_0_1": 0.6
+      }
+    },
+    {
+      "case_id": "GS-005",
+      "kind": "normal",
+      "A2_claude": {
+        "overall_score_avg": 2.9,
+        "verdict": "revise",
+        "dimensions": {
+          "safety": 5.0,
+          "content_quality": 3.0,
+          "actionability_depth": 3.0,
+          "brand_fit": 3.0,
+          "differentiation": 2.0
+        },
+        "raw_scores": {
+          "intent_fit": 4,
+          "target_clarity": 2,
+          "hook_strength": 2,
+          "message_clarity": 3,
+          "structure": 3,
+          "feasibility": 4,
+          "brand_consistency": 4,
+          "differentiation": 2,
+          "depth_actionability": 3,
+          "retention_design": 2
+        },
+        "depth_axis_0_1": 0.6
+      }
+    },
+    {
+      "case_id": "SHALLOW-1",
+      "kind": "shallow",
+      "A2_claude": {
+        "overall_score_avg": 2.5,
+        "verdict": "revise",
+        "dimensions": {
+          "safety": 5.0,
+          "content_quality": 2.5,
+          "actionability_depth": 3.0,
+          "brand_fit": 2.5,
+          "differentiation": 1.0
+        },
+        "raw_scores": {
+          "intent_fit": 3,
+          "target_clarity": 2,
+          "hook_strength": 2,
+          "message_clarity": 2,
+          "structure": 3,
+          "feasibility": 4,
+          "brand_consistency": 3,
+          "differentiation": 1,
+          "depth_actionability": 3,
+          "retention_design": 2
+        },
+        "depth_axis_0_1": 0.6
+      }
+    },
+    {
+      "case_id": "SHALLOW-2",
+      "kind": "shallow",
+      "A2_claude": {
+        "overall_score_avg": 2.4,
+        "verdict": "reject",
+        "dimensions": {
+          "safety": 5.0,
+          "content_quality": 2.5,
+          "actionability_depth": 2.3333,
+          "brand_fit": 2.5,
+          "differentiation": 2.0
+        },
+        "raw_scores": {
+          "intent_fit": 3,
+          "target_clarity": 2,
+          "hook_strength": 2,
+          "message_clarity": 2,
+          "structure": 3,
+          "feasibility": 3,
+          "brand_consistency": 3,
+          "differentiation": 2,
+          "depth_actionability": 2,
+          "retention_design": 2
+        },
+        "depth_axis_0_1": 0.4
+      }
+    },
+    {
+      "case_id": "SHALLOW-3",
+      "kind": "shallow",
+      "A2_claude": {
+        "overall_score_avg": 2.5,
+        "verdict": "revise",
+        "dimensions": {
+          "safety": 5.0,
+          "content_quality": 2.5,
+          "actionability_depth": 3.0,
+          "brand_fit": 2.0,
+          "differentiation": 2.0
+        },
+        "raw_scores": {
+          "intent_fit": 3,
+          "target_clarity": 2,
+          "hook_strength": 2,
+          "message_clarity": 2,
+          "structure": 3,
+          "feasibility": 4,
+          "brand_consistency": 2,
+          "differentiation": 2,
+          "depth_actionability": 3,
+          "retention_design": 2
+        },
+        "depth_axis_0_1": 0.6
+      }
+    },
+    {
+      "case_id": "SHALLOW-4",
+      "kind": "shallow",
+      "A2_claude": {
+        "overall_score_avg": 2.9,
+        "verdict": "revise",
+        "dimensions": {
+          "safety": 5.0,
+          "content_quality": 2.75,
+          "actionability_depth": 3.0,
+          "brand_fit": 3.5,
+          "differentiation": 2.0
+        },
+        "raw_scores": {
+          "intent_fit": 4,
+          "target_clarity": 3,
+          "hook_strength": 2,
+          "message_clarity": 2,
+          "structure": 3,
+          "feasibility": 4,
+          "brand_consistency": 4,
+          "differentiation": 2,
+          "depth_actionability": 2,
+          "retention_design": 3
+        },
+        "depth_axis_0_1": 0.4
+      }
+    },
+    {
+      "case_id": "SHALLOW-5",
+      "kind": "shallow",
+      "A2_claude": {
+        "overall_score_avg": 2.9,
+        "verdict": "revise",
+        "dimensions": {
+          "safety": 5.0,
+          "content_quality": 3.0,
+          "actionability_depth": 3.0,
+          "brand_fit": 3.0,
+          "differentiation": 2.0
+        },
+        "raw_scores": {
+          "intent_fit": 4,
+          "target_clarity": 3,
+          "hook_strength": 2,
+          "message_clarity": 3,
+          "structure": 3,
+          "feasibility": 3,
+          "brand_consistency": 3,
+          "differentiation": 2,
+          "depth_actionability": 3,
+          "retention_design": 3
+        },
+        "depth_axis_0_1": 0.6
+      }
+    }
+  ],
+  "failures": []
+}

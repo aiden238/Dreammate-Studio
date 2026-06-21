@@ -360,6 +360,68 @@ def _derive_verdict(
     return round(avg, 4), verdict
 
 
+# ─── Phase 31: cross-provider judge (gated) ──────────────────────────
+
+def _judge_via_anthropic(
+    settings: Any,
+    system_prompt: str,
+    user_intro: str,
+    plan: dict[str, Any],
+    max_tokens: int,
+) -> tuple[str, str, Any]:
+    """Cross-provider judge — Claude(Anthropic)로 critic 채점 (Phase 31, gated).
+
+    OpenAI 가 생성한 plan 을 **다른 provider(Claude)** 가 독립 채점한다. 같은 critic
+    system_prompt·차원·verdict 규칙을 쓰되 채점 모델만 교차해 self-review 낙관편향을
+    차단한다 (검증: human blind N=10 에서 false-approve 10/10→0/10, 사람괴리
+    2.27→0.53 — eval/regression_results/2026-06-21).
+
+    재사용: registry 'claude-sonnet'(상위 모델 = judge) + AnthropicAdapter(gateway seam,
+    cross_validation 과 동일 축). json_mode → adapter 가 JSON 지시 + 펜스 정규화.
+
+    Args:
+        settings: get_settings() 인스턴스 (anthropic_api_key 읽음).
+        system_prompt: run_critic 가 mode 별로 구성한 critic system prompt(동일).
+        user_intro: "다음 plan을 N차원으로 평가해줘:\n\n" (mode 별, 동일).
+        plan: 채점 대상 plan dict.
+        max_tokens: OpenAI 경로와 동일 토큰 한도(commercial=2800 / else 1500).
+
+    Returns:
+        (raw_content, model_id, usage): raw_content=JSON 문자열(펜스 제거됨),
+        model_id=실 Claude 모델, usage=LLMUsage(telemetry용 — usage_tokens 호환).
+
+    Raises:
+        ValueError: ANTHROPIC_API_KEY 미설정 (안전 차단).
+        LLMError: Anthropic 호출 실패 (adapter 정규화).
+    """
+    from ..llm import registry
+    from ..llm.providers.anthropic_adapter import AnthropicAdapter
+    from ..llm.types import LLMMessage, LLMRequest
+
+    api_key = getattr(settings, "anthropic_api_key", "") or ""
+    if not api_key:
+        raise ValueError(
+            "critic_judge_provider=anthropic 인데 ANTHROPIC_API_KEY 미설정 — "
+            "cross-provider judge 안전 차단(.env 설정 필요)."
+        )
+    model = registry.get_model("claude-sonnet")
+    req = LLMRequest(
+        messages=[
+            LLMMessage(role="system", content=system_prompt),
+            LLMMessage(
+                role="user",
+                content=user_intro + json.dumps(plan, ensure_ascii=False),
+            ),
+        ],
+        model_id=model["model_id"],
+        temperature=0.2,  # OpenAI critic 과 동일 기조(평가 일관성, agent_io_contract §5.4)
+        max_tokens=max_tokens,
+        json_mode=True,
+    )
+    resp = AnthropicAdapter().complete(req, api_key=api_key)
+    return (resp.text or "{}").strip(), model["model_id"], resp.usage
+
+
 # ─── 호출 함수 ────────────────────────────────────────────────────────
 
 def run_critic(
@@ -392,8 +454,12 @@ def run_critic(
         ValueError: JSON 파싱 실패 또는 scores 키 누락.
     """
     settings = get_settings()
-    _client = client or OpenAI(api_key=settings.openai_api_key)
     _model = model or settings.openai_model_critic
+    # ★ Phase 31 (gated): cross-provider judge. default "openai" → OpenAI 경로 byte-identical.
+    #   "anthropic" + client 미주입 시 Claude(registry claude-sonnet)로 채점 (self-review 편향 차단).
+    #   client 가 주입되면(테스트 mock) provider 무관하게 그 client 사용 → 테스트 결정성 보존.
+    _judge_provider = str(getattr(settings, "critic_judge_provider", "openai")).lower()
+    _use_anthropic = _judge_provider == "anthropic" and client is None
 
     # Phase 15 S3 (gated): output_mode 별 차원. compact=8 / rich=9(DIMENSIONS_RICH) / director=9(현재 rich 차원,
     #   S4 에서 retention_design 추가해 10 으로 확장 예정). ★ compact/rich byte-identical
@@ -424,32 +490,42 @@ def run_critic(
         _calib_key_dims = CALIBRATION_KEY_DIMS.get(_mode, CALIBRATION_KEY_DIMS["compact"])
 
     target_plan_id = str(plan.get("plan_id") or "")
+    # Phase 20 S4: commercial_viral 은 17차원(scores+reasons+suggestions)이라 1500 절단 →
+    #   상향. compact/rich/director(8/9/10차원)는 1500 불변 = byte-identical.
+    _max_tokens = 2800 if _mode == "commercial_viral" else 1500
 
     logger.info("critic call start model=%s plan_id=%s", _model, target_plan_id)
 
     _t0 = time.perf_counter()
-    try:
-        response = _client.chat.completions.create(
-            model=_model,
-            messages=[
-                {"role": "system", "content": _system_prompt},
-                {
-                    "role": "user",
-                    "content": _user_intro
-                    + json.dumps(plan, ensure_ascii=False),
-                },
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.2,  # 평가 일관성 (agent_io_contract §5.4)
-            # Phase 20 S4: commercial_viral 은 17차원(scores+reasons+suggestions)이라 1500 절단 →
-            #   상향. compact/rich/director(8/9/10차원)는 1500 불변 = byte-identical.
-            max_tokens=2800 if _mode == "commercial_viral" else 1500,
+    _usage: Any = None
+    if _use_anthropic:
+        # ★ Phase 31 cross-provider judge (gated): OpenAI 생성 → Claude 독립 채점.
+        #   검증: false-approve 10/10→0/10 (eval/regression_results/2026-06-21).
+        raw_content, _model, _usage = _judge_via_anthropic(
+            settings, _system_prompt, _user_intro, plan, _max_tokens
         )
-    except OpenAIError:
-        logger.exception("Critic OpenAI API 호출 실패")
-        raise
-
-    raw_content = response.choices[0].message.content or "{}"
+    else:
+        _client = client or OpenAI(api_key=settings.openai_api_key)
+        try:
+            response = _client.chat.completions.create(
+                model=_model,
+                messages=[
+                    {"role": "system", "content": _system_prompt},
+                    {
+                        "role": "user",
+                        "content": _user_intro
+                        + json.dumps(plan, ensure_ascii=False),
+                    },
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.2,  # 평가 일관성 (agent_io_contract §5.4)
+                max_tokens=_max_tokens,
+            )
+        except OpenAIError:
+            logger.exception("Critic OpenAI API 호출 실패")
+            raise
+        raw_content = response.choices[0].message.content or "{}"
+        _usage = getattr(response, "usage", None)
     logger.debug("critic raw response: %s", raw_content[:200])
 
     try:
@@ -514,7 +590,8 @@ def run_critic(
     }
 
     # ★ HIP-006 S3: 기본 경로(gateway 미경유) 텔레메트리 — gated default-off + graceful.
-    _in_tok, _out_tok = usage_tokens(getattr(response, "usage", None))
+    #   _usage: OpenAI usage 객체 또는 (cross-provider 시) canonical LLMUsage — usage_tokens 가 흡수.
+    _in_tok, _out_tok = usage_tokens(_usage)
     log_agent_io(
         agent_name="critic",
         prompt_id=PROMPT_ID,
