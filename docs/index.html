@@ -3,12 +3,107 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dreammate Studio 발표자료</title>
-  <meta name="description" content="Dreammate Studio GitHub Pages 슬라이드 발표자료" />
+  <title>Dreammate Studio · 5분 발표 슬라이드</title>
+  <meta name="description" content="Dreammate Studio — 영상기획 AI 에이전트 · GitHub Pages 발표 슬라이드 (비전 · 문제정의 · 해결 · 아키텍처 · WBS)" />
   <link rel="stylesheet" href="./style.css" />
   <link rel="stylesheet" href="./fix.css" />
   <style>
+    /* ===== 기존 WBS 슬라이드 컴포넌트 ===== */
     .slide-wbs-frame{display:grid;grid-template-rows:auto auto 1fr;gap:16px;width:100%}.wbs-topline{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:stretch}.wbs-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.wbs-kpi{padding:14px 16px;border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}.wbs-kpi b{display:block;font-size:34px;line-height:1;color:#101828}.wbs-kpi span{display:block;margin-top:6px;color:var(--muted);font-size:13px;font-weight:900}.wbs-kpi.done{background:linear-gradient(180deg,#f0fdf4,#fff)}.wbs-kpi.doing{background:linear-gradient(180deg,#fff7ed,#fff)}.wbs-kpi.todo{background:linear-gradient(180deg,#eef2ff,#fff)}.wbs-kpi.later{background:linear-gradient(180deg,#f8fafc,#fff)}.wbs-focus{padding:18px 20px;border-radius:24px;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;box-shadow:var(--shadow)}.wbs-focus span{display:inline-flex;margin-bottom:8px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.18);font-size:12px;font-weight:900}.wbs-focus h3{font-size:24px}.wbs-focus p{margin:8px 0 0;color:#eef2ff;font-size:13px;font-weight:800}.wbs-lanes{display:grid;grid-template-columns:1.1fr 1.1fr 1.1fr .8fr;gap:12px;min-height:390px}.wbs-lane{padding:14px;border-radius:24px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}.wbs-lane h3{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:20px}.wbs-lane h3 small{padding:4px 9px;border-radius:999px;background:#f8fafc;color:var(--muted);font-size:11px}.mini-task{display:grid;grid-template-columns:42px 1fr;gap:10px;align-items:center;margin-top:8px;padding:9px 10px;border-radius:16px;border:1px solid #edf1f8;background:#fafbff}.mini-task code{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:900}.mini-task b{font-size:14px;line-height:1.15}.mini-task span{display:block;margin-top:2px;color:var(--muted);font-size:11px;font-weight:800;line-height:1.25}.lane-done{background:linear-gradient(180deg,#f0fdf4,#fff)}.lane-doing{background:linear-gradient(180deg,#fff7ed,#fff)}.lane-todo{background:linear-gradient(180deg,#eef2ff,#fff)}.lane-later{background:linear-gradient(180deg,#f8fafc,#fff)}@media(max-width:980px){.wbs-topline,.wbs-kpi-row,.wbs-lanes{grid-template-columns:1fr}.wbs-lanes{min-height:0}}
+
+    /* ===== 5분 발표 덱 — 추가 컴포넌트 ===== */
+    .slide.dense{align-content:start;overflow-y:auto;}
+    .slide.dense::-webkit-scrollbar{width:0;}
+    .dense h2{font-size:clamp(32px,4.2vw,48px);margin-bottom:12px;}
+    .dense .eyebrow{margin-bottom:12px;}
+    .sub{margin:0 0 16px;color:var(--muted);font-weight:800;font-size:19px;line-height:1.4;}
+
+    /* 비전 */
+    .vision-hero{display:grid;gap:18px;}
+    .vision-statement{padding:28px 32px;border-radius:28px;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;box-shadow:var(--shadow);font-size:clamp(24px,2.9vw,34px);font-weight:900;line-height:1.32;}
+    .vision-statement em{font-style:normal;background:rgba(255,255,255,.2);padding:2px 9px;border-radius:9px;}
+    .pillar-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+    .pillar{padding:22px;border-radius:24px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);}
+    .pillar b{display:block;font-size:22px;margin-bottom:8px;}
+    .pillar span{color:var(--muted);font-weight:800;font-size:16px;line-height:1.4;}
+
+    /* 기술 스택 KV 보드 */
+    .kv-board{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+    .kv{display:grid;grid-template-columns:160px 1fr;gap:14px;align-items:center;padding:15px 18px;border-radius:18px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);}
+    .kv b{font-size:17px;color:#3730a3;}
+    .kv span{color:#344054;font-weight:800;font-size:16px;line-height:1.35;}
+
+    /* 브랜드 컬러보드 */
+    .color-board{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;}
+    .swatch{border-radius:16px;border:1px solid var(--line);overflow:hidden;background:#fff;}
+    .swatch i{display:block;height:48px;}
+    .swatch small{display:block;padding:7px 6px;font-size:11px;font-weight:900;color:#344054;text-align:center;line-height:1.25;}
+
+    /* 일반 컬럼 카드 */
+    .cols-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+    .col-card{padding:22px;border-radius:24px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);}
+    .col-card h3{font-size:21px;margin-bottom:10px;}
+    .col-card ul{margin:0;padding-left:18px;display:grid;gap:7px;}
+    .col-card li{color:#344054;font-weight:700;font-size:16px;line-height:1.38;}
+
+    /* 구현 기능 카드 */
+    .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+    .feat{padding:20px 20px 20px 22px;border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);position:relative;overflow:hidden;}
+    .feat::before{content:"";position:absolute;inset:0 auto 0 0;width:7px;background:linear-gradient(180deg,var(--primary),var(--accent));}
+    .feat b{display:block;font-size:19px;margin-bottom:6px;}
+    .feat span{display:block;color:var(--muted);font-weight:800;font-size:15px;line-height:1.4;}
+
+    /* 시행착오 before→after */
+    .ba-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+    .ba{padding:22px;border-radius:24px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);}
+    .ba h3{font-size:20px;margin-bottom:14px;}
+    .ba-flow{display:grid;grid-template-columns:1fr 34px 1fr;gap:10px;align-items:center;}
+    .ba-box{padding:14px 12px;border-radius:16px;text-align:center;font-weight:900;font-size:15px;line-height:1.3;}
+    .ba-box.bad{background:#fff1f2;color:#b42318;border:1px solid #fecdd3;}
+    .ba-box.good{background:#f0fdf4;color:#027a48;border:1px solid #bbf7d0;}
+    .ba-arrow{font-size:24px;color:var(--primary);font-weight:900;text-align:center;}
+    .ba p{margin:14px 0 0;color:var(--muted);font-weight:800;font-size:14px;line-height:1.45;}
+
+    /* 메트릭 스트립 */
+    .metric-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+    .metric-strip .m{padding:22px;border-radius:24px;background:linear-gradient(180deg,#f0fdf4,#fff);border:1px solid var(--line);box-shadow:var(--shadow);text-align:center;}
+    .metric-strip .m b{display:block;font-size:42px;letter-spacing:-.04em;line-height:1;color:#101828;}
+    .metric-strip .m span{display:block;margin-top:8px;color:var(--muted);font-weight:900;font-size:14px;}
+
+    /* 디렉토리 트리 */
+    .tree{padding:16px 18px;border-radius:16px;background:#0b1020;color:#cbd5e1;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;white-space:pre;overflow:auto;}
+    .tree b{color:#7dd3fc;font-weight:700;}
+    .tree i{color:#86efac;font-style:normal;}
+
+    /* ADR 리스트 */
+    .adr-grid{display:grid;gap:8px;}
+    .adr{display:grid;grid-template-columns:170px 1fr;gap:12px;padding:11px 14px;border-radius:14px;background:#fff;border:1px solid var(--line);}
+    .adr code{color:#3730a3;font-weight:900;font-size:13px;}
+    .adr span{color:#344054;font-weight:700;font-size:14px;line-height:1.35;}
+
+    /* 데모 스텝 */
+    .demo-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+    .demo-step{padding:18px 12px;border-radius:20px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);text-align:center;}
+    .demo-step b{display:grid;place-items:center;width:34px;height:34px;margin:0 auto 10px;border-radius:12px;background:rgba(79,70,229,.12);color:#3730a3;font-size:16px;}
+    .demo-step span{display:block;color:#344054;font-weight:800;font-size:14px;line-height:1.32;}
+
+    /* 마무리 */
+    .closing{place-content:center;text-align:center;}
+    .closing .vision-statement{font-size:clamp(26px,3.3vw,40px);}
+
+    .qa-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+    /* 화면 높이 여유 — 노트북(768p)에서도 안 잘리게 압축 */
+    #cover h1{font-size:clamp(40px,5.4vw,74px);line-height:1.08;}
+    .architecture-slide .arch-split{height:500px;}
+    .architecture-slide h2{font-size:42px;margin-bottom:10px;}
+    #problem .problem-infographic{gap:16px;}
+    #problem .pain-card{min-height:200px;padding:22px;}
+    #solution .process-step{min-height:235px;padding:20px;}
+    @media(max-width:980px){
+      .pillar-row,.kv-board,.color-board,.cols-3,.feat-grid,.ba-grid,.metric-strip,.demo-steps,.qa-2col{grid-template-columns:1fr;}
+      .ba-flow{grid-template-columns:1fr;}.ba-arrow{transform:rotate(90deg);}
+    }
   </style>
 </head>
 <body>
@@ -16,19 +111,24 @@
     <a class="brand" href="#top"><span class="logo"></span>Dreammate Studio</a>
     <nav>
       <a href="#top">표지</a>
-      <a href="#problem">문제·비전</a>
+      <a href="#vision">비전·문제</a>
       <a href="#solution">해결</a>
+      <a href="#tech">기술·WBS</a>
       <a href="#architecture">아키텍처</a>
-      <a href="#wbs">WBS</a>
+      <a href="#build">구현·품질</a>
+      <a href="#impact">활용·기법</a>
+      <a href="#demo">데모·Q&A</a>
     </nav>
   </header>
 
   <main id="top">
+    <!-- 1. 표지 -->
     <section class="slide hero" id="cover">
       <div>
-        <p class="eyebrow">GitHub Pages · Slide Deck · WBS</p>
+        <p class="eyebrow">GitHub Pages · 5분 발표 · 영상기획 AI 에이전트</p>
         <h1>영상기획을<br>실행 가능한 계획으로 바꾸는 AI 에이전트</h1>
-        <p class="lead">Dreammate Studio는 영상 브랜딩과 브랜드 마케팅을 위한 기획 과정을 질문형 AI로 구조화하는 영상기획 AI 에이전트 플랫폼입니다.</p>
+        <p class="lead">Dreammate Studio는 영상 브랜딩과 브랜드 마케팅을 위한 기획 과정을 질문형 AI로 구조화하는 <b>영상기획 AI 에이전트 플랫폼</b>입니다.</p>
+        <p class="lead" style="font-size:18px;margin-top:12px;color:#475467;">발표자 · 송병철 &nbsp;|&nbsp; github.com/aiden238/Dreammate-Studio</p>
       </div>
       <aside class="card hero-infographic">
         <h2>발표 핵심 구조</h2>
@@ -43,35 +143,126 @@
       </aside>
     </section>
 
-    <section id="problem" class="slide">
-      <p class="eyebrow">01. Planning · Vision</p>
-      <h2>영상은 아이디어보다 브랜드 구조가 먼저입니다</h2>
+    <!-- 2. 비전 -->
+    <section id="vision" class="slide dense">
+      <p class="eyebrow">01 · Vision · 비전</p>
+      <h2>영상은 ‘한 편’이 아니라 ‘브랜드’로 쌓여야 합니다</h2>
+      <div class="vision-hero">
+        <div class="vision-statement">
+          Dreammate Studio는 막연한 영상 아이디어를
+          <em>브랜드 방향 · 타깃 · 메시지 · 기획안 · 실행 WBS</em>까지
+          한 흐름으로 연결하는 <em>영상기획 AI 에이전트</em>입니다.
+        </div>
+        <div class="pillar-row">
+          <article class="pillar"><b>브랜드로 축적</b><span>영상 한 편이 아니라, 반복되는 브랜드 자산으로 쌓이게 합니다.</span></article>
+          <article class="pillar"><b>질문으로 구조화</b><span>막연한 아이디어를 AI가 질문으로 좁혀 ‘실행 가능한 기획’으로 바꿉니다.</span></article>
+          <article class="pillar"><b>실행까지 연결</b><span>기획에서 끝나지 않고 촬영·편집·업로드 WBS로 분해합니다.</span></article>
+        </div>
+        <p class="note">한 문장 비전 — “AI가 영상 아이디어를 브랜드 전략과 실행 계획으로 바꾼다.”</p>
+      </div>
+    </section>
+
+    <!-- 3. 문제 정의 -->
+    <section id="problem" class="slide dense">
+      <p class="eyebrow">02 · Problem · 문제정의</p>
+      <h2>영상은 많이 만들수록, 브랜드는 더 흐려집니다</h2>
       <div class="problem-infographic">
         <div class="pain-group">
-          <article class="pain-card"><span>01</span><h3>브랜드 방향 불명확</h3><p>무엇을 보여줄 브랜드인지 흐리면 영상 톤이 흔들립니다.</p></article>
+          <article class="pain-card"><span>01</span><h3>브랜드 방향 불명확</h3><p>무엇을 보여줄 브랜드인지 흐리면 영상마다 톤이 흔들립니다.</p></article>
           <article class="pain-card"><span>02</span><h3>타깃 모호</h3><p>누구에게 각인될 영상인지 불명확하면 메시지가 약해집니다.</p></article>
           <article class="pain-card"><span>03</span><h3>실행 단절</h3><p>브랜딩 전략이 촬영·편집·업로드 작업으로 분해되지 않으면 실행이 멈춥니다.</p></article>
         </div>
-        <div class="bridge-card"><span>Dreammate Studio</span><strong>브랜드 방향을 영상기획과 실행 WBS로 변환</strong></div>
+        <div class="bridge-card"><span>공감 포인트</span><strong>“기획 없이 만든 영상은 조회수는 나와도 브랜드는 남지 않는다”</strong></div>
         <div class="vision-strip"><div>브랜드</div><div>타깃</div><div>메시지</div><div>레퍼런스</div><div>영상기획</div><div>WBS</div></div>
       </div>
     </section>
 
-    <section id="solution" class="slide">
-      <p class="eyebrow">02. Solution Flow</p>
+    <!-- 4. 해결 -->
+    <section id="solution" class="slide dense">
+      <p class="eyebrow">03 · Solution · 해결 방식</p>
       <h2>질문형 AI로 브랜드 방향을 좁혀갑니다</h2>
       <div class="process-infographic">
         <article class="process-step"><b>1</b><h3>Brand</h3><p>브랜드 정체성과 콘텐츠 방향을 질문으로 정리합니다.</p></article>
         <article class="process-step"><b>2</b><h3>Target</h3><p>시청자와 참여 동기를 구체화합니다.</p></article>
         <article class="process-step"><b>3</b><h3>Reference</h3><p>RAG Lite로 기획 근거를 보강합니다.</p></article>
-        <article class="process-step"><b>4</b><h3>Plan</h3><p>영상 기획 후보를 생성합니다.</p></article>
+        <article class="process-step"><b>4</b><h3>Plan ×3</h3><p>영상 기획 후보 3안을 생성합니다.</p></article>
         <article class="process-step"><b>5</b><h3>WBS</h3><p>선택된 기획을 실행 작업으로 전환합니다.</p></article>
       </div>
-      <div class="decision-bar"><span>사용자 선택</span><span>피드백 저장</span><span>Brand Memory 준비</span><span>다음 기획에 반영</span></div>
+      <div class="decision-bar"><span>사용자 선택</span><span>Critic 검증·개선</span><span>피드백 저장</span><span>다음 기획에 반영</span></div>
+      <p class="note">차별점 — 영상을 ‘만들어’ 주지 않습니다. 무엇을·왜·누구에게 만들지를 ‘정해’ 줍니다. (영상 제작·편집·자동 업로드는 범위 밖)</p>
     </section>
 
+    <!-- 5. 기술 스택 + 컬러보드 -->
+    <section id="tech" class="slide dense">
+      <p class="eyebrow">04 · Tech Stack · 적용 기술</p>
+      <h2>적용 기술 — 실측으로 고른 스택</h2>
+      <div class="kv-board">
+        <div class="kv"><b>Frontend</b><span>Next.js 14 (App Router) · TypeScript · Tailwind · shadcn/ui · PWA</span></div>
+        <div class="kv"><b>Backend</b><span>FastAPI (Python 3.11) · Pydantic v2 · SQLAlchemy 2.x</span></div>
+        <div class="kv"><b>Database</b><span>Supabase · PostgreSQL 15 + pgvector · RLS · JWT 인증</span></div>
+        <div class="kv"><b>LLM</b><span>OpenAI gpt-4o-mini(생성) · gpt-4o(Critic 검증)</span></div>
+        <div class="kv"><b>RAG · Embedding</b><span>pgvector · candidate_knowledge 5단계 · Gemini 임베딩(한국어)</span></div>
+        <div class="kv"><b>Infra · Deploy</b><span>Vercel(FE) · Render(BE) · Supabase(DB) · GitHub Pages(덱)</span></div>
+      </div>
+      <p class="sub" style="margin-top:18px;">브랜드 컬러보드 — 인디고→시안 그라디언트를 기준으로 슬라이드·PPT·앱 UI를 통일</p>
+      <div class="color-board">
+        <div class="swatch"><i style="background:#4F46E5"></i><small>Indigo<br>#4F46E5</small></div>
+        <div class="swatch"><i style="background:#06B6D4"></i><small>Cyan<br>#06B6D4</small></div>
+        <div class="swatch"><i style="background:#3730A3"></i><small>Deep<br>#3730A3</small></div>
+        <div class="swatch"><i style="background:#12B76A"></i><small>Green<br>#12B76A</small></div>
+        <div class="swatch"><i style="background:#F79009"></i><small>Amber<br>#F79009</small></div>
+        <div class="swatch"><i style="background:#101828"></i><small>Ink<br>#101828</small></div>
+        <div class="swatch"><i style="background:#F6F8FB;border:1px solid #e4e7ec"></i><small>Mist<br>#F6F8FB</small></div>
+      </div>
+    </section>
+
+    <!-- 6. WBS -->
+    <section id="wbs" class="slide">
+      <div class="slide-wbs-frame">
+        <div>
+          <p class="eyebrow">04 · WBS · 작업 분해 구조</p>
+          <h2>Phase 0~31 완료 — WBS를 슬라이드 한 장에서 확인합니다</h2>
+        </div>
+        <div class="wbs-topline">
+          <div class="wbs-kpi-row">
+            <article class="wbs-kpi done"><b>31</b><span>완료 Phase · 0~31 + 메타</span></article>
+            <article class="wbs-kpi doing"><b>845</b><span>pytest green · 회귀 자동</span></article>
+            <article class="wbs-kpi todo"><b>39</b><span>ADR · 의사결정 기록</span></article>
+            <article class="wbs-kpi later"><b>36/36</b><span>시나리오 시뮬레이션</span></article>
+          </div>
+          <article class="wbs-focus"><span>Priority</span><h3>첫 사용자 루프 안정화</h3><p>브랜드 질문 → 타깃 → 3안 생성 → Critic 검증 → 저장/피드백을 기준선으로 둡니다.</p></article>
+        </div>
+        <div class="wbs-lanes">
+          <article class="wbs-lane lane-done"><h3>완료 <small>Done</small></h3>
+            <div class="mini-task"><code>WP1</code><div><b>기획·UX 설계</b><span>문제정의·Discovery/Quick·design</span></div></div>
+            <div class="mini-task"><code>WP2</code><div><b>PWA 프론트</b><span>Next.js 11 routes · 결과 카드</span></div></div>
+            <div class="mini-task"><code>WP3</code><div><b>FastAPI 백엔드</b><span>17 endpoints · 3안 병렬</span></div></div>
+            <div class="mini-task"><code>WP4</code><div><b>4계층 데이터</b><span>User→Brand→Domain→Series→Video</span></div></div>
+            <div class="mini-task"><code>WP5</code><div><b>AI 파이프라인</b><span>RAG Lite · MOA · Critic·SSE</span></div></div>
+          </article>
+          <article class="wbs-lane lane-doing"><h3>진행 <small>Doing</small></h3>
+            <div class="mini-task"><code>WP6</code><div><b>품질·평가 루프</b><span>eval-run · golden_set 회귀</span></div></div>
+            <div class="mini-task"><code>WP6.1</code><div><b>cross-provider judge</b><span>사람 정렬 계측기 (Phase 31)</span></div></div>
+            <div class="mini-task"><code>WP5.2</code><div><b>RAG grounding</b><span>Gemini 임베딩 · Δ+0.9 실증</span></div></div>
+            <div class="mini-task"><code>WP7.2</code><div><b>데모 백업 영상</b><span>라이브 실패 대비</span></div></div>
+          </article>
+          <article class="wbs-lane lane-todo"><h3>예정 <small>Todo</small></h3>
+            <div class="mini-task"><code>WP7</code><div><b>배포 게이트 B~G</b><span>staging·실 LLM·운영</span></div></div>
+            <div class="mini-task"><code>WP6.2</code><div><b>코퍼스 확대</b><span>승인 지식 큐레이션</span></div></div>
+            <div class="mini-task"><code>WP8.2</code><div><b>멀티모달 입력</b><span>이미지·영상 맥락</span></div></div>
+          </article>
+          <article class="wbs-lane lane-later"><h3>후순위 <small>Later</small></h3>
+            <div class="mini-task"><code>WP8.3</code><div><b>PDF/PPT 산출</b><span>자동 문서 생성</span></div></div>
+            <div class="mini-task"><code>WP8.4</code><div><b>AI 영상 자동화</b><span>대본 기반 워크플로우</span></div></div>
+            <div class="mini-task"><code>Next</code><div><b>확장 원칙</b><span>첫 루프 안정화 우선</span></div></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. 아키텍처 -->
     <section id="architecture" class="slide architecture-slide">
-      <p class="eyebrow">03. System Architecture · Agent Pipeline</p>
+      <p class="eyebrow">05 · System Architecture · Agent Pipeline</p>
       <h2>소프트웨어 아키텍처와 AI 에이전트 파이프라인</h2>
       <div class="arch-split css-arch">
         <article class="card arch-block software-arch">
@@ -86,9 +277,9 @@
             </div>
             <div class="arch-notes">
               <article><b>Next.js PWA</b><span>브랜드 질문 UI와 결과 화면</span></article>
-              <article><b>FastAPI BFF</b><span>인증, 기획 요청, 진행률 처리</span></article>
+              <article><b>FastAPI BFF</b><span>인증, 기획 요청, 진행률(SSE)</span></article>
               <article><b>AI Engine</b><span>기획 에이전트와 검증 실행</span></article>
-              <article><b>Supabase</b><span>사용자, 기획안, 피드백 저장</span></article>
+              <article><b>Supabase</b><span>사용자·기획안·피드백 + RLS</span></article>
             </div>
           </div>
         </article>
@@ -97,7 +288,7 @@
           <div class="pipeline-canvas">
             <article class="pipeline-node"><b>Route</b><span>입력 분기</span></article><div class="pipeline-arrow">→</div>
             <article class="pipeline-node"><b>Retrieve</b><span>근거 검색</span></article><div class="pipeline-arrow">→</div>
-            <article class="pipeline-node wide"><b>Generate + Review</b><span>후보 생성 · 품질 평가 · 개선</span></article><div class="pipeline-arrow">→</div>
+            <article class="pipeline-node wide"><b>Generate + Review</b><span>3안 생성 · 품질 평가 · 개선</span></article><div class="pipeline-arrow">→</div>
             <article class="pipeline-node memory"><b>Save + Memory</b><span>결과 저장 · 다음 기획 반영</span></article>
           </div>
           <div class="pipeline-chip-row"><span>Intent Router</span><span>RAG Lite</span><span>Plan Generator</span><span>Critic Agent</span><span>Rewriter Loop</span><span>Brand Memory</span></div>
@@ -105,50 +296,200 @@
       </div>
     </section>
 
-    <section id="wbs" class="slide">
-      <div class="slide-wbs-frame">
-        <div>
-          <p class="eyebrow">04. WBS Slide</p>
-          <h2>진행 중 프로젝트 WBS를 슬라이드 한 장에서 확인합니다</h2>
-        </div>
-        <div class="wbs-topline">
-          <div class="wbs-kpi-row">
-            <article class="wbs-kpi done"><b>11</b><span>완료 · 구현/검증 통과</span></article>
-            <article class="wbs-kpi doing"><b>5</b><span>진행 · 발표 전 보강</span></article>
-            <article class="wbs-kpi todo"><b>7</b><span>예정 · 최종 발표 전 처리</span></article>
-            <article class="wbs-kpi later"><b>2</b><span>후순위 · 확장 검토</span></article>
+    <!-- 8. 구현 방법 -->
+    <section id="build" class="slide dense">
+      <p class="eyebrow">06 · Implementation · 어떻게 구현했는가</p>
+      <h2>핵심 구현 — 생성·검증·근거·진행을 한 파이프라인으로</h2>
+      <div class="feat-grid">
+        <article class="feat"><b>① 3안 병렬 생성</b><span>하나가 아니라 서로 다른 방향의 기획안 3개를 병렬 생성해 선택지를 줍니다.</span></article>
+        <article class="feat"><b>② Critic + Revise 루프</b><span>Critic Agent가 canonical 0~1 점수로 평가하고, 기준 미달 시 Rewriter가 최대 2회 개선합니다.</span></article>
+        <article class="feat"><b>③ RAG Lite 5단계</b><span>후보→품질필터→평가→승인→승격. 검증된 지식만 pgvector 검색에 들어갑니다.</span></article>
+        <article class="feat"><b>④ MOA Orchestrator</b><span>659줄 god-function을 243줄 오케스트레이터로 분해 — 동작 보존(byte-identical).</span></article>
+        <article class="feat"><b>⑤ SSE Progress 4단계</b><span>30~60초 생성 대기를 4단계 진행률 + 부분 결과로 보여줍니다.</span></article>
+        <article class="feat"><b>⑥ Supabase 영속 · RLS</b><span>JWT httpOnly 쿠키 + 행 수준 보안(RLS)으로 사용자 데이터 격리.</span></article>
+      </div>
+      <p class="note">설계 원칙 — 모든 입출력은 <b>contract(단일 진실 소스)</b> 기준. 구현이 contract를 벗어나면 회귀 테스트가 즉시 잡습니다.</p>
+    </section>
+
+    <!-- 9. 시행착오 -->
+    <section id="trial" class="slide dense">
+      <p class="eyebrow">07 · Trial &amp; Error · 시행착오</p>
+      <h2>개발자 관점의 시행착오 — 측정으로 뒤집은 결정들</h2>
+      <div class="ba-grid">
+        <article class="ba">
+          <h3>① Critic의 ‘88점 함정’</h3>
+          <div class="ba-flow">
+            <div class="ba-box bad">Critic 89점<br>≠ 사람 44점<br>(calibration 0건 교정)</div>
+            <div class="ba-arrow">→</div>
+            <div class="ba-box good">cross-provider<br>Claude judge<br>오승인 10/10 → 0/10</div>
           </div>
-          <article class="wbs-focus"><span>Priority</span><h3>첫 사용자 루프 안정화</h3><p>브랜드 방향 질문 → 타깃 정리 → 영상 기획안 생성 → 저장/검증을 기준선으로 둡니다.</p></article>
+          <p>단일 모델은 자기 출력을 후하게 평가. 다른 provider를 ‘사람 정렬 계측기’로 붙여 괴리 0.53으로 교정했습니다.</p>
+        </article>
+        <article class="ba">
+          <h3>② 한국어 RAG 임베딩</h3>
+          <div class="ba-flow">
+            <div class="ba-box bad">OpenAI 임베딩<br>한국어 약함<br>유사도 0.7 미달</div>
+            <div class="ba-arrow">→</div>
+            <div class="ba-box good">Gemini 임베딩<br>0.7 통과 3/3<br>생성=GPT 분리</div>
+          </div>
+          <p>임베딩 공간이 한국어에서 무너졌습니다. 임베딩만 Gemini로 교체하고 생성은 GPT로 유지해 품질을 살렸습니다.</p>
+        </article>
+      </div>
+      <p class="note">공통 교훈 — “좋아 보인다”가 아니라 <b>golden_set·실측 회귀</b>로 판단. 가설은 단일 변인으로 격리해 검증합니다.</p>
+    </section>
+
+    <!-- 10. 품질·테스트 -->
+    <section id="quality" class="slide dense">
+      <p class="eyebrow">08 · Quality &amp; Test · 코드 품질·테스트·성능</p>
+      <h2>코드 품질 · 단위/통합 테스트 · 성능 최적화</h2>
+      <div class="metric-strip">
+        <div class="m"><b>845</b><span>단위 테스트 pytest green</span></div>
+        <div class="m"><b>36/36</b><span>통합 시나리오 시뮬레이션</span></div>
+        <div class="m"><b>12/12</b><span>스모크 + 통합 MVP</span></div>
+        <div class="m"><b>0</b><span>네이밍/구조 drift (audit)</span></div>
+      </div>
+      <div class="cols-3">
+        <article class="col-card"><h3>코드 품질</h3><ul>
+          <li>contract-first 단일 진실 소스</li>
+          <li>self-verification 50연속 PASS</li>
+          <li>contract-change 절차로 무단 변경 차단</li>
+        </ul></article>
+        <article class="col-card"><h3>테스트 전략</h3><ul>
+          <li>단위: pytest 845 (hermetic)</li>
+          <li>통합: integration MVP + 시나리오 36/36</li>
+          <li>품질: eval-run golden_set 회귀 게이트</li>
+        </ul></article>
+        <article class="col-card"><h3>성능 최적화</h3><ul>
+          <li>SSE 부분 결과로 체감 대기↓</li>
+          <li>Gemini 임베딩으로 검색 정확도↑</li>
+          <li>Redis rate_limit · 3안 병렬 호출</li>
+        </ul></article>
+      </div>
+    </section>
+
+    <!-- 11. 활용·기대효과·로드맵 -->
+    <section id="impact" class="slide dense">
+      <p class="eyebrow">09 · Impact &amp; Roadmap · 활용·기대효과·향후</p>
+      <h2>어떻게 활용할 것인가 · 기대 효과 · 향후 발전</h2>
+      <div class="cols-3">
+        <article class="col-card"><h3>활용 방안</h3><ul>
+          <li>브랜드 채널 운영자 — 시리즈 기획 일관성</li>
+          <li>마케터 — 캠페인 영상 기획·근거 정리</li>
+          <li>1인 크리에이터 — 아이디어→실행 WBS</li>
+        </ul></article>
+        <article class="col-card"><h3>기대 효과</h3><ul>
+          <li>기획에 드는 시간·반복 질문 감소</li>
+          <li>브랜드 메시지 일관성 ↑</li>
+          <li>피드백이 다음 기획에 누적(Brand Memory)</li>
+        </ul></article>
+        <article class="col-card"><h3>향후 로드맵</h3><ul>
+          <li>멀티모달 입력(이미지·영상 레퍼런스)</li>
+          <li>기획안 자동 PDF/PPT 산출</li>
+          <li>도메인 특화 자체 RAG 확장</li>
+        </ul></article>
+      </div>
+      <p class="note">확장 원칙 — 무리한 기능 추가보다 <b>첫 사용자 루프 안정화</b>를 항상 우선합니다.</p>
+    </section>
+
+    <!-- 12. 나만의 기법 -->
+    <section id="method" class="slide dense">
+      <p class="eyebrow">10 · My Method · 나만의 AI 운영 기법</p>
+      <h2>단일 md 라우터 + 자동 트리거 스킬 하네스</h2>
+      <div class="cols-3">
+        <article class="col-card"><h3>듀얼 라우터 (단일 md)</h3><ul>
+          <li><b>CLAUDE.md</b> — 기획·설계·검토 라우팅</li>
+          <li><b>AGENTS.md</b> — 구현·QA·테스트 라우팅</li>
+          <li>rules·commands·skills를 md로 통합</li>
+        </ul></article>
+        <article class="col-card"><h3>자동 트리거 스킬</h3><ul>
+          <li>.claude/skills 19~21개</li>
+          <li>키워드 매칭으로 자동 발동(수동 호출 X)</li>
+          <li>contract-change·eval-run·phase-complete 등</li>
+        </ul></article>
+        <article class="col-card"><h3>암묵지 · 교차검증</h3><ul>
+          <li><b>LLM Wiki</b>(knowledge/llm_wiki) 최신 지식 관리</li>
+          <li>RAG 5단계 승격으로 검증된 지식만 반영</li>
+          <li><b>multi-llm-validation</b> Claude·GPT·Gemini 교차</li>
+        </ul></article>
+      </div>
+      <p class="note">효과 — 단일 진실 소스(docs/contracts) + 자동 스킬로 <b>1인 운영에서도 일관성·회귀 안전성</b>을 확보. 단일 모델 편향은 교차검증으로 줄입니다.</p>
+    </section>
+
+    <!-- 13. 시연 데모 -->
+    <section id="demo" class="slide dense">
+      <p class="eyebrow">11 · Live Demo · 시연 (30초)</p>
+      <h2>아이디어 한 줄 → 브랜드 기획 3안</h2>
+      <div class="demo-steps">
+        <article class="demo-step"><b>1</b><span>“쇼츠 만들고 싶어요” 한 줄 입력</span></article>
+        <article class="demo-step"><b>2</b><span>AI가 브랜드·타깃을 질문</span></article>
+        <article class="demo-step"><b>3</b><span>한 줄 기획 방향 승인</span></article>
+        <article class="demo-step"><b>4</b><span>3안 생성 + Critic 검증(SSE 진행)</span></article>
+        <article class="demo-step"><b>5</b><span>한 안 선택 → 저장·피드백</span></article>
+      </div>
+      <div class="cols-2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px;">
+        <article class="col-card"><h3>보여줄 임팩트</h3><ul>
+          <li>막연한 한 줄이 ‘브랜드 기획안’으로 즉시 구조화</li>
+          <li>3안 비교 + Critic 점수로 ‘왜 이 안인지’ 설명</li>
+        </ul></article>
+        <article class="col-card"><h3>운영 안전장치</h3><ul>
+          <li>라이브 실패 대비 30초 백업 영상 준비</li>
+          <li>compact/rich 모드 — 화면에 맞춰 분량 조절</li>
+        </ul></article>
+      </div>
+    </section>
+
+    <!-- 14. 부록 Q&A -->
+    <section id="qa" class="slide dense">
+      <p class="eyebrow">Appendix · 질의응답 준비 (ADR · 구조 · 빌드/배포)</p>
+      <h2>Q&amp;A 준비 — ADR · 앱 구조 · 빌드/배포 · 설치</h2>
+      <div class="qa-2col">
+        <div>
+          <p class="sub">핵심 ADR (Architecture Decision Record)</p>
+          <div class="adr-grid">
+            <div class="adr"><code>tech_stack</code><span>Next.js·FastAPI·Supabase·OpenAI — 대안 비교·트레이드오프</span></div>
+            <div class="adr"><code>Supabase+RLS</code><span>JWT httpOnly + 행수준보안 + SSE 4단계 진행률</span></div>
+            <div class="adr"><code>RAG 5단계</code><span>후보→필터→평가→승인→승격 (오염 방지)</span></div>
+            <div class="adr"><code>MOA Orchestrator</code><span>god-function 분해 · 동작 보존(byte-identical)</span></div>
+            <div class="adr"><code>cross-provider judge</code><span>사람 정렬 계측기 · 오승인 10/10→0/10</span></div>
+          </div>
+          <p class="sub" style="margin-top:14px;">빌드 → 배포</p>
+          <div class="adr-grid">
+            <div class="adr"><code>Build</code><span>FE: next build · BE: FastAPI(uvicorn) · DB: migration 0001~0007</span></div>
+            <div class="adr"><code>Deploy</code><span>Vercel(FE) · Render(BE) · Supabase(DB) · GitHub Pages(덱)</span></div>
+            <div class="adr"><code>Gate A~G</code><span>Local Smoke ✅ → staging → 실 LLM → 운영</span></div>
+          </div>
         </div>
-        <div class="wbs-lanes">
-          <article class="wbs-lane lane-done"><h3>완료 <small>Done</small></h3>
-            <div class="mini-task"><code>1.1</code><div><b>문제 정의·가치 제안</b><span>중간발표 핵심 슬라이드</span></div></div>
-            <div class="mini-task"><code>2.1</code><div><b>Next.js PWA 화면</b><span>입력·결과 기본 화면</span></div></div>
-            <div class="mini-task"><code>3.1</code><div><b>FastAPI 생성 API</b><span>generation API 구성</span></div></div>
-            <div class="mini-task"><code>4.1</code><div><b>계층형 데이터 구조</b><span>User → Brand → Domain → Series → Video</span></div></div>
-            <div class="mini-task"><code>6.3</code><div><b>회귀 검증 루프</b><span>pytest · scenario_sim · audit</span></div></div>
-          </article>
-          <article class="wbs-lane lane-doing"><h3>진행 <small>Doing</small></h3>
-            <div class="mini-task"><code>1.3</code><div><b>질문 기반 브랜딩</b><span>브랜드 방향 질문 세트 고정</span></div></div>
-            <div class="mini-task"><code>2.2</code><div><b>AppShell 네비게이션</b><span>첫 사용자 진입 경로 보강</span></div></div>
-            <div class="mini-task"><code>2.3</code><div><b>결과 화면 가독성</b><span>기획안 카드 UI 개선</span></div></div>
-            <div class="mini-task"><code>5.2</code><div><b>LLM 모델 레이어</b><span>출력 안정화와 역할 분리</span></div></div>
-            <div class="mini-task"><code>7.2</code><div><b>데모 영상 백업</b><span>라이브 실패 대비</span></div></div>
-          </article>
-          <article class="wbs-lane lane-todo"><h3>예정 <small>Todo</small></h3>
-            <div class="mini-task"><code>3.3</code><div><b>예외 처리 정리</b><span>오류 메시지와 폴백 정책</span></div></div>
-            <div class="mini-task"><code>4.3</code><div><b>브랜딩 맥락 자동 연결</b><span>브랜드·시리즈·비디오 연결</span></div></div>
-            <div class="mini-task"><code>5.3</code><div><b>MOA 교차 검증</b><span>다중 모델 비교</span></div></div>
-            <div class="mini-task"><code>6.2</code><div><b>품질 평가 레이어</b><span>사람 기준 평가표</span></div></div>
-            <div class="mini-task"><code>8.2</code><div><b>멀티모달 입력</b><span>이미지·영상 맥락 입력</span></div></div>
-          </article>
-          <article class="wbs-lane lane-later"><h3>후순위 <small>Later</small></h3>
-            <div class="mini-task"><code>8.3</code><div><b>PDF/PPT 산출</b><span>자동 문서 생성 검토</span></div></div>
-            <div class="mini-task"><code>8.4</code><div><b>AI 영상 자동화</b><span>대본 기반 영상 워크플로우</span></div></div>
-            <div class="mini-task"><code>Next</code><div><b>확장 원칙</b><span>무리한 기능 추가보다 첫 루프 안정화 우선</span></div></div>
-          </article>
+        <div>
+          <p class="sub">앱 구조 · 디렉토리</p>
+          <div class="tree">harness/
+├─ <b>apps/web/</b>        Next.js PWA (11 routes)
+├─ <b>backend/</b>         FastAPI (17 endpoints)
+├─ <b>ai_system/</b>       MOA Lite · RAG Lite · prompts
+├─ <b>docs/contracts/</b>  <i>단일 진실 소스</i>
+├─ <b>docs/decisions/</b>  ADR 40+
+├─ <b>eval/</b>            golden_set · 회귀 결과
+├─ <b>knowledge/</b>       LLM Wiki · RAG 지식
+├─ <b>meta/</b>            회고 · 패턴 · 가드레일
+├─ <b>phases/</b>          active / archive
+└─ <b>.claude/skills/</b>  Skill 19~21 (자동 트리거)</div>
+          <p class="sub" style="margin-top:14px;">설치 가이드 (GitHub README)</p>
+          <div class="tree">$ git clone https://github.com/aiden238/Dreammate-Studio
+$ cp .env.example .env   <i># 키 주입(저장소 미포함)</i>
+$ pip install -r requirements.txt
+$ npm install && npm run dev   <i># FE</i>
+$ uvicorn app.main:app --reload <i># BE</i></div>
         </div>
       </div>
+    </section>
+
+    <!-- 15. 마무리 -->
+    <section id="closing" class="slide dense closing">
+      <p class="eyebrow">Closing · 마무리</p>
+      <div class="vision-statement" style="margin:0 auto;max-width:980px;">
+        Dreammate Studio는 영상 아이디어를
+        <em>브랜드 전략과 실행 계획</em>으로 바꾸는 <em>영상기획 AI 에이전트</em>입니다.
+      </div>
+      <p class="lead" style="margin:22px auto 0;">github.com/aiden238/Dreammate-Studio · Phase 0~31 완료 · pytest 845 · ADR 39</p>
     </section>
   </main>
 
@@ -157,12 +498,26 @@
   <script>
     const slides = Array.from(document.querySelectorAll('.slide'));
     const navLinks = Array.from(document.querySelectorAll('nav a'));
+    const navTargets = ['cover','vision','solution','tech','architecture','build','impact','demo'];
     let currentIndex = Math.max(0, slides.findIndex((slide) => '#' + slide.id === window.location.hash));
+    function activeNav(activeId) {
+      // 현재 슬라이드 이후로 가장 가까운 nav 대상에 하이라이트
+      const idx = slides.findIndex((s) => s.id === activeId);
+      let target = 'cover';
+      for (let i = 0; i < slides.length && i <= idx; i++) {
+        if (navTargets.includes(slides[i].id)) target = slides[i].id;
+      }
+      navLinks.forEach((link) => {
+        const href = link.getAttribute('href');
+        const linkId = href === '#top' ? 'cover' : href.slice(1);
+        link.classList.toggle('active', linkId === target);
+      });
+    }
     function setSlide(index, pushHash = true) {
       currentIndex = Math.max(0, Math.min(slides.length - 1, index));
       slides.forEach((slide, i) => slide.classList.toggle('active', i === currentIndex));
       const activeId = slides[currentIndex].id;
-      navLinks.forEach((link) => link.classList.toggle('active', link.getAttribute('href') === '#' + activeId || (activeId === 'cover' && link.getAttribute('href') === '#top')));
+      activeNav(activeId);
       if (pushHash) history.replaceState(null, '', activeId === 'cover' ? '#top' : '#' + activeId);
     }
     navLinks.forEach((link) => {
