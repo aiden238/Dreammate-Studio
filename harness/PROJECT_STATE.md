@@ -8,6 +8,16 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 **🟢 (직전 기능마감) Phase 26 4계층 video 노드 + 개인 PKM 출처 ✅ done (2026-06-04, archive)** — ★ 현재 최신은 아래 §🟢🟢🟢 최신(2026-06-10, Phase 27~29 + 통합) 참조. — 🅑 잔여 완결. ① **video 노드**: VideoProjectRepo 신규 + /me/videos CRUD(4-hop 소유검증) + 그래프 has_video → **User→Brand→Domain→Series→Video 전 계층** ② **개인 PKM 출처**: migration 0007(pkm_entries +source_plan_id) + 추출 훅 plan_id 기록 + 그래프 개인 PKM sourced_from(`_append_source_provenance` 공유 헬퍼, Phase 21 브랜드 PKM 재사용). S1(video)+S2(pkm source)+S3(frontend). ★ **video 라이브 PASS**(CRUD+has_video+summary.videos+미소유 404), 개인 출처=유닛 6 + 공유 헬퍼. additive/graceful(video 0/출처 없음 byte-identical). hermetic pytest 749→**779**(+30) + scenario_sim 36/36 + audit 0 + typecheck/lint. CC-033/034. **branch `phase-26-video-pkm-source` (main 머지 진행).** ★ **🅑 기능마감 완결** — /brain 4계층이 완전한 지식 구조(생성·편집·삭제·자동연결·출처추적·video). 이월: generate→video 자동연결 / 0007 운영 적용(NG11). **다음 = pending_user_decision.**
 > (과거 최신 경로: Phase 19 2nd brain → 20 commercial_viral → 21 4계층 깊이/출처 → 22 생성 → 23 품질 baseline → 24 편집·삭제 → 25 브랜딩 자동연결 → 26 video/개인출처. 전부 archive.)
 
+## 🟢🟢🟢🟢🟢 최신 (2026-06-21 — "project-2 이어서") — HIP 결착 + 스킬 병합 + RAG 라이브 + Phase 28/29/30 close + Phase 31 진입 — 브랜치 `phase-29-agent-ux`
+
+> 세션: "studio project-2 이어서". 4(심층파악)→2(project-2 잔여결정)→1(critic 아크/페이즈 기획) 순. 정본 워크트리 `dreammate-p27`.
+> 커밋: `5984c07`(HIP-B/C 결착+스킬+RAG taskType) · `6ba1aaf`(RAG Gemini 라이브 프로브) · `9d47e5b`(CODEX 보존) · (+ 본 close 커밋).
+
+- **옵션2 — project-2 잔여 결정 결착(완료)**: HIP-B 죽은게이트 4개(critic_calibration=judge 보완 retain / cross_validation=sunset / multi_provider=defer / agent_io_log_to_db=keep) + HIP-C 스킬(bug-triage **강제 게이트화** + eval-design→eval-run·rag-design→rag-update **흡수병합 21→19**, 격하 보류). audit_naming 0 drift.
+- **RAG**: `embed_many` doc-side **RETRIEVAL_DOCUMENT 배선**(pytest 835 green) + **라이브 검증**(`RAG_EMBEDDING_PROVIDER=gemini`, approved_knowledge 8건 @0.7 검색 5/2/2 hits, sim 0.72~0.89, 태그 일치 — `eval/regression_results/2026-06-21-rag-gemini-live-probe.md`, 재현 `scripts/rag_gemini_probe.py`).
+- **옵션1 — critic 아크 마감 진입**: CODEX 독립 교차검증 보존(B1 +0.12, 메인 +0.33과 정합) + **Phase 28/29/30 정식 close**(회고 phase-28·29·30.md + archive 이동 + phase-27 active/archive 중복 정리=notes.md 보존). 척추 스킬(phase-complete/meta-retrospective) 부활.
+- **▶ Phase 31 진입(active)**: critic 품질 계측기 production화 + 마감 — S1 consensus-min / S2 P-006 prompt-version-review / S3 golden_set RAG ON/OFF / S4 main 머지·push. `phases/active/phase-31-critic-quality-close/`.
+
 ## 🟢🟢🟢🟢 최신 (2026-06-21) — critic 품질 연구 아크 (cross-provider judge + B0/B1) — 브랜치 `phase-29-agent-ux`
 
 > ★ 상세 핸드오프: **`meta/handoffs/2026-06-21-research-critic-quality-handoff.md`** (다음 세션 이것부터). CODEX 독립실행: `meta/handoffs/2026-06-21-codex-improved-output-ab.md`.
@@ -26,7 +36,7 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 - **🟢 Phase 28 = 2nd brain 학습 루프 ✅ done**: **S1** 모든 대화 저장+학습 연결(홈 막다른길 제거) → **S2** PKM consolidation(반복 강화·중복/노이즈 제거, 스키마 변경 0) → **S3** 나만의 컨셉 수렴(`GET /me/concept` — 개인 PKM 종합 → 컨셉 한 줄+핵심 기둥+모순쌍, read-time LLM, gated). 라이브 검증(demo PKM 11신호→컨셉+warm↔neon 모순 자동검출). 회귀 6.
 - **🟢 Phase 29 = 에이전트 UX 마감 ✅ done**: 랜딩/4상황버튼/용어번역(S0~S2) + 진행요약·Brain CTA·에이전트 느낌(S3~S5) + **멀티모달 레퍼런스 A**(이미지 분석→생성 반영 A1 + 키워드 PKM A2, ★ FK 23503 회귀 수정·라이브 PKM 0→4) + **/brain 동적 force 그래프 B1**(react-flow+d3-force, 드래그+필터, 라이브 10노드/9엣지) + **동일출처 API 프록시**(next rewrites `/api/*` → 백엔드; 원격 터널·localhost/127 교차출처 로그인 문제 영구 해소).
 - **project-2 트랙 통합(보존 693957f → merge af345ae)**: Gemini RAG 임베딩(임베딩=Gemini/생성=GPT 분리, `config.rag_embedding_provider`+`embedding.py::_embed_gemini`) + agent_io 텔레메트리(intent·rewriter·critic·planning) + 측정 A7~A11 + BOUNDARIES·CODEOWNERS·check_boundaries + platform_evolution + **conftest hermeticity 수정**(.env 누수 격리, M-4).
-- **▶ 남은 후속 (P0)**: Phase 28/29 **정식 close**(phases/active 정리=현재 phase-27만·‘active 1개’ 원칙 / 회고 phase-28·29.md / qa-check) — dormant 척추 스킬(phase-start/complete/meta-retrospective/qa-check) 부활 / OneDrive 트리 main 정렬(재분기 방지) / (선택) Gemini RAG 활성 라이브 검증.
+- **▶ 남은 후속 (P0)**: ✅ Phase 28/29/30 **정식 close 완료**(2026-06-21 — 회고 + archive + phase-27 중복 정리, active=phase-31 단일). ✅ Gemini RAG 라이브 검증 완료. **잔여**: OneDrive 트리 main 정렬(재분기 방지) + Phase 31 S4(research+project-2 main 머지/push).
 
 ## 🟢🟢 최신 세션 (2026-06-09~10) — 프로젝트 재점검(측정-grounding) + RAG Gemini 채택 + 하네스 점검
 
@@ -127,7 +137,11 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 
 ## 현재 Active Phase
 
-> ⚠️ Phase 28·29 는 done(아래)이나 **정식 phase-complete(archive 이동·회고) 미경유** → `phases/active` 엔 아직 phase-27 만. P0 후속(상단 🟢🟢🟢 최신).
+**🟢 Phase 31 = critic 품질 계측기 production화 + 마감 — ✅ active (2026-06-21)** — cross-provider Claude judge(88점 함정 해소·사람정렬 계측기)의 production 마감 + project-2 결착 main 통합. **S1** consensus-min 배선(OpenAI+Claude 엄격 verdict, 안전 default 후보, additive gated) **S2** P-006 prompt-version-review(특이성 표면레버 + 할루시네이션 라벨 강제 + RAG/PKM ref) **S3** golden_set RAG ON/OFF 품질측정(judge 사용, 2c 후속) **S4** research 5 + project-2 결착 → main 머지/push(outward, 사용자 승인). 진입 docs = `phases/active/phase-31-critic-quality-close/`. acceptance A1~A8.
+
+> ✅ Phase 28·29·30 **정식 close 완료** (2026-06-21): 회고 phase-28/29/30.md + archive 이동 + phase-27 active/archive 중복 정리(notes.md 보존) → `phases/active` = **phase-31 단일**("active 1개" 복원).
+
+### (직전 done) Phase 29 — 에이전트 UX 마감 (참고)
 
 **🟢 Phase 29 = 에이전트 UX 마감 — ✅ done (2026-06-09, main af345ae)** — 랜딩 리디자인 + 4상황버튼(아이디어 정리/브랜드 방향/SNS 반응/바로 기획안, goal 분기 distinct) + 용어 번역(도메인→주제영역·타깃→누구에게 등) + Discovery 진행요약 패널 + 저장 후 Brain CTA·네비 + 에이전트 느낌(진행 메시지·brain 반영 배너). **멀티모달 A**(`agents/vision_analyzer` 이미지 분석 → 요약 user_input 프리펜드[A1] + 키워드 개인 PKM 적재[A2], ★ 라이브로 **FK 23503 회귀 발견·수정**[A2를 plans 영속 이후로 이동, provenance 보존] → PKM 0→4 검증). **/brain 동적 force 그래프 B1**(고정 계층→`react-flow`+`d3-force` 물리 시뮬레이션, 노드 드래그+타입/scope 필터칩, 라이브 10노드/9엣지 렌더). **동일출처 API 프록시**(`next.config.js` rewrites `/api/*`→백엔드 + `API_BASE_URL` 상대화 → 원격 터널(cloudflare/localtunnel)·LAN·localhost/127 교차출처 SameSite/CORS 로그인 문제 영구 해소). tsc 0/lint 0. 커밋 7ffc0c2~c7b5530 + 프록시 4880f5b. 이월: **컨셉→생성 주입** / B2 의미 그래프 타이핑 / 프론트 시각 e2e.
 
