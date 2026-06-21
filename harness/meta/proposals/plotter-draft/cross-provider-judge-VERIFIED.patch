@@ -145,6 +145,94 @@ index 308d69a..e354afb 100644
 +    if not CROSS_JUDGE_ENABLED or not provider:
 +        return None
 +    return _CROSS_JUDGE.get(provider)
+diff --git a/scripts/local_cross_judge_e2e.py b/scripts/local_cross_judge_e2e.py
+new file mode 100644
+index 0000000..bd121b9
+--- /dev/null
++++ b/scripts/local_cross_judge_e2e.py
+@@ -0,0 +1,82 @@
++"""로컬 e2e — cross-provider judge / consensus-min 실 LLM 확인 (ADR-0033).
++
++드라이버 배선 없이 validator_node를 직접 호출해 consensus-min을 end-to-end로 본다.
++in-provider judge 단독 vs consensus-min(in ∧ cross) 두 경로를 같은 후보에 돌려 비교.
++
++필요: .env에 OPENAI_API_KEY + ANTHROPIC_API_KEY (실 LLM 호출 = 비용).
++실행:  python scripts/local_cross_judge_e2e.py   (plotter repo 루트)
++"""
++from __future__ import annotations
++
++import asyncio
++import os
++import sys
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++
++# .env → os.environ
++_env = ROOT / ".env"
++if _env.exists():
++    for line in _env.read_text(encoding="utf-8").splitlines():
++        line = line.strip()
++        if line and not line.startswith("#") and "=" in line:
++            k, _, v = line.partition("=")
++            os.environ.setdefault(k.strip(), v.strip())
++os.environ["CRITIC_CROSS_JUDGE"] = "on"  # cross_judge_model()이 모델 반환하도록
++
++from app.agents.validator import validator_node  # noqa: E402
++from app.llm.models import cross_judge_model  # noqa: E402
++from app.llm.router import LLMCallMeta  # noqa: E402
++from app.pipeline.state import PipelineState  # noqa: E402
++
++# 의도적으로 얕은 후보(마무리 비대 + generic) — judge가 잡는지 본다.
++CANDIDATE = {
++    "hook": "오늘은 흥미로운 이야기를 함께 알아봐요!",
++    "structure": [
++        {"time": "0-3s", "purpose": "hook", "content": "인사 + 주제 소개"},
++        {"time": "3-50s", "purpose": "body", "content": "일반적인 설명을 쭉 이어간다"},
++        {"time": "50-90s", "purpose": "payoff", "content": "그래서 좋아요 (한 줄 마무리를 40초)"},
++    ],
++    "hashtags": ["#정보"],
++    "expected_length_sec": 90,
++    "target_persona": "일반",
++    "rationale": "RAG 미사용",
++}
++
++
++async def _run(cross_model_id):
++    st = PipelineState(user_input="테스트 기획")
++    st.candidates = [CANDIDATE]
++    meta = LLMCallMeta(request_id="e2e", session_id="local")
++    await validator_node(
++        st, meta, score_threshold=3.0,
++        judge_model="openai/gpt-4o",          # in-provider judge (cross와 다른 provider로 명시)
++        cross_judge_model_id=cross_model_id,
++    )
++    return st.threshold_pass, st.scores
++
++
++async def main() -> int:
++    for k in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
++        print(f"  {k}: {'[SET]' if os.environ.get(k) else '[MISSING]'}")
++    cross = cross_judge_model("openai")
++    print(f"  cross_judge_model('openai') = {cross}\n")
++
++    print("[1] in-provider judge 단독 (cross=None)")
++    p1, s1 = await _run(None)
++    print(f"    threshold_pass = {p1}  (weak_axes={s1.get('weak_axes')})\n")
++
++    print("[2] consensus-min (in ∧ cross=Opus)")
++    p2, s2 = await _run(cross)
++    print(f"    threshold_pass = {p2}  | in_provider_pass={s2.get('in_provider_pass')} cross_pass={s2.get('cross_pass')}")
++    print(f"    consensus_min={s2.get('consensus_min')}  cross_judge_model={s2.get('cross_judge_model')}\n")
++
++    print("해석: consensus-min은 in_provider ∧ cross (더 엄격). 둘 중 하나라도 fail이면 전체 fail.")
++    print("      pacing 게이트(structure_pacing_issues)도 각 judge 내에서 structure 약점으로 작동(payoff 44%).")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(asyncio.run(main()))
 diff --git a/tests/test_validator_node.py b/tests/test_validator_node.py
 index b8e1e60..6de23e4 100644
 --- a/tests/test_validator_node.py
