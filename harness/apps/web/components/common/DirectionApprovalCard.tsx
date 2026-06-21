@@ -30,6 +30,11 @@ export interface DirectionApprovalCardDirection {
   text: string;
   reasons?: DirectionReason[];
   revise_count?: number;
+  /**
+   * Phase 34 S2 (cross-project 수렴) — 의도 명확도 0~1 (plotter 확인 턴 clarity_score 흡수).
+   * 있으면 "이렇게 이해했어요 — 맞나요?" 확인 라인 + 명확도 배지를 표면화(가산적, 없으면 종전 동일).
+   */
+  clarity_score?: number;
 }
 
 export interface DirectionApprovalCardProps {
@@ -62,6 +67,10 @@ export const DirectionApprovalCard: FC<DirectionApprovalCardProps> = ({
   }, [direction.text]);
 
   const overLimit = editedText.length > MAX_LEN;
+  // Phase 34 S2 — 명확도 배지(plotter 확인 턴 흡수). null이면 종전 카드와 byte-동일.
+  const clarity = direction.clarity_score;
+  const showClarity = typeof clarity === 'number';
+  const clarityStrong = showClarity && (clarity as number) >= 0.6;
   const showReasons =
     variant === 'verbose' &&
     Array.isArray(direction.reasons) &&
@@ -93,6 +102,28 @@ export const DirectionApprovalCard: FC<DirectionApprovalCardProps> = ({
       aria-label={ariaLabel}
       className="w-full max-w-2xl mx-auto px-4 py-2"
     >
+      {/* Phase 34 S2 — 확인 턴 라인 + 명확도 배지 (plotter 흡수). clarity_score 있을 때만. */}
+      {showClarity && (
+        <div className="flex items-center gap-2 mb-3">
+          <span aria-hidden="true" className="text-primary">
+            ✓
+          </span>
+          <p className="text-sm font-medium text-text-default">
+            이렇게 이해했어요 — 맞나요?
+          </p>
+          <span
+            aria-label={`명확도 ${Math.round((clarity as number) * 100)}퍼센트`}
+            className={`ml-auto rounded-full px-2 py-0.5 text-xs font-semibold ${
+              clarityStrong
+                ? 'bg-primary text-text-inverse'
+                : 'bg-bg-subtle text-text-muted border border-border-default'
+            }`}
+          >
+            명확도 {Math.round((clarity as number) * 100)}%
+          </span>
+        </div>
+      )}
+
       {/* 한 줄 방향 카드 */}
       <div
         role="region"

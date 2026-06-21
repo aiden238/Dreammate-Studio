@@ -29,6 +29,7 @@ import DiscoveryProgress from '@/components/discovery/DiscoveryProgress';
 import type { BrandDirectionCardData } from '@/components/discovery/BrandDirectionCard';
 import { ToneChipsForm } from '@/components/discovery/ToneChipsForm';
 import { DirectionApprovalCard } from '@/components/common/DirectionApprovalCard';
+import { discoveryClarity } from '@/lib/clarity';
 import ProgressStepper, {
   type StepperState,
 } from '@/components/ProgressStepper';
@@ -473,7 +474,10 @@ function buildMockDirection(reviseCount: number): DiscoveryStep6Direction {
   ];
   const text = variations[reviseCount % variations.length];
 
-  return { text, reasons, revise_count: reviseCount };
+  // Phase 34 S2 — 명확도: 명시 선택한 축(reasons) 비율로 결정적 산출(LLM 무호출).
+  const clarity_score = discoveryClarity({ reasonsFilled: reasons.length });
+
+  return { text, reasons, revise_count: reviseCount, clarity_score };
 }
 
 function Step6Direction() {

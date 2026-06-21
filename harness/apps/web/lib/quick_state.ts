@@ -37,6 +37,8 @@ export interface QuickStep2State {
 export interface QuickStep3DirectionState {
   text: string;
   revise_count?: number;
+  /** Phase 34 S2 — 의도 명확도 0~1 (확인 턴 배지). lib/clarity.ts quickClarity. */
+  clarity_score?: number;
 }
 
 export interface QuickStep3State {

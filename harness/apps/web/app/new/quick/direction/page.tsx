@@ -20,10 +20,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DirectionApprovalCard } from '@/components/common/DirectionApprovalCard';
+import { quickClarity } from '@/lib/clarity';
 import {
   saveQuickStep,
   loadQuickStep,
   type QuickStep1State,
+  type QuickStep2State,
   type QuickStep3State,
 } from '@/lib/quick_state';
 
@@ -40,22 +42,36 @@ export default function QuickStep3Page() {
   const router = useRouter();
   const [directionText, setDirectionText] = useState<string>('');
   const [reviseCount, setReviseCount] = useState<number>(0);
+  // Phase 34 S2 — 의도 명확도(확인 턴 배지). 입력 구체성+clarify 보강으로 결정적 산출.
+  const [clarity, setClarity] = useState<number | undefined>(undefined);
 
   // mount 시 Step 1 initialPrompt 로딩 + 이전 Step 3 state 복원
   useEffect(() => {
+    // 명확도: Step1 길이 + Step2(clarify) 응답 여부로 결정적 계산(LLM 무호출).
+    const step1 = loadQuickStep<QuickStep1State>(1);
+    const step2 = loadQuickStep<QuickStep2State>(2);
+    const promptLen = (step1?.initialPrompt ?? '').trim().length;
+    const clarified = Boolean(
+      step2 && !step2.skipped && step2.followUpAnswer && step2.followUpAnswer.trim(),
+    );
+
     const step3 = loadQuickStep<QuickStep3State>(3);
     if (step3?.direction?.text) {
       setDirectionText(step3.direction.text);
       setReviseCount(step3.direction.revise_count ?? 0);
+      setClarity(
+        step3.direction.clarity_score ??
+          quickClarity({ promptLen, clarified, edited: Boolean(step3.editedText) }),
+      );
       return;
     }
-    const step1 = loadQuickStep<QuickStep1State>(1);
     setDirectionText(buildMockDirectionText(step1?.initialPrompt ?? null));
+    setClarity(quickClarity({ promptLen, clarified }));
   }, []);
 
   const handleApprove = () => {
     const state: QuickStep3State = {
-      direction: { text: directionText, revise_count: reviseCount },
+      direction: { text: directionText, revise_count: reviseCount, clarity_score: clarity },
       approved: true,
     };
     saveQuickStep<QuickStep3State>(3, state);
@@ -63,13 +79,22 @@ export default function QuickStep3Page() {
   };
 
   const handleEditAndApprove = (edited: string) => {
+    // 직접 다듬으면 의도 확정도↑ — edited 가중 반영.
+    const step1 = loadQuickStep<QuickStep1State>(1);
+    const step2 = loadQuickStep<QuickStep2State>(2);
+    const promptLen = (step1?.initialPrompt ?? '').trim().length;
+    const clarified = Boolean(
+      step2 && !step2.skipped && step2.followUpAnswer && step2.followUpAnswer.trim(),
+    );
+    const editedClarity = quickClarity({ promptLen, clarified, edited: true });
     const state: QuickStep3State = {
-      direction: { text: edited, revise_count: reviseCount },
+      direction: { text: edited, revise_count: reviseCount, clarity_score: editedClarity },
       approved: true,
       editedText: edited,
     };
     saveQuickStep<QuickStep3State>(3, state);
     setDirectionText(edited);
+    setClarity(editedClarity);
     router.push('/new/quick/generate');
   };
 
@@ -120,7 +145,7 @@ export default function QuickStep3Page() {
 
       <section className="flex-1 pb-12">
         <DirectionApprovalCard
-          direction={{ text: directionText, revise_count: reviseCount }}
+          direction={{ text: directionText, revise_count: reviseCount, clarity_score: clarity }}
           variant="minimal"
           onApprove={handleApprove}
           onEditAndApprove={handleEditAndApprove}

@@ -76,6 +76,8 @@ export interface DiscoveryStep6Direction {
   text: string;
   reasons?: DirectionReason[];
   revise_count?: number;
+  /** Phase 34 S2 — 의도 명확도 0~1 (확인 턴 배지). lib/clarity.ts discoveryClarity. */
+  clarity_score?: number;
 }
 
 export interface DiscoveryStep6State {
