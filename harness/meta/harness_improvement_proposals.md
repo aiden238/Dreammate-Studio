@@ -700,3 +700,34 @@ PASS (critical 0 / high 0; stub 0 / instruction_index 0 / naming 0 drift). mediu
 - low: rag-update related `knowledge/candidate_knowledge/` = Supabase 테이블 → 경로 표기 정정.
 
 ★ 자정작용(완료): `scripts/skill_usage_report.py`(A8, skill_usage 자동집계 졸업) + `BOUNDARIES.md`/`CODEOWNERS`/`check_boundaries.py`(경계 기계화) + (이전) cost_report.py.
+
+---
+
+## 2026-06-21 — HIP-A~D 결착 (project-2 잔여 결정, 사용자 승인)
+
+> 트리거: "studio project-2 이어서" 세션 — project-2(2026-06-09~10)가 남긴 HIP-A~D를 결착.
+> 근거: critic 품질 연구 아크(2026-06-21, branch phase-29-agent-ux)의 실측이 HIP-B의 핵심 가정을 갱신함.
+> 결정 = 사용자 승인. 런타임 default 변경 0(전부 gated 유지) — 본 섹션은 **결정 기록 + 일부 contract-change**.
+
+### HIP-B — default-off "죽은 게이트" 4개 (결착 ✅)
+
+A11/critic-arc 실측이 HIP-B 작성 시점의 가정("calibration 활성=88점 함정 fix")을 뒤집음 — calibration 단독은 verdict 0건 변경. 따라서 결착을 아래로 갱신:
+
+1. **`critic_calibration_enabled` → RETAIN(폐위 아님), cross-provider judge의 보완으로 co-activate.**
+   - 근거: calibration 단독은 점수만 0.35 당기고 verdict 0건 변경(`eval/regression_results/2026-06-21-cross-provider-judge.md`). 진짜 88점 함정 fix = `critic_judge_provider=anthropic`(Phase 31). 단 judge=anthropic 시 calibration preamble가 Claude 채점을 더 엄격하게 만들어 **보완 가치 有** → sunset 하지 않고 judge와 짝으로 활성하는 레버로 유지.
+   - 상태: 둘 다 gated default-off/openai 유지(런타임 불변). 활성은 prompt-version-review(major) 시 **쌍으로**.
+2. **`cross_validation_enabled` → SUNSET(deprecated).**
+   - 근거: orchestrator에 logging-only(Envelope 0 변경, `moa_orchestrator.py`)로 묻혀 의사결정에 반영 안 됨. 그 "다른 provider로 교차검증" 의도는 Phase 31 cross-provider judge(`critic_judge_provider`)가 **실제 verdict 차단으로 정식 구현**함 → 중복. deprecated 표기, 코드 제거는 후속(behavior-preserving이라 급하지 않음).
+3. **`multi_provider_plans_enabled` → DEFER(OFF 유지, 문서화).**
+   - 근거: A11 다양성 real(pairwise 0.959→0.680)이나 취약(provider 503/JSON robustness). 호출자 0(`run_planning_multi_provider_3` 미배선). 활성 = orchestrator 분기(S2b-2b) + Claude JSON robustness + provider fallback 선결 → 측정으로 product 필요 입증 시 진행. (Phase 31 `_judge_via_anthropic`가 AnthropicAdapter+json_mode를 이미 실행해 일부 de-risk됨.)
+4. **`agent_io_log_to_db` → KEEP.** 선택 sub-flag, Supabase 배포 시 토글. 변경 없음.
+
+### HIP-C — skill 통합·격하 (부분 결착 ✅, 격하 보류)
+
+- **실행**: `bug-triage` 강제 게이트화(버그수정 절차 우회 위험 차단) + `eval-design`+`eval-run` 병합 + `rag-design`+`rag-update` 병합. [contract-change(skill), 본 세션 반영]
+- **보류**: `phase-review`·`context-compact` 격하 — `skill_usage_report.py` 한계(tool-call=0 ≠ dead; body-injection 사용 미집계)로 신호 부족 → 격하 전 신호 추가 수집. [HOLD]
+
+### HIP-A — routes.yaml ↔ skill 2-track (보류 → 후속)
+### HIP-D — 검토형 skill 산출물 drift (보류 → 후속)
+
+- HIP-A/D는 본 세션 미결착(decision-only/contract-change). 후속 세션에서 routes 2-track 명문화 + 산출물 요구 완화 결정.

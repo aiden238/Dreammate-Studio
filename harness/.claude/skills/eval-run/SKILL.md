@@ -1,22 +1,25 @@
 ---
 name: eval-run
 description: |
-  품질 평가(eval)를 실행할 때 사용한다. golden_set 회귀, 영상기획 품질 평가,
-  hook 강도 평가, 사람 검토를 어떤 조합으로 어떤 순서로 돌릴지, 결과를
-  어디에 저장하고 어떤 임계값에서 작업을 차단할지 강제한다.
+  품질 평가(eval) 체계의 설계와 실행을 모두 담당한다 (2026-06-21 구 eval-design 흡수, HIP-C).
+  [실행] golden_set 회귀, 영상기획 품질 평가, hook 강도 평가, 사람 검토를 어떤
+  조합으로 어떤 순서로 돌릴지, 결과를 어디에 저장하고 어떤 임계값에서 작업을 차단할지 강제한다.
+  [설계] 새 평가 차원·rubric·golden_set 확장·Critic 점수 체계 변경 제안서 작성.
   키워드: "eval 실행", "평가 돌려", "golden_set", "회귀 테스트", "regression",
-  "품질 평가", "human review", "video_planning_eval".
-applies_to: [agents]
-phase: [phase-9.5, phase-10, phase-11, ongoing]
+  "품질 평가", "human review", "video_planning_eval",
+  "eval 설계", "golden_set 확장", "rubric 설계", "평가 체계 설계", "평가 차원 추가".
+applies_to: [agents, claude]
+phase: [phase-6, phase-9.5, phase-10, phase-11, ongoing]
 related_contracts:
   - eval/golden_set.md
   - eval/video_planning_eval.md
   - eval/hook_quality_eval.md
   - eval/human_review_rubric.md
+  - docs/contracts/output_schema.md
 related_state:
   - eval/regression_results/
   - agent_io_logs
-version: v1.0.0
+version: v1.1.0
 ---
 
 # eval-run
@@ -24,6 +27,8 @@ version: v1.0.0
 평가는 통과/실패가 아니라 점수와 분포다. 어떤 평가를 언제 돌리고 결과를 어떻게 해석할지 절차로 고정한다.
 
 > 정식화 이력: **Phase 9.5에서 first formal baseline으로 정식화**(golden_set 11 케이스 mock-deterministic runner + revise effect + 임계값 게이트, ADR-033)되었고, Phase 10+ 부터 반복 운영한다.
+>
+> **v1.1.0 (2026-06-21, HIP-C 흡수)**: 구 `eval-design` Skill을 흡수 — 이 Skill이 eval **설계**(차원/rubric/golden_set 제안)와 **실행**(회귀/품질/사람검토)을 모두 담당한다. 설계는 아래 "## 설계 모드", 실행은 기존 절차. applies_to=[agents, claude].
 
 ## 트리거 조건
 
@@ -233,3 +238,41 @@ contract-change       : golden_set 갱신 시
 - 모든 결과 저장 + 결정(pass/fail) 기록 → 정상 종료
 - 임계값 위반 → 후속 Skill 위임 후 종료
 - 사람 검토 대기 → 검토 완료 후 다시 종료 처리
+
+---
+
+# 설계 모드 (구 eval-design 흡수, v1.1.0)
+
+> 평가를 **실행**(위)이 아니라 **설계/확장**할 때 — 새 평가 차원, golden_set 확장, rubric/Critic 점수 체계 변경 — 의 절차. "무엇을 어떻게 측정할지"만 다루고, 실제 채점은 위 실행 절차가 담당한다. 산출물 = 제안서(직접 수정 금지).
+
+## 설계 트리거
+
+- 새 평가 차원 필요 (예: `brand_consistency`, `hook_strength`)
+- golden_set 확장 (10 → 20 → 50 케이스)
+- 새 Phase acceptance를 정량 측정할 방법 필요
+- Critic Agent 점수 체계(0~5, 가중치) 변경 제안
+- human_review_rubric 새 항목 추가
+
+## 설계 절차
+
+1. **현재 평가 자산 로드**: `eval/golden_set.md` · `video_planning_eval.md` · `human_review_rubric.md` (+ `eval/design_reviews/`) → 각 평가가 다루는 차원을 표로 정리.
+2. **부족한 차원 식별**: 형식정합/사실성/브랜드정합/타겟적합/광고표현/다양성/비용·지연 체크리스트로 누락 점검.
+3. **metric 정의**: 각 새 차원에 정량 metric(0~1 또는 0~5) + 계산법(LLM-judge/규칙/사람) + 임계값(PASS/WARN/FAIL) + 회귀 허용 폭. LLM-judge면 judge prompt 초안도 함께(`ai_system/prompts/judge_drafts/`).
+4. **golden_set 변경 제안**: 추가 케이스 수·선정 기준(브랜드/도메인/타겟 다양성)·expected fields(positive/negative)·출처(실/합성). PII/저작권 위험은 `security-review` 트리거.
+5. **human_review_rubric 반영**: 자동으로 안 잡히는 차원은 사람 rubric(0~5 + 1줄 메모 + 분기별 샘플 N).
+6. **eval-run 실행표 갱신 제안**: 새 차원을 위 실행 절차가 돌릴 수 있게 `video_planning_eval.md` 실행표·임계값·출력형식 갱신 제안.
+7. **contract-change 라우팅**: 평가 체계 변경 = contract 수준 → `contract-change` Skill. 제안서를 `docs/contract_changes/proposals/eval_design_{date}.md`에 작성.
+
+## 설계 금지 사항
+
+- 평가 **실행** 수행은 위 실행 절차로 (설계 모드는 제안만).
+- golden_set 파일 직접 수정 금지 (제안서만).
+- judge prompt를 prompt_registry에 직접 추가 금지 (`prompt-version-review` 절차).
+- 사용자 동의 없이 임계값 임의 조정 금지.
+
+## 설계 자주 발생하는 실수
+
+1. **차원 중복**: 기존과 의미 겹치는 차원 추가 — §1 표로 중복 확인.
+2. **임계값 근거 부재**: 임의 0.75 — 최소 5케이스 베이스라인 근거.
+3. **회귀 폭 누락**: 임계값만 정의하고 직전 버전 대비 허용 폭 빠지면 회귀 감지 불가.
+4. **사람 rubric 미반영**: 정성 차원은 반드시 사람 항목도.

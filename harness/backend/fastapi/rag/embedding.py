@@ -14,9 +14,15 @@ from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
+# Gemini embedding taskType 비대칭 (A9 측정: 이 비대칭이 ko 0.7 통과의 핵심).
+#   문서 적재(ingest/promote)는 DOCUMENT, 검색 쿼리는 QUERY 로 임베딩해야 측정된
+#   +0.20~0.34 이득이 실현된다. OpenAI 경로(client 주입/provider=openai)는 taskType 무시 → no-op.
+TASK_TYPE_QUERY = "RETRIEVAL_QUERY"
+TASK_TYPE_DOCUMENT = "RETRIEVAL_DOCUMENT"
+
 
 async def _embed_gemini(
-    text: str, *, task_type: str = "RETRIEVAL_QUERY"
+    text: str, *, task_type: str = TASK_TYPE_QUERY
 ) -> Optional[list[float]]:
     """gemini-embedding-2 임베딩 (httpx REST, taskType 비대칭). graceful None.
 
@@ -58,7 +64,7 @@ async def embed(
     *,
     model: str = "text-embedding-3-small",
     client: Any | None = None,
-    task_type: str = "RETRIEVAL_QUERY",
+    task_type: str = TASK_TYPE_QUERY,
 ) -> Optional[list[float]]:
     """OpenAI embedding API → 1536 dim float list.
 
@@ -136,17 +142,22 @@ async def embed_many(
     *,
     model: str = "text-embedding-3-small",
     client: Any | None = None,
+    task_type: str = TASK_TYPE_DOCUMENT,
 ) -> list[Optional[list[float]]]:
     """다중 텍스트 embedding (graceful — 개별 실패 시 None).
 
     Phase 7 MVP: 순차 호출 (batch_size=10 정책은 ADR-025 §2 명시했으나
     Phase 9+ 운영 단계에서 동적 batch 도입). 본 함수는 단순 wrapper.
+
+    ★ task_type 기본 = RETRIEVAL_DOCUMENT (배치 임베딩 = 문서 적재/승격 경로).
+    Gemini provider 일 때만 적용(taskType 비대칭) — OpenAI/client 주입 시 no-op,
+    byte-identical. 검색 쿼리 임베딩은 단건 embed()(default QUERY)를 쓴다.
     """
     results: list[Optional[list[float]]] = []
     for text in texts:
-        emb = await embed(text, model=model, client=client)
+        emb = await embed(text, model=model, client=client, task_type=task_type)
         results.append(emb)
     return results
 
 
-__all__ = ["embed", "embed_many"]
+__all__ = ["embed", "embed_many", "TASK_TYPE_QUERY", "TASK_TYPE_DOCUMENT"]

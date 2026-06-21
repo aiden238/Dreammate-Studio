@@ -4,20 +4,36 @@ description: |
   버그 또는 예상치 못한 동작 발견 시 사용한다. 원인 영역 분류, 재현 절차 정리,
   영향 범위 파악, 임시 우회 방법 확인, 수정 phase 생성 여부 결정까지 한 번에 처리한다.
   키워드: "버그", "bug", "오류", "에러 발생", "재현", "exception", "안 됨",
-  "예상과 다름", "fix phase", "긴급 수정".
+  "예상과 다름", "fix phase", "긴급 수정", "버그 수정", "fix", "hotfix".
 applies_to: [agents]
 phase: [all]
+gate: mandatory  # 버그 수정 진입 전 강제 통과 게이트 (2026-06-21, HIP-C)
 related_contracts:
   - docs/contracts/event_log_contract.md
 related_state:
   - PHASE_REGISTRY.md
   - phases/active/
-version: v1.0.0
+version: v1.1.0
 ---
 
 # bug-triage
 
 버그 발견 시 즉시 코드 수정에 들어가지 말고 분류부터 한다. 잘못된 영역을 고치는 시간이 분류에 쓰는 시간보다 훨씬 비싸다.
+
+> ## ★ 강제 게이트 (v1.1.0, HIP-C — 2026-06-21)
+>
+> **버그 수정은 이 Skill을 우회할 수 없다.** "버그/오류/안 됨/에러/fix" 신호가 있으면 코드 한 줄
+> 고치기 전에 **반드시** §1~§7 분류를 먼저 수행하고 분류 결과(`docs/bug_reports/{date}-{slug}.md`)를
+> 남긴다. 우선순위 표(`instruction_index/priority_rules.md`)에서도 `bug-triage`는 정상 흐름을
+> 일시 정지시키는 인터럽트 게이트다.
+>
+> **게이트 면제(예외)** — 아래만 triage 기록 없이 즉시 수정 가능:
+> - 1줄 오타/타입/import 등 **자명한 기계적 수정**(원인 영역이 100% 명확).
+> - 이미 동일 버그의 triage 기록이 존재하는 **연속 수정**.
+> - **green 회복용 테스트/빌드 즉시 수정**(단, 사후 1줄 기록 권장).
+>
+> 그 외 모든 "왜 이런지 모르겠는" 동작·다영역 의심·재현 불명은 **분류 의무**. 분류 없이 수정 시작 =
+> 절차 위반(가장 흔한 회귀 원인, §자주 발생하는 실수 1).
 
 ## 트리거 조건
 

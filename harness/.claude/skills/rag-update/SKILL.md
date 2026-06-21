@@ -1,27 +1,33 @@
 ---
 name: rag-update
 description: |
-  RAG 지식을 추가하거나 candidate_knowledge를 approved_knowledge로 승격시킬 때 사용한다.
-  사용자 데이터, LLM Wiki 신규 항목, 외부 시드 데이터 등 어떤 출처든 RAG에 진입하기 전
-  필수로 거치는 5단계 파이프라인(후보 → 품질 필터 → 평가 → 승인 → 승격)을 강제한다.
+  RAG 시스템의 설계와 운영 갱신을 모두 담당한다 (2026-06-21 구 rag-design 흡수, HIP-C).
+  [갱신] 사용자 데이터·LLM Wiki·외부 시드 등 어떤 출처든 RAG 진입 전 필수 5단계
+  파이프라인(후보 → 품질 필터 → 평가 → 승인 → 승격)을 강제한다.
+  [설계] 새 RAG layer·데이터 소스·chunking/retrieval 정책·LLM Wiki vs RAG 분리 같은 구조적 변경.
   트리거: "RAG 추가", "지식 추가", "candidate_knowledge", "approved_knowledge",
-  "llm_wiki 추가", "승격", "promotion", "knowledge update".
+  "llm_wiki 추가", "승격", "promotion", "knowledge update",
+  "RAG 설계", "RAG architecture", "custom RAG", "chunking 전략", "retrieval 정책 설계", "LLM Wiki 분리".
 applies_to: [agents, claude]
-phase: [phase-7, phase-8, phase-9, phase-10, ongoing]
+phase: [phase-7, phase-8, phase-9, phase-10, phase-21, ongoing]
 related_contracts:
   - docs/contracts/privacy_contract.md
   - docs/contracts/llm_security_contract.md
+  - docs/contracts/rag_data_contract.md
   - docs/contracts/db_schema.md (candidate_knowledge, rag_documents, rag_chunks)
 related_state:
   - knowledge/candidate_knowledge/
   - knowledge/approved_knowledge/
   - knowledge/llm_wiki/
-version: v1.0.0
+  - knowledge/rag/
+version: v1.1.0
 ---
 
 # rag-update
 
 RAG 지식이 운영 시스템에 들어가기 전 거쳐야 하는 5단계 승격 파이프라인.
+
+> **v1.1.0 (2026-06-21, HIP-C 흡수)**: 구 `rag-design` Skill을 흡수 — 이 Skill이 RAG **설계**(구조/정책/소스)와 **운영 갱신**(5단계 승격)을 모두 담당한다. 설계는 아래 "## 설계 모드", 일상 갱신은 기존 5단계 절차.
 
 ## 핵심 원칙
 
@@ -230,3 +236,34 @@ agent_io_logs: 모든 LLM 호출 기록 (Critic 평가 등)
 - 후보가 promoted까지 완주 → 정상 종료
 - 어느 단계에서든 rejected → 사유 기록 후 종료
 - 회귀 평가에서 품질 하락 → 즉시 rollback + contract-change Skill로 위임
+
+---
+
+# 설계 모드 (구 rag-design 흡수, v1.1.0)
+
+> RAG를 **갱신**(위 5단계)이 아니라 **설계/확장**할 때 — 새 RAG layer, 새 데이터 소스, chunking/retrieval 정책 변경, LLM Wiki vs RAG 분리 재검토 — 의 절차. "구조"만 다루고, 정책/스키마 파일 직접 수정 금지(반드시 `contract-change` 제안서).
+
+## 설계 트리거
+
+- Phase 7 진입(RAG Lite 첫 구현) / Phase 21+ Custom RAG 확장
+- 새 데이터 소스 도입 검토(외부 API/사내 문서/사용자 데이터)
+- `chunking_policy.md` / `retrieval_policy.md`(top_k·isolation·re-rank) / `metadata_schema.md` 변경 제안
+- LLM Wiki vs RAG 분리 기준 재검토
+
+## 설계 절차
+
+1. **현재 자산 로드**: `retrieval_policy.md` · `metadata_schema.md` · `chunking_policy.md` · `quality_filter.md` · `promotion_rule.md` · `sources.md` · `llm_wiki/index.md` · `rag_data_contract.md` · `privacy_contract.md` → 영역별 표(정책/스키마/운영/분리기준).
+2. **retrieval_policy 점검**: top_k 근거 / brand_id·domain 격리(retrieval 단계 강제 여부) / re-rank 비용 / dedupe.
+3. **metadata_schema 점검**: 필수 필드(brand_id, source_kind, promoted_at, quality_score, pii_masked) 존재 — 누락=critical → contract-change.
+4. **chunking_policy 점검**: 토큰 범위·overlap·단위·한/영 분리. 근거 없으면 §6 실험 제안.
+5. **quality_filter 점검**: 길이/광고표현/사실성/PII 마스킹 단계가 promotion_rule 5단계(pending→filtered→evaluated→approved→promoted)와 정합하는지.
+6. **새 소스 도입 검토**: 저작권/PII/갱신주기/isolation 단위/Wiki vs RAG 분류 → `security-review` 트리거 후보.
+7. **LLM Wiki vs RAG 분리**: 정적·보편=Wiki / 브랜드별 동적=RAG. 모호 항목은 표로 정리 후 사용자 결정.
+8. **변경 제안서**: `docs/contract_changes/proposals/rag_design_{date}.md`(변경 항목·근거·영향 contract/agent/Skill) → `contract-change` 라우팅.
+
+## 설계 금지 사항
+
+- 정책/스키마 파일 직접 수정 금지(반드시 `contract-change`).
+- 새 소스를 `security-review` 없이 승인 금지.
+- LLM Wiki↔RAG 경계 단독 판단 금지(사용자 또는 `multi-llm-validation`).
+- chunking 값을 근거(실험 데이터) 없이 변경 금지.

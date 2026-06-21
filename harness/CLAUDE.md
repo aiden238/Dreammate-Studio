@@ -65,7 +65,7 @@ Claude, GPT, Gemini 등 기획·설계·문서 검토형 모델을 위한 라우
 - `knowledge/rag/quality_filter.md`
 - `knowledge/rag/promotion_rule.md`
 - `docs/contracts/rag_data_contract.md`
-- Skill: `rag-design`, `rag-update`
+- Skill: `rag-update` (설계+갱신 통합, 구 rag-design 흡수)
 
 ### 프론트 / UX
 
@@ -82,7 +82,7 @@ Claude, GPT, Gemini 등 기획·설계·문서 검토형 모델을 위한 라우
 - `eval/golden_set.md`
 - `eval/video_planning_eval.md`
 - `eval/human_review_rubric.md`
-- Skill: `eval-design` (설계), `eval-run` (실행)
+- Skill: `eval-run` (설계+실행 통합, 구 eval-design 흡수)
 
 ### 메타 개선
 

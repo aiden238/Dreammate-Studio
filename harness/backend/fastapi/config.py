@@ -168,6 +168,9 @@ class Settings(BaseSettings):
     # 배경: critic 전수 approve(낙관 편향, "88점 함정") — 얕은 plan 도 평균이 높아 통과
     #   (meta/audits/2026-06-05.md HIP-007). ★ behavior-preserving: default False → 프롬프트/게이트
     #   미적용 = critic 출력 byte-identical. ON 시 (1) anti-optimism 프롬프트 (2) 핵심 차원 게이트.
+    # ★ 결착 (2026-06-21, HIP-B): RETAIN — 단독은 verdict 0건 변경(점수만 0.35 보정)이라 88점 함정
+    #   fix 가 아님. 진짜 fix = critic_judge_provider='anthropic'(Phase 31). 본 flag 는 그 judge 의
+    #   **보완**(judge=anthropic 와 짝으로 co-activate 시 Claude 채점을 더 엄격하게) → sunset 아님.
     critic_calibration_enabled: bool = Field(
         default=False,
         description=(
@@ -227,6 +230,10 @@ class Settings(BaseSettings):
     )
 
     # ─── Phase 11 A안 Slice 2 — cross-validation 게이트 + Gemini 튜닝 (additive) ─
+    # ★ DEPRECATED (2026-06-21, HIP-B 결착): SUNSET. orchestrator 에 logging-only(Envelope 0 변경)로
+    #   묻혀 의사결정 미반영. "다른 provider 로 교차검증" 의도는 Phase 31 cross-provider judge
+    #   (critic_judge_provider='anthropic')가 실제 verdict 차단으로 정식 구현 → 중복. 코드 제거는
+    #   후속(behavior-preserving 이라 비긴급). 신규 사용 금지 — judge 레버를 쓸 것.
     # ★ behavior-preserving / gated default-off: cross_validation_enabled=False →
     #   호출측(orchestrator 등)에서 교차검증 skip. 본 Slice 는 모듈만 추가 — 자동
     #   연결 0 (orchestrator 미변경). 기존 Field 전부 보존.
@@ -251,6 +258,9 @@ class Settings(BaseSettings):
     )
 
     # ─── Phase 11 B안 Slice S2b-2a — 3-provider 다양성 게이트 (additive) ─
+    # ★ 결착 (2026-06-21, HIP-B): DEFER. A11 다양성 real(0.959→0.680)이나 취약(provider 503/JSON
+    #   robustness). 활성 = orchestrator 분기(S2b-2b) + Claude JSON robustness + provider fallback
+    #   선결 → 측정으로 product 필요 입증 시 진행. (Phase 31 _judge_via_anthropic 가 일부 de-risk.)
     # ★ behavior-preserving / gated default-off: True 여도 본 Slice 는 신규 함수
     #   run_planning_multi_provider_3 를 추가만 — 아무 곳도 호출 X (orchestrator 분기는
     #   후속 S2b-2b). False 일 때 기존 OpenAI 3-call(run_planning_parallel_3) 경로 유지.
