@@ -8,15 +8,17 @@ Next.js PWA **11 routes** (+/login) + FastAPI 17 endpoints (Phase 1~9 누적, /a
 **🟢 (직전 기능마감) Phase 26 4계층 video 노드 + 개인 PKM 출처 ✅ done (2026-06-04, archive)** — ★ 현재 최신은 아래 §🟢🟢🟢 최신(2026-06-10, Phase 27~29 + 통합) 참조. — 🅑 잔여 완결. ① **video 노드**: VideoProjectRepo 신규 + /me/videos CRUD(4-hop 소유검증) + 그래프 has_video → **User→Brand→Domain→Series→Video 전 계층** ② **개인 PKM 출처**: migration 0007(pkm_entries +source_plan_id) + 추출 훅 plan_id 기록 + 그래프 개인 PKM sourced_from(`_append_source_provenance` 공유 헬퍼, Phase 21 브랜드 PKM 재사용). S1(video)+S2(pkm source)+S3(frontend). ★ **video 라이브 PASS**(CRUD+has_video+summary.videos+미소유 404), 개인 출처=유닛 6 + 공유 헬퍼. additive/graceful(video 0/출처 없음 byte-identical). hermetic pytest 749→**779**(+30) + scenario_sim 36/36 + audit 0 + typecheck/lint. CC-033/034. **branch `phase-26-video-pkm-source` (main 머지 진행).** ★ **🅑 기능마감 완결** — /brain 4계층이 완전한 지식 구조(생성·편집·삭제·자동연결·출처추적·video). 이월: generate→video 자동연결 / 0007 운영 적용(NG11). **다음 = pending_user_decision.**
 > (과거 최신 경로: Phase 19 2nd brain → 20 commercial_viral → 21 4계층 깊이/출처 → 22 생성 → 23 품질 baseline → 24 편집·삭제 → 25 브랜딩 자동연결 → 26 video/개인출처. 전부 archive.)
 
-## 🟢🟢🟢🟢🟢 최신 (2026-06-21 — "project-2 이어서") — HIP 결착 + 스킬 병합 + RAG 라이브 + Phase 28/29/30 close + Phase 31 진입 — 브랜치 `phase-29-agent-ux`
+## 🟢🟢🟢🟢🟢 최신 (2026-06-21 — "project-2 이어서") — HIP 결착 + 스킬 병합 + RAG 라이브 + Phase 28/29/30 close + Phase 31(S1~S4) + ★ main push — 브랜치 `phase-29-agent-ux` = **main 동기**
 
 > 세션: "studio project-2 이어서". 4(심층파악)→2(project-2 잔여결정)→1(critic 아크/페이즈 기획) 순. 정본 워크트리 `dreammate-p27`.
-> 커밋: `5984c07`(HIP-B/C 결착+스킬+RAG taskType) · `6ba1aaf`(RAG Gemini 라이브 프로브) · `9d47e5b`(CODEX 보존) · (+ 본 close 커밋).
+> ★ **main 통합 완료**: `c82ed9b..801bb00` push(origin/main 동기, 12커밋). 팀↔개인 취합은 이미 완료(aa2d236 경로분리), 본 세션이 phase-29 8커밋 + research 4커밋을 main에 통합.
+> 커밋: `5984c07`(HIP-B/C+스킬+RAG taskType) · `6ba1aaf`(RAG 라이브) · `9d47e5b`(CODEX) · `18bc022`(Phase 28/29/30 close+Phase31 기획) · `866fddd`(S1 consensus-min) · `0f108f8`(S2 P-006 v1.2.1) · `801bb00`(S2·S3 측정).
 
 - **옵션2 — project-2 잔여 결정 결착(완료)**: HIP-B 죽은게이트 4개(critic_calibration=judge 보완 retain / cross_validation=sunset / multi_provider=defer / agent_io_log_to_db=keep) + HIP-C 스킬(bug-triage **강제 게이트화** + eval-design→eval-run·rag-design→rag-update **흡수병합 21→19**, 격하 보류). audit_naming 0 drift.
 - **RAG**: `embed_many` doc-side **RETRIEVAL_DOCUMENT 배선**(pytest 835 green) + **라이브 검증**(`RAG_EMBEDDING_PROVIDER=gemini`, approved_knowledge 8건 @0.7 검색 5/2/2 hits, sim 0.72~0.89, 태그 일치 — `eval/regression_results/2026-06-21-rag-gemini-live-probe.md`, 재현 `scripts/rag_gemini_probe.py`).
 - **옵션1 — critic 아크 마감 진입**: CODEX 독립 교차검증 보존(B1 +0.12, 메인 +0.33과 정합) + **Phase 28/29/30 정식 close**(회고 phase-28·29·30.md + archive 이동 + phase-27 active/archive 중복 정리=notes.md 보존). 척추 스킬(phase-complete/meta-retrospective) 부활.
-- **▶ Phase 31 진입(active)**: critic 품질 계측기 production화 + 마감 — S1 consensus-min / S2 P-006 prompt-version-review / S3 golden_set RAG ON/OFF / S4 main 머지·push. `phases/active/phase-31-critic-quality-close/`.
+- **▶ Phase 31(active) — S1~S4 완료**: ✅ **S1 consensus-min**(OpenAI+Claude 엄격 verdict, gated, pytest 838) ✅ **S2 P-006 director v1.2.1**(특이성+정직가드, prompt-version-review, 라이브 Δ+0.1~0.2 비퇴행) ✅ **S3 RAG ON/OFF**(리뷰 Δ+0.9 — RAG grounding 품질 기여 첫 실증, `eval/regression_results/2026-06-21-phase31-s2-s3-measure.md`) ✅ **S4 main 머지·push**(완전 통합). 잔여(follow-up): gpt-4o-mini JSON robustness 보강 후 클린 N↑ 재측정 / default judge 전환 결정 / 코퍼스 확대(큐레이션·2nd-brain). `phases/active/phase-31-critic-quality-close/`.
+- **⚠️ OneDrive 트리**: 아직 `phase-27-mvp-realuse-close`(693957f) = 이제 main의 조상(behind, 능동 divergence 0). 다음에 main 정렬 권장(재분기 방지).
 
 ## 🟢🟢🟢🟢 최신 (2026-06-21) — critic 품질 연구 아크 (cross-provider judge + B0/B1) — 브랜치 `phase-29-agent-ux`
 
