@@ -33,10 +33,13 @@ import BrainReflectedBanner from "@/components/plan/BrainReflectedBanner";
 import BrandMemoryAside from "@/components/plan/BrandMemoryAside";
 // Phase 30 Slice 6 — 선택완료 결과를 영상기획 브리프 깊이로 표현(표현 계층 전용).
 import FinalBriefPanel from "@/components/plan/FinalBriefPanel";
+// Phase 34 S2 — 대화형 follow-up (결과 카드 후 프롬프트로 계속 이어가기). 표현 계층 전용.
+import FollowUpComposer from "@/components/plan/FollowUpComposer";
 import PlanComparisonGrid from "@/components/plan/PlanComparisonGrid";
 import PlanFeedbackControls from "@/components/plan/PlanFeedbackControls";
 import PlanOptionFrame from "@/components/plan/PlanOptionFrame";
 import {
+  generate,
   generateMultiPlan,
   getPkmGraph,
   getPlan,
@@ -102,6 +105,14 @@ function PlanResultPageContent() {
   const [rejectOpenIndex, setRejectOpenIndex] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Phase 34 S2 — 대화형 follow-up 스레드. 결과 카드 후 추가 프롬프트로 새 기획안 묶음을 누적
+  //   (선택→저장=끝 막다른길 제거). 각 follow-up = { 사용자 입력, 새 generate envelope }.
+  const [followUps, setFollowUps] = useState<
+    { input: string; envelope: MultiPlanEnvelope }[]
+  >([]);
+  const [followUpBusy, setFollowUpBusy] = useState(false);
+  const [followUpError, setFollowUpError] = useState<string | null>(null);
 
   // sessionStorage 에서 이전 선택 복원
   useEffect(() => {
@@ -297,6 +308,49 @@ function PlanResultPageContent() {
     });
   }, []);
 
+  // Phase 34 S2 — 추가 요청 → generate 재호출 → 스레드 누적 (대화형 이어가기).
+  //   선택 카드가 있으면 그 이름·콘셉트를 컨텍스트로 prepend (방향 계승). 키/PKM 은 백엔드가 누적.
+  const handleFollowUp = useCallback(
+    async (text: string) => {
+      setFollowUpBusy(true);
+      setFollowUpError(null);
+      // 선택 카드 컨텍스트: 초기 + 이전 follow-up 전 블록에서 검색.
+      const allPlans: Plan[] = [
+        ...(envelope?.body.plan_candidates ?? []),
+        ...followUps.flatMap((f) => f.envelope.body.plan_candidates ?? []),
+      ];
+      const sel = allPlans.find((p) => p.plan_id === selectedPlanId);
+      const contextual = sel
+        ? `이전 기획안 "${sel.name}" (콘셉트: ${sel.concept})의 방향을 이어서, 다음 요청을 반영해줘: ${text}`
+        : text;
+      try {
+        const result = await generate({ input: contextual });
+        if (result.ok) {
+          setFollowUps((prev) => [
+            ...prev,
+            { input: text, envelope: result.envelope },
+          ]);
+          // 새 블록으로 스크롤 (다음 틱)
+          if (typeof window !== "undefined") {
+            window.setTimeout(
+              () => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }),
+              80,
+            );
+          }
+        } else {
+          setFollowUpError(
+            result.userMessage ?? "이어서 생성하지 못했어요. 다시 시도해주세요.",
+          );
+        }
+      } catch {
+        setFollowUpError("이어서 생성하지 못했어요. 다시 시도해주세요.");
+      } finally {
+        setFollowUpBusy(false);
+      }
+    },
+    [envelope, followUps, selectedPlanId],
+  );
+
   // ── Loading 상태 (Phase 1 ProgressStepper 재사용) ──────────────────
   if (loading) {
     return (
@@ -355,6 +409,11 @@ function PlanResultPageContent() {
     typeof envelope.body.recommended_plan_index === "number"
       ? envelope.body.recommended_plan_index
       : null;
+  // Phase 34 S2 — 선택 카드(초기 + follow-up 블록 전체) → composer 컨텍스트 라벨.
+  const selectedPlan: Plan | undefined = [
+    ...plans,
+    ...followUps.flatMap((f) => f.envelope.body.plan_candidates ?? []),
+  ].find((p) => p.plan_id === selectedPlanId);
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-10 pb-32 flex flex-col gap-6">
@@ -462,6 +521,48 @@ function PlanResultPageContent() {
           {actionError}
         </p>
       )}
+
+      {/* Phase 34 S2 — 대화형 follow-up 스레드: 각 추가 요청의 새 기획안 묶음 누적 (선택 가능) */}
+      {followUps.map((fu, fi) => {
+        const fuPlans = fu.envelope.body.plan_candidates ?? [];
+        return (
+          <section
+            key={`fu-${fi}`}
+            aria-label={`이어진 기획 ${fi + 1}`}
+            className="flex flex-col gap-3 border-t border-border-default pt-5"
+          >
+            <p className="text-sm text-text-muted">
+              💬 이어서:{" "}
+              <span className="font-medium text-text-default">
+                &ldquo;{fu.input}&rdquo;
+              </span>
+            </p>
+            <PlanComparisonGrid label={`이어진 기획안 ${fi + 1}`}>
+              {fuPlans.map((plan, i) => (
+                <PlanOptionFrame
+                  key={plan.plan_id}
+                  optionIndex={i}
+                  total={fuPlans.length}
+                  planName={plan.name}
+                  selected={selectedPlanId === plan.plan_id}
+                  recommended={false}
+                  onSelect={() => handleSelect(plan.plan_id)}
+                >
+                  <PlanCard plan={plan} />
+                </PlanOptionFrame>
+              ))}
+            </PlanComparisonGrid>
+          </section>
+        );
+      })}
+
+      {/* Phase 34 S2 — 이어서 요청하기 (막다른길 제거: 선택 후에도 계속 프롬프트) */}
+      <FollowUpComposer
+        onSubmit={(t) => void handleFollowUp(t)}
+        busy={followUpBusy}
+        selectedLabel={selectedPlan?.name ?? null}
+        error={followUpError}
+      />
 
       {/* Warnings (개발자 정보) */}
       {warnings.length > 0 && (
