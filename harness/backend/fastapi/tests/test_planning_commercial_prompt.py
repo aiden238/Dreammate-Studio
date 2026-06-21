@@ -84,7 +84,7 @@ def test_lower_tier_prompts_not_polluted_by_commercial() -> None:
 def test_prompt_versions_4tier() -> None:
     assert PROMPT_VERSION == "v1.0.0"          # compact
     assert RICH_PROMPT_VERSION == "v1.1.0"     # rich
-    assert DIRECTOR_PROMPT_VERSION == "v1.2.0"  # director
+    assert DIRECTOR_PROMPT_VERSION == "v1.2.1"  # director (+특이성·정직가드 Phase 31)
     assert COMMERCIAL_PROMPT_VERSION == "v1.3.0"  # commercial_viral (minor bump)
 
 

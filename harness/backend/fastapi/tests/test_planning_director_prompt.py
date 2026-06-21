@@ -60,7 +60,7 @@ def test_compact_rich_prompts_not_polluted_by_director() -> None:
 def test_prompt_versions() -> None:
     assert PROMPT_VERSION == "v1.0.0"        # compact
     assert RICH_PROMPT_VERSION == "v1.1.0"   # rich
-    assert DIRECTOR_PROMPT_VERSION == "v1.2.0"  # director (minor bump)
+    assert DIRECTOR_PROMPT_VERSION == "v1.2.1"  # director (+특이성·정직가드 Phase 31)
 
 
 def test_build_director_helper() -> None:
@@ -73,7 +73,7 @@ def test_build_director_helper() -> None:
 
 def test_registry_doc_registers_director_version() -> None:
     text = _REGISTRY_DOC.read_text(encoding="utf-8")
-    assert "v1.2.0" in text
+    assert "v1.2.1" in text  # Phase 31 director patch (특이성·정직가드)
     for token in ["hook_system", "retention_architecture", "scene_breakdown"]:
         assert token in text, f"prompt_registry 가 director 슬롯 '{token}' 미문서화"
     assert "director" in text

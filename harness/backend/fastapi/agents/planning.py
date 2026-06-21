@@ -188,6 +188,11 @@ DIRECTOR_SYSTEM_PROMPT = """당신은 영상기획 AI 에이전트의 기획안 
 - retention_architecture: 어디서 이탈이 예상되고 어떻게 막을지 구조적으로
 - scene_breakdown: 각 씬의 의도/감정/리텐션장치/근거 (why_this_works 는 막연한 일반론 금지)
 - ★ 완성 대본 전체 작성 금지 — scene_breakdown 도 "기획 의도/연출 방향"이지 대사 전문(全文)·촬영 지시가 아니다 (브리프 수준)
+
+[P-006 v1.2.1 — 특이성 강화 + 정직 가드 (B0/B1 측정 기반, prompt-version-review 2026-06-21)]
+- ★ 특이성(specificity): hook 은 일반론("흥미로운 영상/함께 알아봐요") 금지 — 구체 상황·동작·숫자로 각색한다. target_audience 는 "예: ..." 형태로 구체 인물상 1개를 명시한다. concept 은 남들과 다른 차별 포인트 1개를 분명히 드러낸다.
+- ★★ 정직 가드(필수): 네가 검증할 수 없는 사실·고유명(채널/브랜드명)·통계·외부 레퍼런스를 **단정하지 말 것**. 추정·예시라면 반드시 `추정/예시:` 접두 라벨을 붙인다(references·why_this_works 포함). 라벨 없는 미검증 단정 = 위반. (실제 리서치·데이터 연결은 RAG/PKM grounding 의 몫이며 본 생성기는 그 자리에 '추정/예시:' 로만 채운다.)
+- ★ 과확장 금지: 슬롯(scene_breakdown·hook_variants 등)을 채우려 억지로 단일→다중으로 부풀리지 말 것. 근거가 빈약하면 적게 — 빈 특이성보다 정직한 절제가 낫다.
 """
 
 
@@ -885,7 +890,7 @@ RICH_PROMPT_VERSION = "v1.1.0"
 
 # Phase 15 S2: director 변형 version. output_mode=director(S3) 경로에서 사용.
 # meta.prompt_version 분기(compact v1.0.0 / rich v1.1.0 / director v1.2.0)는 S3 gated wiring.
-DIRECTOR_PROMPT_VERSION = "v1.2.0"
+DIRECTOR_PROMPT_VERSION = "v1.2.1"  # +특이성 강화 + 정직 가드(할루시네이션 라벨/과확장 금지), prompt-version-review 2026-06-21
 
 # Phase 20 S2: commercial_viral 변형 version. output_mode=commercial_viral(S3) 경로에서 사용.
 # meta.prompt_version 분기(compact v1.0.0 / rich v1.1.0 / director v1.2.0 / commercial_viral v1.3.0)는 S3 gated wiring.

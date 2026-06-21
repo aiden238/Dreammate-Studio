@@ -306,7 +306,8 @@ variant 정책: P-005q (Quick Mode 변형) 는 부모 P-005 version 을 상속�
 ## 7. P-006 · plan_candidates (Planner Agent)
 
 **Stage**: 3개 기획안 생성 (MOA Planner)
-**Version**: **v1.0.0 (compact, active)** · **v1.1.0 (rich, gated — Phase 13 S2)** · **v1.2.0 (director, gated — Phase 15 S2)** · **v1.3.0 (commercial_viral, gated — Phase 20 S2)** — 네 버전 output_mode 공존 (아래 §Semver)
+**Version**: **v1.0.0 (compact, active)** · **v1.1.0 (rich, gated — Phase 13 S2)** · **v1.2.1 (director, gated — Phase 15 S2 base v1.2.0 + Phase 31 특이성·정직가드)** · **v1.3.0 (commercial_viral, gated — Phase 20 S2)** — 네 버전 output_mode 공존 (아래 §Semver)
+> **v1.2.1 (director, 2026-06-21, prompt-version-review)**: 스키마 불변(가이던스-only patch). B0/B1 측정(eval/regression_results/2026-06-21-improved-output-ab*.md) 기반 — ① 특이성 강화(hook 구체 각색·target "예:"·concept 차별점) ② ★ 정직 가드(검증 불가 사실·고유명·통계·레퍼런스는 `추정/예시:` 라벨 강제) ③ 과확장 금지. 실 차별화는 RAG/PKM grounding 의 몫(프롬프트 불가, B0/B1 격리 입증).
 **Input variables**: `one_line_direction`, `selected_context` (brand/domain/series/target/tone), `rag_references` (RAG 검색 결과), `brand_memory`
 **Output schema (v1.0.0 compact)**: `{ plans: [{ name, concept, hook, flow, pros, risks }, ... ×3] }`
 **Output schema (v1.1.0 rich, additive)**: v1.0.0 + S1 rich 슬롯(전부 Optional) — `hook_variants[]`, `target_audience`, `tone`, `shots[]`, `thumbnail`, `title_candidates[]`, `cta`, `references[]`, `length_variants[]`, flow beat 에 `visual`/`dialogue`/`caption` (output_schema.md §8.1 v1.2.0, CC-012)
