@@ -123,11 +123,12 @@
     #wbs .wbs-kpi span{font-size:15px;}
     #wbs .wbs-focus h3{font-size:26px;}
     #wbs .wbs-focus p{font-size:15px;}
-    #wbs .wbs-lanes{grid-template-columns:repeat(4,1fr);gap:14px;min-height:0;}
-    #wbs .wbs-lane{padding:18px;}
+    #wbs .wbs-lanes{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;min-height:0;}
+    #wbs .wbs-lane{padding:16px;min-width:0;}
+    #wbs .mini-task>div{min-width:0;}
     #wbs .wbs-lane h3{font-size:25px;}
     #wbs .wbs-lane h3 small{font-size:13px;}
-    #wbs .mini-task{grid-template-columns:48px 1fr;gap:12px;padding:12px 15px;height:132px;overflow:hidden;align-items:center;border-radius:18px;}
+    #wbs .mini-task{grid-template-columns:46px minmax(0,1fr);gap:12px;padding:11px 14px;height:96px;overflow:hidden;align-items:center;border-radius:16px;}
     #wbs .mini-task code{width:48px;height:48px;border-radius:14px;font-size:14px;}
     #wbs .mini-task b{font-size:22px;line-height:1.16;}
     #wbs .mini-task span{font-size:15px;margin-top:5px;line-height:1.3;}
@@ -289,16 +290,16 @@
             <div class="mini-task"><code>WP2</code><div><b>PWA 프론트</b><span>Next.js 11 routes · 결과 카드</span></div></div>
             <div class="mini-task"><code>WP3</code><div><b>FastAPI 백엔드</b><span>17 endpoints · 3안 병렬</span></div></div>
             <div class="mini-task"><code>WP4</code><div><b>4계층 데이터</b><span>User→Brand→Domain→Series→Video</span></div></div>
-            <div class="mini-task"><code>WP5</code><div><b>AI 파이프라인</b><span>RAG Lite · MOA · Critic·SSE</span></div></div>
+            <div class="mini-task"><code>WP5</code><div><b>AI 파이프라인</b><span>RAG·MOA·Critic·SSE</span></div></div>
           </article>
           <article class="wbs-lane lane-doing"><h3>진행 <small>Doing</small></h3>
             <div class="mini-task"><code>WP6</code><div><b>품질·평가 루프</b><span>eval-run · golden_set 회귀</span></div></div>
             <div class="mini-task"><code>WP6.1</code><div><b>교차검증 judge</b><span>사람 정렬 계측기</span></div></div>
-            <div class="mini-task"><code>WP5.2</code><div><b>RAG grounding</b><span>Gemini 임베딩 · Δ+0.9 실증</span></div></div>
+            <div class="mini-task"><code>WP5.2</code><div><b>RAG 그라운딩</b><span>Gemini 임베딩·Δ+0.9</span></div></div>
             <div class="mini-task"><code>WP7.2</code><div><b>데모 백업 영상</b><span>라이브 실패 대비</span></div></div>
           </article>
           <article class="wbs-lane lane-todo"><h3>예정 <small>Todo</small></h3>
-            <div class="mini-task"><code>WP7</code><div><b>배포 게이트 B~G</b><span>staging·실 LLM·운영</span></div></div>
+            <div class="mini-task"><code>WP7</code><div><b>배포 게이트</b><span>staging·실 LLM·운영</span></div></div>
             <div class="mini-task"><code>WP6.2</code><div><b>코퍼스 확대</b><span>승인 지식 큐레이션</span></div></div>
             <div class="mini-task"><code>WP8.2</code><div><b>멀티모달 입력</b><span>이미지·영상 맥락</span></div></div>
           </article>
