@@ -206,6 +206,26 @@ class Settings(BaseSettings):
             "★ default 전환은 prompt-version-review 대상(major)."
         ),
     )
+    # Phase 34 S2 — Claude judge 모델/토큰 조정 (cross-provider 지연·JSON 잘림 대응).
+    #   sonnet 은 검증 품질이나 ~28s/호출 → generate 지연(프록시 타임아웃 500) + 다차원 JSON 1500 절단.
+    #   haiku 로 ~8s + max_tokens 상향으로 JSON 완결. cross-provider(self-review 편향 차단)는 유지.
+    critic_judge_anthropic_model: str = Field(
+        default="claude-sonnet",
+        description=(
+            "anthropic/consensus_min judge 의 Claude registry alias. "
+            "'claude-sonnet'(검증 품질·느림 ~28s) / 'claude-haiku'(빠름 ~8s, cross-provider 유지). "
+            "환경변수 CRITIC_JUDGE_ANTHROPIC_MODEL."
+        ),
+    )
+    critic_judge_max_tokens: int = Field(
+        default=4096,
+        ge=512,
+        description=(
+            "cross-provider judge(Claude) 응답 max_tokens. director/commercial 다차원 critic JSON 이 "
+            "1500 에서 잘리던 문제(Unterminated string) 해결 — Claude verbose 대응 상향. "
+            "환경변수 CRITIC_JUDGE_MAX_TOKENS."
+        ),
+    )
 
     # ─── Phase 33 (2026-06-22) — 결정적 pacing 게이트 (plotter structure_pacing_issues 이식) ─
     # 배경: calibration per-axis 게이트(LLM 점수 기반)는 director "얕은 입력→깊은 plan"에서 미발동

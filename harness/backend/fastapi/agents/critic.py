@@ -404,7 +404,12 @@ def _judge_via_anthropic(
             "critic_judge_provider=anthropic 인데 ANTHROPIC_API_KEY 미설정 — "
             "cross-provider judge 안전 차단(.env 설정 필요)."
         )
-    model = registry.get_model("claude-sonnet")
+    # Phase 34 S2 — judge 모델 설정화(기본 claude-sonnet, .env 로 claude-haiku 전환 시 ~3.5배 빠름).
+    _judge_alias = (
+        getattr(settings, "critic_judge_anthropic_model", "claude-sonnet")
+        or "claude-sonnet"
+    )
+    model = registry.get_model(_judge_alias)
     req = LLMRequest(
         messages=[
             LLMMessage(role="system", content=system_prompt),
@@ -581,8 +586,13 @@ def run_critic(
     if _use_anthropic:
         # ★ Phase 31 cross-provider judge (gated): OpenAI 생성 → Claude 독립 채점.
         #   검증: false-approve 10/10→0/10 (eval/regression_results/2026-06-21).
+        # Phase 34 S2: Claude 는 verbose 라 다차원 JSON 이 1500 에서 잘렸음(Unterminated string) →
+        #   critic_judge_max_tokens(기본 4096)로 상향. OpenAI 경로(_max_tokens)는 불변.
+        _judge_max_tokens = max(
+            _max_tokens, int(getattr(settings, "critic_judge_max_tokens", 4096))
+        )
         raw_content, _model, _usage = _judge_via_anthropic(
-            settings, _system_prompt, _user_intro, plan, _max_tokens
+            settings, _system_prompt, _user_intro, plan, _judge_max_tokens
         )
     else:
         _client = client or OpenAI(api_key=settings.openai_api_key)
