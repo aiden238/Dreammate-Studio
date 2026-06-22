@@ -114,7 +114,8 @@
     .chip-row6 span{padding:16px 8px;border-radius:16px;background:#fff6e8;border:1px solid #ffe0bf;color:#ad3817;text-align:center;font-size:15px;font-weight:900;}
     @media(max-width:980px){#architecture .arch-row,#pipeline .arch-row,.arch-cards,.chip-row6{grid-template-columns:1fr;}.arch-a{transform:rotate(90deg);}}
     /* WBS — 가독성: 박스·텍스트 확대(본문 ≥ 비전 '브랜드로 축적' 22px) + 균일 높이 + 중앙정렬/스크롤 */
-    #wbs{height:auto;min-height:calc(100vh - 64px);max-height:none;width:min(1180px,calc(100% - 40px));max-width:1180px;overflow-y:auto;align-content:safe center;padding:40px 0;}
+    #wbs{height:calc(100vh - 64px);max-height:calc(100vh - 64px);min-height:0;width:min(1180px,calc(100% - 40px));max-width:1180px;overflow-y:auto;align-content:start;padding:32px 0;}
+    #wbs .wbs-lane{overflow:visible;}
     #wbs .slide-wbs-frame{height:auto;grid-template-rows:auto auto auto;gap:20px;}
     #wbs h2{font-size:42px;}
     #wbs .eyebrow{font-size:16px;margin-bottom:10px;}
@@ -130,6 +131,23 @@
     #wbs .mini-task code{width:48px;height:48px;border-radius:14px;font-size:14px;}
     #wbs .mini-task b{font-size:22px;line-height:1.16;}
     #wbs .mini-task span{font-size:15px;margin-top:5px;line-height:1.3;}
+    /* 최소 폰트 하한 — WBS와 동일 가독성 기준을 다른 페이지에도 반영 (박스 주 텍스트 ↑) */
+    .pillar span{font-size:17px;}
+    .feat b{font-size:22px;}
+    .feat span{font-size:16px;}
+    .col-card h3{font-size:22px;}
+    .col-card li{font-size:17px;}
+    .kv b{font-size:20px;}
+    .kv span{font-size:17px;}
+    .process-step h3{font-size:26px;}
+    .process-step p{font-size:17px;}
+    .pain-card p{font-size:17px;}
+    .demo-step span{font-size:17px;}
+    .metric-strip .m span{font-size:16px;}
+    .arch-cards b{font-size:22px;}
+    .arch-cards span{font-size:16px;}
+    .arch-box small{font-size:16px;}
+    .adr span{font-size:15px;}
     #problem .problem-infographic{gap:16px;}
     #problem .pain-card{min-height:200px;padding:22px;}
     #solution .process-step{min-height:235px;padding:20px;}
