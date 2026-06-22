@@ -113,6 +113,23 @@
     .chip-row6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:0 0 18px;}
     .chip-row6 span{padding:16px 8px;border-radius:16px;background:#fff6e8;border:1px solid #ffe0bf;color:#ad3817;text-align:center;font-size:15px;font-weight:900;}
     @media(max-width:980px){#architecture .arch-row,#pipeline .arch-row,.arch-cards,.chip-row6{grid-template-columns:1fr;}.arch-a{transform:rotate(90deg);}}
+    /* WBS — 가독성: 박스·텍스트 확대(본문 ≥ 비전 '브랜드로 축적' 22px) + 균일 높이 + 중앙정렬/스크롤 */
+    #wbs{height:auto;min-height:calc(100vh - 64px);max-height:none;width:min(1180px,calc(100% - 40px));max-width:1180px;overflow-y:auto;align-content:safe center;padding:40px 0;}
+    #wbs .slide-wbs-frame{height:auto;grid-template-rows:auto auto auto;gap:20px;}
+    #wbs h2{font-size:42px;}
+    #wbs .eyebrow{font-size:16px;margin-bottom:10px;}
+    #wbs .wbs-kpi b{font-size:40px;}
+    #wbs .wbs-kpi span{font-size:15px;}
+    #wbs .wbs-focus h3{font-size:26px;}
+    #wbs .wbs-focus p{font-size:15px;}
+    #wbs .wbs-lanes{grid-template-columns:repeat(4,1fr);gap:14px;min-height:0;}
+    #wbs .wbs-lane{padding:18px;}
+    #wbs .wbs-lane h3{font-size:25px;}
+    #wbs .wbs-lane h3 small{font-size:13px;}
+    #wbs .mini-task{grid-template-columns:48px 1fr;gap:12px;padding:12px 15px;height:132px;overflow:hidden;align-items:center;border-radius:18px;}
+    #wbs .mini-task code{width:48px;height:48px;border-radius:14px;font-size:14px;}
+    #wbs .mini-task b{font-size:22px;line-height:1.16;}
+    #wbs .mini-task span{font-size:15px;margin-top:5px;line-height:1.3;}
     #problem .problem-infographic{gap:16px;}
     #problem .pain-card{min-height:200px;padding:22px;}
     #solution .process-step{min-height:235px;padding:20px;}
@@ -258,7 +275,7 @@
           </article>
           <article class="wbs-lane lane-doing"><h3>진행 <small>Doing</small></h3>
             <div class="mini-task"><code>WP6</code><div><b>품질·평가 루프</b><span>eval-run · golden_set 회귀</span></div></div>
-            <div class="mini-task"><code>WP6.1</code><div><b>cross-provider judge</b><span>사람 정렬 계측기 (Phase 31)</span></div></div>
+            <div class="mini-task"><code>WP6.1</code><div><b>교차검증 judge</b><span>사람 정렬 계측기</span></div></div>
             <div class="mini-task"><code>WP5.2</code><div><b>RAG grounding</b><span>Gemini 임베딩 · Δ+0.9 실증</span></div></div>
             <div class="mini-task"><code>WP7.2</code><div><b>데모 백업 영상</b><span>라이브 실패 대비</span></div></div>
           </article>
